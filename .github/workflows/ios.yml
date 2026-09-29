@@ -1,0 +1,54 @@
+name: iOS build (unsigned .ipa for SideStore)
+
+# Manual only: Actions tab → "iOS build" → Run workflow. SideStore signs the .ipa with the
+# free Apple ID on the phone, so the build itself is unsigned.
+# Expo SDK 57 needs Xcode 26.4+, which the macOS 26 runner provides.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - run: npm ci
+
+      # Continuous Native Generation: ios/ is generated from app.json, never committed.
+      # Prebuild also runs `pod install`.
+      - run: npx expo prebuild --platform ios --clean
+
+      - name: Build (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace ios/Rakki.xcworkspace \
+            -scheme Rakki \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tail -n 200
+
+      - name: Package .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Rakki.app Payload/
+          zip -qry Rakki.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rakki-ipa
+          path: Rakki.ipa
+          retention-days: 30
