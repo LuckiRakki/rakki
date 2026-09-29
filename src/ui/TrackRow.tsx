@@ -12,15 +12,19 @@ export function TrackRow({
   active,
   playing,
   onPress,
+  onLongPress,
 }: {
   track: BaseItem;
   active: boolean;
   playing: boolean;
   onPress: () => void;
+  onLongPress?: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { queryClient, useRecentlyAdded, useRecentlyPlayed } from '@/api/queries';
-import { showAccountSheet } from '@/auth/actions';
+import { router } from 'expo-router';
 import { useAuth } from '@/auth/store';
 import { greeting } from '@/lib/format';
 import { AlbumTile, QuickTile } from '@/ui/AlbumTile';
@@ -38,7 +38,7 @@ export default function HomeScreen() {
         pointerEvents="none"
       />
       <View style={styles.header}>
-        <Pressable onPress={showAccountSheet} style={styles.avatar} hitSlop={8}>
+        <Pressable onPress={() => router.push('/settings')} style={styles.avatar} hitSlop={8}>
           <T style={{ fontFamily: fonts.bold, fontSize: 15, color: '#000' }}>
             {userName.charAt(0).toUpperCase() || '?'}
           </T>

@@ -1,56 +1,75 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
 import { usePlayer } from '@/player/store';
-import { openAlbum } from '@/ui/AlbumTile';
+import { useProgress } from '@/player/useProgress';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
 import { colors, fonts, radius, space } from '@/ui/theme';
 
-/** Spotify-style mini-player that sits on top of the tab bar, tinted by the art colour. */
+/**
+ * Spotify-style mini-player on top of the tab bar, tinted by the art colour.
+ * Tap opens the full player; swipe left/right skips.
+ */
 export function MiniPlayer() {
-  const track = usePlayer((s) => s.queue[s.index]);
+  const track = usePlayer((s) => s.queue[s.index]?.item);
   const playing = usePlayer((s) => s.playing);
   const buffering = usePlayer((s) => s.buffering);
-  const position = usePlayer((s) => s.position);
-  const duration = usePlayer((s) => s.duration);
   const client = useAuth((s) => s.client);
+  const { position, duration } = useProgress(500);
 
   if (!track) return null;
   const tint = artColor(client?.blurhash(track), colors.surface3);
   const pct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
 
+  const swipes = Gesture.Race(
+    Gesture.Fling()
+      .direction(Directions.LEFT)
+      .runOnJS(true)
+      .onStart(() => usePlayer.getState().next()),
+    Gesture.Fling()
+      .direction(Directions.RIGHT)
+      .runOnJS(true)
+      .onStart(() => {
+        const { index, skipTo, previous } = usePlayer.getState();
+        if (index > 0) skipTo(index - 1);
+        else previous();
+      }),
+  );
+
   return (
     <View style={styles.wrap}>
-      <Pressable
-        style={[styles.card, { backgroundColor: tint }]}
-        onPress={() => track.AlbumId && openAlbum(track.AlbumId)}>
-        <Artwork item={track} size={40} />
-        <View style={styles.text}>
-          <T numberOfLines={1} style={styles.title}>
-            {track.Name}
-          </T>
-          <T variant="caption" numberOfLines={1} style={{ fontSize: 12 }}>
-            {artistLine(track)}
-          </T>
-        </View>
-        <Pressable hitSlop={10} onPress={() => usePlayer.getState().toggle()} style={styles.btn}>
-          {buffering && !playing ? (
-            <ActivityIndicator color={colors.text} />
-          ) : (
-            <Ionicons name={playing ? 'pause' : 'play'} size={26} color={colors.text} />
-          )}
+      <GestureDetector gesture={swipes}>
+        <Pressable style={[styles.card, { backgroundColor: tint }]} onPress={() => router.push('/player')}>
+          <Artwork item={track} size={40} />
+          <View style={styles.text}>
+            <T numberOfLines={1} style={styles.title}>
+              {track.Name}
+            </T>
+            <T variant="caption" numberOfLines={1} style={{ fontSize: 12 }}>
+              {artistLine(track)}
+            </T>
+          </View>
+          <Pressable hitSlop={10} onPress={() => usePlayer.getState().toggle()} style={styles.btn}>
+            {buffering ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <Ionicons name={playing ? 'pause' : 'play'} size={26} color={colors.text} />
+            )}
+          </Pressable>
+          <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()} style={styles.btn}>
+            <Ionicons name="play-skip-forward" size={22} color={colors.text} />
+          </Pressable>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${pct}%` }]} />
+          </View>
         </Pressable>
-        <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()} style={styles.btn}>
-          <Ionicons name="play-skip-forward" size={22} color={colors.text} />
-        </Pressable>
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${pct}%` }]} />
-        </View>
-      </Pressable>
+      </GestureDetector>
     </View>
   );
 }

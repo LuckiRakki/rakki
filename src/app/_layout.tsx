@@ -61,6 +61,9 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Protected guard={signedIn}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="player" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="login" />

@@ -8,6 +8,7 @@ import { useAlbumTracks, useItem } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { ticksToSeconds } from '@/lib/format';
+import { showTrackActions } from '@/player/actions';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
@@ -22,15 +23,15 @@ export default function AlbumScreen() {
   const client = useAuth((s) => s.client);
   const album = useItem(id);
   const tracks = useAlbumTracks(id);
-  const currentId = usePlayer((s) => s.queue[s.index]?.Id);
-  const currentAlbumId = usePlayer((s) => s.queue[s.index]?.AlbumId);
+  const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
+  const isThisAlbum = usePlayer((s) => s.source?.type === 'album' && s.source.id === id);
   const playing = usePlayer((s) => s.playing);
 
   const list = tracks.data ?? [];
   const multiDisc = new Set(list.map((t) => t.ParentIndexNumber ?? 1)).size > 1;
   const minutes = Math.round(list.reduce((sum, t) => sum + ticksToSeconds(t.RunTimeTicks), 0) / 60);
-  const isThisAlbum = currentAlbumId === id;
   const tint = artColor(album.data && client?.blurhash(album.data));
+  const source = { type: 'album' as const, id, name: album.data?.Name ?? 'Album' };
 
   function play(shuffle = false) {
     if (list.length === 0) return;
@@ -38,8 +39,7 @@ export default function AlbumScreen() {
       usePlayer.getState().toggle();
       return;
     }
-    const q = shuffle ? [...list].sort(() => Math.random() - 0.5) : list;
-    usePlayer.getState().playQueue(q, 0);
+    usePlayer.getState().playQueue(list, { source, shuffle });
   }
 
   const header = (
@@ -108,7 +108,8 @@ export default function AlbumScreen() {
                 track={item}
                 active={item.Id === currentId}
                 playing={playing}
-                onPress={() => usePlayer.getState().playQueue(list, index)}
+                onPress={() => usePlayer.getState().playQueue(list, { startIndex: index, source })}
+                onLongPress={() => showTrackActions(item)}
               />
             </>
           );

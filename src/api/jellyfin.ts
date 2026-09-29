@@ -54,6 +54,20 @@ export interface ItemsResult {
   StartIndex: number;
 }
 
+/** Body for /Sessions/Playing, /Progress and /Stopped. */
+export interface PlaybackInfo {
+  ItemId: string;
+  PlaySessionId: string;
+  PositionTicks: number;
+  IsPaused?: boolean;
+  CanSeek?: boolean;
+  PlayMethod?: 'DirectPlay' | 'DirectStream' | 'Transcode';
+  EventName?: 'TimeUpdate' | 'Pause' | 'Unpause';
+  RepeatMode?: 'RepeatNone' | 'RepeatAll' | 'RepeatOne';
+  PlaybackOrder?: 'Default' | 'Shuffle';
+  PlaybackStartTimeTicks?: number;
+}
+
 interface AuthResult {
   AccessToken: string;
   User: { Id: string; Name: string };
@@ -121,7 +135,12 @@ async function request<T>(
     clearTimeout(timer);
   }
   if (!res.ok) {
-    if (res.status === 401) throw new JellyfinError('Wrong username or password.', 401);
+    if (res.status === 401) {
+      throw new JellyfinError(
+        token ? 'Your session has expired. Sign in again.' : 'Wrong username or password.',
+        401,
+      );
+    }
     throw new JellyfinError(`Server error ${res.status}`, res.status);
   }
   const text = await res.text();
@@ -204,6 +223,40 @@ export class JellyfinClient {
   private get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}) {
     const { serverUrl, deviceId, token } = this.session;
     return request<T>(`${serverUrl}${path}${query(params)}`, { deviceId, token });
+  }
+
+  private send<T = void>(
+    method: 'POST' | 'DELETE',
+    path: string,
+    body?: unknown,
+    params: Record<string, string | number | boolean | undefined> = {},
+  ) {
+    const { serverUrl, deviceId, token } = this.session;
+    return request<T>(`${serverUrl}${path}${query(params)}`, {
+      method,
+      deviceId,
+      token,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  }
+
+  // Playback reporting (drives play counts, "Recently played", Last.fm via the server).
+  reportPlaybackStart(info: PlaybackInfo) {
+    return this.send('POST', '/Sessions/Playing', info);
+  }
+
+  reportPlaybackProgress(info: PlaybackInfo) {
+    return this.send('POST', '/Sessions/Playing/Progress', info);
+  }
+
+  reportPlaybackStopped(info: PlaybackInfo) {
+    return this.send('POST', '/Sessions/Playing/Stopped', info);
+  }
+
+  setFavorite(itemId: string, favorite: boolean) {
+    return this.send(favorite ? 'POST' : 'DELETE', `/UserFavoriteItems/${itemId}`, undefined, {
+      userId: this.session.userId,
+    });
   }
 
   getAlbums(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string }) {
@@ -289,10 +342,11 @@ export class JellyfinClient {
   }
 
   /**
-   * Direct-play what iOS can decode natively; everything else is transcoded to AAC over HLS
-   * (same approach as Finamp). Quality settings arrive in Phase 1.
+   * Direct-play what iOS can decode natively; everything else (or anything above the bitrate
+   * cap) is transcoded to AAC over HLS, the same approach as Finamp.
+   * @param maxKbps 0 = no cap (original file whenever possible).
    */
-  streamUrl(trackId: string): string {
+  streamUrl(trackId: string, maxKbps = 0): string {
     const { serverUrl, userId, deviceId, token } = this.session;
     return `${serverUrl}/Audio/${trackId}/universal${query({
       UserId: userId,
@@ -302,7 +356,7 @@ export class JellyfinClient {
       TranscodingContainer: 'ts',
       TranscodingProtocol: 'hls',
       AudioCodec: 'aac',
-      MaxStreamingBitrate: 140000000,
+      MaxStreamingBitrate: maxKbps > 0 ? maxKbps * 1000 : 140000000,
     })}`;
   }
 }
