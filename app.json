@@ -49,7 +49,8 @@
           "microphonePermission": false,
           "enableBackgroundPlayback": true
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "reactCompiler": true

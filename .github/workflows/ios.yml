@@ -1,15 +1,28 @@
 name: iOS build (unsigned .ipa for SideStore)
 
-# Manual only: Actions tab → "iOS build" → Run workflow. SideStore signs the .ipa with the
-# free Apple ID on the phone, so the build itself is unsigned.
+# Manual only: Actions tab → "iOS build" → Run workflow, then pick the variant.
+#   dev     → "Rakki Dev": Debug build with expo-dev-client; loads JS live from the PC.
+#             Rebuild only when native code or native dependencies change.
+#   release → "Rakki": the everyday app with the JS bundled in.
+# SideStore signs the .ipa with the free Apple ID on the phone, so the build is unsigned.
 # Expo SDK 57 needs Xcode 26.4+, which the macOS 26 runner provides.
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: Which app to build
+        type: choice
+        options: [dev, release]
+        default: dev
 
 jobs:
   build:
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 75
+    env:
+      APP_VARIANT: ${{ inputs.variant == 'dev' && 'development' || 'production' }}
+      CONFIGURATION: ${{ inputs.variant == 'dev' && 'Debug' || 'Release' }}
+      IPA_NAME: ${{ inputs.variant == 'dev' && 'Rakki-Dev' || 'Rakki' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -22,33 +35,46 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - run: xcodebuild -version
+
       - run: npm ci
 
-      # Continuous Native Generation: ios/ is generated from app.json, never committed.
-      # Prebuild also runs `pod install`.
+      # Continuous Native Generation: ios/ is generated from app.json + app.config.js and never
+      # committed. Prebuild also runs `pod install`.
       - run: npx expo prebuild --platform ios --clean
 
       - name: Build (unsigned)
         run: |
           set -o pipefail
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "Workspace: $WORKSPACE  Scheme: $SCHEME  Configuration: $CONFIGURATION"
           xcodebuild \
-            -workspace ios/Rakki.xcworkspace \
-            -scheme Rakki \
-            -configuration Release \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIGURATION" \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            build | tail -n 200
+            build 2>&1 | tee xcodebuild.log | grep -E "error:|warning: .*Rakki|BUILD (SUCCEEDED|FAILED)|\*\* " || true
+          grep -q "BUILD SUCCEEDED" xcodebuild.log
+
+      - name: Show compile errors
+        if: failure()
+        run: grep -n -B2 -A6 "error:" xcodebuild.log | head -n 200 || true
 
       - name: Package .ipa
         run: |
+          APP=$(find build/Build/Products -maxdepth 2 -name "*.app" -type d | head -n 1)
+          echo "App: $APP"
           mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/Rakki.app Payload/
-          zip -qry Rakki.ipa Payload
+          cp -R "$APP" Payload/
+          zip -qry "$IPA_NAME.ipa" Payload
+          ls -lh "$IPA_NAME.ipa"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rakki-ipa
-          path: Rakki.ipa
+          name: ${{ env.IPA_NAME }}-ipa
+          path: ${{ env.IPA_NAME }}.ipa
           retention-days: 30
