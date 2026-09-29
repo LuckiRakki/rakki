@@ -51,7 +51,19 @@ Every screen, animation, gesture and lyrics tweak is plain TypeScript and **show
 
 ### Known weak spot: gapless audio
 
-`react-native-track-player` v5 (`@rntp/player`, New Architecture) handles queues, background playback, lock screen, Control Center and caching, and **preloads** the next track for "gapless-like" playback. **We verify true gaplessness in Phase 1.** If it falls short, the fallback is a small custom Expo native module on AVQueuePlayer. That module is contained, stable Swift, so compiling it through CI is acceptable.
+**Decision (Phase 1, 2026-09-29): our own engine, `modules/rakki-audio`** (Swift, local Expo module).
+- **Rejected: `react-native-track-player` v5 (`@rntp/player`).** It became commercially licensed (free only for personal use; €99/month for commercial use), which sits badly in a public AGPL app, and it's only "gapless-like".
+- **Rejected: plain `expo-audio`.** Its lock screen has no next/previous track commands.
+- **The engine copies how Finamp does it** (`just_audio` + `audio_service`, both MIT):
+  - an `AVQueuePlayer` with a 2-song look-ahead "treadmill", for **true gapless** playback
+  - native lock-screen and Control Center commands (play, pause, next, previous, scrub)
+  - now-playing info with artwork
+  - handling for interruptions and headphone unplugs
+  - repeat off/all/one
+  - per-track gain
+  - an AirPlay picker view
+  - a synchronous `getProgress()` for the lyrics
+- On web and in Expo Go, an `expo-audio` fallback engine sits behind the same interface (`src/player/engine.ts`).
 
 ### Packages (✅ = works in Expo Go, stage A)
 
@@ -64,7 +76,7 @@ Every screen, animation, gesture and lyrics tweak is plain TypeScript and **show
 | Local DB | `expo-sqlite` ✅ + `drizzle-orm` (cache, downloads index, persisted queue); `expo-sqlite/kv-store` for settings |
 | Secrets | `expo-secure-store` ✅ (token in the Keychain) |
 | Audio (stage A) | `expo-audio` ✅ (foreground only; enough to prototype) |
-| Audio (stage B+) | `@rntp/player` (react-native-track-player v5): background, lock screen, queue, preload |
+| Audio (stage B+) | `modules/rakki-audio`: our Swift engine (AVQueuePlayer treadmill, remote commands, now playing, AirPlay) |
 | Downloads | `expo-file-system` ✅ (foreground) → `@kesha-antonov/react-native-background-downloader` (iOS background URLSession, stage B) |
 | Lists | `@shopify/flash-list` ✅ (6.8k-track library) |
 | Animation / gestures | `react-native-reanimated` ✅, `react-native-gesture-handler` ✅ |
@@ -133,7 +145,7 @@ Shared-machine hygiene:
 └───────────────┬──────────────────────────────────────┬───────────────────┘
                 │ TanStack Query hooks                 │ zustand player store
 ┌───────────────▼────────────────┐     ┌───────────────▼──────────────────┐
-│ src/api  (Jellyfin client,     │     │ src/player (RNTP service: queue, │
+│ src/api  (Jellyfin client,     │     │ src/player (engine + store: queue│
 │ endpoints, Feishin normalisers)│     │ reporting, normalization, sleep, │
 │ src/server  MusicServer iface  │     │ queue persistence, radio)        │
 └───────┬───────────────┬────────┘     └──────┬──────────────────┬────────┘
@@ -161,7 +173,8 @@ src/
   api/jellyfin/         client.ts, endpoints/*.ts, types.ts, normalize.ts (ported from Feishin)
   server/               MusicServer interface → JellyfinServer (room for Navidrome later)
   db/                   drizzle schema, migrations
-  player/               service.ts (RNTP playback service), queue.ts, reporting.ts, normalization.ts
+  player/               engine.ts (native/fallback), store.ts (queue), reporting.ts, useProgress.ts
+modules/rakki-audio/    Swift engine (ios/RakkiPlayer.swift, RakkiAudioModule.swift) + index.ts
   downloads/
   spicy/
     engine/             Spring.ts, Spline.ts, curves.ts, timeline.ts, ttml.ts  ← from the web mod
@@ -216,7 +229,7 @@ The user wants both, with the effort going into Spicy. Both share one data layer
   - Each frame only updates transforms, the gradient-sweep shader position and the blur-mask glow. No React re-renders per frame.
   - Only the `[active-2 … active+1]` line window ticks.
   - Letters are split only for held words. (These are the perf lessons from the head unit.)
-- **Timing:** the player position comes from RNTP every ~250 ms, then a frame clock interpolates between updates (the same approach as the web mod).
+- **Timing:** `RakkiAudio.getProgress()` is synchronous and interpolated natively, so the lyrics can read it every frame.
 - **Surfaces:**
   1. A lyrics card under the full player (Spotify style) that expands into
   2. a full-screen Spicy view with the spinning, blurred art backdrop, tap-to-seek and the Word↔Line toggle.
@@ -302,7 +315,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | Queue: play next, add, reorder, remove, clear, shuffle, repeat | F, Fs | 1 |
 | Playback reporting (play counts, Last.fm through the server) | F, Fs | 1 |
 | Mini-player and full player | F, Fs | 1 |
-| Gapless (verify RNTP preload; custom module if needed) | F | 1 / 5 |
+| Gapless (native AVQueuePlayer treadmill; verify on device) | F | 1 |
 | **Spicy Lyrics mode**, the focus (word, bg vocals, duets, letters, dots, attribution) | ours | 2 |
 | **Regular lyrics mode** (line-by-line, Spotify-style) + Spicy ⇄ Regular toggle | F, Fs | 2 |
 | Shared lyrics data layer (TTML + LRC + plain, one model) | ours | 2 |
@@ -346,8 +359,10 @@ The user wants to choose colours, sizes and similar details themselves. So every
   - Expo Go (SDK 57+) on iOS requires Expo Go and the PC's Expo CLI to be signed in to the **same Expo account** (luckirakki). This doesn't apply to our own dev build.
 
 ### Phase 1: Player core (stage B, dev build)
-- **First:** add `expo-dev-client` + `@rntp/player`, run `ios.yml` once, and set up SideStore to install Rakki-dev. This is the pipeline test moved from Phase 0; do it before building features on native modules.
-- `@rntp/player` service, queue model, reporting, mini-player and full player, streaming quality settings.
+- **First:** add `expo-dev-client` + the Rakki audio engine, run `ios.yml` once, and set up SideStore to install Rakki Dev. This is the pipeline test moved from Phase 0.
+  - ✅ Done: the first dev build compiled on the first attempt (Xcode 26.6, ~11 min compile).
+  - It also includes Skia, `expo-sqlite` and `expo-network`, so Phase 2 needs no new build.
+- ✅ Written: engine + queue store, Jellyfin reporting, mini-player (tap and swipe), full player, queue, settings (Wi-Fi/cellular quality), and long-press actions (Play next / Add to queue / Like / Go to album).
 - Theme plumbing for the customizer: `useTheme()` + persisted appearance store; move the Phase 0 screens onto it.
 - Gapless test on a known gapless album.
 - **Exit:** you can listen to a whole album with the screen locked using lock-screen controls, it shows in Jellyfin's "Now playing" and play counts, and we have a verdict on gapless.
@@ -390,7 +405,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 
 | Risk | Mitigation |
 |---|---|
-| RNTP preload isn't truly gapless on iOS | Verify in Phase 1; fallback = custom Expo module on AVQueuePlayer (Phase 5). |
+| Our Swift engine has native bugs we can't see from Windows | Test on the device through SideStore; the college Mac (Xcode console) catches native crashes. |
 | Expo Go can't do background audio | Expected. Expo Go is only for Phase 0; the dev build takes over in Phase 1. |
 | 7-day expiry, 3-app budget, VPN juggling | SideStore auto-refresh. Keep only dev + release installed. Move to $99/TestFlight if it becomes annoying. |
 | Lyric engine perf in React Native | Skia canvas plus UI-thread worklets, no per-frame React renders, 4-line window, letters only on held words. Profile in Phase 2. |
