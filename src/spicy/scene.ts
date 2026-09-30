@@ -9,6 +9,7 @@
 // canvas (see draw()). Layout that CSS did for free (wrapping, alignment, gaps) is done
 // here once per song/size in the constructor.
 import {
+  BlendMode,
   BlurStyle,
   Skia,
   TileMode,
@@ -65,7 +66,7 @@ export const SPICY_DEFAULTS: SpicySettings = {
   lineBlurEnabled: true,
   blurPerLine: 1.25,
   gapDotsMs: 4000,
-  dotRise: 0.95,
+  dotRise: 0.7, // web mod: 0.95; lowered a touch on request (2026-09-30)
   lrcSweep: true,
   lrcBand: 20,
   unsyncedAutoScroll: true,
@@ -100,7 +101,6 @@ const LETTER_GLOW_ALPHA = 1.85;
 const LINE_GLOW_ALPHA = 0.5;
 
 const BLUR_CAP_LINES = 5.465;
-const SCROLL_LIFT = 30;
 const PIN_LOOKAHEAD = 2;
 const MAX_FRAME_S = 0.1;
 const SEEK_BACK_MS = 150;
@@ -209,6 +209,22 @@ interface Group {
   endMs: number;
 }
 
+/**
+ * Where the lyrics sit in the view. The web mod centres the sung line; Rakki's lyrics screen
+ * has the album header above, so the sung line follows higher up (like Spicy Lyrics' compact
+ * view) and lines fade out at the top and bottom edges instead of being cut off.
+ */
+export interface SpicyLayout {
+  /** Fraction of the view height where the followed line's centre sits. */
+  anchor: number;
+  /** Height (px) of the fade at the top edge. */
+  fadeTop: number;
+  /** Height (px) of the fade at the bottom edge (under the player controls). */
+  fadeBottom: number;
+}
+
+export const SPICY_LAYOUT_DEFAULTS: SpicyLayout = { anchor: 0.5, fadeTop: 0, fadeBottom: 0 };
+
 export interface SpicyFonts {
   lead: SkFont;
   bg: SkFont;
@@ -255,6 +271,7 @@ export class SpicyScene {
     width: number,
     height: number,
     private settings: SpicySettings = SPICY_DEFAULTS,
+    private layout: SpicyLayout = SPICY_LAYOUT_DEFAULTS,
   ) {
     this.width = width;
     this.height = height;
@@ -276,8 +293,8 @@ export class SpicyScene {
     this.contentHeight = last ? last.top + last.height : 0;
     // Start with the first line where the singer will be.
     const first = this.rows[0];
-    this.scrollY = this.scrollTo = first ? this.height / 2 - (first.top + first.height / 2) - SCROLL_LIFT : 0;
-    if (!this.synced) this.scrollY = this.scrollTo = this.height * 0.12;
+    this.scrollY = this.scrollTo = first ? this.anchorY - (first.top + first.height / 2) : 0;
+    if (!this.synced) this.scrollY = this.scrollTo = this.unsyncedTop;
   }
 
   // ── Building ────────────────────────────────────────────────────────────────────
@@ -533,6 +550,16 @@ export class SpicyScene {
 
   // ── Per frame ───────────────────────────────────────────────────────────────────
 
+  /** View y where the followed line's centre sits. */
+  private get anchorY() {
+    return this.height * this.layout.anchor;
+  }
+
+  /** Where unsynced lyrics start (just below the top fade). */
+  private get unsyncedTop() {
+    return Math.max(this.layout.fadeTop, this.height * 0.04);
+  }
+
   /**
    * Advance to playback time `ms`. `dt` is the wall-clock frame time in seconds — springs
    * move in real time, independent of the (seek-jumpy) playback clock.
@@ -549,7 +576,7 @@ export class SpicyScene {
     if (!this.synced) {
       if (this.settings.unsyncedAutoScroll && !this.manual && durationMs > 0) {
         const scrollable = Math.max(0, this.contentHeight - this.height * 0.7);
-        this.scrollY = this.height * 0.12 - clamp01(ms / durationMs) * scrollable;
+        this.scrollY = this.unsyncedTop - clamp01(ms / durationMs) * scrollable;
       }
       return;
     }
@@ -587,7 +614,7 @@ export class SpicyScene {
     if (target >= 0 && !this.manual && target !== this.centeredGroup) {
       const g = this.groups[target];
       const row = this.rows[g.first];
-      this.glideTo(this.height / 2 - (row.top + row.height / 2) - SCROLL_LIFT, !jumped);
+      this.glideTo(this.anchorY - (row.top + row.height / 2), !jumped);
       this.centeredGroup = target;
     }
 
@@ -827,14 +854,38 @@ export class SpicyScene {
     if (!this.manual) this.scrollT = 1;
     this.manual = true;
     this.manualUntil = Date.now() + MANUAL_RESUME_MS;
-    const minY = this.height / 2 - this.contentHeight;
-    const maxY = this.height / 2;
+    const minY = this.anchorY - this.contentHeight;
+    const maxY = this.anchorY;
     this.scrollY = Math.max(minY, Math.min(maxY, this.scrollY + dy));
   }
 
   // ── Drawing ─────────────────────────────────────────────────────────────────────
 
   draw(canvas: SkCanvas) {
+    const { fadeTop, fadeBottom } = this.layout;
+    const fading = fadeTop > 0 || fadeBottom > 0;
+    if (fading) canvas.saveLayer();
+    this.drawContent(canvas);
+    if (fading) {
+      // Keep the pixels where the mask is opaque: transparent at the very edges.
+      const h = this.height;
+      const mask = Skia.Paint();
+      mask.setBlendMode(BlendMode.DstIn);
+      mask.setShader(
+        Skia.Shader.MakeLinearGradient(
+          { x: 0, y: 0 },
+          { x: 0, y: h },
+          [Skia.Color('transparent'), Skia.Color('black'), Skia.Color('black'), Skia.Color('transparent')],
+          [0, Math.min(0.49, fadeTop / h), Math.max(0.51, 1 - fadeBottom / h), 1],
+          TileMode.Clamp,
+        ),
+      );
+      canvas.drawRect(Skia.XYWHRect(0, 0, this.width, h), mask);
+      canvas.restore();
+    }
+  }
+
+  private drawContent(canvas: SkCanvas) {
     const s = this.settings;
     const glowMul = s.glowEnabled ? s.glowStrength : 0;
     const dotsH = this.dots.visible ? this.dotMetrics().height : 0;

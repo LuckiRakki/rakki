@@ -5,7 +5,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
 
 import type { Lyrics } from '@/lyrics/types';
-import { SpicyScene } from '@/spicy/scene';
+import { SPICY_DEFAULTS, SPICY_LAYOUT_DEFAULTS, SpicyScene, type SpicyLayout } from '@/spicy/scene';
 
 const INTER_BOLD = require('@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf');
 const INTER_SEMIBOLD = require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf');
@@ -25,11 +25,14 @@ export function SpicyLyricsView({
   nowMs,
   durationMs,
   onSeek,
+  layout = SPICY_LAYOUT_DEFAULTS,
 }: {
   lyrics: Lyrics;
   nowMs: () => number;
   durationMs: () => number;
   onSeek: (ms: number) => void;
+  /** Where the sung line follows and how far the edges fade (see SpicyLayout). */
+  layout?: SpicyLayout;
 }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const fontSize = Math.max(26, Math.min(44, size.w * 0.08));
@@ -41,9 +44,13 @@ export function SpicyLyricsView({
   const scene = useMemo(
     () =>
       lead && bg && credits && size.w > 0 && size.h > 0
-        ? new SpicyScene(lyrics, { lead, bg, credits }, size.w, size.h)
+        ? new SpicyScene(lyrics, { lead, bg, credits }, size.w, size.h, SPICY_DEFAULTS, {
+            anchor: layout.anchor,
+            fadeTop: layout.fadeTop,
+            fadeBottom: layout.fadeBottom,
+          })
         : null,
-    [lyrics, lead, bg, credits, size.w, size.h],
+    [lyrics, lead, bg, credits, size.w, size.h, layout.anchor, layout.fadeTop, layout.fadeBottom],
   );
 
   useEffect(() => {

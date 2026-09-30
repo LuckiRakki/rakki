@@ -1,6 +1,8 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { withAlpha } from '@/lib/color';
 import type { Lyrics } from '@/lyrics/types';
 import { T } from '@/ui/T';
 import { fonts, space } from '@/ui/theme';
@@ -36,10 +38,20 @@ export function RegularLyricsView({
   lyrics,
   nowMs,
   onSeek,
+  anchor = 0.3,
+  fadeColor,
+  fadeTop = 0,
+  fadeBottom = 0,
 }: {
   lyrics: Lyrics;
   nowMs: () => number;
   onSeek: (ms: number) => void;
+  /** Fraction of the view height where the current line sits. */
+  anchor?: number;
+  /** Background colour the edges fade into (Regular mode sits on a solid colour). */
+  fadeColor?: string;
+  fadeTop?: number;
+  fadeBottom?: number;
 }) {
   const lines = toLines(lyrics);
   const [active, setActive] = useState(-1);
@@ -62,17 +74,18 @@ export function RegularLyricsView({
   useEffect(() => {
     if (active < 0 || Date.now() < manualUntil.current) return;
     const y = offsets.current[active];
-    if (y !== undefined) scroll.current?.scrollTo({ y: Math.max(0, y - viewH * 0.3), animated: true });
-  }, [active, viewH]);
+    if (y !== undefined) scroll.current?.scrollTo({ y: Math.max(0, y - viewH * anchor), animated: true });
+  }, [active, viewH, anchor]);
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       ref={scroll}
       onLayout={(e) => setViewH(e.nativeEvent.layout.height)}
       onScrollBeginDrag={() => (manualUntil.current = Date.now() + 60_000)}
       onScrollEndDrag={() => (manualUntil.current = Date.now() + MANUAL_RESUME_MS)}
       onMomentumScrollEnd={() => (manualUntil.current = Date.now() + MANUAL_RESUME_MS)}
-      contentContainerStyle={{ paddingHorizontal: space.xl, paddingTop: viewH * 0.3, paddingBottom: viewH * 0.6 }}
+      contentContainerStyle={{ paddingHorizontal: space.xl, paddingTop: fadeTop, paddingBottom: viewH * 0.7 }}
       showsVerticalScrollIndicator={false}>
       {lines.map((line, i) => {
         const color = !lyrics.isSynced
@@ -91,6 +104,21 @@ export function RegularLyricsView({
         );
       })}
     </ScrollView>
+      {fadeColor && fadeTop > 0 ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={[fadeColor, withAlpha(fadeColor, 0)]}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: fadeTop }}
+        />
+      ) : null}
+      {fadeColor && fadeBottom > 0 ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={[withAlpha(fadeColor, 0), fadeColor]}
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: fadeBottom }}
+        />
+      ) : null}
+    </View>
   );
 }
 

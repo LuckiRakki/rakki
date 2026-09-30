@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { RegularLyricsView } from '@/lyrics/RegularLyricsView';
 import type { Lyrics, LyricsBundle } from '@/lyrics/types';
 import type { LyricsMode } from '@/settings/store';
 import { SpicyBackdrop } from '@/spicy/Backdrop';
+import type { SpicyLayout } from '@/spicy/scene';
 import { SpicyLyrics } from '@/spicy/SpicyLyrics';
 import { T } from '@/ui/T';
 import { space } from '@/ui/theme';
@@ -20,7 +22,16 @@ export function pickLyrics(bundle: LyricsBundle | undefined, mode: LyricsMode): 
   return order.find((l) => l?.isSynced) ?? order.find(Boolean) ?? null;
 }
 
-/** Background + the chosen renderer. Shared by the lyrics screen and the dev demo. */
+/** The sung line follows a quarter of the way down, under the album header (Spicy's compact view). */
+const ANCHOR = 0.24;
+const FADE_TOP = 36;
+
+/**
+ * Background + header + the chosen renderer. The header (album art, title…) sits above the
+ * lyrics in the normal flow; `footerSpace` is how much of the bottom is covered by overlaid
+ * controls, so the lyrics fade out before reaching them. Shared by the lyrics screen and the
+ * dev demo.
+ */
 export function LyricsStage({
   lyrics,
   loading,
@@ -30,6 +41,8 @@ export function LyricsStage({
   onSeek,
   artUri,
   tint,
+  header,
+  footerSpace = 0,
 }: {
   lyrics: Lyrics | null;
   loading: boolean;
@@ -39,7 +52,10 @@ export function LyricsStage({
   onSeek: (ms: number) => void;
   artUri?: string;
   tint: string;
+  header?: ReactNode;
+  footerSpace?: number;
 }) {
+  const layout: SpicyLayout = { anchor: ANCHOR, fadeTop: FADE_TOP, fadeBottom: footerSpace + 40 };
   return (
     <View style={StyleSheet.absoluteFill}>
       {mode === 'spicy' ? (
@@ -47,12 +63,29 @@ export function LyricsStage({
       ) : (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: tint }]} />
       )}
+      {header}
       <View style={{ flex: 1 }}>
         {lyrics ? (
           mode === 'spicy' ? (
-            <SpicyLyrics key={lyricsKey(lyrics)} lyrics={lyrics} nowMs={nowMs} durationMs={durationMs} onSeek={onSeek} />
+            <SpicyLyrics
+              key={lyricsKey(lyrics)}
+              lyrics={lyrics}
+              nowMs={nowMs}
+              durationMs={durationMs}
+              onSeek={onSeek}
+              layout={layout}
+            />
           ) : (
-            <RegularLyricsView key={lyricsKey(lyrics)} lyrics={lyrics} nowMs={nowMs} onSeek={onSeek} />
+            <RegularLyricsView
+              key={lyricsKey(lyrics)}
+              lyrics={lyrics}
+              nowMs={nowMs}
+              onSeek={onSeek}
+              anchor={ANCHOR}
+              fadeColor={tint}
+              fadeTop={FADE_TOP}
+              fadeBottom={footerSpace + 40}
+            />
           )
         ) : (
           <View style={styles.empty}>

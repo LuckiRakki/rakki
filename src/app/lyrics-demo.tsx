@@ -67,6 +67,23 @@ export default function LyricsDemo() {
   );
   if (!__DEV__) return null;
 
+  const toggle = (
+    <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
+      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
+        <T style={{ fontFamily: fonts.bold }}>✕</T>
+      </Pressable>
+      <View style={{ flex: 1 }} />
+      {(['spicy', 'regular'] as const).map((m) => (
+        <Pressable
+          key={m}
+          onPress={() => setMode(m)}
+          style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: mode === m ? colors.text : 'rgba(0,0,0,0.4)' }}>
+          <T style={{ fontFamily: fonts.bold, fontSize: 12, color: mode === m ? '#000' : colors.text }}>{m}</T>
+        </Pressable>
+      ))}
+    </View>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <LyricsStage
@@ -77,22 +94,21 @@ export default function LyricsDemo() {
         durationMs={clock.durationMs}
         onSeek={(ms) => setT0(Date.now() - ms)}
         tint="#6b2d1f"
+        footerSpace={110}
+        header={
+          <View style={{ paddingTop: insets.top + space.sm, paddingHorizontal: space.lg }}>
+            {toggle}
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.sm, paddingVertical: space.md }}>
+              <View style={{ width: 92, height: 92, borderRadius: radius.card, backgroundColor: '#c0482c' }} />
+              <View style={{ marginLeft: space.lg }}>
+                <T style={{ fontFamily: fonts.black, fontSize: 22 }}>Demo Song</T>
+                <T variant="caption" style={{ fontSize: 15 }}>Rakki</T>
+                <T variant="caption" style={{ fontSize: 13, color: colors.textMuted }}>Made-up Lyrics · 2026</T>
+              </View>
+            </View>
+          </View>
+        }
       />
-      <View
-        style={{ position: 'absolute', top: insets.top + space.sm, left: space.lg, right: space.lg, flexDirection: 'row', gap: space.sm }}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
-          <T style={{ fontFamily: fonts.bold }}>✕</T>
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        {(['spicy', 'regular'] as const).map((m) => (
-          <Pressable
-            key={m}
-            onPress={() => setMode(m)}
-            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: mode === m ? colors.text : 'rgba(0,0,0,0.4)' }}>
-            <T style={{ fontFamily: fonts.bold, fontSize: 12, color: mode === m ? '#000' : colors.text }}>{m}</T>
-          </Pressable>
-        ))}
-      </View>
     </View>
   );
 }
