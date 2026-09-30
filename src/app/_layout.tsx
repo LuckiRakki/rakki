@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { checkForUpdate } from '@/lib/updates';
 import { colors } from '@/ui/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -44,6 +45,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     void useAuth.getState().load();
+    void checkForUpdate();
   }, []);
 
   const ready = fontsLoaded && status === 'ready';

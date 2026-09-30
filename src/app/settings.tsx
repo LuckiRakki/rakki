@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CLIENT_VERSION } from '@/api/jellyfin';
 import { signOut } from '@/auth/actions';
 import { useAuth } from '@/auth/store';
+import { checkForUpdate, getUpdateInfo, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { T } from '@/ui/T';
@@ -16,6 +18,11 @@ export default function SettingsScreen() {
   const session = useAuth((s) => s.session);
   const wifi = useSettings((s) => s.wifiBitrate);
   const cellular = useSettings((s) => s.cellularBitrate);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+
+  useEffect(() => {
+    void getUpdateInfo().then(setUpdate);
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -64,6 +71,20 @@ export default function SettingsScreen() {
           <T variant="caption" style={{ marginTop: 2 }}>
             Audio engine: {engine.native ? 'Rakki native (gapless, lock screen)' : 'Basic (Expo Go / web preview)'}
           </T>
+          <T variant="caption" style={{ marginTop: 2 }}>
+            {update === null
+              ? ' '
+              : !update.enabled
+                ? 'Updates: live from the PC (dev build)'
+                : update.embedded
+                  ? `Updates: on (${update.channel}), running the built-in version`
+                  : `Updates: on (${update.channel}), update from ${update.createdAt?.toLocaleString() ?? '?'}`}
+          </T>
+          <Pressable
+            onPress={() => void checkForUpdate(false)}
+            style={({ pressed }) => [styles.signOut, pressed && { opacity: 0.7 }]}>
+            <T variant="bodyStrong">Check for updates</T>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

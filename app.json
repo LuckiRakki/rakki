@@ -54,6 +54,24 @@
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "owner": "luckirakki",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      },
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

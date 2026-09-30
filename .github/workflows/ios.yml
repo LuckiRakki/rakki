@@ -19,6 +19,8 @@ jobs:
   build:
     runs-on: macos-26
     timeout-minutes: 75
+    permissions:
+      contents: write # publish the release .ipa to a GitHub Release
     env:
       APP_VARIANT: ${{ inputs.variant == 'dev' && 'development' || 'production' }}
       CONFIGURATION: ${{ inputs.variant == 'dev' && 'Debug' || 'Release' }}
@@ -78,3 +80,16 @@ jobs:
           name: ${{ env.IPA_NAME }}-ipa
           path: ${{ env.IPA_NAME }}.ipa
           retention-days: 30
+
+      # Release builds also go to a fixed GitHub Release so the iPhone can download them in
+      # Safari: https://github.com/LuckiRakki/rakki/releases/download/ios-latest/Rakki.ipa
+      - name: Publish to GitHub Release
+        if: inputs.variant == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Unsigned build for SideStore. On your iPhone: download Rakki.ipa, then SideStore → My Apps → + → pick it. Code changes arrive as over-the-air updates; this file only changes when native code does."
+          if ! gh release view ios-latest >/dev/null 2>&1; then
+            gh release create ios-latest --title "Rakki for iPhone (latest build)" --notes "$NOTES" --prerelease
+          fi
+          gh release upload ios-latest "$IPA_NAME.ipa" --clobber
