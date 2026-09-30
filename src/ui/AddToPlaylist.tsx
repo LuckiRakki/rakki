@@ -9,7 +9,7 @@ import { useAuth } from '@/auth/store';
 import { setLiked } from '@/library/actions';
 import { Artwork } from '@/ui/Artwork';
 import { showToast, useOverlays } from '@/ui/overlays';
-import { Sheet } from '@/ui/Sheet';
+import { SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -33,7 +33,7 @@ function askName(): Promise<string | null> {
  * song (or how many of an album's songs it has), Liked Songs on top, New playlist, search.
  * Ticks are staged locally and saved on Done.
  */
-export function AddToPlaylistHost() {
+export function AddToPlaylistPanel() {
   const t = useTheme();
   const styles = useStyles();
   const request = useOverlays((s) => s.addTo);
@@ -146,7 +146,7 @@ export function AddToPlaylistHost() {
   };
 
   return (
-    <Sheet visible={!!request} onClose={close} maxHeightRatio={0.9}>
+    <SheetPanel visible={!!request} onClose={close} maxHeightRatio={0.9}>
       <View style={styles.top}>
         <T variant="heading" style={{ textAlign: 'center' }}>
           Add to playlist
@@ -200,7 +200,7 @@ export function AddToPlaylistHost() {
       <Pressable disabled={saving} onPress={done} style={({ pressed }) => [styles.done, (pressed || saving) && { opacity: 0.8 }]}>
         <T style={styles.doneText}>{saving ? 'Saving…' : 'Done'}</T>
       </Pressable>
-    </Sheet>
+    </SheetPanel>
   );
 }
 

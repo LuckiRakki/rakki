@@ -16,8 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { checkForUpdate } from '@/lib/updates';
-import { AddToPlaylistHost } from '@/ui/AddToPlaylist';
-import { ContextMenuHost } from '@/ui/ContextMenu';
+import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
@@ -86,8 +85,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="login" />
             </Stack.Protected>
           </Stack>
-          <ContextMenuHost />
-          <AddToPlaylistHost />
+          <OverlayHost />
           <ToastHost />
         </ThemeProvider>
       </QueryClientProvider>

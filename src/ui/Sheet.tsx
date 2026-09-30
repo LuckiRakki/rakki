@@ -1,18 +1,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { makeStyles } from '@/ui/theme';
 
 const OPEN_MS = 260;
+export const CLOSE_MS = 200;
 
 /**
- * A Spotify-style bottom sheet: slides up over a dimmed backdrop; tap the backdrop or drag the
- * sheet down to close. Stays mounted until its closing animation has finished.
+ * A Spotify-style bottom sheet panel: slides up when `visible`, down (and unmounts) when not;
+ * drag it down to close. It has no Modal of its own: all sheets live in the one OverlayHost
+ * Modal, because iOS can't present a new Modal while another is still dismissing (switching
+ * from the menu to "Add to playlist" froze the app).
  */
-export function Sheet({
+export function SheetPanel({
   visible,
   onClose,
   children,
@@ -27,7 +30,7 @@ export function Sheet({
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [mounted, setMounted] = useState(visible);
-  const offset = useSharedValue(height); // sheet translateY: 0 = open
+  const offset = useSharedValue(height); // translateY: 0 = open
   const drag = useSharedValue(0);
 
   // Opening mounts straight away; closing unmounts after the slide-out finishes.
@@ -39,7 +42,7 @@ export function Sheet({
       offset.set(withTiming(0, { duration: OPEN_MS, easing: Easing.out(Easing.cubic) }));
     } else if (mounted) {
       offset.set(
-        withTiming(height, { duration: 200, easing: Easing.in(Easing.cubic) }, (done) => {
+        withTiming(height, { duration: CLOSE_MS, easing: Easing.in(Easing.cubic) }, (done) => {
           if (done) runOnJS(setMounted)(false);
         }),
       );
@@ -60,31 +63,21 @@ export function Sheet({
     });
 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.get() + drag.get() }] }));
-  const backdropStyle = useAnimatedStyle(() => ({ opacity: 0.6 * (1 - Math.min(1, offset.get() / height)) }));
 
   if (!mounted) return null;
   return (
-    <Modal transparent visible animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
-          <Pressable style={{ flex: 1 }} onPress={onClose} />
-        </Animated.View>
-        <Animated.View
-          style={[styles.sheet, { maxHeight: height * maxHeightRatio, paddingBottom: insets.bottom + 8 }, sheetStyle]}>
-          <GestureDetector gesture={pan}>
-            <View style={styles.handleArea}>
-              <View style={styles.handle} />
-            </View>
-          </GestureDetector>
-          {children}
-        </Animated.View>
-      </GestureHandlerRootView>
-    </Modal>
+    <Animated.View style={[styles.sheet, { maxHeight: height * maxHeightRatio, paddingBottom: insets.bottom + 8 }, sheetStyle]}>
+      <GestureDetector gesture={pan}>
+        <View style={styles.handleArea}>
+          <View style={styles.handle} />
+        </View>
+      </GestureDetector>
+      {children}
+    </Animated.View>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  backdrop: { backgroundColor: '#000' },
   sheet: {
     position: 'absolute',
     left: 0,

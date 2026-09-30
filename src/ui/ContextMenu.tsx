@@ -8,7 +8,7 @@ import { artistLine } from '@/lib/items';
 import { addToQueue, isLiked, playNext, setLiked, startRadio, tracksOf } from '@/library/actions';
 import { Artwork } from '@/ui/Artwork';
 import { useOverlays } from '@/ui/overlays';
-import { Sheet } from '@/ui/Sheet';
+import { SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -35,9 +35,8 @@ function actionsFor(item: BaseItem, close: () => void): Action[] {
   };
   const artist = item.ArtistItems?.[0] ?? item.AlbumArtists?.[0];
   const addToPlaylist = async () => {
-    close();
     const tracks = await tracksOf(item);
-    useOverlays.getState().openAddToPlaylist(tracks, item.Name);
+    useOverlays.getState().menuToAddToPlaylist(tracks, item.Name);
   };
   const like: Action = {
     icon: liked ? 'heart' : 'heart-outline',
@@ -84,8 +83,8 @@ function actionsFor(item: BaseItem, close: () => void): Action[] {
   }
 }
 
-/** The long-press menu, shown for whatever item `useOverlays.menu` holds. */
-export function ContextMenuHost() {
+/** The long-press menu, shown for whatever item `useOverlays.menu` holds (inside OverlayHost). */
+export function ContextMenuPanel() {
   const t = useTheme();
   const styles = useStyles();
   const item = useOverlays((s) => s.menu);
@@ -94,7 +93,7 @@ export function ContextMenuHost() {
   const subtitle = item ? [KIND[item.Type], item.Type === 'MusicArtist' ? null : artistLine(item)].filter(Boolean).join(' · ') : '';
 
   return (
-    <Sheet visible={!!item} onClose={close}>
+    <SheetPanel visible={!!item} onClose={close}>
       {item ? (
         <>
           <View style={styles.header}>
@@ -124,7 +123,7 @@ export function ContextMenuHost() {
           ))}
         </>
       ) : null}
-    </Sheet>
+    </SheetPanel>
   );
 }
 
