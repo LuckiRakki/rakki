@@ -336,7 +336,8 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | Theme plumbing: every colour/size/font from a persisted `useTheme()` store | ours | 1 |
 | Lyrics customizer (Spicy knobs + Regular options) | ours | 2 |
 | **In-depth customizer** screen: colours, type, shape/density, Home layout, player, presets, import/export | ours | 5 |
-| Home-screen widget, Live Activity | new | 6 |
+| Lyrics screen truly full-screen (no sheet gap at the top) with header/footer fades | ours | 5 |
+| **Widgets:** home screen (jump back in / resume) and lock screen (open Rakki, last played), Live Activity | new | 6 |
 | iPad / landscape | F | 6 |
 | Android head-unit build | ours | 6 |
 | CarPlay (**needs the $99 account**) | F | 6 |
@@ -385,9 +386,20 @@ The user wants to choose colours, sizes and similar details themselves. So every
 ### Phase 5: Parity and polish
 - Queue restore, instant mix/radio, normalization, sleep timer, credits, multi-server, custom gapless module if Phase 1 said so, haptics and animation pass.
 - **The in-depth customizer screen** (§5): every area, live previews, presets, reset, theme import/export.
+- **Lyrics screen covers the whole screen** (user feedback, 2026-09-30).
+  - Today it opens as an iOS sheet, which leaves a strip of the player visible at the top. Present it full-screen and keep swipe-down-to-close with our own gesture.
+  - Add soft dark fades behind the header and footer, so lyrics scrolling under the title, toggle and credit line stay readable.
 
 ### Phase 6: Extras
-- Widgets / Live Activity, iPad, head-unit APK, CarPlay (only with the $99 account), Navidrome.
+- **Widgets** (user request, 2026-09-30; like YouTube Music / Spotify):
+  - **Home screen:** a small widget (last played art, tap to resume) and a medium "Jump back in" grid (recent albums/playlists, each opens in Rakki).
+  - **Lock screen:** a circular Rakki button that opens the app, and a rectangular "last played" that resumes it.
+  - **Live Activity** on the lock screen while playing (the iPhone 13 has no Dynamic Island).
+  - Built as a WidgetKit (SwiftUI) extension through a config plugin (e.g. `@bacons/apple-targets`). The app shares "recently played / now playing" with the widget through an App Group. Taps deep-link into Rakki (`rakki://album/<id>`, `rakki://resume`).
+  - **Check first:**
+    - Free-Apple-ID signing plus SideStore with an app extension and an App Group. Each extension uses one of the 10 App IDs per week.
+    - Needs a new native build (version bump).
+- iPad, head-unit APK, CarPlay (only with the $99 account), Navidrome.
 
 ---
 
