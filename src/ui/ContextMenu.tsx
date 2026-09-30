@@ -5,10 +5,20 @@ import { Pressable, View } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { artistLine } from '@/lib/items';
-import { addToQueue, isLiked, playNext, setLiked, startRadio, tracksOf } from '@/library/actions';
+import {
+  addToQueue,
+  deletePlaylist,
+  isLiked,
+  playNext,
+  removeFromPlaylist,
+  renamePlaylist,
+  setLiked,
+  startRadio,
+  tracksOf,
+} from '@/library/actions';
 import { Artwork } from '@/ui/Artwork';
-import { useOverlays } from '@/ui/overlays';
-import { SheetPanel } from '@/ui/Sheet';
+import { useOverlays, type MenuContext } from '@/ui/overlays';
+import { CLOSE_MS, SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -18,6 +28,8 @@ interface Action {
   label: string;
   run: () => void | Promise<void>;
   accent?: boolean;
+  /** Opens an iOS dialog: wait until the sheet is gone (iOS can't present over a dismissing Modal). */
+  afterClose?: boolean;
 }
 
 const KIND: Record<string, string> = {
@@ -27,7 +39,7 @@ const KIND: Record<string, string> = {
   Playlist: 'Playlist',
 };
 
-function actionsFor(item: BaseItem, close: () => void): Action[] {
+function actionsFor(item: BaseItem, close: () => void, context: MenuContext | null): Action[] {
   const liked = isLiked(item);
   const go = (path: string) => () => {
     close();
@@ -45,10 +57,22 @@ function actionsFor(item: BaseItem, close: () => void): Action[] {
     accent: liked,
   };
 
+  const removeHere: Action[] =
+    context?.playlistId && context.entryId
+      ? [
+          {
+            icon: 'remove-circle-outline',
+            label: 'Remove from this playlist',
+            run: () => removeFromPlaylist(context.playlistId!, context.entryId!, item.Name),
+          },
+        ]
+      : [];
+
   switch (item.Type) {
     case 'Audio':
       return [
         like,
+        ...removeHere,
         { icon: 'add-circle-outline', label: 'Add to playlist', run: addToPlaylist },
         { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
         { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
@@ -77,6 +101,8 @@ function actionsFor(item: BaseItem, close: () => void): Action[] {
         { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
         { icon: 'radio-outline', label: 'Playlist radio', run: () => startRadio(item) },
         { icon: 'albums-outline', label: 'Go to playlist', run: go(`/playlist/${item.Id}`) },
+        { icon: 'create-outline', label: 'Rename playlist', run: () => renamePlaylist(item), afterClose: true },
+        { icon: 'trash-outline', label: 'Delete playlist', run: () => deletePlaylist(item), afterClose: true },
       ];
     default:
       return [];
@@ -88,8 +114,9 @@ export function ContextMenuPanel() {
   const t = useTheme();
   const styles = useStyles();
   const item = useOverlays((s) => s.menu);
+  const context = useOverlays((s) => s.menuContext);
   const close = () => useOverlays.getState().closeMenu();
-  const actions = item ? actionsFor(item, close) : [];
+  const actions = item ? actionsFor(item, close, context) : [];
   const subtitle = item ? [KIND[item.Type], item.Type === 'MusicArtist' ? null : artistLine(item)].filter(Boolean).join(' · ') : '';
 
   return (
@@ -114,7 +141,8 @@ export function ContextMenuPanel() {
               onPress={() => {
                 void Haptics.selectionAsync().catch(() => {});
                 if (a.label !== 'Add to playlist' && !a.label.startsWith('Go to')) close();
-                void a.run();
+                if (a.afterClose) setTimeout(() => void a.run(), CLOSE_MS + 150);
+                else void a.run();
               }}
               style={({ pressed }) => [styles.row, pressed && { backgroundColor: t.colors.surface3 }]}>
               <Ionicons name={a.icon} size={24} color={a.accent ? t.colors.accent : t.colors.textSecondary} />

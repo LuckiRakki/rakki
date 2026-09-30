@@ -1,34 +1,48 @@
-import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { songCount } from '@/lib/format';
 import { Artwork } from '@/ui/Artwork';
+import { openAlbum, openItem } from '@/ui/nav';
 import { openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
-export function openAlbum(id: string) {
-  router.push(`/album/${id}`);
+export { openAlbum };
+
+function subtitleOf(item: BaseItem): string {
+  if (item.Type === 'MusicArtist') return 'Artist';
+  if (item.Type === 'Playlist') return `Playlist${item.ChildCount ? ` · ${songCount(item.ChildCount)}` : ''}`;
+  return item.AlbumArtist ?? '';
 }
 
-/** Square art + title + artist, for shelves and grids. */
-export function AlbumTile({ album, size }: { album: BaseItem; size: number }) {
+/** Art + title + subtitle for shelves and grids: albums, playlists, and artists (round art). */
+export function ItemTile({ item, size }: { item: BaseItem; size: number }) {
   const t = useTheme();
+  const round = item.Type === 'MusicArtist';
   return (
     <Pressable
-      onPress={() => openAlbum(album.Id)}
-      onLongPress={() => openMenu(album)}
+      onPress={() => openItem(item)}
+      onLongPress={() => openMenu(item)}
       delayLongPress={350}
       style={({ pressed }) => ({ width: size, opacity: pressed ? 0.7 : 1 })}>
-      <Artwork item={album} size={size} />
-      <T variant="bodyStrong" numberOfLines={1} style={{ marginTop: 8, fontSize: t.size(14) }}>
-        {album.Name}
+      <Artwork item={item} size={size} rounded={round ? size / 2 : undefined} />
+      <T
+        variant="bodyStrong"
+        numberOfLines={1}
+        style={{ marginTop: 8, fontSize: t.size(14), textAlign: round ? 'center' : 'left' }}>
+        {item.Name}
       </T>
-      <T variant="caption" numberOfLines={1}>
-        {album.AlbumArtist ?? ''}
+      <T variant="caption" numberOfLines={1} style={{ textAlign: round ? 'center' : 'left' }}>
+        {subtitleOf(item)}
       </T>
     </Pressable>
   );
+}
+
+/** Kept for existing screens. */
+export function AlbumTile({ album, size }: { album: BaseItem; size: number }) {
+  return <ItemTile item={album} size={size} />;
 }
 
 /** Compact Spotify "quick pick" tile: art on the left, name on the right. */
@@ -36,7 +50,7 @@ export function QuickTile({ album }: { album: BaseItem }) {
   const t = useTheme();
   return (
     <Pressable
-      onPress={() => openAlbum(album.Id)}
+      onPress={() => openItem(album)}
       onLongPress={() => openMenu(album)}
       delayLongPress={350}
       style={({ pressed }) => ({

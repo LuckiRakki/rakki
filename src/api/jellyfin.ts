@@ -440,7 +440,7 @@ export class JellyfinClient {
     return (await this.items({ IncludeItemTypes: 'MusicAlbum', SortBy: 'Random', Limit: limit })).Items;
   }
 
-  /** Liked Songs (newest to the library first; Jellyfin doesn't record when you liked them). */
+  /** All Liked Songs (newest to the library first; Jellyfin doesn't record when you liked them). */
   getFavoriteTracks(opts: { startIndex?: number; limit?: number } = {}) {
     return this.items({
       IncludeItemTypes: 'Audio',
@@ -448,7 +448,7 @@ export class JellyfinClient {
       SortBy: 'DateCreated,SortName',
       SortOrder: 'Descending',
       StartIndex: opts.startIndex ?? 0,
-      Limit: opts.limit ?? 200,
+      Limit: opts.limit ?? 5000,
     });
   }
 

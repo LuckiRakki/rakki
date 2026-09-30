@@ -21,3 +21,8 @@ export function greeting(date = new Date()): string {
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
 }
+
+/** "1 song", "12 songs". */
+export function songCount(n: number): string {
+  return `${n} song${n === 1 ? '' : 's'}`;
+}

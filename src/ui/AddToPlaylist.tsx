@@ -6,6 +6,7 @@ import { Alert, Platform, Pressable, ScrollView, TextInput, View } from 'react-n
 import type { BaseItem } from '@/api/jellyfin';
 import { queryClient, usePlaylists } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { songCount } from '@/lib/format';
 import { setLiked } from '@/library/actions';
 import { Artwork } from '@/ui/Artwork';
 import { showToast, useOverlays } from '@/ui/overlays';
@@ -152,7 +153,7 @@ export function AddToPlaylistPanel() {
           Add to playlist
         </T>
         <T variant="caption" numberOfLines={1} style={{ textAlign: 'center', marginTop: 2 }}>
-          {items.length > 1 ? `${request?.title} · ${items.length} songs` : request?.title}
+          {items.length > 1 ? `${request?.title} · ${songCount(items.length)}` : request?.title}
         </T>
         <Pressable onPress={newPlaylist} style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.8 }]}>
           <T style={styles.newBtnText}>New playlist</T>
@@ -188,7 +189,7 @@ export function AddToPlaylistPanel() {
               ? 'Already added'
               : n > 0
                 ? `${n} of ${items.length} songs already added`
-                : `${p.ChildCount ?? 0} songs`;
+                : songCount(p.ChildCount ?? 0);
           return row(p.Id, p.Name, <Artwork item={p} size={48} />, sub, n > 0);
         })}
         {lists.length === 0 && !playlists.isLoading ? (

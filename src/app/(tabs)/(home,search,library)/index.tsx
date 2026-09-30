@@ -1,13 +1,23 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { BaseItem } from '@/api/jellyfin';
-import { queryClient, useRecentlyAdded, useRecentlyPlayed } from '@/api/queries';
-import { router } from 'expo-router';
+import {
+  queryClient,
+  useMostPlayed,
+  usePlaylists,
+  useRandomAlbums,
+  useRecentlyAdded,
+  useRecentlyPlayed,
+  useRediscover,
+} from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
-import { AlbumTile, QuickTile } from '@/ui/AlbumTile';
+import { QuickTile } from '@/ui/AlbumTile';
+import { LikedArt } from '@/ui/LikedArt';
+import { Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -18,9 +28,14 @@ export default function HomeScreen() {
   const userName = useAuth((s) => s.session?.userName ?? '');
   const recent = useRecentlyPlayed();
   const added = useRecentlyAdded();
+  const mostPlayed = useMostPlayed();
+  const rediscover = useRediscover();
+  const random = useRandomAlbums();
+  const playlists = usePlaylists();
 
-  const quick = recent.data?.slice(0, 6) ?? [];
-  const jumpBackIn = recent.data?.slice(6) ?? [];
+  // Quick picks: Liked Songs plus the five most recently played albums.
+  const quick = recent.data?.slice(0, 5) ?? [];
+  const jumpBackIn = recent.data?.slice(5) ?? [];
   const refreshing = recent.isRefetching || added.isRefetching;
 
   return (
@@ -28,14 +43,10 @@ export default function HomeScreen() {
       style={{ flex: 1, backgroundColor: t.colors.bg }}
       contentContainerStyle={{ paddingTop: insets.top + t.space.md, paddingBottom: t.space.xl }}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          tintColor={t.colors.text}
-          onRefresh={() => void queryClient.invalidateQueries()}
-        />
+        <RefreshControl refreshing={refreshing} tintColor={t.colors.text} onRefresh={() => void queryClient.invalidateQueries()} />
       }>
       <LinearGradient
-        colors={['rgba(255,107,61,0.22)', t.colors.bg]}
+        colors={[withAlpha(t.colors.accent, 0.22), t.colors.bg]}
         style={[StyleSheet.absoluteFill, { height: 320 }]}
         pointerEvents="none"
       />
@@ -48,55 +59,36 @@ export default function HomeScreen() {
         <T variant="display">{greeting()}</T>
       </View>
 
-      {quick.length > 0 ? (
-        <View style={styles.grid}>
-          {chunk(quick, 2).map((pair, i) => (
-            <View key={i} style={styles.gridRow}>
-              {pair.map((a) => (
+      <View style={styles.grid}>
+        {chunk([null, ...quick], 2).map((pair, i) => (
+          <View key={i} style={styles.gridRow}>
+            {pair.map((a) =>
+              a ? (
                 <QuickTile key={a.Id} album={a} />
-              ))}
-              {pair.length === 1 ? <View style={{ flex: 1 }} /> : null}
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      <Shelf title="Jump back in" items={jumpBackIn} error={recent.error} />
-      <Shelf title="Recently added" items={added.data ?? []} error={added.error} />
-    </ScrollView>
-  );
-}
-
-function Shelf({ title, items, error }: { title: string; items: BaseItem[]; error: Error | null }) {
-  const t = useTheme();
-  const styles = useStyles();
-  if (error) {
-    return (
-      <View style={styles.shelf}>
-        <T variant="heading" style={styles.shelfTitle}>
-          {title}
-        </T>
-        <T variant="caption" style={{ paddingHorizontal: t.space.lg }}>
-          Couldn’t load: {error.message}
-        </T>
+              ) : (
+                <Pressable
+                  key="liked"
+                  onPress={() => router.push('/liked')}
+                  style={({ pressed }) => [styles.likedTile, pressed && { backgroundColor: t.colors.surface3 }]}>
+                  <LikedArt size={56} />
+                  <T numberOfLines={2} style={{ flex: 1, paddingHorizontal: 10, fontFamily: t.fonts.bold, fontSize: t.size(13) }}>
+                    Liked Songs
+                  </T>
+                </Pressable>
+              ),
+            )}
+            {pair.length === 1 ? <View style={{ flex: 1 }} /> : null}
+          </View>
+        ))}
       </View>
-    );
-  }
-  if (items.length === 0) return null;
-  return (
-    <View style={styles.shelf}>
-      <T variant="heading" style={styles.shelfTitle}>
-        {title}
-      </T>
-      <FlatList
-        horizontal
-        data={items}
-        keyExtractor={(a) => a.Id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: t.space.lg, gap: t.space.lg }}
-        renderItem={({ item }) => <AlbumTile album={item} size={148} />}
-      />
-    </View>
+
+      <Shelf title="Jump back in" items={jumpBackIn} />
+      <Shelf title="Your playlists" items={playlists.data} onShowAll={() => router.push('/library')} />
+      <Shelf title="Recently added" items={added.data} />
+      <Shelf title="Most played" items={mostPlayed.data} />
+      <Shelf title="Rediscover" items={rediscover.data} />
+      <Shelf title="Random picks" items={random.data} />
+    </ScrollView>
   );
 }
 
@@ -124,6 +116,13 @@ const useStyles = makeStyles((t) => ({
   },
   grid: { paddingHorizontal: t.space.lg, gap: t.space.sm },
   gridRow: { flexDirection: 'row', gap: t.space.sm },
-  shelf: { marginTop: t.space.xl },
-  shelfTitle: { paddingHorizontal: t.space.lg, marginBottom: t.space.md },
+  likedTile: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: t.radius.art,
+    overflow: 'hidden',
+    backgroundColor: t.colors.surface2,
+  },
 }));
