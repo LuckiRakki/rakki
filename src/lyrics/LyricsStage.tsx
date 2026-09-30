@@ -8,7 +8,7 @@ import { SpicyBackdrop } from '@/spicy/Backdrop';
 import type { SpicyLayout } from '@/spicy/scene';
 import { SpicyLyrics } from '@/spicy/SpicyLyrics';
 import { T } from '@/ui/T';
-import { space } from '@/ui/theme';
+import { makeStyles } from '@/ui/theme';
 
 /**
  * Which lyrics each mode shows. Spicy prefers word-timed TTML (falling back to LRC, drawn
@@ -55,6 +55,7 @@ export function LyricsStage({
   header?: ReactNode;
   footerSpace?: number;
 }) {
+  const styles = useStyles();
   const layout: SpicyLayout = { anchor: ANCHOR, fadeTop: FADE_TOP, fadeBottom: footerSpace + 40 };
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -107,6 +108,6 @@ function lyricsKey(l: Lyrics) {
   return `${l.kind}:${l.lines.length}:${l.lines[0]?.startMs ?? 0}:${l.lines[0]?.text ?? ''}`;
 }
 
-const styles = StyleSheet.create({
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xl },
-});
+const useStyles = makeStyles((t) => ({
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: t.space.xl },
+}));

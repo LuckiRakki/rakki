@@ -9,9 +9,11 @@ import { useAuth } from '@/auth/store';
 import { greeting } from '@/lib/format';
 import { AlbumTile, QuickTile } from '@/ui/AlbumTile';
 import { T } from '@/ui/T';
-import { colors, fonts, space } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 export default function HomeScreen() {
+  const t = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const userName = useAuth((s) => s.session?.userName ?? '');
   const recent = useRecentlyPlayed();
@@ -23,23 +25,23 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: space.xl }}
+      style={{ flex: 1, backgroundColor: t.colors.bg }}
+      contentContainerStyle={{ paddingTop: insets.top + t.space.md, paddingBottom: t.space.xl }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          tintColor={colors.text}
+          tintColor={t.colors.text}
           onRefresh={() => void queryClient.invalidateQueries()}
         />
       }>
       <LinearGradient
-        colors={['rgba(255,107,61,0.22)', colors.bg]}
+        colors={['rgba(255,107,61,0.22)', t.colors.bg]}
         style={[StyleSheet.absoluteFill, { height: 320 }]}
         pointerEvents="none"
       />
       <View style={styles.header}>
         <Pressable onPress={() => router.push('/settings')} style={styles.avatar} hitSlop={8}>
-          <T style={{ fontFamily: fonts.bold, fontSize: 15, color: '#000' }}>
+          <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(15), color: '#000' }}>
             {userName.charAt(0).toUpperCase() || '?'}
           </T>
         </Pressable>
@@ -66,13 +68,15 @@ export default function HomeScreen() {
 }
 
 function Shelf({ title, items, error }: { title: string; items: BaseItem[]; error: Error | null }) {
+  const t = useTheme();
+  const styles = useStyles();
   if (error) {
     return (
       <View style={styles.shelf}>
         <T variant="heading" style={styles.shelfTitle}>
           {title}
         </T>
-        <T variant="caption" style={{ paddingHorizontal: space.lg }}>
+        <T variant="caption" style={{ paddingHorizontal: t.space.lg }}>
           Couldn’t load: {error.message}
         </T>
       </View>
@@ -89,7 +93,7 @@ function Shelf({ title, items, error }: { title: string; items: BaseItem[]; erro
         data={items}
         keyExtractor={(a) => a.Id}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.lg }}
+        contentContainerStyle={{ paddingHorizontal: t.space.lg, gap: t.space.lg }}
         renderItem={({ item }) => <AlbumTile album={item} size={148} />}
       />
     </View>
@@ -102,24 +106,24 @@ function chunk<T>(arr: T[], n: number): T[][] {
   return out;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
-    paddingHorizontal: space.lg,
-    marginBottom: space.lg,
+    gap: t.space.md,
+    paddingHorizontal: t.space.lg,
+    marginBottom: t.space.lg,
   },
   avatar: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: colors.accent,
+    backgroundColor: t.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  grid: { paddingHorizontal: space.lg, gap: space.sm },
-  gridRow: { flexDirection: 'row', gap: space.sm },
-  shelf: { marginTop: space.xl },
-  shelfTitle: { paddingHorizontal: space.lg, marginBottom: space.md },
-});
+  grid: { paddingHorizontal: t.space.lg, gap: t.space.sm },
+  gridRow: { flexDirection: 'row', gap: t.space.sm },
+  shelf: { marginTop: t.space.xl },
+  shelfTitle: { paddingHorizontal: t.space.lg, marginBottom: t.space.md },
+}));

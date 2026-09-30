@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CLIENT_VERSION } from '@/api/jellyfin';
@@ -11,9 +11,11 @@ import { checkForUpdate, getUpdateInfo, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { T } from '@/ui/T';
-import { colors, fonts, radius, space } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 export default function SettingsScreen() {
+  const t = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const session = useAuth((s) => s.session);
   const wifi = useSettings((s) => s.wifiBitrate);
@@ -25,15 +27,15 @@ export default function SettingsScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <View style={styles.header}>
         <View style={{ width: 28 }} />
-        <T style={{ fontFamily: fonts.bold, fontSize: 16 }}>Settings</T>
+        <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Settings</T>
         <Pressable hitSlop={12} onPress={() => router.back()}>
-          <Ionicons name="close" size={26} color={colors.text} />
+          <Ionicons name="close" size={26} color={t.colors.text} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: insets.bottom + space.xxl }}>
+      <ScrollView contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
         <T variant="label" style={styles.section}>
           Account
         </T>
@@ -58,7 +60,7 @@ export default function SettingsScreen() {
           value={cellular}
           onChange={(v) => useSettings.getState().set('cellularBitrate', v)}
         />
-        <T variant="caption" style={{ marginTop: space.sm, fontSize: 12 }}>
+        <T variant="caption" style={{ marginTop: t.space.sm, fontSize: t.size(12) }}>
           Applies to songs that haven&apos;t started buffering yet. Anything above the limit is
           converted to AAC by your server.
         </T>
@@ -100,23 +102,25 @@ function QualityPicker({
   value: Bitrate;
   onChange: (v: Bitrate) => void;
 }) {
+  const t = useTheme();
+  const styles = useStyles();
   return (
     <>
       <T variant="label" style={styles.section}>
         {title}
       </T>
-      <View style={[styles.card, { paddingVertical: space.xs }]}>
+      <View style={[styles.card, { paddingVertical: t.space.xs }]}>
         {BITRATE_OPTIONS.map((o) => (
           <Pressable key={o.value} onPress={() => onChange(o.value)} style={styles.option}>
             <View style={{ flex: 1 }}>
-              <T variant="bodyStrong" color={o.value === value ? colors.accent : colors.text}>
+              <T variant="bodyStrong" color={o.value === value ? t.colors.accent : t.colors.text}>
                 {o.label}
               </T>
-              <T variant="caption" style={{ fontSize: 12 }}>
+              <T variant="caption" style={{ fontSize: t.size(12) }}>
                 {o.detail}
               </T>
             </View>
-            {o.value === value ? <Ionicons name="checkmark" size={20} color={colors.accent} /> : null}
+            {o.value === value ? <Ionicons name="checkmark" size={20} color={t.colors.accent} /> : null}
           </Pressable>
         ))}
       </View>
@@ -124,24 +128,24 @@ function QualityPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
+    paddingHorizontal: t.space.lg,
+    paddingVertical: t.space.md,
   },
-  section: { marginTop: space.xl, marginBottom: space.sm },
-  card: { backgroundColor: colors.surface, borderRadius: radius.card, padding: space.lg },
+  section: { marginTop: t.space.xl, marginBottom: t.space.sm },
+  card: { backgroundColor: t.colors.surface, borderRadius: t.radius.card, padding: t.space.lg },
   signOut: {
-    marginTop: space.lg,
+    marginTop: t.space.lg,
     height: 42,
-    borderRadius: radius.pill,
+    borderRadius: t.radius.pill,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  option: { flexDirection: 'row', alignItems: 'center', paddingVertical: space.sm },
-});
+  option: { flexDirection: 'row', alignItems: 'center', paddingVertical: t.space.sm },
+}));

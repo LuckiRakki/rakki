@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,11 +17,13 @@ import { usePlayer } from '@/player/store';
 import { useSettings, type LyricsMode } from '@/settings/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
-import { colors, fonts, radius, space } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 const FOOTER_H = 110;
 
 export default function LyricsScreen() {
+  const t = useTheme();
+  const styles = useStyles();
   useKeepAwake();
   const insets = useSafeAreaInsets();
   const client = useAuth((s) => s.client);
@@ -59,10 +61,10 @@ export default function LyricsScreen() {
         footerSpace={footerSpace}
         header={
           <GestureDetector gesture={swipeDown}>
-            <View style={{ paddingTop: insets.top + space.xs }}>
+            <View style={{ paddingTop: insets.top + t.space.xs }}>
               <View style={styles.topBar}>
                 <Pressable hitSlop={12} onPress={() => router.back()}>
-                  <Ionicons name="chevron-down" size={28} color={colors.text} />
+                  <Ionicons name="chevron-down" size={28} color={t.colors.text} />
                 </Pressable>
                 <ModeToggle mode={mode} />
               </View>
@@ -73,7 +75,7 @@ export default function LyricsScreen() {
       />
 
       {/* Footer: credit (required for Spicy Lyrics API lyrics) + transport */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space.sm }]} pointerEvents="box-none">
+      <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
         {credit ? (
           <T variant="caption" numberOfLines={1} style={styles.credit}>
             {credit}
@@ -81,13 +83,13 @@ export default function LyricsScreen() {
         ) : null}
         <View style={styles.transport}>
           <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
-            <Ionicons name="play-skip-back" size={26} color={colors.text} />
+            <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
           </Pressable>
           <Pressable onPress={() => usePlayer.getState().toggle()} style={styles.play}>
             <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
           </Pressable>
           <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()}>
-            <Ionicons name="play-skip-forward" size={26} color={colors.text} />
+            <Ionicons name="play-skip-forward" size={26} color={t.colors.text} />
           </Pressable>
         </View>
       </View>
@@ -97,19 +99,21 @@ export default function LyricsScreen() {
 
 /** Album art + title + artist + album · year, like Spicy Lyrics' compact view. */
 function NowPlayingHeader({ track }: { track: BaseItem }) {
+  const t = useTheme();
+  const styles = useStyles();
   const albumLine = [track.Album, track.ProductionYear].filter(Boolean).join(' · ');
   return (
     <View style={styles.nowPlaying}>
-      <Artwork item={track} size={92} rounded={radius.card} style={styles.art} />
-      <View style={{ flex: 1, marginLeft: space.lg }}>
-        <T numberOfLines={2} style={{ fontFamily: fonts.black, fontSize: 22, letterSpacing: -0.4 }}>
+      <Artwork item={track} size={92} rounded={t.radius.card} style={styles.art} />
+      <View style={{ flex: 1, marginLeft: t.space.lg }}>
+        <T numberOfLines={2} style={{ fontFamily: t.fonts.black, fontSize: t.size(22), letterSpacing: -0.4 }}>
           {track.Name}
         </T>
-        <T numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.textSecondary, marginTop: 2 }}>
+        <T numberOfLines={1} style={{ fontFamily: t.fonts.semibold, fontSize: t.size(15), color: t.colors.textSecondary, marginTop: 2 }}>
           {artistLine(track)}
         </T>
         {albumLine ? (
-          <T numberOfLines={1} style={{ fontFamily: fonts.medium, fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
+          <T numberOfLines={1} style={{ fontFamily: t.fonts.medium, fontSize: t.size(13), color: t.colors.textMuted, marginTop: 2 }}>
             {albumLine}
           </T>
         ) : null}
@@ -120,12 +124,14 @@ function NowPlayingHeader({ track }: { track: BaseItem }) {
 
 /** One tap between the two lyric systems; remembered as the default. */
 function ModeToggle({ mode }: { mode: LyricsMode }) {
+  const t = useTheme();
+  const styles = useStyles();
   const set = (m: LyricsMode) => useSettings.getState().set('lyricsMode', m);
   return (
     <View style={styles.toggle}>
       {(['spicy', 'regular'] as const).map((m) => (
         <Pressable key={m} onPress={() => set(m)} style={[styles.toggleBtn, mode === m && styles.toggleOn]}>
-          <T style={{ fontFamily: fonts.bold, fontSize: 12, color: mode === m ? '#000' : colors.text }}>
+          <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(12), color: mode === m ? '#000' : t.colors.text }}>
             {m === 'spicy' ? 'Spicy' : 'Regular'}
           </T>
         </Pressable>
@@ -134,20 +140,20 @@ function ModeToggle({ mode }: { mode: LyricsMode }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: space.lg,
+    paddingHorizontal: t.space.lg,
     height: 44,
   },
   nowPlaying: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: space.xl,
-    paddingTop: space.sm,
-    paddingBottom: space.md,
+    paddingHorizontal: t.space.xl,
+    paddingTop: t.space.sm,
+    paddingBottom: t.space.md,
   },
   art: {
     shadowColor: '#000',
@@ -156,22 +162,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
   },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
-  credit: { fontSize: 11, marginBottom: space.sm, paddingHorizontal: space.xl, opacity: 0.8 },
-  transport: { flexDirection: 'row', alignItems: 'center', gap: space.xxl },
+  credit: { fontSize: t.size(11), marginBottom: t.space.sm, paddingHorizontal: t.space.xl, opacity: 0.8 },
+  transport: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxl },
   play: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.text,
+    backgroundColor: t.colors.text,
     alignItems: 'center',
     justifyContent: 'center',
   },
   toggle: {
     flexDirection: 'row',
     backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: radius.pill,
+    borderRadius: t.radius.pill,
     padding: 3,
   },
-  toggleBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill },
-  toggleOn: { backgroundColor: colors.text },
-});
+  toggleBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
+  toggleOn: { backgroundColor: t.colors.text },
+}));

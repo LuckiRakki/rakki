@@ -4,7 +4,7 @@ import { PixelRatio, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
-import { colors, radius } from '@/ui/theme';
+import { useTheme } from '@/ui/theme';
 
 // Request a few fixed sizes so the same image is shared by the disk cache across screens.
 const BUCKETS = [120, 240, 480, 800, 1200];
@@ -16,7 +16,7 @@ function bucket(px: number) {
 export function Artwork({
   item,
   size,
-  rounded = radius.art,
+  rounded,
   style,
 }: {
   item?: BaseItem;
@@ -24,8 +24,10 @@ export function Artwork({
   rounded?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const t = useTheme();
+  const r = rounded ?? t.radius.art;
   const client = useAuth((s) => s.client);
-  const box = { width: size, height: size, borderRadius: rounded };
+  const box = { width: size, height: size, borderRadius: r };
   const uri = item && client?.imageUrl(item, bucket(size * PixelRatio.get()));
   const blurhash = item && client?.blurhash(item);
 
@@ -34,15 +36,15 @@ export function Artwork({
       <View
         style={[
           box,
-          { backgroundColor: colors.surface3, alignItems: 'center', justifyContent: 'center' },
+          { backgroundColor: t.colors.surface3, alignItems: 'center', justifyContent: 'center' },
           style,
         ]}>
-        <Ionicons name="musical-notes" size={size * 0.36} color={colors.textMuted} />
+        <Ionicons name="musical-notes" size={size * 0.36} color={t.colors.textMuted} />
       </View>
     );
   }
   return (
-    <View style={[box, { overflow: 'hidden', backgroundColor: colors.surface3 }, style]}>
+    <View style={[box, { overflow: 'hidden', backgroundColor: t.colors.surface3 }, style]}>
       <Image
         source={{ uri }}
         placeholder={blurhash ? { blurhash } : undefined}

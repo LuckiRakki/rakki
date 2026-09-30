@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAlbumTracks, useItem } from '@/api/queries';
@@ -13,11 +13,13 @@ import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
 import { TrackRow } from '@/ui/TrackRow';
-import { colors, radius, space } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 const ART = 232;
 
 export default function AlbumScreen() {
+  const t = useTheme();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const client = useAuth((s) => s.client);
@@ -45,23 +47,23 @@ export default function AlbumScreen() {
   const header = (
     <View>
       <LinearGradient
-        colors={[tint, colors.bg]}
-        style={{ paddingTop: insets.top + 56, paddingBottom: space.lg, alignItems: 'center' }}>
+        colors={[tint, t.colors.bg]}
+        style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
         <Artwork item={album.data} size={ART} style={styles.artShadow} />
       </LinearGradient>
-      <View style={{ paddingHorizontal: space.lg }}>
+      <View style={{ paddingHorizontal: t.space.lg }}>
         <T variant="title">{album.data?.Name ?? ' '}</T>
-        <T variant="bodyStrong" style={{ marginTop: space.sm }}>
+        <T variant="bodyStrong" style={{ marginTop: t.space.sm }}>
           {album.data?.AlbumArtist ?? ''}
         </T>
-        <T variant="caption" style={{ marginTop: space.xs }}>
+        <T variant="caption" style={{ marginTop: t.space.xs }}>
           {['Album', album.data?.ProductionYear, list.length ? `${list.length} songs, ${minutes} min` : null]
             .filter(Boolean)
             .join(' · ')}
         </T>
         <View style={styles.actions}>
           <Pressable hitSlop={8} onPress={() => play(true)}>
-            <Ionicons name="shuffle" size={28} color={colors.textSecondary} />
+            <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
           </Pressable>
           <Pressable
             onPress={() => play()}
@@ -75,9 +77,9 @@ export default function AlbumScreen() {
           </Pressable>
         </View>
       </View>
-      {tracks.isLoading ? <ActivityIndicator color={colors.text} style={{ marginTop: space.xl }} /> : null}
+      {tracks.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
       {tracks.error ? (
-        <T variant="caption" style={{ padding: space.lg }}>
+        <T variant="caption" style={{ padding: t.space.lg }}>
           Couldn’t load tracks: {tracks.error.message}
         </T>
       ) : null}
@@ -85,12 +87,12 @@ export default function AlbumScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <FlatList
         data={list}
         keyExtractor={(t) => t.Id}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl }}
         renderItem={({ item, index }) => {
           const disc = item.ParentIndexNumber ?? 1;
           const newDisc = multiDisc && (index === 0 || (list[index - 1].ParentIndexNumber ?? 1) !== disc);
@@ -98,8 +100,8 @@ export default function AlbumScreen() {
             <>
               {newDisc ? (
                 <View style={styles.disc}>
-                  <Ionicons name="disc-outline" size={16} color={colors.textSecondary} />
-                  <T variant="bodyStrong" color={colors.textSecondary} style={{ fontSize: 13 }}>
+                  <Ionicons name="disc-outline" size={16} color={t.colors.textSecondary} />
+                  <T variant="bodyStrong" color={t.colors.textSecondary} style={{ fontSize: t.size(13) }}>
                     Disc {disc}
                   </T>
                 </View>
@@ -118,14 +120,14 @@ export default function AlbumScreen() {
       <Pressable
         onPress={() => router.back()}
         hitSlop={10}
-        style={[styles.back, { top: insets.top + space.sm }]}>
-        <Ionicons name="chevron-back" size={24} color={colors.text} />
+        style={[styles.back, { top: insets.top + t.space.sm }]}>
+        <Ionicons name="chevron-back" size={24} color={t.colors.text} />
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   artShadow: {
     shadowColor: '#000',
     shadowOpacity: 0.5,
@@ -136,28 +138,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: space.md,
-    marginBottom: space.sm,
+    marginTop: t.space.md,
+    marginBottom: t.space.sm,
   },
   playBtn: {
     width: 56,
     height: 56,
-    borderRadius: radius.pill,
-    backgroundColor: colors.accent,
+    borderRadius: t.radius.pill,
+    backgroundColor: t.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   disc: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.sm,
-    paddingHorizontal: space.lg,
-    paddingTop: space.lg,
-    paddingBottom: space.xs,
+    gap: t.space.sm,
+    paddingHorizontal: t.space.lg,
+    paddingTop: t.space.lg,
+    paddingBottom: t.space.xs,
   },
   back: {
     position: 'absolute',
-    left: space.md,
+    left: t.space.md,
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -165,4 +167,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

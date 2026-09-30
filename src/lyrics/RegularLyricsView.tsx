@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, ScrollView, View } from 'react-native';
 
 import { withAlpha } from '@/lib/color';
 import type { Lyrics } from '@/lyrics/types';
 import { T } from '@/ui/T';
-import { fonts, space } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 const MANUAL_RESUME_MS = 4000;
 
@@ -54,6 +54,8 @@ export function RegularLyricsView({
   fadeTop?: number;
   fadeBottom?: number;
 }) {
+  const t = useTheme();
+  const styles = useStyles();
   const lines = toLines(lyrics);
   const [active, setActive] = useState(-1);
   const scroll = useRef<ScrollView>(null);
@@ -91,7 +93,7 @@ export function RegularLyricsView({
       onScrollBeginDrag={() => (manualUntil.current = Date.now() + 60_000)}
       onScrollEndDrag={() => (manualUntil.current = Date.now() + MANUAL_RESUME_MS)}
       onMomentumScrollEnd={() => (manualUntil.current = Date.now() + MANUAL_RESUME_MS)}
-      contentContainerStyle={{ paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: viewH * 0.7 }}
+      contentContainerStyle={{ paddingHorizontal: t.space.xl, paddingTop: t.space.sm, paddingBottom: viewH * 0.7 }}
       showsVerticalScrollIndicator={false}>
       {lines.map((line, i) => {
         const color = !lyrics.isSynced
@@ -130,7 +132,7 @@ export function RegularLyricsView({
   );
 }
 
-const styles = StyleSheet.create({
-  line: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 34, marginBottom: space.lg, letterSpacing: -0.3 },
-  note: { height: 34, marginBottom: space.lg },
-});
+const useStyles = makeStyles((t) => ({
+  line: { fontFamily: t.fonts.bold, fontSize: t.size(26), lineHeight: t.size(34), marginBottom: t.space.lg, letterSpacing: -0.3 },
+  note: { height: 34, marginBottom: t.space.lg },
+}));

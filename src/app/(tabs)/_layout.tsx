@@ -3,7 +3,7 @@ import { BottomTabBar, Tabs } from 'expo-router/tabs';
 import { View, type ColorValue } from 'react-native';
 
 import { MiniPlayer } from '@/player/MiniPlayer';
-import { colors, fonts } from '@/ui/theme';
+import { useTheme } from '@/ui/theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -15,22 +15,23 @@ function tabIcon(active: IconName, inactive: IconName) {
 }
 
 export default function TabLayout() {
+  const t = useTheme();
   return (
     <Tabs
       // Mini-player rides on top of the tab bar, like Spotify. Because the bar is in normal
       // layout flow, screens end above it and nothing is hidden behind the player.
       tabBar={(props) => (
-        <View style={{ backgroundColor: colors.bg }}>
+        <View style={{ backgroundColor: t.colors.bg }}>
           <MiniPlayer />
           <BottomTabBar {...props} />
         </View>
       )}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopWidth: 0, elevation: 0 },
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 10 },
+        tabBarActiveTintColor: t.colors.text,
+        tabBarInactiveTintColor: t.colors.textMuted,
+        tabBarStyle: { backgroundColor: t.colors.bg, borderTopWidth: 0, elevation: 0 },
+        tabBarLabelStyle: { fontFamily: t.fonts.medium, fontSize: t.size(10) },
       }}>
       <Tabs.Screen
         name="(home)"

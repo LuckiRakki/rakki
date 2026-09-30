@@ -5,7 +5,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { formatDuration, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { T } from '@/ui/T';
-import { colors, space } from '@/ui/theme';
+import { useTheme } from '@/ui/theme';
 
 export function TrackRow({
   track,
@@ -20,6 +20,7 @@ export function TrackRow({
   onPress: () => void;
   onLongPress?: () => void;
 }) {
+  const t = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -28,32 +29,32 @@ export function TrackRow({
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: space.lg,
+        paddingHorizontal: t.space.lg,
         paddingVertical: 10,
-        backgroundColor: pressed ? colors.surface : 'transparent',
+        backgroundColor: pressed ? t.colors.surface : 'transparent',
       })}>
       <View style={{ width: 28, alignItems: 'flex-start' }}>
         {active ? (
           <Ionicons
             name={playing ? 'volume-high' : 'volume-mute'}
             size={16}
-            color={colors.accent}
+            color={t.colors.accent}
           />
         ) : (
-          <T variant="caption" color={colors.textMuted}>
+          <T variant="caption" color={t.colors.textMuted}>
             {track.IndexNumber ?? ''}
           </T>
         )}
       </View>
-      <View style={{ flex: 1, marginRight: space.md }}>
-        <T variant="bodyStrong" numberOfLines={1} color={active ? colors.accent : colors.text}>
+      <View style={{ flex: 1, marginRight: t.space.md }}>
+        <T variant="bodyStrong" numberOfLines={1} color={active ? t.colors.accent : t.colors.text}>
           {track.Name}
         </T>
         <T variant="caption" numberOfLines={1}>
           {artistLine(track)}
         </T>
       </View>
-      <T variant="caption" color={colors.textMuted}>
+      <T variant="caption" color={t.colors.textMuted}>
         {formatDuration(ticksToSeconds(track.RunTimeTicks))}
       </T>
     </Pressable>

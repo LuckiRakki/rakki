@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { formatDuration } from '@/lib/format';
 import { T } from '@/ui/T';
-import { colors, space } from '@/ui/theme';
+import { useTheme } from '@/ui/theme';
 
 /** Spotify-style scrubber: drag or tap anywhere on the bar; seeks when you let go. */
 export function SeekBar({
@@ -16,6 +16,7 @@ export function SeekBar({
   duration: number;
   onSeek: (seconds: number) => void;
 }) {
+  const t = useTheme();
   const [width, setWidth] = useState(1);
   const [scrub, setScrub] = useState<number | null>(null);
 
@@ -45,7 +46,7 @@ export function SeekBar({
                 width: `${shown * 100}%`,
                 height: '100%',
                 borderRadius: 3,
-                backgroundColor: colors.text,
+                backgroundColor: t.colors.text,
               }}
             />
           </View>
@@ -57,16 +58,16 @@ export function SeekBar({
               width: 12,
               height: 12,
               borderRadius: 6,
-              backgroundColor: colors.text,
+              backgroundColor: t.colors.text,
             }}
           />
         </View>
       </GestureDetector>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.xs }}>
-        <T variant="caption" style={{ fontSize: 12 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: t.space.xs }}>
+        <T variant="caption" style={{ fontSize: t.size(12) }}>
           {formatDuration(shown * duration)}
         </T>
-        <T variant="caption" style={{ fontSize: 12 }}>
+        <T variant="caption" style={{ fontSize: t.size(12) }}>
           -{formatDuration(Math.max(0, duration - shown * duration))}
         </T>
       </View>

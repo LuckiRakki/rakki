@@ -27,7 +27,7 @@ import {
 } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { T } from '@/ui/T';
-import { colors, fonts, radius, space } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 interface Server {
   url: string;
@@ -53,6 +53,8 @@ async function finish(
 }
 
 export default function LoginScreen() {
+  const t = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const deviceId = useAuth((s) => s.deviceId);
   const lastServer = useAuth((s) => s.lastServer);
@@ -142,9 +144,9 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <LinearGradient
-        colors={['rgba(255,107,61,0.35)', 'rgba(255,107,61,0.06)', colors.bg]}
+        colors={['rgba(255,107,61,0.35)', 'rgba(255,107,61,0.06)', t.colors.bg]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
@@ -158,9 +160,9 @@ export default function LoginScreen() {
             { paddingTop: insets.top + 72, paddingBottom: insets.bottom + 32 },
           ]}>
           <T style={styles.wordmark}>
-            Rakki<T style={[styles.wordmark, { color: colors.accent }]}>.</T>
+            Rakki<T style={[styles.wordmark, { color: t.colors.accent }]}>.</T>
           </T>
-          <T variant="caption" style={{ marginBottom: space.xxl, fontSize: 15 }}>
+          <T variant="caption" style={{ marginBottom: t.space.xxl, fontSize: t.size(15) }}>
             Your Jellyfin music, with Spicy Lyrics.
           </T>
 
@@ -187,16 +189,16 @@ export default function LoginScreen() {
           ) : (
             <>
               <Pressable onPress={changeServer} style={styles.serverChip}>
-                <Ionicons name="server-outline" size={16} color={colors.textSecondary} />
-                <View style={{ flex: 1, marginLeft: space.sm }}>
+                <Ionicons name="server-outline" size={16} color={t.colors.textSecondary} />
+                <View style={{ flex: 1, marginLeft: t.space.sm }}>
                   <T variant="bodyStrong" numberOfLines={1}>
                     {server.info.ServerName}
                   </T>
-                  <T variant="caption" numberOfLines={1} style={{ fontSize: 12 }}>
+                  <T variant="caption" numberOfLines={1} style={{ fontSize: t.size(12) }}>
                     {server.url} · Jellyfin {server.info.Version}
                   </T>
                 </View>
-                <T variant="caption" color={colors.accent}>
+                <T variant="caption" color={t.colors.accent}>
                   Change
                 </T>
               </Pressable>
@@ -209,9 +211,9 @@ export default function LoginScreen() {
                     In another Jellyfin app that’s signed in, open Settings → Quick Connect and
                     enter this code.
                   </T>
-                  <ActivityIndicator color={colors.accent} style={{ marginTop: space.lg }} />
-                  <Pressable onPress={() => setQuick(null)} style={{ marginTop: space.lg }}>
-                    <T variant="caption" color={colors.text}>
+                  <ActivityIndicator color={t.colors.accent} style={{ marginTop: t.space.lg }} />
+                  <Pressable onPress={() => setQuick(null)} style={{ marginTop: t.space.lg }}>
+                    <T variant="caption" color={t.colors.text}>
                       Use password instead
                     </T>
                   </Pressable>
@@ -256,8 +258,8 @@ export default function LoginScreen() {
 
           {error ? (
             <View style={styles.error}>
-              <Ionicons name="alert-circle" size={18} color={colors.danger} />
-              <T variant="caption" color={colors.text} style={{ flex: 1, marginLeft: space.sm }}>
+              <Ionicons name="alert-circle" size={18} color={t.colors.danger} />
+              <T variant="caption" color={t.colors.text} style={{ flex: 1, marginLeft: t.space.sm }}>
                 {error}
               </T>
             </View>
@@ -269,12 +271,14 @@ export default function LoginScreen() {
 }
 
 function Field(props: TextInputProps) {
+  const t = useTheme();
+  const styles = useStyles();
   return (
     <TextInput
       autoCapitalize="none"
       autoCorrect={false}
-      placeholderTextColor={colors.textMuted}
-      selectionColor={colors.accent}
+      placeholderTextColor={t.colors.textMuted}
+      selectionColor={t.colors.accent}
       {...props}
       style={styles.input}
     />
@@ -290,6 +294,8 @@ function PrimaryButton({
   busy: boolean;
   onPress: () => void;
 }) {
+  const t = useTheme();
+  const styles = useStyles();
   return (
     <Pressable
       disabled={busy}
@@ -298,38 +304,38 @@ function PrimaryButton({
       {busy ? (
         <ActivityIndicator color="#000" />
       ) : (
-        <T style={{ fontFamily: fonts.bold, fontSize: 16, color: '#000' }}>{label}</T>
+        <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16), color: '#000' }}>{label}</T>
       )}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { paddingHorizontal: space.xl, flexGrow: 1 },
-  wordmark: { fontFamily: fonts.black, fontSize: 52, letterSpacing: -2, color: colors.text },
-  fieldLabel: { marginBottom: space.sm, marginTop: space.lg },
-  hint: { marginTop: space.sm, fontSize: 12 },
+const useStyles = makeStyles((t) => ({
+  content: { paddingHorizontal: t.space.xl, flexGrow: 1 },
+  wordmark: { fontFamily: t.fonts.black, fontSize: t.size(52), letterSpacing: -2, color: t.colors.text },
+  fieldLabel: { marginBottom: t.space.sm, marginTop: t.space.lg },
+  hint: { marginTop: t.space.sm, fontSize: t.size(12) },
   input: {
     height: 50,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface2,
-    paddingHorizontal: space.lg,
-    color: colors.text,
-    fontFamily: fonts.medium,
-    fontSize: 16,
+    borderRadius: t.radius.card,
+    backgroundColor: t.colors.surface2,
+    paddingHorizontal: t.space.lg,
+    color: t.colors.text,
+    fontFamily: t.fonts.medium,
+    fontSize: t.size(16),
   },
   primary: {
     height: 50,
-    marginTop: space.xl,
-    borderRadius: radius.pill,
-    backgroundColor: colors.accent,
+    marginTop: t.space.xl,
+    borderRadius: t.radius.pill,
+    backgroundColor: t.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondary: {
     height: 50,
-    marginTop: space.md,
-    borderRadius: radius.pill,
+    marginTop: t.space.md,
+    borderRadius: t.radius.pill,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
@@ -338,30 +344,30 @@ const styles = StyleSheet.create({
   serverChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: space.md,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface2,
+    padding: t.space.md,
+    borderRadius: t.radius.card,
+    backgroundColor: t.colors.surface2,
   },
   quickBox: {
-    marginTop: space.xl,
-    padding: space.xl,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
+    marginTop: t.space.xl,
+    padding: t.space.xl,
+    borderRadius: t.radius.card,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
   },
   quickCode: {
-    fontFamily: fonts.black,
-    fontSize: 44,
+    fontFamily: t.fonts.black,
+    fontSize: t.size(44),
     letterSpacing: 8,
-    color: colors.text,
-    marginVertical: space.md,
+    color: t.colors.text,
+    marginVertical: t.space.md,
   },
   error: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: space.xl,
-    padding: space.md,
-    borderRadius: radius.card,
+    marginTop: t.space.xl,
+    padding: t.space.md,
+    borderRadius: t.radius.card,
     backgroundColor: 'rgba(255,84,112,0.12)',
   },
-});
+}));

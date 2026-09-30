@@ -11,7 +11,7 @@ import { LyricsStage } from '@/lyrics/LyricsStage';
 import type { LyricLine, Lyrics, WordCue } from '@/lyrics/types';
 import type { LyricsMode } from '@/settings/store';
 import { T } from '@/ui/T';
-import { colors, fonts, radius, space } from '@/ui/theme';
+import { useTheme } from '@/ui/theme';
 
 const LOOP_MS = 30_000;
 
@@ -56,6 +56,7 @@ const DEMO: Lyrics = {
 };
 
 export default function LyricsDemo() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<LyricsMode>('spicy');
   const [t0, setT0] = useState(() => Date.now());
@@ -69,17 +70,17 @@ export default function LyricsDemo() {
   if (!__DEV__) return null;
 
   const toggle = (
-    <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
+    <View style={{ flexDirection: 'row', gap: t.space.sm, alignItems: 'center' }}>
       <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
-        <Ionicons name="close" size={26} color={colors.text} />
+        <Ionicons name="close" size={26} color={t.colors.text} />
       </Pressable>
       <View style={{ flex: 1 }} />
       {(['spicy', 'regular'] as const).map((m) => (
         <Pressable
           key={m}
           onPress={() => setMode(m)}
-          style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: mode === m ? colors.text : 'rgba(0,0,0,0.4)' }}>
-          <T style={{ fontFamily: fonts.bold, fontSize: 12, color: mode === m ? '#000' : colors.text }}>{m}</T>
+          style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: t.radius.pill, backgroundColor: mode === m ? t.colors.text : 'rgba(0,0,0,0.4)' }}>
+          <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(12), color: mode === m ? '#000' : t.colors.text }}>{m}</T>
         </Pressable>
       ))}
     </View>
@@ -97,14 +98,14 @@ export default function LyricsDemo() {
         tint="#6b2d1f"
         footerSpace={110}
         header={
-          <View style={{ paddingTop: insets.top + space.sm, paddingHorizontal: space.lg }}>
+          <View style={{ paddingTop: insets.top + t.space.sm, paddingHorizontal: t.space.lg }}>
             {toggle}
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.sm, paddingVertical: space.md }}>
-              <View style={{ width: 92, height: 92, borderRadius: radius.card, backgroundColor: '#c0482c' }} />
-              <View style={{ marginLeft: space.lg }}>
-                <T style={{ fontFamily: fonts.black, fontSize: 22 }}>Demo Song</T>
-                <T variant="caption" style={{ fontSize: 15 }}>Rakki</T>
-                <T variant="caption" style={{ fontSize: 13, color: colors.textMuted }}>Made-up Lyrics · 2026</T>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.sm, paddingVertical: t.space.md }}>
+              <View style={{ width: 92, height: 92, borderRadius: t.radius.card, backgroundColor: '#c0482c' }} />
+              <View style={{ marginLeft: t.space.lg }}>
+                <T style={{ fontFamily: t.fonts.black, fontSize: t.size(22) }}>Demo Song</T>
+                <T variant="caption" style={{ fontSize: t.size(15) }}>Rakki</T>
+                <T variant="caption" style={{ fontSize: t.size(13), color: t.colors.textMuted }}>Made-up Lyrics · 2026</T>
               </View>
             </View>
           </View>
