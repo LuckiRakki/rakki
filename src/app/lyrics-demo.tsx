@@ -1,6 +1,7 @@
 // Dev-only preview of both lyric systems with made-up lyrics on a looping fake clock, so the
 // renderers can be checked (on web or a phone) without signing in or playing a song.
 // Open /lyrics-demo in the dev server.
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -70,7 +71,7 @@ export default function LyricsDemo() {
   const toggle = (
     <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
       <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
-        <T style={{ fontFamily: fonts.bold }}>✕</T>
+        <Ionicons name="close" size={26} color={colors.text} />
       </Pressable>
       <View style={{ flex: 1 }} />
       {(['spicy', 'regular'] as const).map((m) => (

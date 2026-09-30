@@ -126,7 +126,7 @@ function ModeToggle({ mode }: { mode: LyricsMode }) {
       {(['spicy', 'regular'] as const).map((m) => (
         <Pressable key={m} onPress={() => set(m)} style={[styles.toggleBtn, mode === m && styles.toggleOn]}>
           <T style={{ fontFamily: fonts.bold, fontSize: 12, color: mode === m ? '#000' : colors.text }}>
-            {m === 'spicy' ? '🌶 Spicy' : 'Regular'}
+            {m === 'spicy' ? 'Spicy' : 'Regular'}
           </T>
         </Pressable>
       ))}

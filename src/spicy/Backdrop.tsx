@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect } from 'react';
@@ -68,7 +69,7 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
         },
         style,
       ]}>
-      <Image source={{ uri }} blurRadius={60} style={{ width: side, height: side, borderRadius: side / 2 }} contentFit="cover" />
+      <Image source={{ uri }} blurRadius={60} style={{ width: side, height: side }} contentFit="cover" />
     </Animated.View>
   );
 }
@@ -76,7 +77,8 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
 /**
  * The Spicy Lyrics backdrop: the cover, heavily blurred, as three slowly turning and drifting
  * layers, with a gentle brightness pulse and a dark tint for readability. Each blurred cover
- * is a static texture that the GPU only moves around, so this stays cheap.
+ * is a static texture the GPU only moves around; one live blur on top melts the layers'
+ * edges together so no shapes show, just flowing colour.
  */
 export function SpicyBackdrop({ uri }: { uri?: string }) {
   const clock = useSharedValue(0);
@@ -100,10 +102,11 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0b0b0b', overflow: 'hidden' }]} pointerEvents="none">
       {uri ? LAYERS.map((spec, i) => <Layer key={i} uri={uri} spec={spec} clock={clock} />) : null}
+      <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
       {/* Brightness pulse, like the web mod's backdrop glow. */}
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, breathe]} />
       <LinearGradient
-        colors={['rgba(0,0,0,0.45)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.5)']}
+        colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.35)']}
         style={StyleSheet.absoluteFill}
       />
     </View>

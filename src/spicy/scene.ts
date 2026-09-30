@@ -293,7 +293,7 @@ export class SpicyScene {
     this.contentHeight = last ? last.top + last.height : 0;
     // Start with the first line where the singer will be.
     const first = this.rows[0];
-    this.scrollY = this.scrollTo = first ? this.anchorY - (first.top + first.height / 2) : 0;
+    this.scrollY = this.scrollTo = first ? this.followY(first) : 0;
     if (!this.synced) this.scrollY = this.scrollTo = this.unsyncedTop;
   }
 
@@ -555,9 +555,19 @@ export class SpicyScene {
     return this.height * this.layout.anchor;
   }
 
-  /** Where unsynced lyrics start (just below the top fade). */
+  /** Where the first line rests: at the top, the lyrics never sit lower than this. */
+  private get topRest() {
+    return 8;
+  }
+
+  /** Where unsynced lyrics start. */
   private get unsyncedTop() {
-    return Math.max(this.layout.fadeTop, this.height * 0.04);
+    return this.topRest;
+  }
+
+  /** Scroll position for following `row`: at the anchor, but never below the resting top. */
+  private followY(row: Row) {
+    return Math.min(this.anchorY - (row.top + row.height / 2), this.topRest);
   }
 
   /**
@@ -614,7 +624,7 @@ export class SpicyScene {
     if (target >= 0 && !this.manual && target !== this.centeredGroup) {
       const g = this.groups[target];
       const row = this.rows[g.first];
-      this.glideTo(this.anchorY - (row.top + row.height / 2), !jumped);
+      this.glideTo(this.followY(row), !jumped);
       this.centeredGroup = target;
     }
 
@@ -855,14 +865,17 @@ export class SpicyScene {
     this.manual = true;
     this.manualUntil = Date.now() + MANUAL_RESUME_MS;
     const minY = this.anchorY - this.contentHeight;
-    const maxY = this.anchorY;
+    const maxY = this.topRest;
     this.scrollY = Math.max(minY, Math.min(maxY, this.scrollY + dy));
   }
 
   // ── Drawing ─────────────────────────────────────────────────────────────────────
 
   draw(canvas: SkCanvas) {
-    const { fadeTop, fadeBottom } = this.layout;
+    const { fadeBottom } = this.layout;
+    // The top fade grows in only as lines scroll up under the header, so the first line
+    // isn't dimmed while it rests at the top.
+    const fadeTop = this.layout.fadeTop * clamp01((this.topRest - this.scrollY) / Math.max(1, this.layout.fadeTop));
     const fading = fadeTop > 0 || fadeBottom > 0;
     if (fading) canvas.saveLayer();
     this.drawContent(canvas);
@@ -1074,7 +1087,7 @@ export class SpicyScene {
   }
 
   private dotMetrics() {
-    const em = 18; // the web mod's fixed 1.5rem, scaled for a phone
+    const em = 13; // the web mod's fixed 1.5rem, scaled down for a phone (smaller on request)
     return { em, size: em * 0.8, gap: em * 0.7, height: em * 0.8 + em * 0.3 + 2 * em * 0.47 };
   }
 

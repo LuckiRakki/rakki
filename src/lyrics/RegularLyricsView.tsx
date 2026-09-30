@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { withAlpha } from '@/lib/color';
 import type { Lyrics } from '@/lyrics/types';
@@ -59,6 +60,9 @@ export function RegularLyricsView({
   const offsets = useRef<number[]>([]);
   const manualUntil = useRef(0);
   const [viewH, setViewH] = useState(0);
+  // The top fade only appears once lines are scrolling under the header.
+  const [scrollY] = useState(() => new Animated.Value(0));
+  const topFadeOpacity = scrollY.interpolate({ inputRange: [0, Math.max(1, fadeTop)], outputRange: [0, 1], extrapolate: 'clamp' });
 
   useEffect(() => {
     if (!lyrics.isSynced) return;
@@ -79,13 +83,15 @@ export function RegularLyricsView({
 
   return (
     <View style={{ flex: 1 }}>
-    <ScrollView
+    <Animated.ScrollView
       ref={scroll}
+      scrollEventThrottle={16}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
       onLayout={(e) => setViewH(e.nativeEvent.layout.height)}
       onScrollBeginDrag={() => (manualUntil.current = Date.now() + 60_000)}
       onScrollEndDrag={() => (manualUntil.current = Date.now() + MANUAL_RESUME_MS)}
       onMomentumScrollEnd={() => (manualUntil.current = Date.now() + MANUAL_RESUME_MS)}
-      contentContainerStyle={{ paddingHorizontal: space.xl, paddingTop: fadeTop, paddingBottom: viewH * 0.7 }}
+      contentContainerStyle={{ paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: viewH * 0.7 }}
       showsVerticalScrollIndicator={false}>
       {lines.map((line, i) => {
         const color = !lyrics.isSynced
@@ -98,18 +104,20 @@ export function RegularLyricsView({
         return (
           <View key={i} onLayout={(e) => (offsets.current[i] = e.nativeEvent.layout.y)}>
             <Pressable disabled={!lyrics.isSynced} onPress={() => onSeek(line.startMs)}>
-              <T style={[styles.line, { color }]}>{line.text || '♪'}</T>
+              {line.text ? (
+                <T style={[styles.line, { color }]}>{line.text}</T>
+              ) : (
+                <Ionicons name="musical-notes" size={26} color={color} style={styles.note} />
+              )}
             </Pressable>
           </View>
         );
       })}
-    </ScrollView>
+    </Animated.ScrollView>
       {fadeColor && fadeTop > 0 ? (
-        <LinearGradient
-          pointerEvents="none"
-          colors={[fadeColor, withAlpha(fadeColor, 0)]}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: fadeTop }}
-        />
+        <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: fadeTop, opacity: topFadeOpacity }}>
+          <LinearGradient colors={[fadeColor, withAlpha(fadeColor, 0)]} style={{ flex: 1 }} />
+        </Animated.View>
       ) : null}
       {fadeColor && fadeBottom > 0 ? (
         <LinearGradient
@@ -124,4 +132,5 @@ export function RegularLyricsView({
 
 const styles = StyleSheet.create({
   line: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 34, marginBottom: space.lg, letterSpacing: -0.3 },
+  note: { height: 34, marginBottom: space.lg },
 });
