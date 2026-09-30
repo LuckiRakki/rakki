@@ -1,0 +1,54 @@
+name: Publish over-the-air update
+
+# Every push to main that changes app code is checked, then published to the "production"
+# update channel. The installed Rakki app downloads it the next time it opens (Settings →
+# About → Check for updates to fetch it right away). Publishing runs here rather than on the
+# dev PC because EAS uploads need decent upload speed.
+#
+# Needs the EXPO_TOKEN repository secret (expo.dev → Account settings → Access tokens).
+#
+# Only JS/asset changes can ship this way. When native code or a native dependency changes,
+# bump expo.version in app.json and run "iOS build" (release): an update is only delivered to
+# builds with the same version, so a new native build never receives an incompatible update.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ota-update
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+
+      - name: Publish update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::warning::EXPO_TOKEN secret is not set; skipping the update."
+            exit 0
+          fi
+          npx eas-cli@latest update \
+            --channel production \
+            --environment production \
+            --platform ios \
+            --message "$(git log -1 --pretty=%s)" \
+            --non-interactive
