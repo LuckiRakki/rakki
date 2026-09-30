@@ -7,8 +7,11 @@ import { create } from 'zustand';
 import { readPref, writePref } from '@/lib/prefs';
 
 export interface Appearance {
-  /** 'art' = accents follow the album art where a screen has one; 'fixed' = always `accent`. */
-  accentMode: 'art' | 'fixed';
+  /**
+   * 'custom' = always `accent`. 'lucid' = the colour of the playing album's art, else the last
+   * played album's, else `accent` (user decision, 2026-09-30).
+   */
+  accentMode: 'custom' | 'lucid';
   accent: string;
   /** App background: near-black, true OLED black. */
   background: 'dark' | 'oled';
@@ -21,7 +24,7 @@ export interface Appearance {
 }
 
 export const APPEARANCE_DEFAULTS: Appearance = {
-  accentMode: 'art',
+  accentMode: 'custom',
   accent: '#FF6B3D',
   background: 'dark',
   textScale: 1,

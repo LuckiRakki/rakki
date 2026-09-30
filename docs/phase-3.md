@@ -28,15 +28,17 @@ Carried in from earlier phases:
 - [ ] **4. Search.**
   - Empty: genre tiles and recent searches.
   - Typing: live results, a top result, and chips (Songs / Albums / Artists / Playlists).
-  - **Fuzzy search** (user request, 2026-09-30): misspellings still find the right thing.
-    - Jellyfin's search is substring-only, so Rakki keeps a local name index of songs, albums, artists and playlists, cached and refreshed in the background.
-    - Typo-tolerant matching (fuzzy scoring on words and initials) is merged with the server's results.
+  - Fuzzy search is in the FRAMEWORK ideas backlog. It's not part of this phase unless the user says go.
 - [ ] **5. Library.**
   - Chips: Playlists / Albums / Artists / Liked.
   - Sort sheet, grid ↔ list toggle, remembered choices.
 - [ ] **6. Artist page.**
   - Backdrop header, Play / Shuffle / Radio.
   - Popular, Discography (Albums / Singles & EPs), Appears on, Similar artists.
+- [ ] **6b. Add to playlist sheet** (Spotify style; the user called it "very important"):
+  - A clean bottom sheet listing your playlists with their mosaic art, plus a search field and a **New playlist** button.
+  - Playlists that **already contain the song are clearly marked** (filled check, "Already added"), so adding a duplicate is a deliberate choice.
+  - Tap to add or remove, then **Done**. A small confirmation toast shows which playlist it went into.
 - [ ] **7. Playlist page.**
   - Mosaic header, Play / Shuffle.
   - Edit mode: rename, drag to reorder, remove, delete. Create from the Library and from "Add to playlist".

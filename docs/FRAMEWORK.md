@@ -277,7 +277,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 
 | Area | Options |
 |---|---|
-| **Colour** | Accent: *auto from album art* (default) / fixed colour (picker + hex) / presets. Background: near-black `#121212` / true OLED black / art-tinted. Surface contrast. How strongly art colour tints headers, the mini-player and the player. |
+| **Colour** | Accent, two modes (user decision, 2026-09-30): **Custom** is your own colour (picker + hex + presets). **Lucid** takes the accent from the *currently playing* album's art, else the *last played* album's; with neither, it falls back to your Custom colour. Background: near-black `#121212` / true OLED black / art-tinted. Surface contrast. How strongly art colour tints headers, the mini-player and the player. |
 | **Type and size** | Font (Inter / system SF / Plus Jakarta Sans / …). Global text size (×0.85–1.4, on top of iOS Dynamic Type). Title weight. |
 | **Shape and density** | Corner roundness (square → very round). Density: compact / comfortable / spacious. Album grid 2 / 3 / 4 columns. Tile and art sizes. List vs grid default per library tab. |
 | **Home** | Show, hide and reorder shelves (Jump back in, Recently added, Most played, Rediscover, Favorites, Playlists, Random, Instant mixes). Quick-pick grid on/off and size. Greeting on/off. |
@@ -324,6 +324,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | Album / artist / playlist pages (popular, discography, similar) | Fs | 3 |
 | Favorites everywhere | F, Fs | 3 |
 | Playlist create / edit / reorder / delete | F, Fs | 3 |
+| **Spotify-style "Add to playlist" sheet** that clearly shows which playlists already contain the song (user: "very important"), plus New playlist | ours | 3 |
 | Context sheets (long-press) | F, Fs | 3 |
 | Art-colour theming (from blurhash) and placeholders | F, Fs | 3 |
 | Downloads: album/playlist/artist, transcoded downloads, storage manager | F | 4 |
@@ -400,6 +401,10 @@ The user wants to choose colours, sizes and similar details themselves. So every
     - Free-Apple-ID signing plus SideStore with an app extension and an App Group. Each extension uses one of the 10 App IDs per week.
     - Needs a new native build (version bump).
 - iPad, head-unit APK, CarPlay (only with the $99 account), Navidrome.
+
+### Ideas backlog (not scheduled; the user will decide scope later)
+- **SUB/WAVE radio integration.** The user runs a SUB/WAVE internet radio station, set up in an earlier session, at `http://100.103.153.111:7700/` (manual: https://www.getsubwave.com/manual). The idea is to integrate it into Rakki, e.g. listening to the station with its now-playing info. The user isn't sure of the scope yet, so read the manual and ask before designing anything.
+- **Fuzzy search.** Misspellings should still find the right song, album, artist or playlist. Jellyfin's search is substring-only, so this means a local name index of the library plus typo-tolerant matching merged with the server's results. The natural home is the Search screen once it exists; build it when the user says go.
 
 ---
 
