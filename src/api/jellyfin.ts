@@ -46,6 +46,15 @@ export interface BaseItem {
   ChildCount?: number;
   ImageTags?: Record<string, string>;
   ImageBlurHashes?: Record<string, Record<string, string>>;
+  BackdropImageTags?: string[];
+  /** A song's position in a playlist (needed to remove/move it). */
+  PlaylistItemId?: string;
+  Genres?: string[];
+  GenreItems?: NameIdPair[];
+  Overview?: string;
+  MediaType?: string;
+  AlbumCount?: number;
+  SongCount?: number;
   UserData?: { IsFavorite?: boolean; PlayCount?: number; LastPlayedDate?: string };
   DateCreated?: string;
 }
@@ -217,6 +226,26 @@ export async function authenticateWithQuickConnect(
 
 // ---- Authenticated client -------------------------------------------------------------
 
+/** The distinct albums of a list of songs, in order, as album items. */
+function albumsOf(tracks: BaseItem[], limit: number): BaseItem[] {
+  const seen = new Set<string>();
+  const albums: BaseItem[] = [];
+  for (const t of tracks) {
+    if (!t.AlbumId || seen.has(t.AlbumId)) continue;
+    seen.add(t.AlbumId);
+    albums.push({
+      Id: t.AlbumId,
+      Name: t.Album ?? t.Name,
+      Type: 'MusicAlbum',
+      AlbumArtist: t.AlbumArtist,
+      ImageTags: t.AlbumPrimaryImageTag ? { Primary: t.AlbumPrimaryImageTag } : undefined,
+      ImageBlurHashes: t.ImageBlurHashes,
+    });
+    if (albums.length >= limit) break;
+  }
+  return albums;
+}
+
 const ALBUM_FIELDS = 'DateCreated,ChildCount';
 
 export class JellyfinClient {
@@ -288,37 +317,239 @@ export class JellyfinClient {
 
   /** Albums of the most recently played tracks, de-duplicated, newest first. */
   async getRecentlyPlayedAlbums(limit = 12): Promise<BaseItem[]> {
-    const r = await this.get<ItemsResult>('/Items', {
-      userId: this.session.userId,
+    const r = await this.items({
       IncludeItemTypes: 'Audio',
-      Recursive: true,
       Filters: 'IsPlayed',
       SortBy: 'DatePlayed',
       SortOrder: 'Descending',
       Limit: limit * 6,
-      EnableImageTypes: 'Primary',
-      ImageTypeLimit: 1,
     });
-    const seen = new Set<string>();
-    const albums: BaseItem[] = [];
-    for (const t of r.Items) {
-      if (!t.AlbumId || seen.has(t.AlbumId)) continue;
-      seen.add(t.AlbumId);
-      albums.push({
-        Id: t.AlbumId,
-        Name: t.Album ?? t.Name,
-        Type: 'MusicAlbum',
-        AlbumArtist: t.AlbumArtist,
-        ImageTags: t.AlbumPrimaryImageTag ? { Primary: t.AlbumPrimaryImageTag } : undefined,
-        ImageBlurHashes: t.ImageBlurHashes,
-      });
-      if (albums.length >= limit) break;
-    }
-    return albums;
+    return albumsOf(r.Items, limit);
   }
 
   getItem(id: string) {
     return this.get<BaseItem>(`/Items/${id}`, { userId: this.session.userId });
+  }
+
+  /** /Items with the defaults every list needs (this user, recursive, one primary image). */
+  items(params: Record<string, string | number | boolean | undefined>) {
+    return this.get<ItemsResult>('/Items', {
+      userId: this.session.userId,
+      Recursive: true,
+      EnableImageTypes: 'Primary,Backdrop',
+      ImageTypeLimit: 1,
+      ...params,
+    });
+  }
+
+  // ---- Artists ----
+
+  /** Album artists (the Library's Artists tab), sorted by name. */
+  getAlbumArtists(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string } = {}) {
+    return this.get<ItemsResult>('/Artists/AlbumArtists', {
+      userId: this.session.userId,
+      SortBy: opts.sortBy ?? 'SortName',
+      SortOrder: opts.sortOrder ?? 'Ascending',
+      StartIndex: opts.startIndex ?? 0,
+      Limit: opts.limit ?? 100,
+      Fields: 'ChildCount',
+      EnableImageTypes: 'Primary,Backdrop',
+      ImageTypeLimit: 1,
+    });
+  }
+
+  /** The artist's own albums, newest first. */
+  getArtistAlbums(artistId: string) {
+    return this.items({
+      IncludeItemTypes: 'MusicAlbum',
+      AlbumArtistIds: artistId,
+      SortBy: 'ProductionYear,PremiereDate,SortName',
+      SortOrder: 'Descending',
+      Fields: 'ChildCount',
+    });
+  }
+
+  /** Albums by others that the artist features on. */
+  async getAppearsOn(artistId: string): Promise<BaseItem[]> {
+    const r = await this.items({
+      IncludeItemTypes: 'MusicAlbum',
+      ContributingArtistIds: artistId,
+      SortBy: 'ProductionYear,SortName',
+      SortOrder: 'Descending',
+      Limit: 40,
+    });
+    return r.Items.filter((a) => !a.AlbumArtists?.some((x) => x.Id === artistId));
+  }
+
+  /** The artist's most played songs (by this user), then alphabetical. */
+  async getTopTracks(artistId: string, limit = 10): Promise<BaseItem[]> {
+    const r = await this.items({
+      IncludeItemTypes: 'Audio',
+      ArtistIds: artistId,
+      SortBy: 'PlayCount,SortName',
+      SortOrder: 'Descending,Ascending',
+      Limit: limit,
+    });
+    return r.Items;
+  }
+
+  async getSimilar(itemId: string, limit = 12): Promise<BaseItem[]> {
+    const r = await this.get<ItemsResult>(`/Items/${itemId}/Similar`, {
+      userId: this.session.userId,
+      Limit: limit,
+    });
+    return r.Items;
+  }
+
+  /** Jellyfin's radio: songs like a song, album, artist, playlist or genre. */
+  async getInstantMix(itemId: string, limit = 100): Promise<BaseItem[]> {
+    const r = await this.get<ItemsResult>(`/Items/${itemId}/InstantMix`, {
+      userId: this.session.userId,
+      Limit: limit,
+    });
+    return r.Items;
+  }
+
+  // ---- Home shelves ----
+
+  /** Albums of the most played songs. */
+  async getMostPlayedAlbums(limit = 16): Promise<BaseItem[]> {
+    const r = await this.items({
+      IncludeItemTypes: 'Audio',
+      Filters: 'IsPlayed',
+      SortBy: 'PlayCount',
+      SortOrder: 'Descending',
+      Limit: limit * 6,
+    });
+    return albumsOf(r.Items, limit);
+  }
+
+  /** Albums you played, but longest ago. */
+  async getRediscoverAlbums(limit = 16): Promise<BaseItem[]> {
+    const r = await this.items({
+      IncludeItemTypes: 'Audio',
+      Filters: 'IsPlayed',
+      SortBy: 'DatePlayed',
+      SortOrder: 'Ascending',
+      Limit: limit * 8,
+    });
+    return albumsOf(r.Items, limit);
+  }
+
+  async getRandomAlbums(limit = 16): Promise<BaseItem[]> {
+    return (await this.items({ IncludeItemTypes: 'MusicAlbum', SortBy: 'Random', Limit: limit })).Items;
+  }
+
+  /** Liked Songs (newest to the library first; Jellyfin doesn't record when you liked them). */
+  getFavoriteTracks(opts: { startIndex?: number; limit?: number } = {}) {
+    return this.items({
+      IncludeItemTypes: 'Audio',
+      Filters: 'IsFavorite',
+      SortBy: 'DateCreated,SortName',
+      SortOrder: 'Descending',
+      StartIndex: opts.startIndex ?? 0,
+      Limit: opts.limit ?? 200,
+    });
+  }
+
+  // ---- Genres ----
+  // Jellyfin's genre list only works scoped to a library, and this library has hundreds of
+  // fine-grained genres, so Rakki ranks them by how many albums use them instead.
+
+  /** Genres by number of albums, most used first. */
+  async getGenreCounts(): Promise<{ name: string; count: number }[]> {
+    const r = await this.get<ItemsResult>('/Items', {
+      userId: this.session.userId,
+      Recursive: true,
+      IncludeItemTypes: 'MusicAlbum',
+      Fields: 'Genres',
+      EnableImages: false,
+      Limit: 5000,
+    });
+    const counts = new Map<string, number>();
+    for (const album of r.Items) for (const g of album.Genres ?? []) counts.set(g, (counts.get(g) ?? 0) + 1);
+    return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }
+
+  /** Albums tagged with a genre (matched by name). */
+  getGenreAlbums(genre: string, opts: { startIndex?: number; limit?: number } = {}) {
+    return this.items({
+      IncludeItemTypes: 'MusicAlbum',
+      Genres: genre,
+      SortBy: 'SortName',
+      StartIndex: opts.startIndex ?? 0,
+      Limit: opts.limit ?? 100,
+    });
+  }
+
+  // ---- Search (Jellyfin matches substrings of names) ----
+
+  async search(term: string, limit = 20) {
+    const [songs, albums, playlists, artists] = await Promise.all([
+      this.items({ searchTerm: term, IncludeItemTypes: 'Audio', Limit: limit }),
+      this.items({ searchTerm: term, IncludeItemTypes: 'MusicAlbum', Limit: limit }),
+      this.items({ searchTerm: term, IncludeItemTypes: 'Playlist', Limit: limit }),
+      this.get<ItemsResult>('/Artists', {
+        userId: this.session.userId,
+        searchTerm: term,
+        Limit: limit,
+        EnableImageTypes: 'Primary',
+        ImageTypeLimit: 1,
+      }),
+    ]);
+    return { songs: songs.Items, albums: albums.Items, playlists: playlists.Items, artists: artists.Items };
+  }
+
+  // ---- Playlists ----
+
+  getPlaylists() {
+    return this.items({
+      IncludeItemTypes: 'Playlist',
+      SortBy: 'SortName',
+      Fields: 'ChildCount,DateCreated',
+    });
+  }
+
+  getPlaylistItems(playlistId: string) {
+    return this.get<ItemsResult>(`/Playlists/${playlistId}/Items`, {
+      userId: this.session.userId,
+      EnableImageTypes: 'Primary',
+      ImageTypeLimit: 1,
+    });
+  }
+
+  async createPlaylist(name: string, itemIds: string[] = []): Promise<string> {
+    const r = await this.send<{ Id: string }>('POST', '/Playlists', {
+      Name: name,
+      Ids: itemIds,
+      UserId: this.session.userId,
+      MediaType: 'Audio',
+    });
+    return r.Id;
+  }
+
+  addToPlaylist(playlistId: string, itemIds: string[]) {
+    return this.send('POST', `/Playlists/${playlistId}/Items`, undefined, {
+      ids: itemIds.join(','),
+      userId: this.session.userId,
+    });
+  }
+
+  /** @param entryIds the songs' PlaylistItemId values, not their item ids */
+  removeFromPlaylist(playlistId: string, entryIds: string[]) {
+    return this.send('DELETE', `/Playlists/${playlistId}/Items`, undefined, { entryIds: entryIds.join(',') });
+  }
+
+  movePlaylistItem(playlistId: string, entryId: string, newIndex: number) {
+    return this.send('POST', `/Playlists/${playlistId}/Items/${entryId}/Move/${newIndex}`);
+  }
+
+  renamePlaylist(playlistId: string, name: string) {
+    return this.send('POST', `/Playlists/${playlistId}`, { Name: name });
+  }
+
+  deletePlaylist(playlistId: string) {
+    return this.send('DELETE', `/Items/${playlistId}`);
   }
 
   getAlbumTracks(albumId: string) {
@@ -346,6 +577,13 @@ export class JellyfinClient {
       quality: 90,
       tag,
     })}`;
+  }
+
+  /** An artist's (or album's) wide backdrop image, if it has one. */
+  backdropUrl(item: BaseItem, width = 1200): string | undefined {
+    const tag = item.BackdropImageTags?.[0];
+    if (!tag) return undefined;
+    return `${this.session.serverUrl}/Items/${item.Id}/Images/Backdrop/0${query({ maxWidth: width, quality: 85, tag })}`;
   }
 
   blurhash(item: BaseItem): string | undefined {

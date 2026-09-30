@@ -64,3 +64,61 @@ export function useAlbumTracks(albumId: string | undefined) {
     queryFn: async () => (await client!.getAlbumTracks(albumId!)).Items,
   });
 }
+
+// ---- Phase 3 ---------------------------------------------------------------------------
+
+/** A query keyed to the signed-in user, enabled only while signed in. */
+function useUserQuery<T>(key: unknown[], fn: (client: NonNullable<ReturnType<typeof useClient>>) => Promise<T>, enabled = true) {
+  const client = useClient();
+  return useQuery({
+    queryKey: [key[0], client?.session.userId, ...key.slice(1)],
+    enabled: !!client && enabled,
+    queryFn: () => fn(client!),
+  });
+}
+
+export const useMostPlayed = () => useUserQuery(['mostPlayed'], (c) => c.getMostPlayedAlbums(16));
+export const useRediscover = () => useUserQuery(['rediscover'], (c) => c.getRediscoverAlbums(16));
+export const useRandomAlbums = () => useUserQuery(['randomAlbums'], (c) => c.getRandomAlbums(16));
+export const useLikedSongs = () => useUserQuery(['likedSongs'], async (c) => (await c.getFavoriteTracks()).Items);
+
+export function useAlbumArtists() {
+  const client = useClient();
+  return useInfiniteQuery({
+    queryKey: ['albumArtists', client?.session.userId],
+    enabled: !!client,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => client!.getAlbumArtists({ startIndex: pageParam, limit: 100 }),
+    getNextPageParam: (last) => {
+      const next = last.StartIndex + last.Items.length;
+      return last.Items.length > 0 && next < last.TotalRecordCount ? next : undefined;
+    },
+  });
+}
+
+export const useArtistAlbums = (id?: string) =>
+  useUserQuery(['artistAlbums', id], async (c) => (await c.getArtistAlbums(id!)).Items, !!id);
+export const useAppearsOn = (id?: string) => useUserQuery(['appearsOn', id], (c) => c.getAppearsOn(id!), !!id);
+export const useTopTracks = (id?: string) => useUserQuery(['topTracks', id], (c) => c.getTopTracks(id!, 10), !!id);
+export const useSimilar = (id?: string) => useUserQuery(['similar', id], (c) => c.getSimilar(id!, 12), !!id);
+
+export function useGenreCounts() {
+  const client = useClient();
+  return useQuery({
+    queryKey: ['genreCounts', client?.session.userId],
+    enabled: !!client,
+    staleTime: 24 * 60 * 60_000,
+    queryFn: () => client!.getGenreCounts(),
+  });
+}
+export const useGenreAlbums = (genre?: string) =>
+  useUserQuery(['genreAlbums', genre], async (c) => (await c.getGenreAlbums(genre!)).Items, !!genre);
+
+export const usePlaylists = () => useUserQuery(['playlists'], async (c) => (await c.getPlaylists()).Items);
+export const usePlaylistItems = (id?: string) =>
+  useUserQuery(['playlistItems', id], async (c) => (await c.getPlaylistItems(id!)).Items, !!id);
+
+export function useSearch(term: string) {
+  const t = term.trim();
+  return useUserQuery(['search', t.toLowerCase()], (c) => c.search(t, 20), t.length >= 2);
+}

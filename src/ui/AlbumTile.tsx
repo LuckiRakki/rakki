@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { Artwork } from '@/ui/Artwork';
+import { openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
@@ -16,6 +17,8 @@ export function AlbumTile({ album, size }: { album: BaseItem; size: number }) {
   return (
     <Pressable
       onPress={() => openAlbum(album.Id)}
+      onLongPress={() => openMenu(album)}
+      delayLongPress={350}
       style={({ pressed }) => ({ width: size, opacity: pressed ? 0.7 : 1 })}>
       <Artwork item={album} size={size} />
       <T variant="bodyStrong" numberOfLines={1} style={{ marginTop: 8, fontSize: t.size(14) }}>
@@ -34,6 +37,8 @@ export function QuickTile({ album }: { album: BaseItem }) {
   return (
     <Pressable
       onPress={() => openAlbum(album.Id)}
+      onLongPress={() => openMenu(album)}
+      delayLongPress={350}
       style={({ pressed }) => ({
         flex: 1,
         flexDirection: 'row',

@@ -8,7 +8,7 @@ import { useAlbumTracks, useItem } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { ticksToSeconds } from '@/lib/format';
-import { showTrackActions } from '@/player/actions';
+import { openMenu } from '@/ui/overlays';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
@@ -111,7 +111,7 @@ export default function AlbumScreen() {
                 active={item.Id === currentId}
                 playing={playing}
                 onPress={() => usePlayer.getState().playQueue(list, { startIndex: index, source })}
-                onLongPress={() => showTrackActions(item)}
+                onLongPress={() => openMenu(item)}
               />
             </>
           );

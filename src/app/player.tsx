@@ -9,11 +9,11 @@ import { getRoutePicker } from '../../modules/rakki-audio';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
-import { showTrackActions } from '@/player/actions';
 import { SeekBar } from '@/player/SeekBar';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { Artwork } from '@/ui/Artwork';
+import { openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -71,7 +71,7 @@ export default function PlayerScreen() {
               {source?.name ?? track.Album ?? ''}
             </T>
           </View>
-          <Pressable hitSlop={12} onPress={() => showTrackActions(track)}>
+          <Pressable hitSlop={12} onPress={() => openMenu(track)}>
             <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.text} />
           </Pressable>
         </View>

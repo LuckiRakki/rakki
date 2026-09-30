@@ -11,14 +11,16 @@ Carried in from earlier phases:
 
 ## Tasks
 
-- [ ] **0. Theme plumbing.**
+- [x] **0. Theme plumbing.** Done 2026-09-30 (verified on the signed-in preview, OTA fbb21fc8).
   - Appearance store: persisted and versioned, holding accent, background, text scale, corner roundness and density.
   - `ThemeProvider`, `useTheme()` and `makeStyles()`.
   - Migrate every existing component and screen off static `theme.ts` imports.
-- [ ] **1. UI kit.**
+- [~] **1. UI kit.** Done: `Sheet`, long-press `ContextMenu` (replaces the iOS action sheet), `Toast`. To do: chips, shelf, artist and playlist tiles.
   - Context sheet: a bottom sheet replacing the iOS action sheet. Actions: Play next · Add to queue · Add to playlist · Go to album/artist · Like · Instant mix · Share.
   - Chip, section header, shelf, artist tile (round art), playlist tile (mosaic art), list rows.
-- [ ] **2. API.**
+- [x] **2. API.** Checked against the live server.
+  - The genre list only works scoped to the Music library, and there are 640 genres, so tiles are ranked by album count.
+  - The user has 0 playlists and 245 liked songs.
   - Artists (album artists), artist albums, "appears on", popular tracks, similar artists.
   - Playlists: list, items, create, add, remove, move, rename, delete.
   - Genres; search per type; favourites per type; most played; rediscover; random; instant mix.
@@ -35,7 +37,7 @@ Carried in from earlier phases:
 - [ ] **6. Artist page.**
   - Backdrop header, Play / Shuffle / Radio.
   - Popular, Discography (Albums / Singles & EPs), Appears on, Similar artists.
-- [ ] **6b. Add to playlist sheet** (Spotify style; the user called it "very important"):
+- [x] **6b. Add to playlist sheet** (built; the "Already added" marks still need a real playlist, i.e. the user's first one) (Spotify style; the user called it "very important"):
   - A clean bottom sheet listing your playlists with their mosaic art, plus a search field and a **New playlist** button.
   - Playlists that **already contain the song are clearly marked** (filled check, "Already added"), so adding a duplicate is a deliberate choice.
   - Tap to add or remove, then **Done**. A small confirmation toast shows which playlist it went into.
