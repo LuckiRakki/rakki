@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { checkForUpdate } from '@/lib/updates';
+import { ensureSearchIndex } from '@/search/index';
 import { useModalTracker } from '@/ui/nav';
 import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
@@ -58,6 +59,13 @@ export default function RootLayout() {
 function AppShell({ signedIn }: { signedIn: boolean }) {
   const t = useTheme();
   useModalTracker();
+
+  // Build or top up the fuzzy-search index once the first screens have loaded.
+  useEffect(() => {
+    if (!signedIn) return;
+    const id = setTimeout(() => void ensureSearchIndex(), 8000);
+    return () => clearTimeout(id);
+  }, [signedIn]);
   const navTheme = {
     ...DarkTheme,
     colors: {

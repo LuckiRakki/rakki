@@ -20,7 +20,7 @@ export interface QueueEntry {
 }
 
 export interface QueueSource {
-  type: 'album' | 'playlist' | 'artist' | 'tracks';
+  type: 'album' | 'playlist' | 'artist' | 'tracks' | 'genre' | 'search';
   id?: string;
   name: string;
 }

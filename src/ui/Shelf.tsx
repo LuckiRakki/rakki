@@ -30,11 +30,14 @@ export function Shelf({
   items,
   size = 148,
   onShowAll,
+  onItemPress,
 }: {
   title: string;
   items: BaseItem[] | undefined;
   size?: number;
   onShowAll?: () => void;
+  /** Replaces opening the item (Search uses it to remember what you opened). */
+  onItemPress?: (item: BaseItem) => void;
 }) {
   const t = useTheme();
   if (!items?.length) return null;
@@ -47,7 +50,9 @@ export function Shelf({
         keyExtractor={(a) => a.Id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: t.space.lg, gap: t.space.lg }}
-        renderItem={({ item }) => <ItemTile item={item} size={size} />}
+        renderItem={({ item }) => (
+          <ItemTile item={item} size={size} onPress={onItemPress ? () => onItemPress(item) : undefined} />
+        )}
       />
     </View>
   );

@@ -27,10 +27,10 @@ Carried in from earlier phases:
 - [x] **3. Home.** Quick grid plus shelves (1ceee36):
   - Jump back in, Recently added, Most played, Rediscover
   - Liked Songs, Your playlists, Random picks. Still to add: Artists you play.
-- [ ] **4. Search.**
-  - Empty: genre tiles and recent searches.
-  - Typing: live results, a top result, and chips (Songs / Albums / Artists / Playlists).
-  - Fuzzy search is in the FRAMEWORK ideas backlog. It's not part of this phase unless the user says go.
+- [x] **4. Search.** Done 2026-09-30.
+  - Empty: "Browse all" genre tiles (colour from the cover album, top 40 then "Show all"). Focused: recent searches (items you opened, removable).
+  - Typing: live results, a top result with Play, and chips (All / Songs / Artists / Albums / Playlists / Genres).
+  - **Fuzzy search** (the user asked for it in this phase): on-device name index (`src/search/index.ts`, ~630 KB, built once in the background ~30 s, topped up every 3 h, full rebuild weekly), typo-tolerant scoring (`src/search/fuzzy.ts`), merged with Jellyfin's own search and ranked together; play count breaks ties.
 - [~] **5. Library.**
   - Done (1ceee36): chips Playlists / Albums / Artists, remembered. Liked Songs is pinned at the top of Playlists. "+" creates a playlist.
   - To do: sort sheet, grid ↔ list toggle.
@@ -44,7 +44,7 @@ Carried in from earlier phases:
 - [~] **7. Playlist page.**
   - Done (1ceee36): header, Play / Shuffle, long-press "Remove from this playlist", Rename and Delete in the playlist menu, create from Library and from "Add to playlist".
   - To do: edit mode with drag to reorder.
-- [~] **8. Genre and Liked Songs pages.** Liked Songs done (1ceee36). Genre page to do.
+- [x] **8. Genre and Liked Songs pages.** Liked Songs (1ceee36). Genre page: mosaic cover, Play/Shuffle (random 200 songs), your top songs, artists, albums.
 - [ ] **9. Queue drag-to-reorder.**
 - [ ] **10. Lyrics card** under the full player.
 

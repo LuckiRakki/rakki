@@ -113,12 +113,12 @@ export function useGenreCounts() {
 }
 export const useGenreAlbums = (genre?: string) =>
   useUserQuery(['genreAlbums', genre], async (c) => (await c.getGenreAlbums(genre!)).Items, !!genre);
+export const useGenreArtists = (genre?: string) =>
+  useUserQuery(['genreArtists', genre], async (c) => (await c.getGenreArtists(genre!)).Items, !!genre);
+export const useGenreTopTracks = (genre?: string) =>
+  useUserQuery(['genreTopTracks', genre], async (c) => (await c.getGenreTracks(genre!, { mostPlayed: true, limit: 5 })).Items, !!genre);
 
 export const usePlaylists = () => useUserQuery(['playlists'], async (c) => (await c.getPlaylists()).Items);
 export const usePlaylistItems = (id?: string) =>
   useUserQuery(['playlistItems', id], async (c) => (await c.getPlaylistItems(id!)).Items, !!id);
 
-export function useSearch(term: string) {
-  const t = term.trim();
-  return useUserQuery(['search', t.toLowerCase()], (c) => c.search(t, 20), t.length >= 2);
-}

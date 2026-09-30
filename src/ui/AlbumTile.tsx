@@ -17,12 +17,12 @@ function subtitleOf(item: BaseItem): string {
 }
 
 /** Art + title + subtitle for shelves and grids: albums, playlists, and artists (round art). */
-export function ItemTile({ item, size }: { item: BaseItem; size: number }) {
+export function ItemTile({ item, size, onPress }: { item: BaseItem; size: number; onPress?: () => void }) {
   const t = useTheme();
   const round = item.Type === 'MusicArtist';
   return (
     <Pressable
-      onPress={() => openItem(item)}
+      onPress={onPress ?? (() => openItem(item))}
       onLongPress={() => openMenu(item)}
       delayLongPress={350}
       style={({ pressed }) => ({ width: size, opacity: pressed ? 0.7 : 1 })}>

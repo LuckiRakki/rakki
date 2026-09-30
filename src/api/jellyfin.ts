@@ -59,6 +59,15 @@ export interface BaseItem {
   DateCreated?: string;
 }
 
+export type SearchKind = 'songs' | 'albums' | 'artists' | 'playlists';
+
+export interface GenreCount {
+  name: string;
+  count: number;
+  /** An album from the genre, for its tile. */
+  album?: BaseItem;
+}
+
 export interface ItemsResult {
   Items: BaseItem[];
   TotalRecordCount: number;
@@ -456,19 +465,54 @@ export class JellyfinClient {
   // Jellyfin's genre list only works scoped to a library, and this library has hundreds of
   // fine-grained genres, so Rakki ranks them by how many albums use them instead.
 
-  /** Genres by number of albums, most used first. */
-  async getGenreCounts(): Promise<{ name: string; count: number }[]> {
+  /**
+   * Genres by number of albums, most used first, each with a cover album for its tile.
+   * Covers are spread out so neighbouring tiles don't all show the same album.
+   */
+  async getGenreCounts(): Promise<GenreCount[]> {
     const r = await this.get<ItemsResult>('/Items', {
       userId: this.session.userId,
       Recursive: true,
       IncludeItemTypes: 'MusicAlbum',
       Fields: 'Genres',
-      EnableImages: false,
+      EnableImageTypes: 'Primary',
+      ImageTypeLimit: 1,
+      EnableUserData: false,
+      SortBy: 'SortName',
       Limit: 5000,
     });
-    const counts = new Map<string, number>();
-    for (const album of r.Items) for (const g of album.Genres ?? []) counts.set(g, (counts.get(g) ?? 0) + 1);
-    return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    const byGenre = new Map<string, BaseItem[]>();
+    for (const album of r.Items) {
+      for (const g of album.Genres ?? []) {
+        const list = byGenre.get(g);
+        if (list) list.push(album);
+        else byGenre.set(g, [album]);
+      }
+    }
+    const used = new Set<string>();
+    return [...byGenre]
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([name, albums]) => {
+        const withArt = albums.filter((x) => x.ImageTags?.Primary);
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+        const start = withArt.length ? Math.abs(hash) % withArt.length : 0;
+        let cover: BaseItem | undefined;
+        for (let i = 0; i < withArt.length && !cover; i++) {
+          const x = withArt[(start + i) % withArt.length];
+          if (!used.has(x.Id)) cover = x;
+        }
+        cover ??= withArt[start];
+        if (cover) used.add(cover.Id);
+        const album = cover && {
+          Id: cover.Id,
+          Name: cover.Name,
+          Type: cover.Type,
+          ImageTags: cover.ImageTags,
+          ImageBlurHashes: cover.ImageBlurHashes,
+        };
+        return { name, count: albums.length, album };
+      });
   }
 
   /** Albums tagged with a genre (matched by name). */
@@ -478,26 +522,79 @@ export class JellyfinClient {
       Genres: genre,
       SortBy: 'SortName',
       StartIndex: opts.startIndex ?? 0,
-      Limit: opts.limit ?? 100,
+      Limit: opts.limit ?? 500,
     });
   }
 
-  // ---- Search (Jellyfin matches substrings of names) ----
+  /** Album artists with albums in a genre. */
+  getGenreArtists(genre: string) {
+    return this.get<ItemsResult>('/Artists/AlbumArtists', {
+      userId: this.session.userId,
+      Genres: genre,
+      Limit: 200,
+      Fields: 'ChildCount',
+    });
+  }
 
-  async search(term: string, limit = 20) {
+  /** Songs in a genre: shuffled for Play, or your most played. */
+  getGenreTracks(genre: string, opts: { mostPlayed?: boolean; limit?: number } = {}) {
+    return this.items({
+      IncludeItemTypes: 'Audio',
+      Genres: genre,
+      ...(opts.mostPlayed
+        ? { SortBy: 'PlayCount,SortName', SortOrder: 'Descending', Filters: 'IsPlayed' }
+        : { SortBy: 'Random' }),
+      Limit: opts.limit ?? 200,
+    });
+  }
+
+  // ---- Search (Jellyfin matches substrings of names; typos are handled on the device) ----
+
+  async search(term: string, limit = 20, kinds: SearchKind[] = ['songs', 'albums', 'artists', 'playlists']) {
+    const want = (k: SearchKind) => kinds.includes(k);
+    const none = Promise.resolve({ Items: [] as BaseItem[] });
     const [songs, albums, playlists, artists] = await Promise.all([
-      this.items({ searchTerm: term, IncludeItemTypes: 'Audio', Limit: limit }),
-      this.items({ searchTerm: term, IncludeItemTypes: 'MusicAlbum', Limit: limit }),
-      this.items({ searchTerm: term, IncludeItemTypes: 'Playlist', Limit: limit }),
-      this.get<ItemsResult>('/Artists', {
-        userId: this.session.userId,
-        searchTerm: term,
-        Limit: limit,
-        EnableImageTypes: 'Primary',
-        ImageTypeLimit: 1,
-      }),
+      want('songs') ? this.items({ searchTerm: term, IncludeItemTypes: 'Audio', Limit: limit }) : none,
+      want('albums') ? this.items({ searchTerm: term, IncludeItemTypes: 'MusicAlbum', Limit: limit }) : none,
+      want('playlists')
+        ? this.items({ searchTerm: term, IncludeItemTypes: 'Playlist', Limit: limit, Fields: 'ChildCount' })
+        : none,
+      want('artists')
+        ? this.get<ItemsResult>('/Artists', {
+            userId: this.session.userId,
+            searchTerm: term,
+            Limit: limit,
+            EnableImageTypes: 'Primary',
+            ImageTypeLimit: 1,
+          })
+        : none,
     ]);
     return { songs: songs.Items, albums: albums.Items, playlists: playlists.Items, artists: artists.Items };
+  }
+
+  /** Full items for a list of ids (any type), in no particular order. Missing ids are skipped. */
+  async getItemsByIds(ids: string[]): Promise<BaseItem[]> {
+    if (ids.length === 0) return [];
+    return (await this.items({ Ids: ids.join(','), Fields: 'ChildCount' })).Items;
+  }
+
+  /**
+   * One page of the search index: every song, album or playlist, name and artist only. The
+   * server sends whole items, so this is the slow part of building the index (~1 MB/1000 songs).
+   */
+  getIndexPage(kind: 'Audio' | 'MusicAlbum' | 'Playlist', startIndex: number, limit: number, since?: string) {
+    return this.get<ItemsResult>('/Items', {
+      userId: this.session.userId,
+      Recursive: true,
+      IncludeItemTypes: kind,
+      EnableImages: false,
+      EnableUserData: false,
+      EnableTotalRecordCount: true,
+      SortBy: 'SortName',
+      StartIndex: startIndex,
+      Limit: limit,
+      MinDateLastSaved: since,
+    });
   }
 
   // ---- Playlists ----
