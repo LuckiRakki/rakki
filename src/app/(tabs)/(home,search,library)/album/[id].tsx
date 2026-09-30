@@ -7,10 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlbumTracks, useItem } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
-import { ticksToSeconds } from '@/lib/format';
+import { songCount, ticksToSeconds } from '@/lib/format';
 import { openMenu } from '@/ui/overlays';
 import { usePlayer } from '@/player/store';
+import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
+import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { TrackRow } from '@/ui/TrackRow';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -25,6 +27,8 @@ export default function AlbumScreen() {
   const client = useAuth((s) => s.client);
   const album = useItem(id);
   const tracks = useAlbumTracks(id);
+  const artists = album.data?.AlbumArtists?.filter((a) => a.Id) ?? [];
+  const firstArtist = useItem(artists[0]?.Id);
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const isThisAlbum = usePlayer((s) => s.source?.type === 'album' && s.source.id === id);
   const playing = usePlayer((s) => s.playing);
@@ -53,11 +57,16 @@ export default function AlbumScreen() {
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>
         <T variant="title">{album.data?.Name ?? ' '}</T>
-        <T variant="bodyStrong" style={{ marginTop: t.space.sm }}>
-          {album.data?.AlbumArtist ?? ''}
-        </T>
+        <View style={styles.artistRow}>
+          {artists.length ? (
+            <Pressable onPress={() => openArtist(artists[0].Id)} hitSlop={6}>
+              <Artwork item={firstArtist.data} size={24} rounded={12} />
+            </Pressable>
+          ) : null}
+          <ArtistLinks artists={artists} fallback={album.data?.AlbumArtist} style={{ flex: 1 }} />
+        </View>
         <T variant="caption" style={{ marginTop: t.space.xs }}>
-          {['Album', album.data?.ProductionYear, list.length ? `${list.length} songs, ${minutes} min` : null]
+          {['Album', album.data?.ProductionYear, list.length ? `${songCount(list.length)}, ${minutes} min` : null]
             .filter(Boolean)
             .join(' · ')}
         </T>
@@ -133,6 +142,12 @@ const useStyles = makeStyles((t) => ({
     shadowOpacity: 0.5,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
+  },
+  artistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space.sm,
+    marginTop: t.space.sm,
   },
   actions: {
     flexDirection: 'row',

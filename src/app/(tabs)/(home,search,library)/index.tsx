@@ -17,6 +17,7 @@ import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
 import { QuickTile } from '@/ui/AlbumTile';
 import { LikedArt } from '@/ui/LikedArt';
+import { openLibrary } from '@/ui/nav';
 import { Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -83,7 +84,7 @@ export default function HomeScreen() {
       </View>
 
       <Shelf title="Jump back in" items={jumpBackIn} />
-      <Shelf title="Your playlists" items={playlists.data} onShowAll={() => router.push('/library')} />
+      <Shelf title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
       <Shelf title="Recently added" items={added.data} />
       <Shelf title="Most played" items={mostPlayed.data} />
       <Shelf title="Rediscover" items={rediscover.data} />

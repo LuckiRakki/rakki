@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -17,6 +16,7 @@ import {
   tracksOf,
 } from '@/library/actions';
 import { Artwork } from '@/ui/Artwork';
+import { goTo } from '@/ui/nav';
 import { useOverlays, type MenuContext } from '@/ui/overlays';
 import { CLOSE_MS, SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
@@ -28,7 +28,7 @@ interface Action {
   label: string;
   run: () => void | Promise<void>;
   accent?: boolean;
-  /** Opens an iOS dialog: wait until the sheet is gone (iOS can't present over a dismissing Modal). */
+  /** Opens an iOS dialog: wait until the sheet has slid away first. */
   afterClose?: boolean;
 }
 
@@ -43,7 +43,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
   const liked = isLiked(item);
   const go = (path: string) => () => {
     close();
-    router.push(path as never);
+    goTo(path);
   };
   const artist = item.ArtistItems?.[0] ?? item.AlbumArtists?.[0];
   const addToPlaylist = async () => {

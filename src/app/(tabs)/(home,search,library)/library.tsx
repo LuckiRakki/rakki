@@ -1,43 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useAlbumArtists, useAlbums, useLikedSongs, usePlaylists } from '@/api/queries';
 import { songCount } from '@/lib/format';
-import { readPref, writePref } from '@/lib/prefs';
 import { createPlaylist } from '@/library/actions';
+import { useLibraryView, type LibraryTab as Tab } from '@/library/view';
 import { ItemTile } from '@/ui/AlbumTile';
 import { Chip, ItemRow } from '@/ui/ItemRow';
 import { LikedArt } from '@/ui/LikedArt';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
-type Tab = 'playlists' | 'albums' | 'artists';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'playlists', label: 'Playlists' },
   { key: 'albums', label: 'Albums' },
   { key: 'artists', label: 'Artists' },
 ];
-const TAB_KEY = 'rakki.libraryTab';
 const COLUMNS = 2;
-
-function initialTab(): Tab {
-  const saved = readPref(TAB_KEY);
-  return saved === 'playlists' || saved === 'artists' || saved === 'albums' ? saved : 'albums';
-}
 
 export default function LibraryScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<Tab>(initialTab);
-
-  const choose = (next: Tab) => {
-    setTab(next);
-    writePref(TAB_KEY, next);
-  };
+  const tab = useLibraryView((s) => s.tab);
+  const choose = useLibraryView((s) => s.setTab);
 
   const header = (
     <View style={{ paddingTop: insets.top + t.space.md, paddingBottom: t.space.md }}>

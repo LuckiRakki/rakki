@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { checkForUpdate } from '@/lib/updates';
+import { useModalTracker } from '@/ui/nav';
 import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
@@ -56,6 +57,7 @@ export default function RootLayout() {
 /** Everything under the theme, so navigation colours follow the appearance settings too. */
 function AppShell({ signedIn }: { signedIn: boolean }) {
   const t = useTheme();
+  useModalTracker();
   const navTheme = {
     ...DarkTheme,
     colors: {

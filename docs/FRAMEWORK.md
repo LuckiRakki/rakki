@@ -405,6 +405,10 @@ The user wants to choose colours, sizes and similar details themselves. So every
 ### Ideas backlog (not scheduled; the user will decide scope later)
 - **SUB/WAVE radio integration.** The user runs a SUB/WAVE internet radio station, set up in an earlier session, at `http://100.103.153.111:7700/` (manual: https://www.getsubwave.com/manual). The idea is to integrate it into Rakki, e.g. listening to the station with its now-playing info. The user isn't sure of the scope yet, so read the manual and ask before designing anything.
 - **Fuzzy search.** Misspellings should still find the right song, album, artist or playlist. Jellyfin's search is substring-only, so this means a local name index of the library plus typo-tolerant matching merged with the server's results. The natural home is the Search screen once it exists; build it when the user says go.
+- **Online play counts on tracks (like Spotify).** Show a public "plays" number next to songs, e.g. in an artist's Popular list and on album tracks. This is not the user's own Jellyfin play count. Sources to weigh when we get to it:
+  - Last.fm `track.getInfo` gives global `playcount` and `listeners` with a free API key, matched by artist + title.
+  - Spotify's public Web API only exposes a 0–100 `popularity` score, not play counts. The real counts sit behind Spotify's private web-player API, which is unofficial and against its terms. Many library files already carry Spotify IDs (the Downtify tagging work), which would make matching exact.
+  - Either way: cache counts for days (they change slowly) and label the source.
 
 ---
 
