@@ -63,6 +63,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="player" options={{ presentation: 'modal' }} />
               <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="lyrics" options={{ presentation: 'modal' }} />
               <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>

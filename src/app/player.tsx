@@ -142,6 +142,10 @@ export default function PlayerScreen() {
           ) : (
             <Ionicons name="phone-portrait-outline" size={22} color={colors.textMuted} />
           )}
+          <Pressable hitSlop={12} onPress={() => router.push('/lyrics')} style={styles.lyricsBtn}>
+            <Ionicons name="mic" size={18} color="#000" />
+            <T style={{ fontFamily: fonts.bold, fontSize: 13, color: '#000' }}>Lyrics</T>
+          </Pressable>
           <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
             <Ionicons name="list" size={26} color={colors.text} />
           </Pressable>
@@ -194,4 +198,13 @@ const styles = StyleSheet.create({
     color: colors.accent,
   },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  lyricsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: colors.text,
+  },
 });

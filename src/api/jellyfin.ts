@@ -3,6 +3,8 @@
 // and off unless the server enables them), so we use only those two.
 import * as Device from 'expo-device';
 
+import type { JellyfinLyricsDto, TtmlDto } from '@/lyrics/types';
+
 export const CLIENT_NAME = 'Rakki';
 export const CLIENT_VERSION = '0.1.0';
 
@@ -251,6 +253,16 @@ export class JellyfinClient {
 
   reportPlaybackStopped(info: PlaybackInfo) {
     return this.send('POST', '/Sessions/Playing/Stopped', info);
+  }
+
+  /** Spicy Lyrics plugin: word-timed TTML as JSON (404 when the song has none). */
+  getSpicyLyrics(itemId: string) {
+    return this.get<TtmlDto>(`/SpicyLyrics/${itemId}/ttml`);
+  }
+
+  /** Jellyfin's own lyrics (LRC or plain; 404 when none). */
+  getLyrics(itemId: string) {
+    return this.get<JellyfinLyricsDto>(`/Audio/${itemId}/Lyrics`);
   }
 
   setFavorite(itemId: string, favorite: boolean) {

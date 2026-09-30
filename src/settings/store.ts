@@ -14,15 +14,20 @@ export const BITRATE_OPTIONS: { value: Bitrate; label: string; detail: string }[
   { value: 96, label: 'Data saver', detail: '96 kbps AAC' },
 ];
 
+/** Spicy = the full word-by-word engine (default, the focus). Regular = clean line by line. */
+export type LyricsMode = 'spicy' | 'regular';
+
 interface Settings {
   wifiBitrate: Bitrate;
   cellularBitrate: Bitrate;
+  lyricsMode: LyricsMode;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
+// New keys don't need a bump: missing keys fall back to their defaults.
 const VERSION = 1;
 const KEY = 'rakki.settings';
-const DEFAULTS: Settings = { wifiBitrate: 0, cellularBitrate: 256 };
+const DEFAULTS: Settings = { wifiBitrate: 0, cellularBitrate: 256, lyricsMode: 'spicy' };
 
 function load(): Settings {
   try {
@@ -30,7 +35,11 @@ function load(): Settings {
     if (!raw) return DEFAULTS;
     const parsed = JSON.parse(raw) as Partial<Settings> & { _v?: number };
     if (parsed._v !== VERSION) return DEFAULTS;
-    return { ...DEFAULTS, ...parsed };
+    const merged = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
+      if (parsed[k] !== undefined) (merged as Record<string, unknown>)[k] = parsed[k];
+    }
+    return merged;
   } catch {
     return DEFAULTS;
   }
@@ -44,7 +53,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
   ...load(),
   set(key, value) {
     set({ [key]: value } as Pick<Settings, typeof key>);
-    const { wifiBitrate, cellularBitrate } = get();
-    writePref(KEY, JSON.stringify({ _v: VERSION, wifiBitrate, cellularBitrate }));
+    const state = get();
+    const out: Record<string, unknown> = { _v: VERSION };
+    for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) out[k] = state[k];
+    writePref(KEY, JSON.stringify(out));
   },
 }));
