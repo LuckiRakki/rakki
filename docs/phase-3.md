@@ -15,7 +15,7 @@ Carried in from earlier phases:
   - Appearance store: persisted and versioned, holding accent, background, text scale, corner roundness and density.
   - `ThemeProvider`, `useTheme()` and `makeStyles()`.
   - Migrate every existing component and screen off static `theme.ts` imports.
-- [~] **1. UI kit.** Done: `Sheet`, long-press `ContextMenu` (replaces the iOS action sheet), `Toast`. To do: chips, shelf, artist and playlist tiles.
+- [x] **1. UI kit.** `Sheet`, long-press `ContextMenu` (replaces the iOS action sheet), `Toast`, `Chip`, `Shelf`, `ItemTile` (round art for artists), `ItemRow`, `CollectionHeader`, `LikedArt`. Done 2026-09-30.
   - Context sheet: a bottom sheet replacing the iOS action sheet. Actions: Play next · Add to queue · Add to playlist · Go to album/artist · Like · Instant mix · Share.
   - Chip, section header, shelf, artist tile (round art), playlist tile (mosaic art), list rows.
 - [x] **2. API.** Checked against the live server.
@@ -24,27 +24,27 @@ Carried in from earlier phases:
   - Artists (album artists), artist albums, "appears on", popular tracks, similar artists.
   - Playlists: list, items, create, add, remove, move, rename, delete.
   - Genres; search per type; favourites per type; most played; rediscover; random; instant mix.
-- [ ] **3. Home.** Quick grid plus shelves:
+- [x] **3. Home.** Quick grid plus shelves (1ceee36):
   - Jump back in, Recently added, Most played, Rediscover
-  - Liked Songs, Your playlists, Random picks, Artists you play
+  - Liked Songs, Your playlists, Random picks. Still to add: Artists you play.
 - [ ] **4. Search.**
   - Empty: genre tiles and recent searches.
   - Typing: live results, a top result, and chips (Songs / Albums / Artists / Playlists).
   - Fuzzy search is in the FRAMEWORK ideas backlog. It's not part of this phase unless the user says go.
-- [ ] **5. Library.**
-  - Chips: Playlists / Albums / Artists / Liked.
-  - Sort sheet, grid ↔ list toggle, remembered choices.
-- [ ] **6. Artist page.**
+- [~] **5. Library.**
+  - Done (1ceee36): chips Playlists / Albums / Artists, remembered. Liked Songs is pinned at the top of Playlists. "+" creates a playlist.
+  - To do: sort sheet, grid ↔ list toggle.
+- [x] **6. Artist page.** (1ceee36)
   - Backdrop header, Play / Shuffle / Radio.
   - Popular, Discography (Albums / Singles & EPs), Appears on, Similar artists.
-- [x] **6b. Add to playlist sheet** (built; the "Already added" marks still need a real playlist, i.e. the user's first one) (Spotify style; the user called it "very important"):
+- [x] **6b. Add to playlist sheet** (the user confirmed it works on the phone 2026-09-30) (Spotify style; the user called it "very important"):
   - A clean bottom sheet listing your playlists with their mosaic art, plus a search field and a **New playlist** button.
   - Playlists that **already contain the song are clearly marked** (filled check, "Already added"), so adding a duplicate is a deliberate choice.
   - Tap to add or remove, then **Done**. A small confirmation toast shows which playlist it went into.
-- [ ] **7. Playlist page.**
-  - Mosaic header, Play / Shuffle.
-  - Edit mode: rename, drag to reorder, remove, delete. Create from the Library and from "Add to playlist".
-- [ ] **8. Genre and Liked Songs pages.**
+- [~] **7. Playlist page.**
+  - Done (1ceee36): header, Play / Shuffle, long-press "Remove from this playlist", Rename and Delete in the playlist menu, create from Library and from "Add to playlist".
+  - To do: edit mode with drag to reorder.
+- [~] **8. Genre and Liked Songs pages.** Liked Songs done (1ceee36). Genre page to do.
 - [ ] **9. Queue drag-to-reorder.**
 - [ ] **10. Lyrics card** under the full player.
 
