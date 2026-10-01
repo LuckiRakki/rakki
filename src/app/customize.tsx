@@ -18,6 +18,7 @@ import {
 } from '@/appearance/store';
 import { isHexColor } from '@/lib/color';
 import { tick } from '@/lib/haptics';
+import { AppIconPicker } from '@/ui/AppIconPicker';
 import { Segmented } from '@/ui/Segmented';
 import { Field, SettingSection, Toggle } from '@/ui/SettingRows';
 import { Slider } from '@/ui/Slider';
@@ -92,6 +93,8 @@ export default function CustomizeScreen() {
             </Pressable>
           ))}
         </ScrollView>
+
+        <AppIconPicker />
 
         <Section title="Colour" id="colour" onReset={() => setHex(useAppearance.getState().accent)}>
           <Field label="Accent">

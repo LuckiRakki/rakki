@@ -82,9 +82,16 @@ app-side code ships over the air now and does nothing until that build is instal
 - [x] **Downloads out of iCloud backup**: a native `excludeFromBackup` in our RakkiAudio module;
   `Documents/Music` and `Documents/.rakki` are marked on launch (everything in them can be
   downloaded again).
-- [ ] **New app icon**: waiting on the user's drafts.
-- [ ] **Version 0.2.0**: bumped right before the release build. The OTA channel follows the
-  app version, so bumping earlier would stop updates reaching the installed 0.1.0 app.
+- [x] **App icons** (2026-10-01): the main icon is the user's own neko silhouette (orange, black
+  cat girl with an iPod and wired earbuds, `assets/icons/rakki.png`). Two alternates designed
+  with the user: **Neko player** (a white player with cat ears and a happy face on the screen)
+  and **Lyric lines** (the lyrics line mid-sweep). Sources in `assets/icons/source/`.
+- [x] **Switch icons in the app**: Customize → App icon (`src/ui/AppIconPicker.tsx`,
+  `src/lib/appIcon.ts`) via `expo-alternate-app-icons` (icons in the asset catalog plus
+  `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES`). iOS confirms a switch with its own alert.
+  Hidden on builds without it.
+- [x] **Version 0.2.0**, bumped for the release build. The OTA channel follows the app version,
+  so updates from here on reach 0.2.0 only; the 0.1.0 app keeps what it has.
 - Already in the config: the Files app folder (`UIFileSharingEnabled`,
   `LSSupportsOpeningDocumentsInPlace`).
 

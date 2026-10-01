@@ -2,14 +2,14 @@
   "expo": {
     "name": "Rakki",
     "slug": "rakki",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/rakki.png",
     "scheme": "rakki",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#121212",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/icons/rakki.png",
       "bundleIdentifier": "com.luckirakki.rakki",
       "supportsTablet": false,
       "infoPlist": {
@@ -53,6 +53,13 @@
         }
       ],
       "expo-sqlite",
+      [
+        "expo-alternate-app-icons",
+        [
+          { "name": "NekoPlayer", "ios": "./assets/icons/neko-player.png" },
+          { "name": "LyricLines", "ios": "./assets/icons/lyric-lines.png" }
+        ]
+      ],
       [
         "expo-image-picker",
         {
