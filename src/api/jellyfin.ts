@@ -4,10 +4,11 @@
 import * as Device from 'expo-device';
 
 import { isOffline, reportConnectionFailure, reportConnectionSuccess } from '@/lib/online';
+import { appVersion } from '@/lib/updates';
 import type { JellyfinLyricsDto, TtmlDto } from '@/lyrics/types';
 
 export const CLIENT_NAME = 'Rakki';
-export const CLIENT_VERSION = '0.1.0';
+export const CLIENT_VERSION = appVersion();
 
 export interface Session {
   serverUrl: string;

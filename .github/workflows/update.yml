@@ -7,9 +7,11 @@ name: Publish over-the-air update
 #
 # Needs the EXPO_TOKEN repository secret (expo.dev → Account settings → Access tokens).
 #
-# Only JS/asset changes can ship this way. When native code or a native dependency changes,
-# bump expo.version in app.json and run "iOS build" (release): an update is only delivered to
-# builds with the same version, so a new native build never receives an incompatible update.
+# Only JS/asset changes can ship this way. An update is only delivered to builds with the same
+# runtimeVersion (app.json), which names the native build: when native code or a native
+# dependency changes, give runtimeVersion a new value and run "iOS build" (release), so a new
+# native build never receives an incompatible update. expo.version is separate: Rakki's a.b.c
+# version, bumped with each release and shown in Settings → About.
 on:
   push:
     branches: [main]

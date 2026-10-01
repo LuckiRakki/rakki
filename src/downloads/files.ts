@@ -1,6 +1,6 @@
 // Where downloads live on the phone, inside Rakki's Documents folder:
-//   Music/<Artist>/<Album>/<01 Title>.<ext>   the songs, readable (shown in the Files app once
-//                                              the next native build turns file sharing on)
+//   Music/<Artist>/<Album>/<01 Title>.<ext>   the songs, readable (Files app → On My iPhone →
+//                                              Rakki → Music)
 //   .rakki/art/<itemId>.jpg                    cover art   } hidden: Rakki's own data
 //   .rakki/lyrics/<itemId>.json                lyrics      }
 // Documents is never purged by iOS (unlike Caches). Both folders are kept out of iCloud

@@ -452,3 +452,4 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | 3 | Repo | **Public** on GitHub (unlimited free Mac builds; no secrets in code). |
 | 4 | Server access | **Login screen with a server URL field, like Finamp.** http allowed through an ATS exception. |
 | 5 | Name | **Rakki** (`com.luckirakki.rakki`). |
+| 6 | Versioning | **a.b.c** (the user's call, 2026-10-01): **a** = major updates with lots of new features; **b** = smaller but notable changes (backend changes, new UI elements); **c** = bug fixes and very minor things. Started at 0.7.0; 1.0.0 once the user is happy with it. `expo.version` carries it in every update; `runtimeVersion` separately names the native build (`0.2.0` = the build installed 2026-10-01) and only changes with a new native build. |

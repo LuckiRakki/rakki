@@ -38,9 +38,9 @@ Checked before starting (2026-10-01):
   Artist/Album folders are removed with their last song.
 - [x] Library → "Downloaded" chip: downloaded albums, playlists, Liked Songs (with progress),
   then single songs; sort (Recently downloaded / Alphabetical) and grid/list.
-- [ ] Files app folder ("On My iPhone → Rakki"): needs `UIFileSharingEnabled` +
-  `LSSupportsOpeningDocumentsInPlace` in Info.plist (added to app.json), so it only appears
-  after the next native .ipa build. Deleting/moving files there makes Rakki re-download them.
+- [x] Files app folder ("On My iPhone → Rakki"): `UIFileSharingEnabled` +
+  `LSSupportsOpeningDocumentsInPlace` in Info.plist, live since the 0.2.0 native build.
+  Deleting/moving files there makes Rakki re-download them.
 - [x] Verified on the phone by the user (2026-10-01: "it's clean").
 
 ## 4b. Offline mode — built 2026-10-01

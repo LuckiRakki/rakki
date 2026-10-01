@@ -3,19 +3,17 @@
 // installed side by side.
 //
 // RAKKI_UPDATE / RAKKI_COMMIT are set by the over-the-air publish workflow, so each update
-// carries its number and commit (shown in Settings → About). The app version itself only
-// changes with a new native build.
+// carries its number and commit (shown in Settings → About). Left out entirely when not set:
+// the embedded config turns null into {}.
+//
+// expo.version (app.json) is Rakki's version, a.b.c: a = big releases, b = new features and
+// UI, c = fixes. It ships with every update. runtimeVersion is separate: it names the native
+// build an update needs, and only changes with a new native build (see update.yml).
 module.exports = ({ config }) => {
-  const withBuild = {
-    ...config,
-    extra: {
-      ...config.extra,
-      build: {
-        update: process.env.RAKKI_UPDATE ? Number(process.env.RAKKI_UPDATE) : null,
-        commit: process.env.RAKKI_COMMIT ? process.env.RAKKI_COMMIT.slice(0, 7) : null,
-      },
-    },
-  };
+  const build = {};
+  if (process.env.RAKKI_UPDATE) build.update = Number(process.env.RAKKI_UPDATE);
+  if (process.env.RAKKI_COMMIT) build.commit = process.env.RAKKI_COMMIT.slice(0, 7);
+  const withBuild = { ...config, extra: { ...config.extra, build } };
   if (process.env.APP_VARIANT !== 'development') return withBuild;
   return {
     ...withBuild,

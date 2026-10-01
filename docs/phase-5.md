@@ -56,7 +56,7 @@ playing album, drawn by the real renderers.
 - [x] Autoplay (Settings → Playback, on by default): when the last song starts, up to 25 songs
   from Jellyfin's instant mix are added as an "Autoplay · similar songs" queue section (new
   origin 'autoplay'; drag rules unit-tested). Not with repeat on or offline.
-- [ ] Verified on the phone (needs real playback: normalization, autoplay, timer fade).
+- [x] Verified on the phone (2026-10-01).
 
 ## 5d. Accounts — built 2026-10-01
 - [x] Several accounts (servers/users): `useAuth.accounts` in the Keychain (`rakki.accounts`);
@@ -71,8 +71,9 @@ playing album, drawn by the real renderers.
 - [x] Downloads never overwrite a file already on disk (another account may own it); "Remove all
   downloads" removes only the active account's files.
 - [x] Profile picture: tap the avatar in Settings → pick a JPEG/PNG (iOS file picker) → POST
-  `/UserImage` (base64 body). Photos-app picking needs a native picker → final build.
-- [ ] Verified on the phone.
+  `/UserImage` (base64 body). Since 0.2.0 it picks from Photos with a square crop
+  (expo-image-picker).
+- [x] Verified on the phone (2026-10-01).
 
 ## 5e. Feel pass — built 2026-10-01
 - [x] Haptics (`src/lib/haptics.ts`, all behind Customize → Haptics): tick (buttons, chips,
@@ -87,7 +88,7 @@ playing album, drawn by the real renderers.
   mini-player entrance, the heart pop and tile shrink.
 - Preview note: when the app window is minimised the browser pauses animation frames, so
   Reanimated styles don't update — test animations only while the window is visible.
-- [ ] Verified on the phone.
+- [x] Verified on the phone (2026-10-01).
 
 ## User notes after Phase 5 (2026-10-01) — done
 - [x] Heart: one small bounce (no spring wobble).

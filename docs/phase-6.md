@@ -31,9 +31,9 @@ app-side code ships over the air now and does nothing until that build is instal
   Before anything has played: "Play something and it shows up here".
 - [x] **Jump Back In**: medium (4 albums) and large (6 albums with artists). Each album opens
   its page; the header opens the app. Background tinted from the newest album's colour.
-- [ ] ~~Live Activity~~: skipped. The iPhone 13 has no Dynamic Island, and the Lock Screen
+- Live Activity: skipped. The iPhone 13 has no Dynamic Island, and the Lock Screen
   already shows Rakki's Now Playing controls (MPNowPlayingInfoCenter). Can be added later.
-- [ ] Play/pause buttons on the widget: not possible with `expo-widgets` (a button runs in the
+- Play/pause buttons on the widget: not possible with `expo-widgets` (a button runs in the
   widget, not in the app that plays the audio). The Lock Screen media controls cover it.
 
 ## Links (`src/app/+native-intent.ts`)
@@ -60,7 +60,7 @@ app-side code ships over the air now and does nothing until that build is instal
 - [x] **Optimized widget.** `expo-widgets` gives the widget target the same settings for Debug
   and Release (`-Onone`, so Xcode also bundles a 7 MB debug dylib). Patched: Release builds with
   `-O`, whole module, no debug dylib (widgets have little memory).
-- [ ] **App IDs:** the widget extension takes one more of the free account's 10 App IDs per
+- [x] **App IDs:** the widget extension takes one more of the free account's 10 App IDs per
   week (Rakki + widgets = 2). If SideStore asks whether to keep app extensions, keep them.
 
 ## Build
@@ -72,8 +72,7 @@ app-side code ships over the air now and does nothing until that build is instal
   `ExpoWidgetsTarget.appex` with the widget runtime bundle, bundle ID
   `com.luckirakki.rakki.ExpoWidgetsTarget`, app group on both, `rakki` URL scheme, Photos
   permission only (no camera/microphone), iOS 16.4 minimum.
-- [ ] On the phone, in the final build: add both widgets, check art, progress, links, the
-  Lock Screen versions and that they follow an account switch.
+- [x] Installed on the phone (0.2.0, 2026-10-01) and checked by the user.
 
 ## Other items for the final build (done alongside)
 - [x] **Photos picker** for the profile picture (`expo-image-picker`, `src/auth/profile.ts`):

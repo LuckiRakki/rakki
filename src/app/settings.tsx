@@ -4,13 +4,12 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CLIENT_VERSION } from '@/api/jellyfin';
 import { removeAccount, signOut, switchAccount } from '@/auth/actions';
 import { changeProfilePicture } from '@/auth/profile';
 import { accountKey, useAuth } from '@/auth/store';
 import { useDownloads } from '@/downloads/store';
 import { formatBytes, songCount } from '@/lib/format';
-import { buildStamp, checkForUpdate, getUpdateInfo, versionLabel, type UpdateInfo } from '@/lib/updates';
+import { appVersion, buildStamp, checkForUpdate, getUpdateInfo, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, DOWNLOAD_QUALITY_OPTIONS, useSettings } from '@/settings/store';
 import { Toggle } from '@/ui/SettingRows';
@@ -239,7 +238,7 @@ export default function SettingsScreen() {
           About
         </T>
         <View style={styles.card}>
-          <T variant="bodyStrong">Rakki {versionLabel(CLIENT_VERSION)}</T>
+          <T variant="bodyStrong">Rakki {appVersion()}</T>
           <T variant="caption" style={{ marginTop: 2 }}>
             Audio engine: {engine.native ? 'Rakki native (gapless, lock screen)' : 'Basic (Expo Go / web preview)'}
           </T>
@@ -250,9 +249,10 @@ export default function SettingsScreen() {
                 ? 'Updates: live from the PC (dev build)'
                 : update.embedded
                   ? `Updates: on (${update.channel}), running the built-in version`
-                  : `Updates: on (${update.channel}), published ${update.createdAt?.toLocaleString() ?? '?'}${
-                      buildStamp().commit ? ` · ${buildStamp().commit}` : ''
-                    }`}
+                  : `Updates: on (${update.channel}), ${updateLabel()} published ${update.createdAt?.toLocaleString() ?? '?'}`}
+          </T>
+          <T variant="caption" style={{ marginTop: 2 }}>
+            {update?.runtimeVersion ? `Native build ${update.runtimeVersion}` : ' '}
           </T>
           <Pressable
             onPress={() => void checkForUpdate(false)}
@@ -344,3 +344,11 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'center',
   },
 }));
+
+
+/** "update 27 (4e1dd24)" for the over-the-air update that's running. */
+function updateLabel(): string {
+  const { update, commit } = buildStamp();
+  if (!update) return 'an update';
+  return commit ? `update ${update} (${commit})` : `update ${update}`;
+}

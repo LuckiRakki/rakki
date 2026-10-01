@@ -7,17 +7,22 @@ import { Alert, Platform } from 'react-native';
 
 const available = Platform.OS !== 'web' && !__DEV__ && !!requireOptionalNativeModule('ExpoUpdates');
 
-/** Which over-the-air update this is (stamped by the publish workflow), if any. */
-export function buildStamp(): { update: number | null; commit: string | null } {
-  const build = (Constants.expoConfig?.extra as { build?: { update?: number | null; commit?: string | null } } | undefined)
-    ?.build;
-  return { update: build?.update ?? null, commit: build?.commit ?? null };
+/**
+ * Rakki's version (a.b.c: a = big releases, b = new features and UI, c = fixes). It comes with
+ * the code, so an over-the-air update carries its own version without a new native build.
+ */
+export function appVersion(): string {
+  return Constants.expoConfig?.version ?? '0.0.0';
 }
 
-/** "0.1.0 · update 14": the app version, plus the update number when running one. */
-export function versionLabel(appVersion: string): string {
-  const { update } = buildStamp();
-  return update ? `${appVersion} · update ${update}` : appVersion;
+/** Which over-the-air update this is (stamped by the publish workflow), if any. */
+export function buildStamp(): { update: number | null; commit: string | null } {
+  const build = (Constants.expoConfig?.extra as { build?: { update?: unknown; commit?: unknown } } | undefined)?.build;
+  // Builds made outside the publish workflow have no stamp (older ones carry an empty object).
+  return {
+    update: typeof build?.update === 'number' ? build.update : null,
+    commit: typeof build?.commit === 'string' ? build.commit : null,
+  };
 }
 
 export interface UpdateInfo {
