@@ -9,6 +9,7 @@ import { useAlbumArtists, useAlbums, useLikedSongs, usePlaylists } from '@/api/q
 import { songCount } from '@/lib/format';
 import { kindLine } from '@/lib/items';
 import { useDownloads, type DownloadedCollection } from '@/downloads/store';
+import { useOffline } from '@/lib/online';
 import { createPlaylist } from '@/library/actions';
 import { layoutFor, SORTS, sortFor, useLibraryView, type LibraryLayout, type LibraryTab, type SortOption } from '@/library/view';
 import { ItemTile } from '@/ui/AlbumTile';
@@ -41,6 +42,7 @@ export default function LibraryScreen() {
   const tab = useLibraryView((s) => s.tab);
   const sort = useLibraryView((s) => sortFor(s, s.tab));
   const layout = useLibraryView((s) => layoutFor(s, s.tab));
+  const offline = useOffline();
 
   const chooseSort = () =>
     openOptions({
@@ -56,9 +58,11 @@ export default function LibraryScreen() {
         <T variant="display" style={{ flex: 1 }}>
           Your Library
         </T>
-        <Pressable hitSlop={10} accessibilityLabel="Create playlist" onPress={() => void createPlaylist()}>
-          <Ionicons name="add" size={30} color={t.colors.text} />
-        </Pressable>
+        {offline ? null : (
+          <Pressable hitSlop={10} accessibilityLabel="Create playlist" onPress={() => void createPlaylist()}>
+            <Ionicons name="add" size={30} color={t.colors.text} />
+          </Pressable>
+        )}
       </View>
       <ScrollView
         horizontal
@@ -174,6 +178,7 @@ const LIKED: BaseItem = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
 
 function Playlists({ header, sort, layout }: ListProps) {
   const t = useTheme();
+  const offline = useOffline();
   const playlists = usePlaylists();
   const liked = useLikedSongs();
   const grid = layout === 'grid';
@@ -225,30 +230,32 @@ function Playlists({ header, sort, layout }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl }}
       ListHeaderComponent={header}
       ListFooterComponent={
-        <Pressable
-          onPress={() => void createPlaylist()}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: t.space.lg,
-            paddingVertical: t.space.sm,
-            opacity: pressed ? 0.7 : 1,
-          })}>
-          <View
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: t.radius.art,
-              backgroundColor: t.colors.surface2,
+        offline ? null : (
+          <Pressable
+            onPress={() => void createPlaylist()}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
               alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Ionicons name="add" size={28} color={t.colors.textSecondary} />
-          </View>
-          <T variant="bodyStrong" style={{ marginLeft: t.space.md }}>
-            Create playlist
-          </T>
-        </Pressable>
+              paddingHorizontal: t.space.lg,
+              paddingVertical: t.space.sm,
+              opacity: pressed ? 0.7 : 1,
+            })}>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: t.radius.art,
+                backgroundColor: t.colors.surface2,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Ionicons name="add" size={28} color={t.colors.textSecondary} />
+            </View>
+            <T variant="bodyStrong" style={{ marginLeft: t.space.md }}>
+              Create playlist
+            </T>
+          </Pressable>
+        )
       }
       renderItem={({ item }) =>
         item.Id === LIKED.Id ? (

@@ -10,7 +10,10 @@ import { useAppearsOn, useArtistAlbums, useItem, useSimilar, useTopTracks } from
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { setLiked, startRadio } from '@/library/actions';
+import { offlineArtistTracks } from '@/downloads/offline';
+import { isOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
+import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -52,9 +55,14 @@ export default function ArtistScreen() {
 
   async function shuffle() {
     if (!client) return;
-    const all = await client.items({ IncludeItemTypes: 'Audio', ArtistIds: id, Limit: 500 });
-    if (all.Items.length) usePlayer.getState().playQueue(all.Items, { source, shuffle: true });
+    const all = isOffline()
+      ? offlineArtistTracks(id)
+      : (await client.items({ IncludeItemTypes: 'Audio', ArtistIds: id, Limit: 500 })).Items;
+    if (all.length) usePlayer.getState().playQueue(all, { source, shuffle: true });
   }
+
+  // Offline with no songs by this artist on the phone.
+  if (artist.data === null) return <OfflineUnavailable />;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>

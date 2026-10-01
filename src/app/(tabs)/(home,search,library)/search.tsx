@@ -16,6 +16,7 @@ import type { BaseItem, GenreCount } from '@/api/jellyfin';
 import { useGenreCounts } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { kindLine } from '@/lib/items';
+import { useOffline } from '@/lib/online';
 import { tracksOf } from '@/library/actions';
 import { usePlayer, type QueueSource } from '@/player/store';
 import { ensureSearchIndex, useSearchIndex } from '@/search/index';
@@ -161,6 +162,7 @@ function BrowseAll() {
   const t = useTheme();
   const { width } = useWindowDimensions();
   const genres = useGenreCounts();
+  const offline = useOffline();
   const [all, setAll] = useState(false);
   const list = genres.data ?? [];
   const shown = all ? list : list.slice(0, BROWSE_FIRST);
@@ -180,7 +182,11 @@ function BrowseAll() {
           <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} />
         ) : (
           <T variant="caption" style={{ textAlign: 'center', padding: t.space.xl }}>
-            {genres.error ? 'Couldn’t load genres.' : 'No genres in this library yet.'}
+            {offline
+              ? 'You’re offline. Search still finds everything you’ve downloaded.'
+              : genres.error
+                ? 'Couldn’t load genres.'
+                : 'No genres in this library yet.'}
           </T>
         )
       }

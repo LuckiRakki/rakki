@@ -6,7 +6,8 @@ import { formatDuration, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { useTrackDownload } from '@/downloads/store';
 import { Artwork } from '@/ui/Artwork';
-import { openMenu } from '@/ui/overlays';
+import { useOffline } from '@/lib/online';
+import { openMenu, showToast } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
@@ -33,12 +34,14 @@ export function TrackRow({
 }) {
   const t = useTheme();
   const downloaded = useTrackDownload(track.Id);
+  // Offline, songs that aren't on the phone are greyed out and can't be played.
+  const unavailable = useOffline() && downloaded !== 'done';
   const indicator = (
     <Ionicons name={playing ? 'volume-high' : 'volume-mute'} size={16} color={t.colors.accent} />
   );
   return (
     <Pressable
-      onPress={onPress}
+      onPress={unavailable ? () => showToast('Not downloaded, so it can’t play offline') : onPress}
       onLongPress={onLongPress ?? (() => openMenu(track))}
       delayLongPress={350}
       style={({ pressed }) => ({
@@ -47,6 +50,7 @@ export function TrackRow({
         paddingHorizontal: t.space.lg,
         paddingVertical: art ? t.space.sm : 10,
         backgroundColor: pressed ? t.colors.surface : 'transparent',
+        opacity: unavailable ? 0.4 : 1,
       })}>
       {rank !== undefined ? (
         <View style={{ width: 24, alignItems: 'flex-start' }}>

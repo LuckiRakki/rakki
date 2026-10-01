@@ -25,6 +25,7 @@ export default function SettingsScreen() {
   const cellular = useSettings((s) => s.cellularBitrate);
   const downloadQuality = useSettings((s) => s.downloadQuality);
   const downloadOnCellular = useSettings((s) => s.downloadOnCellular);
+  const offlineMode = useSettings((s) => s.offlineMode);
   const downloadSummary = useDownloads((s) => {
     const done = Object.values(s.tracks).filter((x) => x.state === 'done');
     return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
@@ -95,6 +96,20 @@ export default function SettingsScreen() {
           Applies to new downloads. MP3s and other compressed files are always kept as they are.
         </T>
         <View style={[styles.card, { marginTop: t.space.md }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: t.space.lg }}>
+            <View style={{ flex: 1, marginRight: t.space.md }}>
+              <T variant="bodyStrong">Offline mode</T>
+              <T variant="caption" style={{ fontSize: t.size(12) }}>
+                Only play what&apos;s downloaded. Rakki also does this on its own when your server
+                can&apos;t be reached.
+              </T>
+            </View>
+            <Switch
+              value={offlineMode}
+              onValueChange={(v) => useSettings.getState().set('offlineMode', v)}
+              trackColor={{ true: t.colors.accent, false: t.colors.surface3 }}
+            />
+          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ flex: 1, marginRight: t.space.md }}>
               <T variant="bodyStrong">Download using cellular</T>

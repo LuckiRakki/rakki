@@ -17,6 +17,7 @@ import {
 } from '@/library/actions';
 import { confirmRemove, downloadCollection } from '@/downloads/manager';
 import { useDownloads } from '@/downloads/store';
+import { useOffline } from '@/lib/online';
 import { Artwork } from '@/ui/Artwork';
 import { goTo } from '@/ui/nav';
 import { useOverlays, type MenuContext } from '@/ui/overlays';
@@ -32,6 +33,8 @@ interface Action {
   accent?: boolean;
   /** Opens an iOS dialog: wait until the sheet has slid away first. */
   afterClose?: boolean;
+  /** Works without the server (shown offline; everything else is hidden then). */
+  offline?: boolean;
 }
 
 const KIND: Record<string, string> = {
@@ -67,7 +70,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
   const download: Action[] = !kind
     ? []
     : dl.collections[collectionId]
-      ? [{ icon: 'arrow-down-circle', label: 'Remove download', run: () => confirmRemove(collectionId, item.Name), accent: true, afterClose: true }]
+      ? [{ icon: 'arrow-down-circle', label: 'Remove download', run: () => confirmRemove(collectionId, item.Name), accent: true, afterClose: true, offline: true }]
       : item.Type === 'Audio' && dl.tracks[item.Id]
         ? []
         : [{ icon: 'arrow-down-circle-outline', label: 'Download', run: () => downloadCollection(kind, item) }];
@@ -89,36 +92,36 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         like,
         ...removeHere,
         { icon: 'add-circle-outline', label: 'Add to playlist', run: addToPlaylist },
-        { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
-        { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
+        { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item), offline: true },
+        { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item), offline: true },
         ...download,
-        ...(item.AlbumId ? [{ icon: 'disc-outline' as IconName, label: 'Go to album', run: go(`/album/${item.AlbumId}`) }] : []),
-        ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`) }] : []),
+        ...(item.AlbumId ? [{ icon: 'disc-outline' as IconName, label: 'Go to album', run: go(`/album/${item.AlbumId}`), offline: true }] : []),
+        ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`), offline: true }] : []),
         { icon: 'radio-outline', label: 'Song radio', run: () => startRadio(item) },
       ];
     case 'MusicAlbum':
       return [
         like,
         { icon: 'add-circle-outline', label: 'Add to playlist', run: addToPlaylist },
-        { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
-        { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
+        { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item), offline: true },
+        { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item), offline: true },
         ...download,
-        ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`) }] : []),
+        ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`), offline: true }] : []),
         { icon: 'radio-outline', label: 'Album radio', run: () => startRadio(item) },
       ];
     case 'MusicArtist':
       return [
         like,
         { icon: 'radio-outline', label: 'Artist radio', run: () => startRadio(item) },
-        { icon: 'person-outline', label: 'Go to artist', run: go(`/artist/${item.Id}`) },
+        { icon: 'person-outline', label: 'Go to artist', run: go(`/artist/${item.Id}`), offline: true },
       ];
     case 'Playlist':
       return [
-        { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
-        { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
+        { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item), offline: true },
+        { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item), offline: true },
         ...download,
         { icon: 'radio-outline', label: 'Playlist radio', run: () => startRadio(item) },
-        { icon: 'albums-outline', label: 'Go to playlist', run: go(`/playlist/${item.Id}`) },
+        { icon: 'albums-outline', label: 'Go to playlist', run: go(`/playlist/${item.Id}`), offline: true },
         { icon: 'create-outline', label: 'Rename playlist', run: () => renamePlaylist(item), afterClose: true },
         { icon: 'trash-outline', label: 'Delete playlist', run: () => deletePlaylist(item), afterClose: true },
       ];
@@ -134,7 +137,9 @@ export function ContextMenuPanel() {
   const item = useOverlays((s) => s.menu);
   const context = useOverlays((s) => s.menuContext);
   const close = () => useOverlays.getState().closeMenu();
-  const actions = item ? actionsFor(item, close, context) : [];
+  const offline = useOffline();
+  const all = item ? actionsFor(item, close, context) : [];
+  const actions = offline ? all.filter((a) => a.offline) : all;
   const subtitle = item ? [KIND[item.Type], item.Type === 'MusicArtist' ? null : artistLine(item)].filter(Boolean).join(' · ') : '';
 
   return (

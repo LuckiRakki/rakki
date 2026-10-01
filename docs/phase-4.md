@@ -41,14 +41,26 @@ Checked before starting (2026-10-01):
 - [ ] Files app folder ("On My iPhone → Rakki"): needs `UIFileSharingEnabled` +
   `LSSupportsOpeningDocumentsInPlace` in Info.plist (added to app.json), so it only appears
   after the next native .ipa build. Deleting/moving files there makes Rakki re-download them.
-- [ ] Verified on the phone (downloads can't run in the web preview).
+- [x] Verified on the phone by the user (2026-10-01: "it's clean").
 
-## 4b. Offline mode — next
-- [ ] Detect when the server is unreachable (no network, or Tailscale off) plus a manual
-  Offline mode switch.
-- [ ] Offline: screens show only what's downloaded (data hooks fall back to the downloads
-  index), "Downloaded" chip in Library, search within downloads, an offline banner.
+## 4b. Offline mode — built 2026-10-01
+- [x] `src/lib/online.ts`: offline = Offline mode switch, no connection, or the server not
+  answering `/System/Ping` (e.g. Tailscale off). Pinged at sign-in, on connection changes, on
+  app foreground, after a failed request, and every 30 s while unreachable.
+- [x] Signed-in requests fail at once while offline (no 15 s timeouts against an unreachable
+  Tailscale address).
+- [x] Data hooks fall back to the downloads (`src/downloads/offline.ts`): Home (quick picks =
+  downloaded albums, Artists you play), Library tabs, album/playlist/artist/genre pages, Liked
+  Songs, Search (fuzzy over downloads). Partly downloaded albums/artists show the songs you
+  have. Cache keys carry online/offline (+ downloads revision), so data never mixes.
+- [x] "Not available offline" page for things with nothing downloaded; songs not on the phone
+  are greyed out; the player only queues downloaded songs offline.
+- [x] Offline bar above the mini player (why + "Playing downloads only"; tap to re-check).
+- [x] Offline hides server-only actions (like, add to playlist, radio, rename/delete, create
+  playlist, edit playlist, new downloads).
+- [x] Downloads pause offline and resume (plus playlist sync) when the server is back.
 - [ ] Playback reports made offline are dropped for now (later: sync play counts).
+- [ ] Verified on the phone (Airplane mode + Tailscale off).
 
 ## Exit test
 In Airplane mode, downloaded albums play with lyrics.

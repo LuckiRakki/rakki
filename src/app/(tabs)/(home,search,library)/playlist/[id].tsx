@@ -6,8 +6,10 @@ import { useItem, usePlaylistItems } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { songCount, ticksToSeconds } from '@/lib/format';
+import { useOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
+import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { openMenu } from '@/ui/overlays';
@@ -26,11 +28,15 @@ export default function PlaylistScreen() {
   const playing = usePlayer((s) => s.playing);
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === id);
   const [editing, setEditing] = useState(false);
+  const offline = useOffline();
 
-  const p = playlist.data;
+  const p = playlist.data ?? undefined;
   const list = items.data ?? [];
   const minutes = Math.round(list.reduce((sum, x) => sum + ticksToSeconds(x.RunTimeTicks), 0) / 60);
   const source = { type: 'playlist' as const, id, name: p?.Name ?? 'Playlist' };
+
+  // Offline and not downloaded.
+  if (playlist.data === null) return <OfflineUnavailable />;
 
   if (playlist.error) {
     return (
@@ -60,7 +66,7 @@ export default function PlaylistScreen() {
         }}
         onShuffle={() => list.length && usePlayer.getState().playQueue(list, { source, shuffle: true })}
         onMore={p ? () => openMenu(p) : undefined}
-        onEdit={p && list.length ? () => setEditing(true) : undefined}
+        onEdit={p && list.length && !offline ? () => setEditing(true) : undefined}
         download={p && list.length ? <DownloadButton kind="playlist" item={p} /> : undefined}
       />
       {items.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}

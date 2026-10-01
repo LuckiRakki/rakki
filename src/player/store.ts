@@ -9,10 +9,12 @@ import { useAuth } from '@/auth/store';
 import { localArtUri, localAudioUri } from '@/downloads/store';
 import { emitLikedChanged } from '@/lib/events';
 import { ticksToSeconds } from '@/lib/format';
+import { isOffline } from '@/lib/online';
 import { artistLine } from '@/lib/items';
 import { engine, type RakkiTrack, type RepeatMode } from '@/player/engine';
 import { reporter } from '@/player/reporting';
 import { useSettings } from '@/settings/store';
+import { showToast } from '@/ui/overlays';
 
 export interface QueueEntry {
   key: string;
@@ -92,6 +94,13 @@ function toTracks(queue: QueueEntry[]): RakkiTrack[] {
   }));
 }
 
+/** The downloaded ones (offline); says so when none are. */
+function playableOffline(items: BaseItem[]): BaseItem[] {
+  const playable = items.filter((x) => !!localAudioUri(x.Id));
+  if (!playable.length) showToast(items.length === 1 ? 'Not downloaded, so it can’t play offline' : 'None of these are downloaded');
+  return playable;
+}
+
 function entries(items: BaseItem[], origin: QueueEntry['origin']): QueueEntry[] {
   return items.map((item) => ({ key: newKey(), item, origin }));
 }
@@ -115,6 +124,13 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   error: null,
 
   playQueue(items, opts = {}) {
+    if (isOffline()) {
+      // Offline only downloaded songs can play; start from the tapped one if it's there.
+      const chosen = items[opts.startIndex ?? 0];
+      items = playableOffline(items);
+      if (!items.length) return;
+      if (opts.startIndex !== undefined) opts = { ...opts, startIndex: Math.max(0, items.findIndex((x) => x.Id === chosen?.Id)) };
+    }
     if (items.length === 0) return;
     const shuffle = opts.shuffle ?? get().shuffle;
     let queue = entries(items, 'context');
@@ -135,6 +151,8 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   },
 
   playNext(items) {
+    if (isOffline()) items = playableOffline(items);
+    if (!items.length) return;
     const { queue, index } = get();
     if (queue.length === 0) return get().playQueue(items);
     const next = [...queue];
@@ -143,6 +161,8 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   },
 
   addToQueue(items) {
+    if (isOffline()) items = playableOffline(items);
+    if (!items.length) return;
     const { queue, index } = get();
     if (queue.length === 0) return get().playQueue(items);
     // After the current song and any songs already added with Play next / Add to queue.

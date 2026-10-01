@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { watchServer } from '@/lib/online';
 import { checkForUpdate } from '@/lib/updates';
 import { startDownloads } from '@/downloads/manager';
 import { ensureSearchIndex } from '@/search/index';
@@ -60,6 +61,12 @@ export default function RootLayout() {
 function AppShell({ signedIn }: { signedIn: boolean }) {
   const t = useTheme();
   useModalTracker();
+
+  // Watch whether the server answers (offline mode switches on its own when it doesn't).
+  const serverUrl = useAuth((s) => s.session?.serverUrl ?? null);
+  useEffect(() => {
+    watchServer(serverUrl);
+  }, [serverUrl]);
 
   // Downloads: load what's saved, finish anything unfinished, catch up playlists.
   const userId = useAuth((s) => s.session?.userId);

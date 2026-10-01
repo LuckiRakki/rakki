@@ -7,6 +7,7 @@ import { create } from 'zustand';
 
 import type { BaseItem, JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 import { prepare, type Entry, type FuzzyIndex, type Kind } from '@/search/fuzzy';
 
@@ -83,6 +84,14 @@ async function addAll(client: JellyfinClient, kind: 'Audio' | 'MusicAlbum' | 'Pl
 export async function ensureSearchIndex(): Promise<void> {
   const client = useAuth.getState().client;
   if (!client || useSearchIndex.getState().syncing) return;
+  if (isOffline()) {
+    // Offline: just load what's stored (offline search uses the downloads anyway).
+    if (!stored) {
+      const s = load(client);
+      if (s) publish(s);
+    }
+    return;
+  }
   if (!stored || stored.user !== client.session.userId) {
     stored = null;
     const s = load(client);

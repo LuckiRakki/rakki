@@ -13,6 +13,7 @@ import { usePlayer } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { Artwork } from '@/ui/Artwork';
+import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { TrackRow } from '@/ui/TrackRow';
@@ -49,19 +50,22 @@ export default function AlbumScreen() {
     usePlayer.getState().playQueue(list, { source, shuffle });
   }
 
+  // Offline with nothing of this album on the phone.
+  if (album.data === null) return <OfflineUnavailable />;
+
   const header = (
     <View>
       <LinearGradient
         colors={[tint, t.colors.bg]}
         style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
-        <Artwork item={album.data} size={ART} style={styles.artShadow} />
+        <Artwork item={album.data ?? undefined} size={ART} style={styles.artShadow} />
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>
         <T variant="title">{album.data?.Name ?? ' '}</T>
         <View style={styles.artistRow}>
           {artists.length ? (
             <Pressable onPress={() => openArtist(artists[0].Id)} hitSlop={6}>
-              <Artwork item={firstArtist.data} size={24} rounded={12} />
+              <Artwork item={firstArtist.data ?? undefined} size={24} rounded={12} />
             </Pressable>
           ) : null}
           <ArtistLinks artists={artists} fallback={album.data?.AlbumArtist} style={{ flex: 1 }} />

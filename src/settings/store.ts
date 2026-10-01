@@ -37,6 +37,8 @@ interface Settings {
   downloadQuality: DownloadQuality;
   /** Off = downloads wait for Wi-Fi. */
   downloadOnCellular: boolean;
+  /** Act offline even when the server is reachable: only downloads, no data used. */
+  offlineMode: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -49,6 +51,7 @@ const DEFAULTS: Settings = {
   lyricsMode: 'spicy',
   downloadQuality: 'original',
   downloadOnCellular: false,
+  offlineMode: false,
 };
 
 function load(): Settings {

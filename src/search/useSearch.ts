@@ -5,7 +5,10 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { BaseItem, GenreCount, JellyfinClient, SearchKind } from '@/api/jellyfin';
 import { useGenreCounts } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { downloadedAlbums, downloadedArtists, downloadedPlaylists, downloadedTracks } from '@/downloads/offline';
+import { useDownloads } from '@/downloads/store';
 import { artistLine } from '@/lib/items';
+import { isOffline, useOffline } from '@/lib/online';
 import { fuzzySearch, prepare, scoreName, type FuzzyIndex, type Kind } from '@/search/fuzzy';
 import { useSearchIndex } from '@/search/index';
 
@@ -43,7 +46,38 @@ function genreIndex(genres: GenreCount[]): FuzzyIndex {
   return index;
 }
 
+/** Offline: the same matching over what's downloaded (no server). */
+function offlineSearch(term: string, filter: Filter): SearchResults {
+  const limit = filter === 'all' ? 20 : 100;
+  const pools: Record<SearchKind, BaseItem[]> = {
+    songs: downloadedTracks(),
+    albums: downloadedAlbums(),
+    artists: downloadedArtists(),
+    playlists: downloadedPlaylists(),
+  };
+  const kinds = filter === 'all' ? ALL_KINDS : filter === 'genres' ? [] : [filter];
+  const byId = new Map<string, BaseItem>();
+  const entries = kinds.flatMap((k) =>
+    pools[k].map((item) => {
+      byId.set(item.Id, item);
+      const by = item.Type === 'Audio' ? artistLine(item) : item.Type === 'MusicAlbum' ? item.AlbumArtist : undefined;
+      return { id: item.Id, kind: item.Type as Kind, name: item.Name, by };
+    }),
+  );
+  const matches = fuzzySearch(prepare(entries), term, limit);
+  const of = (k: SearchKind) => matches.filter((m) => KIND_OF[m.entry.kind] === k).map((m) => byId.get(m.entry.id)!);
+  return {
+    top: filter === 'all' && matches[0] ? byId.get(matches[0].entry.id)! : null,
+    songs: of('songs'),
+    artists: of('artists'),
+    albums: of('albums'),
+    playlists: of('playlists'),
+    genres: [],
+  };
+}
+
 async function runSearch(client: JellyfinClient, term: string, filter: Filter, genres: GenreCount[]): Promise<SearchResults> {
+  if (isOffline()) return offlineSearch(term, filter);
   const limit = filter === 'all' ? 20 : 100;
   const kinds = filter === 'all' ? ALL_KINDS : filter === 'genres' ? [] : [filter];
   const index = useSearchIndex.getState().index;
@@ -99,10 +133,13 @@ export function useSearchResults(term: string, filter: Filter) {
   const client = useAuth((s) => s.client);
   const version = useSearchIndex((s) => s.version);
   const genres = useGenreCounts().data;
+  const offline = useOffline();
+  const rev = useDownloads((s) => s.rev);
   const t = term.trim();
   return useQuery({
-    queryKey: ['search', client?.session.userId, t.toLowerCase(), filter, version, genres?.length ?? 0],
+    queryKey: ['search', client?.session.userId, t.toLowerCase(), filter, version, genres?.length ?? 0, offline ? `offline:${rev}` : 'online'],
     enabled: !!client && t.length > 0,
+    networkMode: offline ? 'always' : 'online',
     placeholderData: keepPreviousData,
     staleTime: 60_000,
     queryFn: () => runSearch(client!, t, filter, genres ?? []),

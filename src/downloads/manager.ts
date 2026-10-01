@@ -9,6 +9,7 @@ import { useAuth } from '@/auth/store';
 import { onLikedChanged } from '@/lib/events';
 import { ticksToSeconds } from '@/lib/format';
 import { useNetwork } from '@/lib/network';
+import { isOffline, useServerReachable } from '@/lib/online';
 import { tracksOf } from '@/library/actions';
 import { fetchLrc, fetchTtml } from '@/lyrics/fetch';
 import { useSettings } from '@/settings/store';
@@ -66,8 +67,8 @@ function setProgress(id: string, fraction: number | null) {
 }
 
 function allowedNow(): boolean {
-  const { connected, cellular } = useNetwork.getState();
-  return connected && (!cellular || useSettings.getState().downloadOnCellular);
+  const { cellular } = useNetwork.getState();
+  return !isOffline() && (!cellular || useSettings.getState().downloadOnCellular);
 }
 
 /** Start queued downloads while there's room and the connection allows it. */
@@ -362,8 +363,16 @@ onLikedChanged(() => {
   likedTimer = setTimeout(() => void syncCollections(), 1500);
 });
 
-// Connection or the cellular setting changed: maybe downloads can go now.
+// Connection, server or settings changed: maybe downloads can go now (and catch up on
+// playlist changes once the server is back).
 useNetwork.subscribe(() => kick());
+useServerReachable.subscribe((s, prev) => {
+  if (s.reachable && !prev.reachable) {
+    kick();
+    void syncCollections();
+  }
+});
 useSettings.subscribe((s, prev) => {
   if (s.downloadOnCellular !== prev.downloadOnCellular) kick();
+  if (prev.offlineMode && !s.offlineMode) kick();
 });

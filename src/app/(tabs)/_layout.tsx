@@ -3,6 +3,7 @@ import { BottomTabBar, Tabs } from 'expo-router/tabs';
 import { View, type ColorValue } from 'react-native';
 
 import { MiniPlayer } from '@/player/MiniPlayer';
+import { OfflineBar } from '@/ui/OfflineBar';
 import { useTheme } from '@/ui/theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -22,6 +23,7 @@ export default function TabLayout() {
       // layout flow, screens end above it and nothing is hidden behind the player.
       tabBar={(props) => (
         <View style={{ backgroundColor: t.colors.bg }}>
+          <OfflineBar />
           <MiniPlayer />
           <BottomTabBar {...props} />
         </View>

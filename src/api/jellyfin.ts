@@ -3,6 +3,7 @@
 // and off unless the server enables them), so we use only those two.
 import * as Device from 'expo-device';
 
+import { isOffline, reportConnectionFailure, reportConnectionSuccess } from '@/lib/online';
 import type { JellyfinLyricsDto, TtmlDto } from '@/lyrics/types';
 
 export const CLIENT_NAME = 'Rakki';
@@ -132,6 +133,9 @@ async function request<T>(
   init: RequestInit & { deviceId: string; token?: string; timeoutMs?: number },
 ): Promise<T> {
   const { deviceId, token, timeoutMs = 15000, headers, ...rest } = init;
+  // Offline: fail at once rather than wait out a timeout (signed-in requests only, so signing
+  // in is never blocked).
+  if (token && isOffline()) throw new JellyfinError("You're offline.");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   let res: Response;
@@ -148,6 +152,7 @@ async function request<T>(
     });
   } catch (e) {
     const aborted = e instanceof Error && e.name === 'AbortError';
+    if (token) reportConnectionFailure();
     throw new JellyfinError(
       aborted
         ? "The server didn't answer in time. Is Tailscale on and the address right?"
@@ -156,6 +161,7 @@ async function request<T>(
   } finally {
     clearTimeout(timer);
   }
+  if (token) reportConnectionSuccess();
   if (!res.ok) {
     if (res.status === 401) {
       throw new JellyfinError(

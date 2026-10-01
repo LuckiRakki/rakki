@@ -41,12 +41,15 @@ interface Saved {
 
 interface DownloadsState extends Saved {
   userId: string | null;
+  /** Bumped whenever what's downloaded changes (offline views refresh on it). */
+  rev: number;
   /** 0–1 for downloads in progress. */
   progress: Record<string, number>;
 }
 
 export const useDownloads = create<DownloadsState>(() => ({
   userId: null,
+  rev: 0,
   tracks: {},
   collections: {},
   art: {},
@@ -72,6 +75,7 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Save soon (batched: a big album finishes many songs in a row). */
 export function persistDownloads() {
+  useDownloads.setState((s) => ({ rev: s.rev + 1 }));
   if (saveTimer) return;
   saveTimer = setTimeout(() => {
     saveTimer = null;
