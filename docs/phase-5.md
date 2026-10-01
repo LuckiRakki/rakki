@@ -27,11 +27,19 @@ Settings → Customize (`src/app/customize.tsx`). Every control changes the real
 - [x] Reset per section and for everything; export (iOS share sheet, JSON text) and import
   (paste) a theme. Storage stays version 1: new keys fall back to defaults.
 
-## 5b. Lyrics tuning
-- [ ] Spicy Lyrics knobs (×multipliers, 1 = official): glow, word pop, word lift, letter
-  pop/glow, motion speed/damping, sweep band, line blur; font size, alignment, colours;
-  backdrop spin/blur/brightness.
-- [ ] Regular lyrics: font size, alignment, dim level, highlight colour.
+## 5b. Lyrics tuning — built 2026-10-01
+Customize → Lyrics style (also the sliders icon on the lyrics screen): `src/app/lyrics-style.tsx`,
+store `src/lyrics/style.ts`. A live preview loops the demo lyrics (`src/lyrics/demo.ts`) over the
+playing album, drawn by the real renderers.
+- [x] Spicy: glow on/off + strength, word pop, word lift, highlight edge (sweep band), letter by
+  letter on/off + letter pop/glow, motion speed and calm (damping), other-line blur on/off +
+  amount, line glow on/off, pause dots threshold + bounce; text size, font (Spicy's Inter or the
+  app's), alignment left/centre (new in the scene: `lineX`), colour white/accent (new: scene
+  colour instead of hard-coded white); background movement (0 = still), blur, darken.
+- [x] Regular: text size, alignment, other-line visibility, current-line colour.
+- [x] "Lyrics open in" Spicy/Regular. Reset for Spicy and for Regular.
+- Note: `SpicySettings`/`SPICY_DEFAULTS` moved to `src/spicy/settings.ts` (no Skia import), since
+  importing scene.ts early loads Skia before CanvasKit in the web preview.
 
 ## 5c. Parity
 - [ ] Queue restore after a restart (queue, position, shuffle/repeat; starts paused).

@@ -7,7 +7,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { useLibraryView, type LibraryTab } from '@/library/view';
 
 /** Screens presented over the tabs. Pages can't open underneath them, so close them first. */
-const MODALS = ['/player', '/queue', '/lyrics', '/settings', '/downloads', '/customize'];
+const MODALS = ['/player', '/queue', '/lyrics', '/settings', '/downloads', '/customize', '/lyrics-style'];
 let overModal = false;
 
 /** Mounted once in the root layout: keeps track of whether a modal screen is showing. */

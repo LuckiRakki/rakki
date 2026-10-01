@@ -13,6 +13,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
+import { useLyricsStyle } from '@/lyrics/style';
 import { useTheme } from '@/ui/theme';
 
 /**
@@ -85,8 +86,11 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
 export function SpicyBackdrop({ uri }: { uri?: string }) {
   const clock = useSharedValue(0);
   const pulse = useSharedValue(0);
-  // Reduced motion: the covers stay still and the glow doesn't pulse.
-  const still = useTheme().reduceMotion;
+  // Reduced motion (or Movement at 0): the covers stay still and the glow doesn't pulse.
+  const motion = useLyricsStyle((s) => s.backdropMotion);
+  const blur = useLyricsStyle((s) => s.backdropBlur);
+  const dim = useLyricsStyle((s) => s.backdropDim);
+  const still = useTheme().reduceMotion || motion <= 0;
 
   useEffect(() => {
     if (still) {
@@ -95,7 +99,7 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
       return;
     }
     // One long linear clock (1 h) drives every layer; each derives its own motion from it.
-    clock.value = withRepeat(withTiming(3600, { duration: 3600 * 1000, easing: Easing.linear }), -1, false);
+    clock.value = withRepeat(withTiming(3600, { duration: (3600 * 1000) / motion, easing: Easing.linear }), -1, false);
     pulse.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
@@ -104,20 +108,21 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
       -1,
       false,
     );
-  }, [clock, pulse, still]);
+  }, [clock, pulse, still, motion]);
 
   const breathe = useAnimatedStyle(() => ({ opacity: 0.12 * pulse.value }));
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0b0b0b', overflow: 'hidden' }]} pointerEvents="none">
       {uri ? LAYERS.map((spec, i) => <Layer key={i} uri={uri} spec={spec} clock={clock} />) : null}
-      <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={Math.round(100 * blur)} tint="dark" style={StyleSheet.absoluteFill} />
       {/* Brightness pulse, like the web mod's backdrop glow. */}
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, breathe]} />
       <LinearGradient
         colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.35)']}
         style={StyleSheet.absoluteFill}
       />
+      {dim > 0 ? <View style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(0,0,0,${0.6 * dim})` }]} /> : null}
     </View>
   );
 }

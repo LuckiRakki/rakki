@@ -21,60 +21,22 @@ import {
 } from '@shopify/react-native-skia';
 
 import type { LyricLine, Lyrics, WordCue } from '@/lyrics/types';
+import { SPICY_DEFAULTS, type SpicySettings } from '@/spicy/settings';
 import { Spline } from '@/spicy/Spline';
 import { Spring } from '@/spicy/Spring';
 
-// ─── Tunables (the web mod's Settings; the customizer will expose these) ───────────────
-
-export interface SpicySettings {
-  glowEnabled: boolean;
-  glowStrength: number;
-  wordPop: number;
-  wordLift: number;
-  sweepBand: number;
-  spellingEnabled: boolean;
-  spellMinMs: number;
-  letterPop: number;
-  letterGlow: number;
-  motionSpeed: number;
-  motionDamping: number;
-  lineGlowEnabled: boolean;
-  lineGlowAmount: number;
-  lineBlurEnabled: boolean;
-  blurPerLine: number;
-  gapDotsMs: number;
-  dotRise: number;
-  lrcSweep: boolean;
-  lrcBand: number;
-  unsyncedAutoScroll: boolean;
-}
-
-export const SPICY_DEFAULTS: SpicySettings = {
-  glowEnabled: true,
-  glowStrength: 1,
-  wordPop: 1,
-  wordLift: 1,
-  sweepBand: 20,
-  spellingEnabled: true,
-  spellMinMs: 1000,
-  letterPop: 1,
-  letterGlow: 1,
-  motionSpeed: 1,
-  motionDamping: 1,
-  lineGlowEnabled: true,
-  lineGlowAmount: 0.18,
-  lineBlurEnabled: true,
-  blurPerLine: 1.25,
-  gapDotsMs: 4000,
-  dotRise: 0.7, // web mod: 0.95; lowered a touch on request (2026-09-30)
-  lrcSweep: true,
-  lrcBand: 20,
-  unsyncedAutoScroll: true,
-};
+// Tunables live in settings.ts (no Skia there, so the customizer can import them anywhere).
+export { SPICY_DEFAULTS, type SpicySettings } from '@/spicy/settings';
 
 // ─── Motion (identical to LyricsAnimator.ts) ─────────────────────────────────────────
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
+
+/** "#rrggbb" → "r,g,b" (white if unreadable). */
+function hexToRgb(hex: string): string {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  return m ? `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}` : '255,255,255';
+}
 
 const WORD_SCALE = new Spline([[0, 0.95], [0.7, 1.0505], [1, 1]]);
 const WORD_LIFT = new Spline([[0, 0.01], [0.9, -1 / 60], [1, 0]]);
@@ -264,6 +226,8 @@ export class SpicyScene {
   private readonly glowPaint: SkPaint;
   private readonly blurCache = new Map<number, SkMaskFilter>();
   private readonly white: SkColor;
+  /** The lyrics colour as "r,g,b" for gradient stops. */
+  private readonly rgb: string;
 
   constructor(
     lyrics: Lyrics,
@@ -282,7 +246,8 @@ export class SpicyScene {
     this.paint.setAntiAlias(true);
     this.glowPaint = Skia.Paint();
     this.glowPaint.setAntiAlias(true);
-    this.white = Skia.Color('white');
+    this.white = Skia.Color(settings.color);
+    this.rgb = hexToRgb(settings.color);
 
     if (!lyrics.isSynced) {
       this.buildUnsynced(lyrics, fonts);
@@ -423,6 +388,12 @@ export class SpicyScene {
   }
 
   /** A synced line with word timings: words laid out and wrapped like the CSS flexbox. */
+  /** Where a line of width `w` starts: left, right (second voice in a duet), or centred. */
+  private lineX(right: boolean, w: number): number {
+    if (this.settings.align === 'center') return (this.width - w) / 2;
+    return right ? this.width - this.pad - w : this.pad;
+  }
+
   private wordRow(kind: 'lead' | 'bg', group: number, right: boolean, font: SkFont, cues: WordCue[], seekMs: number, top: number): Row {
     const row = this.baseRow(kind, group, right, font, seekMs, top);
     const s = this.settings;
@@ -505,7 +476,7 @@ export class SpicyScene {
     }
     lineUnits.forEach((us, li) => {
       const used = us.reduce((acc, u, k) => acc + u.w + (k < us.length - 1 ? u.gapAfter : 0), 0);
-      let x = right ? this.width - this.pad - used : this.pad;
+      let x = this.lineX(right, used);
       for (const u of us) {
         for (const w of u.words) {
           w.x = x;
@@ -542,7 +513,7 @@ export class SpicyScene {
       }
     }
     if (cur || !out.length) out.push({ text: cur, x: 0, w: curW });
-    for (const l of out) l.x = right ? this.width - this.pad - l.w : this.pad;
+    for (const l of out) l.x = this.lineX(right, l.w);
     row.lines = out;
     row.height = out.length * row.lineHeight;
     return row;
@@ -1038,7 +1009,7 @@ export class SpicyScene {
       Skia.Shader.MakeLinearGradient(
         { x: from, y: 0 },
         { x: Math.max(to, from + 0.01), y: 0 },
-        [Skia.Color(`rgba(255,255,255,${sungA})`), Skia.Color(`rgba(255,255,255,${unsungA})`)],
+        [Skia.Color(`rgba(${this.rgb},${sungA})`), Skia.Color(`rgba(${this.rgb},${unsungA})`)],
         null,
         TileMode.Clamp,
       ),
@@ -1070,7 +1041,7 @@ export class SpicyScene {
       Skia.Shader.MakeLinearGradient(
         { x: 0, y: from },
         { x: 0, y: Math.max(to, from + 0.01) },
-        [Skia.Color(`rgba(255,255,255,${SUNG * op})`), Skia.Color(`rgba(255,255,255,${LINE_UNSUNG * op})`)],
+        [Skia.Color(`rgba(${this.rgb},${SUNG * op})`), Skia.Color(`rgba(${this.rgb},${LINE_UNSUNG * op})`)],
         null,
         TileMode.Clamp,
       ),
@@ -1105,7 +1076,7 @@ export class SpicyScene {
     const groupAlpha = enter * (1 - exit);
     const baseY = afterBottom + height / 2 + exit * DOT_EXIT_EM * em;
     const total = size * 3 + gap * 2;
-    const x0 = this.dots.right ? this.width - this.pad - total : this.pad;
+    const x0 = this.lineX(this.dots.right, total);
     for (let i = 0; i < 3; i++) {
       const local = (p - i / 3) * 3;
       const lift = local >= 0 && local <= 1 ? Math.sin(local * Math.PI) : 0;

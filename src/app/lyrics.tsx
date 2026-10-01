@@ -66,7 +66,12 @@ export default function LyricsScreen() {
                 <Pressable hitSlop={12} onPress={() => router.back()}>
                   <Ionicons name="chevron-down" size={28} color={t.colors.text} />
                 </Pressable>
-                <ModeToggle mode={mode} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
+                  <Pressable hitSlop={10} onPress={() => router.push('/lyrics-style')} accessibilityLabel="Lyrics style">
+                    <Ionicons name="options-outline" size={24} color={t.colors.text} />
+                  </Pressable>
+                  <ModeToggle mode={mode} />
+                </View>
               </View>
               {track ? <NowPlayingHeader track={track} /> : null}
             </View>

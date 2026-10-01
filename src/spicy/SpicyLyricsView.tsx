@@ -5,10 +5,13 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
 
 import type { Lyrics } from '@/lyrics/types';
-import { SPICY_DEFAULTS, SPICY_LAYOUT_DEFAULTS, SpicyScene, type SpicyLayout } from '@/spicy/scene';
+import { useShallow } from 'zustand/react/shallow';
 
-const INTER_BOLD = require('@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf');
-const INTER_SEMIBOLD = require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf');
+import { FONT_FILES, FONTS } from '@/appearance/fonts';
+import { useLyricsStyle } from '@/lyrics/style';
+import { SPICY_LAYOUT_DEFAULTS, SpicyScene, type SpicyLayout } from '@/spicy/scene';
+import { useTheme } from '@/ui/theme';
+
 
 function emptyPicture(): SkPicture {
   const rec = Skia.PictureRecorder();
@@ -34,23 +37,33 @@ export function SpicyLyricsView({
   /** Where the sung line follows and how far the edges fade (see SpicyLayout). */
   layout?: SpicyLayout;
 }) {
+  const t = useTheme();
+  const style = useLyricsStyle(
+    useShallow((s) => ({ spicy: s.spicy, scale: s.spicySize, font: s.spicyFont, color: s.spicyColor })),
+  );
+  const faces = style.font === 'app' ? (FONTS[t.appearance.font]?.faces ?? FONTS.inter.faces) : FONTS.inter.faces;
+  const files = FONT_FILES as Record<string, number>;
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const fontSize = Math.max(26, Math.min(44, size.w * 0.08));
-  const lead = useFont(INTER_BOLD, fontSize);
-  const bg = useFont(INTER_SEMIBOLD, fontSize * 0.75);
-  const credits = useFont(INTER_SEMIBOLD, 16);
+  const fontSize = Math.max(26, Math.min(44, size.w * 0.08)) * style.scale;
+  const lead = useFont(files[faces.bold], fontSize);
+  const bg = useFont(files[faces.semibold], fontSize * 0.75);
+  const credits = useFont(files[faces.semibold], 16);
+  const settings = useMemo(
+    () => ({ ...style.spicy, color: style.color === 'accent' ? t.colors.accent : '#ffffff' }),
+    [style.spicy, style.color, t.colors.accent],
+  );
   const picture = useSharedValue<SkPicture>(emptyPicture());
 
   const scene = useMemo(
     () =>
       lead && bg && credits && size.w > 0 && size.h > 0
-        ? new SpicyScene(lyrics, { lead, bg, credits }, size.w, size.h, SPICY_DEFAULTS, {
+        ? new SpicyScene(lyrics, { lead, bg, credits }, size.w, size.h, settings, {
             anchor: layout.anchor,
             fadeTop: layout.fadeTop,
             fadeBottom: layout.fadeBottom,
           })
         : null,
-    [lyrics, lead, bg, credits, size.w, size.h, layout.anchor, layout.fadeTop, layout.fadeBottom],
+    [lyrics, lead, bg, credits, size.w, size.h, settings, layout.anchor, layout.fadeTop, layout.fadeBottom],
   );
 
   useEffect(() => {

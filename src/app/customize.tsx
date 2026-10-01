@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FONTS, type FontKey } from '@/appearance/fonts';
@@ -19,6 +19,7 @@ import {
 import { isHexColor } from '@/lib/color';
 import { tick } from '@/lib/haptics';
 import { Segmented } from '@/ui/Segmented';
+import { Field, SettingSection, Toggle } from '@/ui/SettingRows';
 import { Slider } from '@/ui/Slider';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -261,6 +262,17 @@ export default function CustomizeScreen() {
           <Toggle label="Lyrics card" detail="Below the controls; scroll down to see it" value={a.lyricsCard} onChange={(v) => set('lyricsCard', v)} />
         </Section>
 
+        <Pressable onPress={() => router.push('/lyrics-style')} style={({ pressed }) => [styles.card, styles.linkRow, { marginTop: t.space.xl }, pressed && { opacity: 0.7 }]}>
+          <Ionicons name="mic-outline" size={22} color={t.colors.accent} />
+          <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+            <T variant="bodyStrong">Lyrics style</T>
+            <T variant="caption" style={{ fontSize: t.size(12) }}>
+              Spicy glow, motion, size, colours and background; Regular lyrics
+            </T>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={t.colors.textMuted} />
+        </Pressable>
+
         <Section title="Feel" id="feel">
           <Toggle label="Haptics" detail="Light taps on buttons and menus" value={a.haptics} onChange={(v) => set('haptics', v)} />
           <Field label="Motion">
@@ -328,55 +340,15 @@ function importTheme(done: () => void) {
 }
 
 function Section({ title, id, onReset, children }: { title: string; id: SectionId; onReset?: () => void; children: ReactNode }) {
-  const t = useTheme();
-  const styles = useStyles();
   return (
-    <>
-      <View style={styles.sectionHead}>
-        <T variant="label">{title}</T>
-        <Pressable
-          hitSlop={10}
-          onPress={() => {
-            useAppearance.getState().apply(sectionDefaults(id));
-            onReset?.();
-          }}>
-          <T variant="caption" style={{ fontFamily: t.fonts.semibold }}>
-            Reset
-          </T>
-        </Pressable>
-      </View>
-      <View style={styles.card}>{children}</View>
-    </>
-  );
-}
-
-function Field({ label, value, children }: { label: string; value?: string; children: ReactNode }) {
-  const t = useTheme();
-  return (
-    <View style={{ marginTop: t.space.md }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: t.space.sm }}>
-        <T variant="bodyStrong">{label}</T>
-        {value ? <T variant="caption">{value}</T> : null}
-      </View>
+    <SettingSection
+      title={title}
+      onReset={() => {
+        useAppearance.getState().apply(sectionDefaults(id));
+        onReset?.();
+      }}>
       {children}
-    </View>
-  );
-}
-
-function Toggle({ label, detail, value, onChange }: { label: string; detail?: string; value: boolean; onChange: (v: boolean) => void }) {
-  const t = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: t.space.md }}>
-      <View style={{ flex: 1, marginRight: t.space.md }}>
-        <T variant="bodyStrong">{label}</T>
-        {detail ? (
-          <T variant="caption" style={{ fontSize: t.size(12) }}>
-            {detail}
-          </T>
-        ) : null}
-      </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: t.colors.accent, false: t.colors.surface3 }} />
-    </View>
+    </SettingSection>
   );
 }
 
@@ -485,14 +457,8 @@ const useStyles = makeStyles((t) => ({
     paddingVertical: t.space.md,
   },
   label: { marginTop: t.space.xl, marginBottom: t.space.sm },
-  sectionHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: t.space.xl,
-    marginBottom: t.space.sm,
-  },
   card: { backgroundColor: t.colors.surface, borderRadius: t.radius.card, padding: t.space.lg, paddingTop: t.space.xs },
+  linkRow: { flexDirection: 'row', alignItems: 'center', paddingTop: t.space.lg },
   hint: { marginTop: t.space.sm, fontSize: t.size(12) },
   preset: {
     flexDirection: 'row',

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, View } from 'react-native';
 
 import { withAlpha } from '@/lib/color';
+import { useLyricsStyle } from '@/lyrics/style';
 import type { Lyrics } from '@/lyrics/types';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -56,6 +57,11 @@ export function RegularLyricsView({
 }) {
   const t = useTheme();
   const styles = useStyles();
+  const scale = useLyricsStyle((s) => s.regularSize);
+  const align = useLyricsStyle((s) => s.regularAlign);
+  const dim = useLyricsStyle((s) => s.regularDim);
+  const current = useLyricsStyle((s) => (s.regularColor === 'accent' ? t.colors.accent : '#fff'));
+  const lineStyle = { fontSize: t.size(26 * scale), lineHeight: t.size(34 * scale), textAlign: align } as const;
   const lines = toLines(lyrics);
   const [active, setActive] = useState(-1);
   const scroll = useRef<ScrollView>(null);
@@ -99,17 +105,22 @@ export function RegularLyricsView({
         const color = !lyrics.isSynced
           ? 'rgba(255,255,255,0.9)'
           : i === active
-            ? '#fff'
+            ? current
             : i < active
-              ? 'rgba(255,255,255,0.55)'
-              : 'rgba(0,0,0,0.55)';
+              ? `rgba(255,255,255,${dim})`
+              : `rgba(0,0,0,${dim})`;
         return (
           <View key={i} onLayout={(e) => (offsets.current[i] = e.nativeEvent.layout.y)}>
             <Pressable disabled={!lyrics.isSynced} onPress={() => onSeek(line.startMs)}>
               {line.text ? (
-                <T style={[styles.line, { color }]}>{line.text}</T>
+                <T style={[styles.line, lineStyle, { color }]}>{line.text}</T>
               ) : (
-                <Ionicons name="musical-notes" size={26} color={color} style={styles.note} />
+                <Ionicons
+                  name="musical-notes"
+                  size={26 * scale}
+                  color={color}
+                  style={[styles.note, align === 'center' && { alignSelf: 'center' }]}
+                />
               )}
             </Pressable>
           </View>
