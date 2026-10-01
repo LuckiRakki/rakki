@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CLIENT_VERSION } from '@/api/jellyfin';
 import { signOut } from '@/auth/actions';
 import { useAuth } from '@/auth/store';
-import { checkForUpdate, getUpdateInfo, type UpdateInfo } from '@/lib/updates';
+import { buildStamp, checkForUpdate, getUpdateInfo, versionLabel, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { T } from '@/ui/T';
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
           About
         </T>
         <View style={styles.card}>
-          <T variant="bodyStrong">Rakki {CLIENT_VERSION}</T>
+          <T variant="bodyStrong">Rakki {versionLabel(CLIENT_VERSION)}</T>
           <T variant="caption" style={{ marginTop: 2 }}>
             Audio engine: {engine.native ? 'Rakki native (gapless, lock screen)' : 'Basic (Expo Go / web preview)'}
           </T>
@@ -86,7 +86,9 @@ export default function SettingsScreen() {
                 ? 'Updates: live from the PC (dev build)'
                 : update.embedded
                   ? `Updates: on (${update.channel}), running the built-in version`
-                  : `Updates: on (${update.channel}), update from ${update.createdAt?.toLocaleString() ?? '?'}`}
+                  : `Updates: on (${update.channel}), published ${update.createdAt?.toLocaleString() ?? '?'}${
+                      buildStamp().commit ? ` · ${buildStamp().commit}` : ''
+                    }`}
           </T>
           <Pressable
             onPress={() => void checkForUpdate(false)}

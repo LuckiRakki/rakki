@@ -41,6 +41,9 @@ jobs:
       - name: Publish update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Stamped into the update so Settings → About can say which one is running.
+          RAKKI_UPDATE: ${{ github.run_number }}
+          RAKKI_COMMIT: ${{ github.sha }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
             echo "::warning::EXPO_TOKEN secret is not set; skipping the update."

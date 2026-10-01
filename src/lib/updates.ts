@@ -2,9 +2,23 @@
 // native updates module; the dev build loads code live from the PC, and older dev binaries
 // don't include the module at all, so everything here is guarded and imported lazily.
 import { requireOptionalNativeModule } from 'expo';
+import Constants from 'expo-constants';
 import { Alert, Platform } from 'react-native';
 
 const available = Platform.OS !== 'web' && !__DEV__ && !!requireOptionalNativeModule('ExpoUpdates');
+
+/** Which over-the-air update this is (stamped by the publish workflow), if any. */
+export function buildStamp(): { update: number | null; commit: string | null } {
+  const build = (Constants.expoConfig?.extra as { build?: { update?: number | null; commit?: string | null } } | undefined)
+    ?.build;
+  return { update: build?.update ?? null, commit: build?.commit ?? null };
+}
+
+/** "0.1.0 · update 14": the app version, plus the update number when running one. */
+export function versionLabel(appVersion: string): string {
+  const { update } = buildStamp();
+  return update ? `${appVersion} · update ${update}` : appVersion;
+}
 
 export interface UpdateInfo {
   enabled: boolean;
