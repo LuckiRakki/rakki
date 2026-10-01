@@ -64,6 +64,19 @@ app-side code ships over the air now and does nothing until that build is instal
 - [ ] On the phone, in the final build: add both widgets, check art, progress, links, the
   Lock Screen versions and that they follow an account switch.
 
+## Other items for the final build (done alongside)
+- [x] **Photos picker** for the profile picture (`expo-image-picker`, `src/auth/profile.ts`):
+  pick a photo, crop it square, uploaded as JPEG. No camera or microphone permission is added.
+  Builds before 0.2.0 keep the Files picker.
+- [x] **Downloads out of iCloud backup**: a native `excludeFromBackup` in our RakkiAudio module;
+  `Documents/Music` and `Documents/.rakki` are marked on launch (everything in them can be
+  downloaded again).
+- [ ] **New app icon**: waiting on the user's drafts.
+- [ ] **Version 0.2.0**: bumped right before the release build. The OTA channel follows the
+  app version, so bumping earlier would stop updates reaching the installed 0.1.0 app.
+- Already in the config: the Files app folder (`UIFileSharingEnabled`,
+  `LSSupportsOpeningDocumentsInPlace`).
+
 ## Testing done
 - Typecheck and lint clean.
 - The layouts were run through Expo's real widget runtime (built locally from
