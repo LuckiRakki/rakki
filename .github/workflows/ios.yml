@@ -4,6 +4,8 @@ name: iOS build (unsigned .ipa for SideStore)
 #   dev     → "Rakki Dev": Debug build with expo-dev-client; loads JS live from the PC.
 #             Rebuild only when native code or native dependencies change.
 #   release → "Rakki": the everyday app with the JS bundled in.
+#   check   → the release build without publishing it: checks native changes compile while
+#             the downloadable build stays as it is.
 # SideStore signs the .ipa with the free Apple ID on the phone, so the build is unsigned.
 # Expo SDK 57 needs Xcode 26.4+, which the macOS 26 runner provides.
 on:
@@ -12,7 +14,7 @@ on:
       variant:
         description: Which app to build
         type: choice
-        options: [dev, release]
+        options: [dev, release, check]
         default: dev
 
 jobs:
@@ -24,7 +26,7 @@ jobs:
     env:
       APP_VARIANT: ${{ inputs.variant == 'dev' && 'development' || 'production' }}
       CONFIGURATION: ${{ inputs.variant == 'dev' && 'Debug' || 'Release' }}
-      IPA_NAME: ${{ inputs.variant == 'dev' && 'Rakki-Dev' || 'Rakki' }}
+      IPA_NAME: ${{ inputs.variant == 'dev' && 'Rakki-Dev' || inputs.variant == 'check' && 'Rakki-check' || 'Rakki' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -66,10 +68,29 @@ jobs:
         if: failure()
         run: grep -n -B2 -A6 "error:" xcodebuild.log | head -n 200 || true
 
+      # SideStore reads each binary's entitlements to know what to set up when it signs the app
+      # with the Apple ID, like the app group the widgets share with the app. An unsigned build
+      # carries none, so sign it ad hoc with them (SideStore replaces the signature anyway).
+      # Inside out: frameworks, then the widget extension, then the app.
+      - name: Embed entitlements
+        run: |
+          APP=$(find build/Build/Products -maxdepth 2 -name "*.app" -type d | head -n 1)
+          find "$APP" -depth \( -name "*.framework" -o -name "*.dylib" \) -print0 | xargs -0 -I{} codesign --force --sign - {}
+          for APPEX in "$APP"/PlugIns/*.appex; do
+            [ -d "$APPEX" ] || continue
+            NAME=$(basename "$APPEX" .appex)
+            codesign --force --sign - --entitlements "ios/$NAME/$NAME.entitlements" "$APPEX"
+            echo "== $NAME"; codesign -d --entitlements - --xml "$APPEX" | plutil -p -
+          done
+          APP_ENTITLEMENTS=$(find ios -maxdepth 2 -name "*.entitlements" -not -path "ios/ExpoWidgetsTarget/*" | head -n 1)
+          codesign --force --sign - --entitlements "$APP_ENTITLEMENTS" "$APP"
+          echo "== $(basename "$APP")"; codesign -d --entitlements - --xml "$APP" | plutil -p -
+
       - name: Package .ipa
         run: |
           APP=$(find build/Build/Products -maxdepth 2 -name "*.app" -type d | head -n 1)
           echo "App: $APP"
+          ls "$APP/PlugIns" 2>/dev/null || true
           mkdir -p Payload
           cp -R "$APP" Payload/
           zip -qry "$IPA_NAME.ipa" Payload

@@ -52,7 +52,32 @@
           "enableBackgroundPlayback": true
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "NowPlaying",
+              "displayName": "Now Playing",
+              "description": "The song you're playing, or the last one you played.",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium", "accessoryRectangular", "accessoryCircular", "accessoryInline"]
+              },
+              "android": null
+            },
+            {
+              "name": "JumpBackIn",
+              "displayName": "Jump Back In",
+              "description": "Albums you played recently.",
+              "ios": {
+                "supportedFamilies": ["systemMedium", "systemLarge"]
+              },
+              "android": null
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

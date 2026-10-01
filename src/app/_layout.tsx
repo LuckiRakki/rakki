@@ -15,11 +15,12 @@ import { startDownloads } from '@/downloads/manager';
 import { restoreQueue } from '@/player/store';
 import { ensureSearchIndex } from '@/search/index';
 import { loadRecentSearches } from '@/search/recent';
-import { useModalTracker } from '@/ui/nav';
+import { openPlayer, takePendingLink, useModalTracker } from '@/ui/nav';
 import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
+import { startWidgets } from '@/widgets';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -66,7 +67,14 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     loadRecentSearches(userId);
     // After downloads load, so a restored queue plays downloaded songs from the phone.
     restoreQueue(userId);
+    // Opened from the Now Playing widget while closed: the player, now that there's a queue.
+    if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);
+
+  // Home Screen / Lock Screen widgets follow the player and recently played from here on.
+  useEffect(() => {
+    startWidgets();
+  }, []);
 
   // Build or top up the fuzzy-search index once the first screens have loaded.
   useEffect(() => {

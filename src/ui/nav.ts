@@ -9,11 +9,13 @@ import { useLibraryView, type LibraryTab } from '@/library/view';
 /** Screens presented over the tabs. Pages can't open underneath them, so close them first. */
 const MODALS = ['/player', '/queue', '/lyrics', '/settings', '/downloads', '/customize', '/lyrics-style', '/add-account'];
 let overModal = false;
+let currentPath = '/';
 
 /** Mounted once in the root layout: keeps track of whether a modal screen is showing. */
 export function useModalTracker() {
   const pathname = usePathname();
   useEffect(() => {
+    currentPath = pathname;
     overModal = MODALS.includes(pathname);
   }, [pathname]);
 }
@@ -25,6 +27,30 @@ export function goTo(path: string) {
     router.dismissAll();
   }
   router.push(path as never);
+}
+
+/** Open the full player from anywhere (a widget tap), closing whatever modal is up. */
+export function openPlayer() {
+  if (currentPath === '/player') return;
+  if (overModal) {
+    overModal = false;
+    router.dismissAll();
+  }
+  router.push('/player');
+}
+
+/**
+ * A link that arrived while the app was closed (src/app/+native-intent.ts), opened once the
+ * app has started and the saved queue is back.
+ */
+let pendingLink: string | null = null;
+export function setPendingLink(path: string) {
+  pendingLink = path;
+}
+export function takePendingLink(): string | null {
+  const link = pendingLink;
+  pendingLink = null;
+  return link;
 }
 
 export const openAlbum = (id: string) => goTo(`/album/${id}`);
