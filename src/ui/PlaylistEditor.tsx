@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
+import { runOnJS } from 'react-native-reanimated';
 import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { thud } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 import { artistLine } from '@/lib/items';
 import { movePlaylistEntry, removePlaylistEntry, savePlaylistName } from '@/library/actions';
@@ -49,6 +51,10 @@ export function PlaylistEditor({
       <ReorderableList
         data={items}
         keyExtractor={(x, i) => x.PlaylistItemId ?? `${x.Id}-${i}`}
+        onDragStart={() => {
+          'worklet';
+          runOnJS(thud)();
+        }}
         onReorder={({ from, to }) => void movePlaylistEntry(playlist.Id, from, to)}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: insets.bottom + t.space.xl }}

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOverlays } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { TopLayer } from '@/ui/TopLayer';
-import { makeStyles } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 const IN_MS = 180;
 const HOLD_MS = 1800;
@@ -39,6 +39,7 @@ function ToastView({ text }: { text: string }) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const shown = useSharedValue(0);
+  const still = useTheme().reduceMotion;
 
   useEffect(() => {
     shown.set(withSequence(withTiming(1, { duration: IN_MS }), withDelay(HOLD_MS, withTiming(0, { duration: OUT_MS }))));
@@ -46,7 +47,7 @@ function ToastView({ text }: { text: string }) {
 
   const style = useAnimatedStyle(() => ({
     opacity: shown.get(),
-    transform: [{ translateY: (1 - shown.get()) * 12 }],
+    transform: [{ translateY: still ? 0 : (1 - shown.get()) * 12 }],
   }));
 
   return (

@@ -4,6 +4,7 @@
 import { DownloadTask, File } from 'expo-file-system';
 import { Alert } from 'react-native';
 
+import { success } from '@/lib/haptics';
 import type { BaseItem, JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { onLikedChanged } from '@/lib/events';
@@ -199,6 +200,7 @@ export async function downloadCollection(kind: CollectionKind, item: BaseItem) {
   if (!tracks.length) return;
   addCollection(id, kind, item, tracks);
   const { cellular } = useNetwork.getState();
+  success();
   showToast(
     cellular && !useSettings.getState().downloadOnCellular
       ? 'Waiting for Wi-Fi to download'

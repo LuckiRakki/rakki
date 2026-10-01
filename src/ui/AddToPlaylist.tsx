@@ -3,6 +3,7 @@ import { useQueries } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 
+import { success } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 import { queryClient, usePlaylists } from '@/api/queries';
 import { useAuth } from '@/auth/store';
@@ -103,7 +104,10 @@ export function AddToPlaylistPanel() {
       }
       if (single && selected.has(LIKED) !== wasIn(LIKED)) await setLiked(single, selected.has(LIKED));
       void queryClient.invalidateQueries({ predicate: (q) => ['playlistItems', 'playlists'].includes(q.queryKey[0] as string) });
-      if (added.length) showToast(added.length === 1 ? `Added to ${added[0]}` : `Added to ${added.length} playlists`);
+      if (added.length) {
+        success();
+        showToast(added.length === 1 ? `Added to ${added[0]}` : `Added to ${added.length} playlists`);
+      }
       close();
     } catch (e) {
       Alert.alert('Couldn’t save', e instanceof Error ? e.message : String(e));
@@ -119,6 +123,7 @@ export function AddToPlaylistPanel() {
     try {
       await client.createPlaylist(name, items.map((i) => i.Id));
       void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'playlists' });
+      success();
       showToast(`Added to ${name}`);
       close();
     } catch (e) {

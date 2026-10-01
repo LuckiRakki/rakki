@@ -3,7 +3,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppearsOn, useArtistAlbums, useItem, useSimilar, useTopTracks } from '@/api/queries';
@@ -13,6 +14,7 @@ import { setLiked, startRadio } from '@/library/actions';
 import { offlineArtistTracks } from '@/downloads/offline';
 import { isOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
+import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
@@ -37,6 +39,14 @@ export default function ArtistScreen() {
   const playing = usePlayer((s) => s.playing);
   const isThisArtist = usePlayer((s) => s.source?.type === 'artist' && s.source.id === id);
   const [more, setMore] = useState(false);
+  const { y, onScroll } = useScrollY();
+  // The photo drifts slower than the page (parallax) and stretches when you pull down.
+  const heroMotion = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(y.value, [-200, 0, 340], [-100, 0, 120], Extrapolation.CLAMP) },
+      { scale: interpolate(y.value, [-200, 0], [1.6, 1], Extrapolation.CLAMP) },
+    ],
+  }));
 
   const a = artist.data;
   const cover = a && client ? (client.backdropUrl(a, 1200) ?? client.imageUrl(a, 800)) : undefined;
@@ -66,16 +76,18 @@ export default function ArtistScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: t.space.xxl }}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: t.space.xxl }}>
         <View style={[styles.hero, { backgroundColor: t.tint(tint) }]}>
           {cover ? (
-            <Image
-              source={{ uri: cover }}
-              placeholder={blurhash ? { blurhash } : undefined}
-              style={StyleHero}
-              contentFit="cover"
-              transition={200}
-            />
+            <Animated.View style={[StyleHero, heroMotion]}>
+              <Image
+                source={{ uri: cover }}
+                placeholder={blurhash ? { blurhash } : undefined}
+                style={StyleHero}
+                contentFit="cover"
+                transition={200}
+              />
+            </Animated.View>
           ) : null}
           <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.25)', t.colors.bg]} locations={[0, 0.6, 1]} style={StyleHero} />
           <T style={styles.name} numberOfLines={2}>
@@ -144,7 +156,8 @@ export default function ArtistScreen() {
             </T>
           </View>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
+      <StickyTitleBar y={y} title={a?.Name ?? ''} color={t.tint(tint)} showAt={300} />
 
       <Pressable onPress={() => router.back()} hitSlop={10} style={[styles.back, { top: insets.top + t.space.sm }]}>
         <Ionicons name="chevron-back" size={24} color={t.colors.text} />

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAlbumTracks, useItem } from '@/api/queries';
@@ -13,6 +14,7 @@ import { usePlayer } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { Artwork } from '@/ui/Artwork';
+import { StickyTitleBar, useCoverStyle, useScrollY } from '@/ui/CollapsingHeader';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
@@ -34,6 +36,8 @@ export default function AlbumScreen() {
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const isThisAlbum = usePlayer((s) => s.source?.type === 'album' && s.source.id === id);
   const playing = usePlayer((s) => s.playing);
+  const { y, onScroll } = useScrollY();
+  const cover = useCoverStyle(y);
 
   const list = tracks.data ?? [];
   const multiDisc = new Set(list.map((t) => t.ParentIndexNumber ?? 1)).size > 1;
@@ -58,7 +62,9 @@ export default function AlbumScreen() {
       <LinearGradient
         colors={[t.tint(tint), t.colors.bg]}
         style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
-        <Artwork item={album.data ?? undefined} size={ART} style={styles.artShadow} />
+        <Animated.View style={cover}>
+          <Artwork item={album.data ?? undefined} size={ART} style={styles.artShadow} />
+        </Animated.View>
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>
         <T variant="title">{album.data?.Name ?? ' '}</T>
@@ -105,7 +111,9 @@ export default function AlbumScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      <FlatList
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={list}
         keyExtractor={(t) => t.Id}
         ListHeaderComponent={header}
@@ -134,6 +142,7 @@ export default function AlbumScreen() {
           );
         }}
       />
+      <StickyTitleBar y={y} title={album.data?.Name ?? ''} color={t.tint(tint)} />
       <Pressable
         onPress={() => router.back()}
         hitSlop={10}

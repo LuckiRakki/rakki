@@ -74,8 +74,20 @@ playing album, drawn by the real renderers.
   `/UserImage` (base64 body). Photos-app picking needs a native picker → final build.
 - [ ] Verified on the phone.
 
-## 5e. Feel pass
-- [ ] Haptics on key actions, animation polish, reduced-motion paths.
+## 5e. Feel pass — built 2026-10-01
+- [x] Haptics (`src/lib/haptics.ts`, all behind Customize → Haptics): tick (buttons, chips,
+  mini-player play/next, heart), thud (long-press menus, picking up a song to drag in the queue
+  or playlist editor), success (added to a playlist, download started).
+- [x] Press feedback: tiles, quick picks and genre tiles shrink a touch under your finger.
+- [x] Spotify-style headers (`src/ui/CollapsingHeader.tsx`): on album, playlist, Liked Songs and
+  genre pages the cover shrinks/fades/drifts as you scroll and a title bar in the page colour
+  fades in; artist page: photo parallax + stretch on pull-down + title bar. Scroll-driven.
+- [x] Heart pop in the full player (`HeartButton`); mini-player slides in when music starts.
+- [x] Reduced motion also covers: Regular lyrics scrolling, the lyrics card, toasts, the
+  mini-player entrance, the heart pop and tile shrink.
+- Preview note: when the app window is minimised the browser pauses animation frames, so
+  Reanimated styles don't update — test animations only while the window is visible.
+- [ ] Verified on the phone.
 
 ## Exit test
 The user can make Rakki look the way they want from one screen, and it remembers.

@@ -25,7 +25,7 @@ export function ItemTile({ item, size, onPress }: { item: BaseItem; size: number
       onPress={onPress ?? (() => openItem(item))}
       onLongPress={() => openMenu(item)}
       delayLongPress={350}
-      style={({ pressed }) => ({ width: size, opacity: pressed ? 0.7 : 1 })}>
+      style={({ pressed }) => ({ width: size, opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed && !t.reduceMotion ? 0.96 : 1 }] })}>
       <Artwork item={item} size={size} rounded={round ? size / 2 : undefined} />
       <T
         variant="bodyStrong"
@@ -61,6 +61,7 @@ export function QuickTile({ album }: { album: BaseItem }) {
         borderRadius: t.radius.art,
         overflow: 'hidden',
         backgroundColor: pressed ? t.colors.surface3 : t.colors.surface2,
+        transform: [{ scale: pressed && !t.reduceMotion ? 0.98 : 1 }],
       })}>
       <Artwork item={album} size={56} rounded={0} />
       <View style={{ flex: 1, paddingHorizontal: 10 }}>

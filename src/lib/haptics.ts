@@ -1,9 +1,21 @@
-// Haptics, if they're on (Customize → Feel).
+// Haptics, if they're on (Customize → Feel). Three kinds, used sparingly:
+//   tick()    – a light click: buttons, choices, chips
+//   thud()    – a firmer bump: long-press menus, picking up a song to drag
+//   success() – something finished: added to a playlist, a download started
 import * as Haptics from 'expo-haptics';
 
 import { useAppearance } from '@/appearance/store';
 
-/** A light click: buttons, menu choices. */
+const on = () => useAppearance.getState().haptics;
+
 export function tick() {
-  if (useAppearance.getState().haptics) void Haptics.selectionAsync().catch(() => {});
+  if (on()) void Haptics.selectionAsync().catch(() => {});
+}
+
+export function thud() {
+  if (on()) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+}
+
+export function success() {
+  if (on()) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 }

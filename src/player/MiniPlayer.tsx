@@ -3,7 +3,9 @@ import { router } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { tick } from '@/lib/haptics';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
@@ -49,7 +51,8 @@ export function MiniPlayer() {
   );
 
   return (
-    <View style={styles.wrap}>
+    // Slides up into place when music starts (not with reduced motion).
+    <Animated.View entering={t.reduceMotion ? undefined : FadeInDown.duration(260)} style={styles.wrap}>
       <GestureDetector gesture={swipes}>
         <Pressable style={[styles.card, { backgroundColor: background }]} onPress={() => router.push('/player')}>
           {style === 'glass' ? (
@@ -64,14 +67,26 @@ export function MiniPlayer() {
               {artistLine(track)}
             </T>
           </View>
-          <Pressable hitSlop={10} onPress={() => usePlayer.getState().toggle()} style={styles.btn}>
+          <Pressable
+            hitSlop={10}
+            onPress={() => {
+              tick();
+              usePlayer.getState().toggle();
+            }}
+            style={styles.btn}>
             {buffering ? (
               <ActivityIndicator color={t.colors.text} />
             ) : (
               <Ionicons name={playing ? 'pause' : 'play'} size={26} color={t.colors.text} />
             )}
           </Pressable>
-          <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()} style={styles.btn}>
+          <Pressable
+            hitSlop={10}
+            onPress={() => {
+              tick();
+              usePlayer.getState().next();
+            }}
+            style={styles.btn}>
             <Ionicons name="play-skip-forward" size={22} color={t.colors.text} />
           </Pressable>
           {miniProgress ? (
@@ -81,7 +96,7 @@ export function MiniPlayer() {
           ) : null}
         </Pressable>
       </GestureDetector>
-    </View>
+    </Animated.View>
   );
 }
 

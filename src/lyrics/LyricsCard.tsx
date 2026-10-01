@@ -38,8 +38,8 @@ export function LyricsCard({ track, positionSec }: { track: BaseItem; positionSe
   // Keep one sung line above the current one in view.
   useEffect(() => {
     const target = lineY.current[Math.max(0, current - 1)] ?? 0;
-    offset.set(withTiming(-target, { duration: 380 }));
-  }, [current, offset]);
+    offset.set(withTiming(-target, { duration: t.reduceMotion ? 0 : 380 }));
+  }, [current, offset, t.reduceMotion]);
 
   const scroll = useAnimatedStyle(() => ({ transform: [{ translateY: offset.get() }] }));
 

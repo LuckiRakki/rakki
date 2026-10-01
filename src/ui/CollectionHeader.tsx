@@ -2,8 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated, { useSharedValue, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCoverStyle } from '@/ui/CollapsingHeader';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -22,6 +24,7 @@ export function CollectionHeader({
   onMore,
   onEdit,
   download,
+  scrollY,
 }: {
   art: ReactNode;
   tint: string;
@@ -34,14 +37,18 @@ export function CollectionHeader({
   onEdit?: () => void;
   /** The download toggle (DownloadButton), next to Shuffle. */
   download?: ReactNode;
+  /** The page's scroll position (useScrollY): the cover shrinks and fades as it scrolls. */
+  scrollY?: SharedValue<number>;
 }) {
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const still = useSharedValue(0);
+  const cover = useCoverStyle(scrollY ?? still);
   return (
     <View>
       <LinearGradient colors={[t.tint(tint), t.colors.bg]} style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
-        <View style={styles.artShadow}>{art}</View>
+        <Animated.View style={[styles.artShadow, cover]}>{art}</Animated.View>
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>
         <T variant="title" numberOfLines={2}>

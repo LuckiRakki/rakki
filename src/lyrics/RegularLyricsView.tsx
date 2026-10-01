@@ -86,8 +86,8 @@ export function RegularLyricsView({
   useEffect(() => {
     if (active < 0 || Date.now() < manualUntil.current) return;
     const y = offsets.current[active];
-    if (y !== undefined) scroll.current?.scrollTo({ y: Math.max(0, y - viewH * anchor), animated: true });
-  }, [active, viewH, anchor]);
+    if (y !== undefined) scroll.current?.scrollTo({ y: Math.max(0, y - viewH * anchor), animated: !t.reduceMotion });
+  }, [active, viewH, anchor, t.reduceMotion]);
 
   return (
     <View style={{ flex: 1 }}>

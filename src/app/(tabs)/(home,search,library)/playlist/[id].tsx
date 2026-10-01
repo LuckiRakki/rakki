@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { useItem, usePlaylistItems } from '@/api/queries';
 import { useAuth } from '@/auth/store';
@@ -10,6 +11,7 @@ import { useOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
+import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { openMenu } from '@/ui/overlays';
@@ -29,6 +31,7 @@ export default function PlaylistScreen() {
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === id);
   const [editing, setEditing] = useState(false);
   const offline = useOffline();
+  const { y, onScroll } = useScrollY();
 
   const p = playlist.data ?? undefined;
   const list = items.data ?? [];
@@ -67,6 +70,7 @@ export default function PlaylistScreen() {
         onShuffle={() => list.length && usePlayer.getState().playQueue(list, { source, shuffle: true })}
         onMore={p ? () => openMenu(p) : undefined}
         onEdit={p && list.length && !offline ? () => setEditing(true) : undefined}
+        scrollY={y}
         download={p && list.length ? <DownloadButton kind="playlist" item={p} /> : undefined}
       />
       {items.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
@@ -80,7 +84,9 @@ export default function PlaylistScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      <FlatList
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={list}
         keyExtractor={(x, i) => x.PlaylistItemId ?? `${x.Id}-${i}`}
         ListHeaderComponent={header}
@@ -96,6 +102,7 @@ export default function PlaylistScreen() {
           />
         )}
       />
+      <StickyTitleBar y={y} title={p?.Name ?? ''} color={t.tint(artColor(p && client?.blurhash(p)))} />
       <BackButton onPress={() => router.back()} />
     </View>
   );

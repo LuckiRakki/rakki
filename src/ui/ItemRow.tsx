@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { tick } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 import { Artwork } from '@/ui/Artwork';
 import { openItem } from '@/ui/nav';
@@ -52,7 +53,10 @@ export function Chip({ label, active, onPress }: { label: string; active: boolea
   const t = useTheme();
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        tick();
+        onPress();
+      }}
       style={{
         paddingHorizontal: t.space.md,
         height: 32,

@@ -2,6 +2,7 @@
 // pick-one options sheet (e.g. Library sort) and short confirmation toasts. Their hosts live once in the root layout.
 import { create } from 'zustand';
 
+import { thud } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 
 /** Where a menu was opened from, for context-only actions (e.g. remove from this playlist). */
@@ -60,7 +61,11 @@ export const useOverlays = create<Overlays>((set) => ({
   showToast: (text) => set({ toast: { text, id: Date.now() } }),
 }));
 
-export const openMenu = (item: BaseItem, context?: MenuContext) => useOverlays.getState().openMenu(item, context);
+/** Open the long-press menu (with a firm haptic bump, like Spotify). */
+export const openMenu = (item: BaseItem, context?: MenuContext) => {
+  thud();
+  useOverlays.getState().openMenu(item, context);
+};
 export const openOptions = (sheet: OptionsSheet) => useOverlays.getState().openOptions(sheet);
 export const showToast = (text: string) => useOverlays.getState().showToast(text);
 

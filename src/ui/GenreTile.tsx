@@ -40,7 +40,8 @@ export function GenreTile({
         borderRadius: t.radius.card,
         backgroundColor: color,
         overflow: 'hidden',
-        opacity: pressed ? 0.8 : 1,
+        opacity: pressed ? 0.85 : 1,
+        transform: [{ scale: pressed && !t.reduceMotion ? 0.97 : 1 }],
       })}>
       <T
         numberOfLines={2}

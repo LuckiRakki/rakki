@@ -7,6 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensio
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getRoutePicker } from '../../modules/rakki-audio';
+import { HeartButton } from '@/ui/HeartButton';
 import { tick } from '@/lib/haptics';
 import { useAuth } from '@/auth/store';
 import { localArtUri } from '@/downloads/store';
@@ -126,13 +127,7 @@ export default function PlayerScreen() {
                 style={{ fontSize: t.size(16), marginTop: 2 }}
               />
             </View>
-            <Pressable hitSlop={10} onPress={tap(() => p().setFavorite(track.Id, !favorite))}>
-              <Ionicons
-                name={favorite ? 'heart' : 'heart-outline'}
-                size={28}
-                color={favorite ? t.colors.accent : t.colors.text}
-              />
-            </Pressable>
+            <HeartButton liked={favorite} onToggle={(v) => p().setFavorite(track.Id, v)} />
           </View>
 
           <SeekBar position={position} duration={duration} onSeek={(s) => p().seek(s)} />

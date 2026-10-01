@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, useWindowDimensions, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useGenreAlbums, useGenreArtists, useGenreCounts, useGenreTopTracks } from '@/api/queries';
@@ -9,6 +10,7 @@ import { withAlpha } from '@/lib/color';
 import { usePlayer } from '@/player/store';
 import { ItemTile } from '@/ui/AlbumTile';
 import { Artwork } from '@/ui/Artwork';
+import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { useGenreColor } from '@/ui/GenreTile';
 import { SectionTitle, Shelf } from '@/ui/Shelf';
@@ -41,6 +43,7 @@ function Mosaic({ albums, color }: { albums: BaseItem[]; color: string }) {
 export default function GenreScreen() {
   const { name = '' } = useLocalSearchParams<{ name: string }>();
   const t = useTheme();
+  const { y, onScroll } = useScrollY();
   const { width } = useWindowDimensions();
   const genre = useGenreCounts().data?.find((g) => g.name === name);
   const color = useGenreColor(genre, name);
@@ -81,6 +84,7 @@ export default function GenreScreen() {
   const header = (
     <View>
       <CollectionHeader
+        scrollY={y}
         art={<Mosaic albums={albumList} color={color} />}
         tint={withAlpha(color, 0.9)}
         title={name}
@@ -130,7 +134,9 @@ export default function GenreScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      <FlatList
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={albumList}
         keyExtractor={(a) => a.Id}
         key={`genre-albums-${columns}`}
@@ -140,6 +146,7 @@ export default function GenreScreen() {
         ListHeaderComponent={header}
         renderItem={({ item }) => <ItemTile item={item} size={tile} />}
       />
+      <StickyTitleBar y={y} title={name} color={t.tint(color)} />
       <BackButton onPress={() => router.back()} />
     </View>
   );

@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { ActivityIndicator, FlatList, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { useLikedSongs } from '@/api/queries';
 import { withAlpha } from '@/lib/color';
 import { songCount } from '@/lib/format';
 import { usePlayer } from '@/player/store';
+import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { LikedArt } from '@/ui/LikedArt';
@@ -16,6 +18,7 @@ const LIKED = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
 
 export default function LikedSongsScreen() {
   const t = useTheme();
+  const { y, onScroll } = useScrollY();
   const liked = useLikedSongs();
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
@@ -26,6 +29,7 @@ export default function LikedSongsScreen() {
   const header = (
     <View>
       <CollectionHeader
+        scrollY={y}
         art={<LikedArt size={232} />}
         tint={withAlpha(t.colors.accent, 0.55)}
         title="Liked Songs"
@@ -49,7 +53,9 @@ export default function LikedSongsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      <FlatList
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={list}
         keyExtractor={(x) => x.Id}
         ListHeaderComponent={header}
@@ -64,6 +70,7 @@ export default function LikedSongsScreen() {
           />
         )}
       />
+      <StickyTitleBar y={y} title="Liked Songs" color={t.tint(t.colors.accent)} />
       <BackButton onPress={() => router.back()} />
     </View>
   );

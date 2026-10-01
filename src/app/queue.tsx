@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
+import { runOnJS } from 'react-native-reanimated';
 import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { thud } from '@/lib/haptics';
 import { artistLine } from '@/lib/items';
 import { queueRows, reorderedUpcoming } from '@/player/queueRows';
 import { usePlayer, type QueueEntry } from '@/player/store';
@@ -65,6 +67,10 @@ export default function QueueScreen() {
       <ReorderableList
         data={rows}
         keyExtractor={(r) => r.key}
+        onDragStart={() => {
+          'worklet';
+          runOnJS(thud)();
+        }}
         onReorder={onReorder}
         ListHeaderComponent={nowPlaying}
         contentContainerStyle={{ paddingBottom: insets.bottom + t.space.xl }}
