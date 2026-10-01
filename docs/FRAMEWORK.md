@@ -392,6 +392,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
   - Add soft dark fades behind the header and footer, so lyrics scrolling under the title, toggle and credit line stay readable.
 
 ### Phase 6: Extras
+- **Widgets: built 2026-10-01** (see docs/phase-6.md). Now Playing (small, medium, Lock Screen) and Jump Back In (medium, large) through `expo-widgets`, with a patch for SideStore's app-group renaming. Live Activity skipped (no Dynamic Island; the Lock Screen already has media controls). Arrives with the final native build. The original plan:
 - **Widgets** (user request, 2026-09-30; like YouTube Music / Spotify):
   - **Home screen:** a small widget (last played art, tap to resume) and a medium "Jump back in" grid (recent albums/playlists, each opens in Rakki).
   - **Lock screen:** a circular Rakki button that opens the app, and a rectangular "last played" that resumes it.
