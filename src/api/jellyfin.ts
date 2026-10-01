@@ -306,6 +306,17 @@ export class JellyfinClient {
     return this.send('POST', '/Sessions/Playing/Stopped', info);
   }
 
+  /**
+   * Count a listen that happened at `when` but couldn't be reported then (offline): Jellyfin
+   * adds one to the play count and sets "last played" to that date.
+   */
+  markPlayed(itemId: string, when: Date) {
+    return this.send('POST', `/UserPlayedItems/${itemId}`, undefined, {
+      userId: this.session.userId,
+      datePlayed: when.toISOString(),
+    });
+  }
+
   /** Spicy Lyrics plugin: word-timed TTML as JSON (404 when the song has none). */
   getSpicyLyrics(itemId: string) {
     return this.get<TtmlDto>(`/SpicyLyrics/${itemId}/ttml`);

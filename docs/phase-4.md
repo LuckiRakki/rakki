@@ -59,7 +59,10 @@ Checked before starting (2026-10-01):
 - [x] Offline hides server-only actions (like, add to playlist, radio, rename/delete, create
   playlist, edit playlist, new downloads).
 - [x] Downloads pause offline and resume (plus playlist sync) when the server is back.
-- [ ] Playback reports made offline are dropped for now (later: sync play counts).
+- [x] Offline listens (0.8.0): a song that counts as played (90% or the whole of it) but couldn't
+  be reported is kept per account and sent when the server is back, as "mark played" with the
+  date it happened, so play counts and Recently played catch up (`src/player/offlineListens.ts`).
+  Last.fm scrobbles via the server plugin only see live playback, so they don't get these.
 - [x] Verified on the phone (the user moved on to Phase 5, 2026-10-01).
 
 ## Exit test

@@ -12,6 +12,7 @@ import { useAuth } from '@/auth/store';
 import { watchServer } from '@/lib/online';
 import { checkForUpdate } from '@/lib/updates';
 import { startDownloads } from '@/downloads/manager';
+import { sendKeptListens } from '@/player/offlineListens';
 import { restoreQueue } from '@/player/store';
 import { ensureSearchIndex } from '@/search/index';
 import { loadRecentSearches } from '@/search/recent';
@@ -67,6 +68,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     loadRecentSearches(userId);
     // After downloads load, so a restored queue plays downloaded songs from the phone.
     restoreQueue(userId);
+    // Listens from the last time Rakki was offline.
+    void sendKeptListens();
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);

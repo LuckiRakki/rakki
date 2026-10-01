@@ -5,9 +5,12 @@
 //   every 10 s while playing → /Progress TimeUpdate
 //   after a seek (debounced) → /Progress TimeUpdate
 //   song ends or is skipped → /Stopped with where it stopped (full length if it ended)
-// Failures are ignored: reporting must never interrupt playback. Offline listens: Phase 4.
+// Failures are ignored: reporting must never interrupt playback. A song that counts as played
+// but couldn't be reported (offline) is kept and sent later (offlineListens.ts).
 import type { BaseItem, PlaybackInfo } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { ticksToSeconds } from '@/lib/format';
+import { countsAsPlayed, keepListen } from '@/player/offlineListens';
 
 const TICKS_PER_SECOND = 10_000_000;
 const REPORT_EVERY_MS = 10_000;
@@ -18,6 +21,7 @@ interface Current {
   key: string;
   playSessionId: string;
   startTicks: number;
+  durationSec: number;
 }
 
 interface Context {
@@ -40,7 +44,7 @@ function sessionId() {
   return s;
 }
 
-function send(kind: 'start' | 'progress' | 'stopped', body: PlaybackInfo) {
+function send(kind: 'start' | 'progress' | 'stopped', body: PlaybackInfo, onFail?: () => void) {
   const client = useAuth.getState().client;
   if (!client) return;
   const call =
@@ -49,7 +53,7 @@ function send(kind: 'start' | 'progress' | 'stopped', body: PlaybackInfo) {
       : kind === 'progress'
         ? client.reportPlaybackProgress(body)
         : client.reportPlaybackStopped(body);
-  call.catch(() => {});
+  call.catch(() => onFail?.());
 }
 
 function info(c: Current, position: number, extra: Partial<PlaybackInfo> = {}): PlaybackInfo {
@@ -98,6 +102,7 @@ export const reporter = {
       key,
       playSessionId: sessionId(),
       startTicks: Date.now() * 10_000,
+      durationSec: ticksToSeconds(item.RunTimeTicks),
     };
     lastPosition = 0;
     sinceReport = 0;
@@ -107,7 +112,11 @@ export const reporter = {
   /** @param position where the song stopped; defaults to the last sampled position. */
   stopped(position?: number | null) {
     if (!current) return;
-    send('stopped', info(current, position ?? lastPosition));
+    const song = current;
+    const at = position ?? lastPosition;
+    send('stopped', info(song, at), () => {
+      if (countsAsPlayed(at, song.durationSec)) keepListen(song.itemId);
+    });
     current = null;
     if (seekTimer) clearTimeout(seekTimer);
     seekTimer = null;
