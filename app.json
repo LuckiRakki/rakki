@@ -54,6 +54,14 @@
       ],
       "expo-sqlite",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Rakki uses a photo only when you pick it as your profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-widgets",
         {
           "widgets": [

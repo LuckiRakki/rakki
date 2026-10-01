@@ -77,6 +77,8 @@ declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
   stop(): Promise<void>;
   /** Synchronous; cheap enough to call every frame. */
   getProgress(): Progress;
+  /** Keep a folder out of iCloud backups. Missing in builds from before 0.2.0. */
+  excludeFromBackup?(uri: string): boolean;
 }
 
 /** null where the native engine isn't built in (web, Android, Expo Go). */

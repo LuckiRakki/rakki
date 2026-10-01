@@ -3,14 +3,15 @@
 //                                              the next native build turns file sharing on)
 //   .rakki/art/<itemId>.jpg                    cover art   } hidden: Rakki's own data
 //   .rakki/lyrics/<itemId>.json                lyrics      }
-// Documents is never purged by iOS (unlike Caches). It is included in iCloud backups for now;
-// excluding it needs a native call, planned for the Phase 6 native build.
+// Documents is never purged by iOS (unlike Caches). Both folders are kept out of iCloud
+// backups (from build 0.2.0; it's a native call): everything in them can be downloaded again.
 //
 // Update 16 saved songs as downloads/<itemId>.<ext>; the manager moves them on launch.
 import { Directory, File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { RakkiAudio } from '../../modules/rakki-audio';
 
 /** Downloads need the phone's file system: not available in the web preview. */
 export const downloadsSupported = Platform.OS !== 'web';
@@ -27,6 +28,7 @@ function ensureDirs() {
   const art = new Directory(Paths.document, INTERNAL, 'art');
   const lyrics = new Directory(Paths.document, INTERNAL, 'lyrics');
   for (const d of [music, art, lyrics]) d.create({ intermediates: true, idempotent: true });
+  for (const d of [music, new Directory(Paths.document, INTERNAL)]) RakkiAudio?.excludeFromBackup?.(d.uri);
   dirs = { music, art, lyrics };
   return dirs;
 }

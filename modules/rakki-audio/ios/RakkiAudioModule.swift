@@ -112,6 +112,20 @@ public class RakkiAudioModule: Module {
       return existing.progress()
     }
 
+    /// Keeps a folder (and everything in it) out of iCloud and computer backups: downloads can
+    /// always be fetched again, so they shouldn't fill up the user's iCloud storage.
+    Function("excludeFromBackup") { (uri: String) -> Bool in
+      var url = URL(string: uri).flatMap { $0.isFileURL ? $0 : nil } ?? URL(fileURLWithPath: uri)
+      var values = URLResourceValues()
+      values.isExcludedFromBackup = true
+      do {
+        try url.setResourceValues(values)
+        return true
+      } catch {
+        return false
+      }
+    }
+
     View(RakkiRoutePickerView.self) {
       Prop("tintColor") { (view: RakkiRoutePickerView, color: UIColor) in
         view.picker.tintColor = color
