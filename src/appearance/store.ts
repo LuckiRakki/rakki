@@ -7,7 +7,16 @@ import { create } from 'zustand';
 import type { FontKey } from '@/appearance/fonts';
 import { readPref, writePref } from '@/lib/prefs';
 
-export type ShelfId = 'jumpBackIn' | 'playlists' | 'artists' | 'recentlyAdded' | 'mostPlayed' | 'rediscover' | 'random';
+export type ShelfId =
+  | 'jumpBackIn'
+  | 'playlists'
+  | 'artists'
+  | 'recentlyAdded'
+  | 'mostPlayed'
+  | 'rediscover'
+  | 'random'
+  | 'musicVideos'
+  | 'radio';
 
 /** Home's shelves, in their default order. */
 export const SHELVES: { id: ShelfId; label: string }[] = [
@@ -18,6 +27,8 @@ export const SHELVES: { id: ShelfId; label: string }[] = [
   { id: 'mostPlayed', label: 'Most played' },
   { id: 'rediscover', label: 'Rediscover' },
   { id: 'random', label: 'Random picks' },
+  { id: 'musicVideos', label: 'Music videos' },
+  { id: 'radio', label: 'Radio' },
 ];
 
 export interface Appearance {

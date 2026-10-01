@@ -6,6 +6,21 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 0.11.0 (2026-10-01)
+- **Radio, with SUB/WAVE built in.** Library → Radio → *Add a station*: paste a SUB/WAVE
+  station's address (e.g. its Tailscale name) and Rakki finds its name, stream and API on
+  its own; any other internet radio works with its stream URL or a .pls / .m3u link. A Radio
+  row on Home too (Customize can hide it).
+  - The live stream plays through Rakki's engine (lock screen, background, sleep timer).
+  - SUB/WAVE stations: what's on air every 10 s (song, artist, cover; the lock screen and the
+    Now Playing widget follow), the show and DJ, **Request a song** to the DJ, and
+    **Recently on air**.
+  - The player turns into a live layout: LIVE with the show, play/pause only (no seeking,
+    skipping, liking or queue). Lock screen skip reconnects the stream.
+  - Radio isn't reported to Jellyfin, saved as your queue, or followed by autoplay.
+- **Music videos on Home** (a row, newest first; Customize can hide it) **and in Search**
+  (All results).
+
 ## 0.10.0 (2026-10-01)
 - **Music videos.** Videos from Jellyfin's Music Videos library are matched to songs by
   artist and title ("CONFETTI - ARMY STYLE (OFFICIAL MUSIC VIDEO)" finds "army style"):

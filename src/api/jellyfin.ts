@@ -65,6 +65,8 @@ export interface BaseItem {
   NormalizationGain?: number;
   /** Credits (composers etc.), when the file has them and the request asked for People. */
   People?: { Name: string; Id: string; Type?: string; Role?: string }[];
+  /** A radio station playing in the queue (not a Jellyfin item; see src/radio). */
+  Radio?: { stationId: string; streamUrl: string; coverUrl?: string };
   /** Music videos (Fields=MediaSources): the file's container and streams. */
   MediaSources?: {
     Id: string;
@@ -439,7 +441,7 @@ export class JellyfinClient {
 
   /** Every music video (the Music Videos library), with what's needed to play them. */
   async getMusicVideos(): Promise<BaseItem[]> {
-    const r = await this.items({ IncludeItemTypes: 'MusicVideo', Fields: 'MediaSources', SortBy: 'SortName', Limit: 2000 });
+    const r = await this.items({ IncludeItemTypes: 'MusicVideo', Fields: 'MediaSources,DateCreated', SortBy: 'SortName', Limit: 2000 });
     return r.Items;
   }
 

@@ -14,6 +14,7 @@ import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 import { artistLine } from '@/lib/items';
 import { engine, type RakkiTrack, type RepeatMode } from '@/player/engine';
+import type { Station } from '@/radio/stations';
 import { reporter } from '@/player/reporting';
 import { useSettings } from '@/settings/store';
 import { showToast } from '@/ui/overlays';
@@ -29,7 +30,7 @@ export interface QueueEntry {
 }
 
 export interface QueueSource {
-  type: 'album' | 'playlist' | 'artist' | 'tracks' | 'genre' | 'search';
+  type: 'album' | 'playlist' | 'artist' | 'tracks' | 'genre' | 'search' | 'radio';
   id?: string;
   name: string;
 }
@@ -44,6 +45,8 @@ interface PlayerState {
   source: QueueSource | null;
   error: string | null;
   playQueue(items: BaseItem[], opts?: { startIndex?: number; shuffle?: boolean; source?: QueueSource }): void;
+  /** Tune in to a radio station (replaces the queue). */
+  playStation(station: Station): void;
   playNext(items: BaseItem[]): void;
   addToQueue(items: BaseItem[]): void;
   removeAt(index: number): void;
@@ -96,18 +99,39 @@ function toTracks(queue: QueueEntry[]): RakkiTrack[] {
   const client = useAuth.getState().client;
   if (!client) return [];
   const kbps = maxKbps();
-  return queue.map(({ key, item }) => ({
-    key,
-    id: item.Id,
-    // Downloaded songs play from the phone, even when online.
-    url: localAudioUri(item.Id) ?? client.streamUrl(item.Id, kbps),
-    title: item.Name,
-    artist: artistLine(item),
-    album: item.Album ?? '',
-    artworkUrl: localArtUri(item.AlbumId ?? item.Id) ?? client.imageUrl(item, 600) ?? null,
-    duration: ticksToSeconds(item.RunTimeTicks),
-    gain: gainFor(item),
-  }));
+  return queue.map(({ key, item }) => {
+    // A radio station: its live stream, with the song on air (no length, no loudness info).
+    if (item.Radio) {
+      return {
+        key,
+        id: item.Id,
+        url: item.Radio.streamUrl,
+        title: item.Name,
+        artist: artistLine(item),
+        album: item.Album ?? '',
+        artworkUrl: item.Radio.coverUrl ?? null,
+        duration: 0,
+        gain: 1,
+      };
+    }
+    return {
+      key,
+      id: item.Id,
+      // Downloaded songs play from the phone, even when online.
+      url: localAudioUri(item.Id) ?? client.streamUrl(item.Id, kbps),
+      title: item.Name,
+      artist: artistLine(item),
+      album: item.Album ?? '',
+      artworkUrl: localArtUri(item.AlbumId ?? item.Id) ?? client.imageUrl(item, 600) ?? null,
+      duration: ticksToSeconds(item.RunTimeTicks),
+      gain: gainFor(item),
+    };
+  });
+}
+
+/** A radio station is playing (its stream is the only thing in the queue). */
+export function radioPlaying(s: Pick<PlayerState, 'queue' | 'index'> = usePlayer.getState()): boolean {
+  return !!s.queue[s.index]?.item.Radio;
 }
 
 /** The downloaded ones (offline); says so when none are. */
@@ -163,14 +187,36 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       index = 0;
     }
     set({ queue, index, shuffle, source: opts.source ?? null, error: null, buffering: true });
+    // Radio plays with the engine on repeat-one (so a dropped stream reconnects): put the
+    // listener's own repeat back.
+    void engine.setRepeatMode(get().repeat);
     void engine.setQueue(toTracks(queue), index, 0, true);
+  },
+
+  playStation(station) {
+    if (isOffline()) {
+      showToast('Radio needs a connection');
+      return;
+    }
+    const item: BaseItem = {
+      Id: `radio:${station.id}`,
+      Name: station.name,
+      Type: 'Radio',
+      Album: station.name,
+      Radio: { stationId: station.id, streamUrl: station.streamUrl },
+    };
+    const queue = entries([item], 'context');
+    unshuffledKeys = null;
+    set({ queue, index: 0, source: { type: 'radio', id: station.id, name: station.name }, error: null, buffering: true });
+    void engine.setRepeatMode('one');
+    void engine.setQueue(toTracks(queue), 0, 0, true);
   },
 
   playNext(items) {
     if (isOffline()) items = playableOffline(items);
     if (!items.length) return;
     const { queue, index } = get();
-    if (queue.length === 0) return get().playQueue(items);
+    if (queue.length === 0 || radioPlaying()) return get().playQueue(items);
     const next = [...queue];
     next.splice(index + 1, 0, ...entries(items, 'queued'));
     syncQueue(next);
@@ -180,7 +226,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     if (isOffline()) items = playableOffline(items);
     if (!items.length) return;
     const { queue, index } = get();
-    if (queue.length === 0) return get().playQueue(items);
+    if (queue.length === 0 || radioPlaying()) return get().playQueue(items);
     // After the current song and any songs already added with Play next / Add to queue.
     let pos = index + 1;
     while (queue[pos]?.origin === 'queued') pos++;
@@ -222,11 +268,11 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   },
 
   next() {
-    void engine.skipToNext();
+    if (!radioPlaying()) void engine.skipToNext();
   },
 
   previous() {
-    void engine.skipToPrevious();
+    if (!radioPlaying()) void engine.skipToPrevious();
   },
 
   seek(seconds) {
@@ -394,6 +440,8 @@ function slimEntry(e: QueueEntry): QueueEntry {
 }
 
 function writeQueue(id: string) {
+  // Radio isn't saved: the last music queue comes back next time instead.
+  if (radioPlaying()) return;
   const { queue, index, shuffle, repeat, source } = usePlayer.getState();
   writePref(queueKey(id), JSON.stringify({ v: 1, queue: queue.map(slimEntry), index, shuffle, repeat, source, unshuffledKeys }));
 }
@@ -488,7 +536,7 @@ let autoplayBusy = false;
 async function maybeAutoplay() {
   const s = usePlayer.getState();
   const client = useAuth.getState().client;
-  if (!client || autoplayBusy || !s.queue.length || s.index < s.queue.length - 1) return;
+  if (!client || autoplayBusy || !s.queue.length || s.index < s.queue.length - 1 || radioPlaying(s)) return;
   if (!useSettings.getState().autoplay || s.repeat !== 'off' || isOffline()) return;
   autoplayBusy = true;
   try {
@@ -510,4 +558,25 @@ async function maybeAutoplay() {
 // Web dev preview only: lets tests set up a queue from the browser console without playing.
 if (__DEV__ && typeof window !== 'undefined') {
   (globalThis as { __rakkiPlayer?: typeof usePlayer }).__rakkiPlayer = usePlayer;
+}
+
+/**
+ * New now-playing info for the radio station that's on (from SUB/WAVE): the song, artist and
+ * cover replace the entry's, and the lock screen follows. The stream keeps playing.
+ */
+export function updateRadioNowPlaying(stationId: string, info: { title: string; artist: string; album?: string; coverUrl?: string }) {
+  const { queue, index } = usePlayer.getState();
+  const entry = queue[index];
+  if (!entry?.item.Radio || entry.item.Radio.stationId !== stationId) return;
+  const item: BaseItem = {
+    ...entry.item,
+    Name: info.title || entry.item.Album || entry.item.Name,
+    Artists: info.artist ? [info.artist] : [],
+    Album: info.album || entry.item.Album,
+    Radio: { ...entry.item.Radio, coverUrl: info.coverUrl },
+  };
+  if (item.Name === entry.item.Name && item.Artists?.[0] === entry.item.Artists?.[0] && item.Radio?.coverUrl === entry.item.Radio.coverUrl) return;
+  const next = queue.map((e, i) => (i === index ? { ...e, item } : e));
+  usePlayer.setState({ queue: next });
+  void engine.updateQueue(toTracks(next));
 }

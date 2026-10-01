@@ -97,6 +97,8 @@ export const reporter = {
   },
 
   started(item: BaseItem, key: string) {
+    // Radio isn't a Jellyfin item: nothing to report.
+    if (item.Radio) return;
     current = {
       itemId: item.Id,
       key,

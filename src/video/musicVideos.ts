@@ -53,6 +53,23 @@ export function videosByArtist(artist: string | undefined, videos: BaseItem[] | 
     .sort((a, b) => (b.ProductionYear ?? 0) - (a.ProductionYear ?? 0));
 }
 
+/** The newest music videos first (Home). */
+export function newestVideos(videos: BaseItem[] | undefined, limit = 12): BaseItem[] {
+  return [...(videos ?? [])].sort((a, b) => (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')).slice(0, limit);
+}
+
+/** Music videos whose title or artist has every word of the search. */
+export function searchVideos(term: string, videos: BaseItem[] | undefined, limit = 10): BaseItem[] {
+  const words = matchKey(term).split(' ').filter(Boolean);
+  if (!words.length || !videos?.length) return [];
+  return videos
+    .filter((v) => {
+      const text = matchKey(`${v.Name} ${(v.Artists ?? []).join(' ')}`);
+      return words.every((w) => text.includes(w));
+    })
+    .slice(0, limit);
+}
+
 /** Load the video list in the background (menus read it from the cache). */
 export function prefetchMusicVideos() {
   const { client, session } = useAuth.getState();

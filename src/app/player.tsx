@@ -27,6 +27,8 @@ import { openAddToPlaylist, openMenu, openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { findVideoFor, playMusicVideo } from '@/video/musicVideos';
+import { useOnAir } from '@/radio/live';
+import { RadioCard } from '@/radio/RadioCard';
 
 const RoutePicker = getRoutePicker();
 
@@ -56,6 +58,10 @@ export default function PlayerScreen() {
   const sleepLabel = useSleepLabel();
   const videos = useMusicVideos();
   const video = track && videos.data ? findVideoFor(track, videos.data) : undefined;
+  // A radio station: live, so no seeking, skipping, liking or queue.
+  const stationId = track?.Radio?.stationId;
+  const onAir = useOnAir((s) => (stationId ? s.byStation[stationId] : undefined));
+  const radio = !!stationId;
 
   if (!track) {
     return (
@@ -103,9 +109,13 @@ export default function PlayerScreen() {
                 {source?.name ?? track.Album ?? ''}
               </T>
             </View>
-            <Pressable hitSlop={12} onPress={() => openMenu(track, { fromPlayer: true })}>
-              <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.text} />
-            </Pressable>
+            {radio ? (
+              <View style={{ width: 24 }} />
+            ) : (
+              <Pressable hitSlop={12} onPress={() => openMenu(track, { fromPlayer: true })}>
+                <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.text} />
+              </Pressable>
+            )}
           </View>
 
           {/* Artwork */}
@@ -131,46 +141,70 @@ export default function PlayerScreen() {
                 style={{ fontSize: t.size(16), marginTop: 2 }}
               />
             </View>
-            <HeartButton
-              liked={favorite}
-              onToggle={(v) => p().setFavorite(track.Id, v)}
-              onLongPress={() => {
-                thud();
-                openAddToPlaylist([track], track.Name);
-              }}
-            />
+            {radio ? null : (
+              <HeartButton
+                liked={favorite}
+                onToggle={(v) => p().setFavorite(track.Id, v)}
+                onLongPress={() => {
+                  thud();
+                  openAddToPlaylist([track], track.Name);
+                }}
+              />
+            )}
           </View>
 
-          <SeekBar position={position} duration={duration} onSeek={(s) => p().seek(s)} />
+          {radio ? (
+            <View style={styles.live}>
+              <View style={styles.liveDot} />
+              <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(12), color: t.colors.accent }}>LIVE</T>
+              <T variant="caption" numberOfLines={1} style={{ flex: 1, marginLeft: t.space.sm }}>
+                {onAir?.show ? (onAir.dj ? `${onAir.show} with ${onAir.dj}` : onAir.show) : (source?.name ?? '')}
+              </T>
+            </View>
+          ) : (
+            <SeekBar position={position} duration={duration} onSeek={(s) => p().seek(s)} />
+          )}
 
           {/* Transport */}
-          <View style={styles.controls}>
-            <Pressable hitSlop={10} onPress={tap(() => p().toggleShuffle())}>
-              <Ionicons name="shuffle" size={26} color={shuffle ? t.colors.accent : t.colors.text} />
-              {shuffle ? <View style={styles.dot} /> : null}
-            </Pressable>
-            <Pressable hitSlop={10} onPress={tap(() => p().previous())}>
-              <Ionicons name="play-skip-back" size={34} color={t.colors.text} />
-            </Pressable>
-            <Pressable onPress={tap(() => p().toggle())} style={styles.playBtn}>
-              {buffering ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <Ionicons name={playing ? 'pause' : 'play'} size={34} color="#000" style={{ marginLeft: playing ? 0 : 4 }} />
-              )}
-            </Pressable>
-            <Pressable hitSlop={10} onPress={tap(() => p().next())}>
-              <Ionicons name="play-skip-forward" size={34} color={t.colors.text} />
-            </Pressable>
-            <Pressable hitSlop={10} onPress={tap(() => p().cycleRepeat())}>
-              <Ionicons name="repeat" size={26} color={repeat !== 'off' ? t.colors.accent : t.colors.text} />
-              {repeat === 'one' ? (
-                <T style={styles.repeatOne}>1</T>
-              ) : repeat === 'all' ? (
-                <View style={styles.dot} />
-              ) : null}
-            </Pressable>
-          </View>
+          {radio ? (
+            <View style={[styles.controls, { justifyContent: 'center' }]}>
+              <Pressable onPress={tap(() => p().toggle())} style={styles.playBtn} accessibilityLabel={playing ? 'Pause' : 'Play'}>
+                {buffering ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Ionicons name={playing ? 'pause' : 'play'} size={34} color="#000" style={{ marginLeft: playing ? 0 : 4 }} />
+                )}
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.controls}>
+              <Pressable hitSlop={10} onPress={tap(() => p().toggleShuffle())}>
+                <Ionicons name="shuffle" size={26} color={shuffle ? t.colors.accent : t.colors.text} />
+                {shuffle ? <View style={styles.dot} /> : null}
+              </Pressable>
+              <Pressable hitSlop={10} onPress={tap(() => p().previous())}>
+                <Ionicons name="play-skip-back" size={34} color={t.colors.text} />
+              </Pressable>
+              <Pressable onPress={tap(() => p().toggle())} style={styles.playBtn}>
+                {buffering ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Ionicons name={playing ? 'pause' : 'play'} size={34} color="#000" style={{ marginLeft: playing ? 0 : 4 }} />
+                )}
+              </Pressable>
+              <Pressable hitSlop={10} onPress={tap(() => p().next())}>
+                <Ionicons name="play-skip-forward" size={34} color={t.colors.text} />
+              </Pressable>
+              <Pressable hitSlop={10} onPress={tap(() => p().cycleRepeat())}>
+                <Ionicons name="repeat" size={26} color={repeat !== 'off' ? t.colors.accent : t.colors.text} />
+                {repeat === 'one' ? (
+                  <T style={styles.repeatOne}>1</T>
+                ) : repeat === 'all' ? (
+                  <View style={styles.dot} />
+                ) : null}
+              </Pressable>
+            </View>
+          )}
 
           {error ? (
             <T variant="caption" color={t.colors.danger} style={{ textAlign: 'center', marginBottom: t.space.sm }}>
@@ -212,15 +246,23 @@ export default function PlayerScreen() {
                   <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(12), color: t.colors.accent }}>{sleepLabel}</T>
                 </Pressable>
               ) : null}
-              <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
-                <Ionicons name="list" size={26} color={t.colors.text} />
-              </Pressable>
+              {radio ? null : (
+                <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
+                  <Ionicons name="list" size={26} color={t.colors.text} />
+                </Pressable>
+              )}
             </View>
           </View>
         </View>
         <View style={{ paddingHorizontal: t.space.lg }}>
-          {t.appearance.lyricsCard ? <LyricsCard track={track} positionSec={position} /> : null}
-          <CreditsCard track={track} />
+          {stationId ? (
+            <RadioCard stationId={stationId} />
+          ) : (
+            <>
+              {t.appearance.lyricsCard ? <LyricsCard track={track} positionSec={position} /> : null}
+              <CreditsCard track={track} />
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -270,6 +312,8 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.accent,
   },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  live: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 44, marginBottom: t.space.sm },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: t.colors.accent },
   sleepPill: {
     flexDirection: 'row',
     alignItems: 'center',

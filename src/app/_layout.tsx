@@ -22,6 +22,7 @@ import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
 import { prefetchMusicVideos } from '@/video/musicVideos';
+import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 
 SplashScreen.preventAutoHideAsync();
@@ -76,9 +77,11 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);
 
-  // Home Screen / Lock Screen widgets follow the player and recently played from here on.
+  // Home Screen / Lock Screen widgets follow the player and recently played from here on;
+  // a radio station's now-playing is followed while it plays.
   useEffect(() => {
     startWidgets();
+    watchRadio();
   }, []);
 
   // Build or top up the fuzzy-search index once the first screens have loaded.
@@ -116,6 +119,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
               <Stack.Screen name="lyrics-style" options={{ presentation: 'modal' }} />
               <Stack.Screen name="add-account" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="add-station" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="login" />

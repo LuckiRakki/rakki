@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem, GenreCount } from '@/api/jellyfin';
-import { useGenreCounts } from '@/api/queries';
+import { useGenreCounts, useMusicVideos } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { kindLine } from '@/lib/items';
 import { useOffline } from '@/lib/online';
@@ -31,6 +31,8 @@ import { SectionTitle, Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
+import { VideoShelf } from '@/ui/VideoShelf';
+import { searchVideos } from '@/video/musicVideos';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -343,6 +345,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
 
 function AllResults({ data, term, footer }: { data: SearchResults; term: string; footer: ReactNode }) {
   const t = useTheme();
+  const videos = searchVideos(term, useMusicVideos().data);
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -360,6 +363,7 @@ function AllResults({ data, term, footer }: { data: SearchResults; term: string;
       <Shelf title="Artists" items={data.artists} size={120} onItemPress={(x) => openResult(x)} />
       <Shelf title="Albums" items={data.albums} size={140} onItemPress={(x) => openResult(x)} />
       <Shelf title="Playlists" items={data.playlists} size={140} onItemPress={(x) => openResult(x)} />
+      <VideoShelf title="Music videos" videos={videos} />
       {data.genres.length ? (
         <View style={{ marginTop: t.space.xl }}>
           <SectionTitle title="Genres" />

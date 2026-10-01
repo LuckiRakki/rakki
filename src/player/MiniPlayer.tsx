@@ -86,15 +86,17 @@ export function MiniPlayer() {
               <Ionicons name={playing ? 'pause' : 'play'} size={26} color={t.colors.text} />
             )}
           </Pressable>
-          <Pressable
-            hitSlop={10}
-            onPress={() => {
-              tick();
-              usePlayer.getState().next();
-            }}
-            style={styles.btn}>
-            <Ionicons name="play-skip-forward" size={22} color={t.colors.text} />
-          </Pressable>
+          {track.Radio ? null : (
+            <Pressable
+              hitSlop={10}
+              onPress={() => {
+                tick();
+                usePlayer.getState().next();
+              }}
+              style={styles.btn}>
+              <Ionicons name="play-skip-forward" size={22} color={t.colors.text} />
+            </Pressable>
+          )}
           {miniProgress ? (
             <View style={styles.track}>
               <View style={[styles.fill, { width: `${pct}%` }]} />

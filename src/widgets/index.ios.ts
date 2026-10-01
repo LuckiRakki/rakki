@@ -196,6 +196,7 @@ async function saveArt(
   opts: { allowLocal?: boolean } = {},
 ): Promise<string | undefined> {
   const client = useAuth.getState().client;
+  if (item.Radio) return saveRadioArt(item.Radio.coverUrl, names);
   const albumId = item.ImageTags?.Primary ? item.Id : item.AlbumId;
   const tag = item.ImageTags?.Primary ?? item.AlbumPrimaryImageTag;
   if (!folder || !client || !albumId) return undefined;
@@ -220,6 +221,22 @@ async function saveArt(
   } catch {
     return undefined;
   }
+}
+
+/** The cover of the song on a radio station (from the station), named after its address. */
+async function saveRadioArt(coverUrl: string | undefined, names: Set<string>): Promise<string | undefined> {
+  if (!folder || !coverUrl || isOffline()) return undefined;
+  let hash = 0;
+  for (let i = 0; i < coverUrl.length; i++) hash = (hash * 31 + coverUrl.charCodeAt(i)) | 0;
+  const name = `art-radio-${Math.abs(hash).toString(36)}.jpg`;
+  names.add(name);
+  const file = new File(folder, name);
+  if (file.exists) return file.uri;
+  const saved = await File.downloadFileAsync(coverUrl, file, { idempotent: true }).then(
+    () => true,
+    () => false,
+  );
+  return saved ? file.uri : undefined;
 }
 
 function removeLeftoverArt() {

@@ -32,7 +32,10 @@ export function Artwork({
   // Saved cover art (downloaded albums/playlists) works offline and loads instantly.
   const artId = item ? (item.Type === 'Audio' ? item.AlbumId : item.Id) : undefined;
   const hasLocal = useDownloads((s) => !!artId && !!s.art[artId]);
-  const uri = (hasLocal ? localArtUri(artId) : null) ?? (item && client?.imageUrl(item, bucket(size * PixelRatio.get())));
+  // A radio station shows the cover of the song on air (from the station).
+  const uri = item?.Radio
+    ? item.Radio.coverUrl
+    : ((hasLocal ? localArtUri(artId) : null) ?? (item && client?.imageUrl(item, bucket(size * PixelRatio.get()))));
   const blurhash = item && client?.blurhash(item);
 
   if (!uri) {
@@ -43,7 +46,7 @@ export function Artwork({
           { backgroundColor: t.colors.surface3, alignItems: 'center', justifyContent: 'center' },
           style,
         ]}>
-        <Ionicons name="musical-notes" size={size * 0.36} color={t.colors.textMuted} />
+        <Ionicons name={item?.Radio ? 'radio' : 'musical-notes'} size={size * 0.36} color={item?.Radio ? t.colors.accent : t.colors.textMuted} />
       </View>
     );
   }

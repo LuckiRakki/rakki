@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   queryClient,
   useMostPlayed,
+  useMusicVideos,
   usePlaylists,
   useRandomAlbums,
   useRecentlyAdded,
@@ -30,6 +31,9 @@ import { Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { UserAvatar } from '@/ui/UserAvatar';
+import { VideoShelf } from '@/ui/VideoShelf';
+import { RadioShelf } from '@/radio/RadioShelf';
+import { newestVideos } from '@/video/musicVideos';
 
 export default function HomeScreen() {
   const t = useTheme();
@@ -42,6 +46,7 @@ export default function HomeScreen() {
   const random = useRandomAlbums();
   const playlists = usePlaylists();
   const topArtists = useTopArtists();
+  const videos = useMusicVideos();
 
   const { homeOrder, homeHidden, quickPicks, greeting: showGreeting } = t.appearance;
 
@@ -58,6 +63,8 @@ export default function HomeScreen() {
     mostPlayed: <Shelf key="mostPlayed" title="Most played" items={mostPlayed.data} />,
     rediscover: <Shelf key="rediscover" title="Rediscover" items={rediscover.data} />,
     random: <Shelf key="random" title="Random picks" items={random.data} />,
+    musicVideos: <VideoShelf key="musicVideos" title="Music videos" videos={newestVideos(videos.data)} />,
+    radio: <RadioShelf key="radio" />,
   };
   const refreshing = recent.isRefetching || added.isRefetching;
 

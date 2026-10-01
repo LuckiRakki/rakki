@@ -24,6 +24,8 @@ import {
 import { ItemTile } from '@/ui/AlbumTile';
 import { Artwork } from '@/ui/Artwork';
 import { GenreTile } from '@/ui/GenreTile';
+import { useStations } from '@/radio/stations';
+import { StationRow } from '@/radio/StationViews';
 import { Chip, ItemRow } from '@/ui/ItemRow';
 import { LikedArt } from '@/ui/LikedArt';
 import { openGenre, openItem } from '@/ui/nav';
@@ -39,6 +41,7 @@ const TABS: { key: LibraryTab; label: string }[] = [
   { key: 'songs', label: 'Songs' },
   { key: 'artists', label: 'Artists' },
   { key: 'genres', label: 'Genres' },
+  { key: 'radio', label: 'Radio' },
   { key: 'downloads', label: 'Downloaded' },
 ];
 
@@ -110,7 +113,7 @@ export default function LibraryScreen() {
           <Ionicons name="swap-vertical" size={16} color={t.colors.text} />
           <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13) }}>{sort.label}</T>
         </Pressable>
-        {tab === 'songs' ? null : (
+        {tab === 'songs' || tab === 'radio' ? null : (
           <Pressable
             hitSlop={10}
             onPress={() => useLibraryView.getState().toggleLayout(tab)}
@@ -128,6 +131,7 @@ export default function LibraryScreen() {
       {tab === 'songs' ? <Songs header={header} sort={sort} layout={layout} /> : null}
       {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'genres' ? <Genres header={header} sort={sort} layout={layout} /> : null}
+      {tab === 'radio' ? <Radio header={header} sort={sort} layout={layout} /> : null}
       {tab === 'playlists' ? <Playlists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'downloads' ? <Downloaded header={header} sort={sort} layout={layout} /> : null}
     </View>
@@ -215,6 +219,54 @@ function Artists({ header, sort, layout }: ListProps) {
         if (artists.hasNextPage && !artists.isFetchingNextPage) void artists.fetchNextPage();
       }}
       renderItem={({ item }) => (grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle="Artist" />)}
+    />
+  );
+}
+
+/** Your radio stations, with Add a station at the top. */
+function Radio({ header, sort }: ListProps) {
+  const t = useTheme();
+  const stations = useStations((s) => s.stations);
+  const list =
+    sort.key === 'alpha'
+      ? [...stations].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+      : [...stations].sort((a, b) => b.addedAt - a.addedAt);
+  return (
+    <FlatList
+      data={list}
+      keyExtractor={(s) => s.id}
+      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      ListHeaderComponent={
+        <>
+          {header}
+          <Pressable
+            onPress={() => router.push('/add-station')}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: t.space.lg,
+              paddingVertical: t.space.sm,
+              backgroundColor: pressed ? t.colors.surface : 'transparent',
+            })}>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: t.radius.art,
+                backgroundColor: t.colors.surface2,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Ionicons name="add" size={28} color={t.colors.text} />
+            </View>
+            <View style={{ flex: 1, marginLeft: t.space.md }}>
+              <T variant="bodyStrong">Add a station</T>
+              <T variant="caption">A SUB/WAVE station or any internet radio</T>
+            </View>
+          </Pressable>
+        </>
+      }
+      renderItem={({ item }) => <StationRow station={item} />}
     />
   );
 }
