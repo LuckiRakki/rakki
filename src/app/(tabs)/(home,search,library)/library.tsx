@@ -5,13 +5,22 @@ import { ActivityIndicator, FlatList, Pressable, ScrollView, useWindowDimensions
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
-import { useAlbumArtists, useAlbums, useLikedSongs, usePlaylists } from '@/api/queries';
+import { useAlbumArtists, useAlbums, useLikedSongs, usePlaylists, useTracks } from '@/api/queries';
 import { songCount } from '@/lib/format';
 import { kindLine } from '@/lib/items';
 import { useDownloads, type DownloadedCollection } from '@/downloads/store';
 import { useOffline } from '@/lib/online';
-import { createPlaylist } from '@/library/actions';
-import { layoutFor, SORTS, sortFor, useLibraryView, type LibraryLayout, type LibraryTab, type SortOption } from '@/library/view';
+import { createPlaylist, playRandom } from '@/library/actions';
+import {
+  layoutFor,
+  seededShuffle,
+  SORTS,
+  sortFor,
+  useLibraryView,
+  type LibraryLayout,
+  type LibraryTab,
+  type SortOption,
+} from '@/library/view';
 import { ItemTile } from '@/ui/AlbumTile';
 import { Chip, ItemRow } from '@/ui/ItemRow';
 import { LikedArt } from '@/ui/LikedArt';
@@ -20,10 +29,12 @@ import { openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { usePlayer } from '@/player/store';
+import { TrackRow } from '@/ui/TrackRow';
 
 const TABS: { key: LibraryTab; label: string }[] = [
   { key: 'playlists', label: 'Playlists' },
   { key: 'albums', label: 'Albums' },
+  { key: 'songs', label: 'Songs' },
   { key: 'artists', label: 'Artists' },
   { key: 'downloads', label: 'Downloaded' },
 ];
@@ -96,12 +107,14 @@ export default function LibraryScreen() {
           <Ionicons name="swap-vertical" size={16} color={t.colors.text} />
           <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13) }}>{sort.label}</T>
         </Pressable>
-        <Pressable
-          hitSlop={10}
-          onPress={() => useLibraryView.getState().toggleLayout(tab)}
-          accessibilityLabel={layout === 'grid' ? 'Show as list' : 'Show as grid'}>
-          <Ionicons name={layout === 'grid' ? 'list' : 'grid-outline'} size={20} color={t.colors.text} />
-        </Pressable>
+        {tab === 'songs' ? null : (
+          <Pressable
+            hitSlop={10}
+            onPress={() => useLibraryView.getState().toggleLayout(tab)}
+            accessibilityLabel={layout === 'grid' ? 'Show as list' : 'Show as grid'}>
+            <Ionicons name={layout === 'grid' ? 'list' : 'grid-outline'} size={20} color={t.colors.text} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -109,6 +122,7 @@ export default function LibraryScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       {tab === 'albums' ? <Albums header={header} sort={sort} layout={layout} /> : null}
+      {tab === 'songs' ? <Songs header={header} sort={sort} layout={layout} /> : null}
       {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'playlists' ? <Playlists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'downloads' ? <Downloaded header={header} sort={sort} layout={layout} /> : null}
@@ -124,7 +138,8 @@ interface ListProps {
 
 function Albums({ header, sort, layout }: ListProps) {
   const t = useTheme();
-  const albums = useAlbums(sort.sortBy, sort.sortOrder);
+  const seed = useLibraryView((s) => s.shuffleSeed);
+  const albums = useAlbums(sort.sortBy, sort.sortOrder, seed);
   const items = albums.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize();
@@ -152,7 +167,8 @@ function Albums({ header, sort, layout }: ListProps) {
 
 function Artists({ header, sort, layout }: ListProps) {
   const t = useTheme();
-  const artists = useAlbumArtists(sort.sortBy, sort.sortOrder);
+  const seed = useLibraryView((s) => s.shuffleSeed);
+  const artists = useAlbumArtists(sort.sortBy, sort.sortOrder, seed);
   const items = artists.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize(1);
@@ -187,11 +203,15 @@ function Playlists({ header, sort, layout }: ListProps) {
   const { gap, tile, columns } = useTileSize();
   const likedLine = `Playlist${liked.data ? ` · ${songCount(liked.data.length)}` : ''}`;
 
-  const sorted = [...(playlists.data ?? [])].sort((a, b) =>
-    sort.key === 'recent'
-      ? (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')
-      : a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base' }),
-  );
+  const seed = useLibraryView((s) => s.shuffleSeed);
+  const sorted =
+    sort.key === 'random'
+      ? seededShuffle(playlists.data ?? [], seed)
+      : [...(playlists.data ?? [])].sort((a, b) =>
+          sort.key === 'recent'
+            ? (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')
+            : a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base' }),
+        );
   // Liked Songs is always first, like Spotify's pinned playlist.
   const data: BaseItem[] = [LIKED, ...sorted];
 
@@ -318,9 +338,11 @@ function Downloaded({ header, sort, layout }: ListProps) {
   const byName = (a: DownloadedCollection, b: DownloadedCollection) =>
     a.item.Name.localeCompare(b.item.Name, undefined, { sensitivity: 'base' });
   const order = sort.key === 'alpha' ? byName : (a: DownloadedCollection, b: DownloadedCollection) => b.addedAt - a.addedAt;
+  const seed = useLibraryView((s) => s.shuffleSeed);
   const all = Object.values(collections);
-  const songs = all.filter((c) => c.kind === 'song').sort(order);
-  const data = [...all.filter((c) => c.kind !== 'song').sort(order), ...songs];
+  const arrange = (list: DownloadedCollection[]) => (sort.key === 'random' ? seededShuffle(list, seed) : list.sort(order));
+  const songs = arrange(all.filter((c) => c.kind === 'song'));
+  const data = [...arrange(all.filter((c) => c.kind !== 'song')), ...songs];
 
   const open = (c: DownloadedCollection) => {
     if (c.kind === 'liked') return router.push('/liked');
@@ -360,6 +382,62 @@ function Downloaded({ header, sort, layout }: ListProps) {
       renderItem={({ item }) =>
         grid ? <DownloadedTile c={item} size={tile} onPress={() => open(item)} /> : <DownloadedRow c={item} onPress={() => open(item)} />
       }
+    />
+  );
+}
+
+/** Every song in the library, as a list. Tapping one plays the list from there. */
+function Songs({ header, sort }: ListProps) {
+  const t = useTheme();
+  const seed = useLibraryView((s) => s.shuffleSeed);
+  const tracks = useTracks(sort.sortBy, sort.sortOrder, seed);
+  const items = tracks.data?.pages.flatMap((p) => p.Items) ?? [];
+  const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
+  const playing = usePlayer((s) => s.playing);
+  return (
+    <FlatList
+      key="songs"
+      data={items}
+      keyExtractor={(x) => x.Id}
+      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      ListHeaderComponent={
+        <View>
+          {header}
+          <Pressable
+            onPress={() => void playRandom()}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              alignSelf: 'flex-start',
+              gap: t.space.sm,
+              marginHorizontal: t.space.lg,
+              marginBottom: t.space.sm,
+              paddingHorizontal: t.space.lg,
+              height: 38,
+              borderRadius: t.radius.pill,
+              backgroundColor: t.colors.accent,
+              opacity: pressed ? 0.8 : 1,
+            })}>
+            <Ionicons name="shuffle" size={18} color="#000" />
+            <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: '#000' }}>Shuffle all songs</T>
+          </Pressable>
+        </View>
+      }
+      ListEmptyComponent={tracks.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
+      ListFooterComponent={tracks.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
+      onEndReachedThreshold={1.5}
+      onEndReached={() => {
+        if (tracks.hasNextPage && !tracks.isFetchingNextPage) void tracks.fetchNextPage();
+      }}
+      renderItem={({ item, index }) => (
+        <TrackRow
+          track={item}
+          art
+          active={item.Id === currentId}
+          playing={playing}
+          onPress={() => usePlayer.getState().playQueue(items, { startIndex: index, source: { type: 'tracks', name: 'Your songs' } })}
+        />
+      )}
     />
   );
 }

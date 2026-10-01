@@ -89,5 +89,19 @@ playing album, drawn by the real renderers.
   Reanimated styles don't update — test animations only while the window is visible.
 - [ ] Verified on the phone.
 
+## User notes after Phase 5 (2026-10-01) — done
+- [x] Heart: one small bounce (no spring wobble).
+- [x] Hold the heart in the full player → Add to playlist.
+- [x] Genres on album and artist pages (`GenreChips`): 3 chips, "+N more" expands, tap → genre
+  page. Artists: their own tags first, then their albums' genres by count (getArtistAlbums
+  now asks for Genres).
+- [x] Library → Songs tab (after Albums): all songs, sorts Alphabetical / Recently added / Artist /
+  Album / Most played / Random, "Shuffle all songs" button; list only.
+- [x] Random sort on Albums, Songs, Artists, Playlists, Downloaded. Server lists fetch one random
+  batch of 200 (Jellyfin reshuffles every request, so paging would repeat); picking Random
+  again reshuffles (`shuffleSeed`); client lists use `seededShuffle`.
+- [x] Home: round shuffle button by the greeting → queue of 200 random songs ("Shuffled
+  library"); offline, the downloaded songs shuffled.
+
 ## Exit test
 The user can make Rakki look the way they want from one screen, and it remembers.

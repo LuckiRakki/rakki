@@ -67,6 +67,7 @@ export const openMenu = (item: BaseItem, context?: MenuContext) => {
   useOverlays.getState().openMenu(item, context);
 };
 export const openOptions = (sheet: OptionsSheet) => useOverlays.getState().openOptions(sheet);
+export const openAddToPlaylist = (items: BaseItem[], title: string) => useOverlays.getState().openAddToPlaylist(items, title);
 export const showToast = (text: string) => useOverlays.getState().showToast(text);
 
 // Web dev preview only: lets the menus be opened from the browser console for testing.

@@ -6,6 +6,7 @@ import {
   downloadedAlbums,
   downloadedArtists,
   downloadedPlaylists,
+  downloadedTracks,
   offlineAlbumTracks,
   offlineArtistAlbums,
   offlineArtistTracks,
@@ -15,6 +16,7 @@ import {
   offlinePlaylistTracks,
 } from '@/downloads/offline';
 import { useDownloads } from '@/downloads/store';
+import { seededShuffle } from '@/library/view';
 import { useOffline } from '@/lib/online';
 
 export const queryClient = new QueryClient({
@@ -58,6 +60,17 @@ function useUserQuery<T>(
   });
 }
 
+const RANDOM_BATCH = 200;
+
+/**
+ * Random order: Jellyfin reshuffles on every request, so paging through it would repeat and
+ * skip. Instead one shuffled batch of 200 (a new one each time Random is picked).
+ */
+async function randomBatch(page: Promise<ItemsResult>): Promise<ItemsResult> {
+  const r = await page;
+  return { Items: r.Items, TotalRecordCount: r.Items.length, StartIndex: 0 };
+}
+
 /** A paged list (Library tabs). Offline it's one page of what's downloaded. */
 function usePagedQuery(
   key: unknown[],
@@ -93,18 +106,38 @@ function sortItems(items: BaseItem[], sortBy: string): BaseItem[] {
   return items;
 }
 
-export const useAlbums = (sortBy = 'SortName', sortOrder = 'Ascending') =>
+const isRandom = (sortBy: string) => sortBy === 'Random';
+
+/** `seed` only matters for Random: a new seed is a new shuffle. */
+export const useAlbums = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0) =>
   usePagedQuery(
-    ['albums', sortBy, sortOrder],
-    (c, start) => c.getAlbums({ startIndex: start, limit: PAGE, sortBy, sortOrder }),
-    () => sortItems(downloadedAlbums(), sortBy),
+    ['albums', sortBy, sortOrder, isRandom(sortBy) ? seed : 0],
+    (c, start) =>
+      isRandom(sortBy)
+        ? randomBatch(c.getAlbums({ limit: RANDOM_BATCH, sortBy }))
+        : c.getAlbums({ startIndex: start, limit: PAGE, sortBy, sortOrder }),
+    () => (isRandom(sortBy) ? seededShuffle(downloadedAlbums(), seed) : sortItems(downloadedAlbums(), sortBy)),
   );
 
-export const useAlbumArtists = (sortBy = 'SortName', sortOrder = 'Ascending') =>
+export const useAlbumArtists = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0) =>
   usePagedQuery(
-    ['albumArtists', sortBy, sortOrder],
-    (c, start) => c.getAlbumArtists({ startIndex: start, limit: 100, sortBy, sortOrder }),
-    downloadedArtists,
+    ['albumArtists', sortBy, sortOrder, isRandom(sortBy) ? seed : 0],
+    (c, start) =>
+      isRandom(sortBy)
+        ? randomBatch(c.getAlbumArtists({ limit: RANDOM_BATCH, sortBy }))
+        : c.getAlbumArtists({ startIndex: start, limit: 100, sortBy, sortOrder }),
+    () => (isRandom(sortBy) ? seededShuffle(downloadedArtists(), seed) : downloadedArtists()),
+  );
+
+/** Library → Songs. Offline: the songs on the phone. */
+export const useTracks = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0) =>
+  usePagedQuery(
+    ['tracks', sortBy, sortOrder, isRandom(sortBy) ? seed : 0],
+    (c, start) =>
+      isRandom(sortBy)
+        ? randomBatch(c.getTracks({ limit: RANDOM_BATCH, sortBy }))
+        : c.getTracks({ startIndex: start, limit: 100, sortBy, sortOrder }),
+    () => (isRandom(sortBy) ? seededShuffle(downloadedTracks(), seed) : sortItems(downloadedTracks(), sortBy)),
   );
 
 export const useRecentlyAdded = () =>

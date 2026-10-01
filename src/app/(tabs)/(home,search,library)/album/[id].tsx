@@ -13,6 +13,7 @@ import { openMenu } from '@/ui/overlays';
 import { usePlayer } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { DownloadButton } from '@/ui/DownloadButton';
+import { GenreChips } from '@/ui/GenreChips';
 import { Artwork } from '@/ui/Artwork';
 import { StickyTitleBar, useCoverStyle, useScrollY } from '@/ui/CollapsingHeader';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
@@ -81,6 +82,7 @@ export default function AlbumScreen() {
             .filter(Boolean)
             .join(' · ')}
         </T>
+        <GenreChips genres={album.data?.Genres ?? []} />
         <View style={styles.actions}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
             <Pressable hitSlop={8} onPress={() => play(true)}>

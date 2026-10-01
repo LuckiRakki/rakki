@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { router } from 'expo-router';
@@ -21,6 +22,8 @@ import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
 import { QuickTile } from '@/ui/AlbumTile';
 import { LikedArt } from '@/ui/LikedArt';
+import { tick } from '@/lib/haptics';
+import { playRandom } from '@/library/actions';
 import { openLibrary } from '@/ui/nav';
 import { openOptions } from '@/ui/overlays';
 import { Shelf } from '@/ui/Shelf';
@@ -78,7 +81,23 @@ export default function HomeScreen() {
           accessibilityLabel="Settings (hold to switch account)">
           <UserAvatar size={34} />
         </Pressable>
-        {showGreeting ? <T variant="display">{greeting()}</T> : null}
+        {showGreeting ? (
+          <T variant="display" numberOfLines={1} style={{ flex: 1 }}>
+            {greeting()}
+          </T>
+        ) : (
+          <View style={{ flex: 1 }} />
+        )}
+        <Pressable
+          onPress={() => {
+            tick();
+            void playRandom();
+          }}
+          hitSlop={8}
+          accessibilityLabel="Shuffle your whole library"
+          style={({ pressed }) => [styles.shuffle, pressed && { transform: [{ scale: 0.94 }] }]}>
+          <Ionicons name="shuffle" size={20} color="#000" />
+        </Pressable>
       </View>
 
       {quickPicks ? (
@@ -143,6 +162,14 @@ const useStyles = makeStyles((t) => ({
     gap: t.space.md,
     paddingHorizontal: t.space.lg,
     marginBottom: t.space.lg,
+  },
+  shuffle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: t.colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   grid: { paddingHorizontal: t.space.lg, gap: t.space.sm },
   gridRow: { flexDirection: 'row', gap: t.space.sm },

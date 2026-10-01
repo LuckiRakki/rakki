@@ -6,6 +6,9 @@ import type { BaseItem } from '@/api/jellyfin';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { emitLikedChanged } from '@/lib/events';
+import { downloadedTracks } from '@/downloads/offline';
+import { seededShuffle } from '@/library/view';
+import { isOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
 import { showToast } from '@/ui/overlays';
 
@@ -41,6 +44,29 @@ export async function addToQueue(item: BaseItem) {
   const tracks = await tracksOf(item);
   usePlayer.getState().addToQueue(tracks);
   showToast(tracks.length > 1 ? `Added ${tracks.length} songs to the queue` : `Added to queue`);
+}
+
+/**
+ * Shuffle the whole library: a queue of random songs (Home's Shuffle button). Offline, the
+ * songs on the phone in random order.
+ */
+export async function playRandom() {
+  let songs: BaseItem[];
+  if (isOffline()) {
+    songs = seededShuffle(downloadedTracks(), Date.now() % 100000);
+  } else {
+    try {
+      songs = await client().getRandomTracks(200);
+    } catch {
+      showToast('Couldn’t reach your server');
+      return;
+    }
+  }
+  if (!songs.length) {
+    showToast(isOffline() ? 'Nothing downloaded to shuffle' : 'No songs found');
+    return;
+  }
+  usePlayer.getState().playQueue(songs, { source: { type: 'tracks', name: 'Shuffled library' } });
 }
 
 /** Jellyfin's instant mix from any item: songs like it, starting now. */

@@ -321,6 +321,22 @@ export class JellyfinClient {
     });
   }
 
+  /** Songs in the library (Library → Songs), paged. */
+  getTracks(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string }) {
+    return this.items({
+      IncludeItemTypes: 'Audio',
+      SortBy: opts.sortBy ?? 'SortName',
+      SortOrder: opts.sortOrder ?? 'Ascending',
+      StartIndex: opts.startIndex ?? 0,
+      Limit: opts.limit ?? 100,
+    });
+  }
+
+  /** Random songs from the whole library (Home → Shuffle, Library → Songs → Shuffle). */
+  async getRandomTracks(limit = 200): Promise<BaseItem[]> {
+    return (await this.items({ IncludeItemTypes: 'Audio', SortBy: 'Random', Limit: limit })).Items;
+  }
+
   getAlbums(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string }) {
     return this.get<ItemsResult>('/Items', {
       userId: this.session.userId,
@@ -386,7 +402,7 @@ export class JellyfinClient {
       AlbumArtistIds: artistId,
       SortBy: 'ProductionYear,PremiereDate,SortName',
       SortOrder: 'Descending',
-      Fields: 'ChildCount',
+      Fields: 'ChildCount,Genres',
     });
   }
 

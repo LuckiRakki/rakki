@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getRoutePicker } from '../../modules/rakki-audio';
 import { HeartButton } from '@/ui/HeartButton';
-import { tick } from '@/lib/haptics';
+import { thud, tick } from '@/lib/haptics';
 import { useAuth } from '@/auth/store';
 import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
@@ -22,7 +22,7 @@ import { useProgress } from '@/player/useProgress';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
 import { openAlbum } from '@/ui/nav';
-import { openMenu, openOptions } from '@/ui/overlays';
+import { openAddToPlaylist, openMenu, openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -127,7 +127,14 @@ export default function PlayerScreen() {
                 style={{ fontSize: t.size(16), marginTop: 2 }}
               />
             </View>
-            <HeartButton liked={favorite} onToggle={(v) => p().setFavorite(track.Id, v)} />
+            <HeartButton
+              liked={favorite}
+              onToggle={(v) => p().setFavorite(track.Id, v)}
+              onLongPress={() => {
+                thud();
+                openAddToPlaylist([track], track.Name);
+              }}
+            />
           </View>
 
           <SeekBar position={position} duration={duration} onSeek={(s) => p().seek(s)} />

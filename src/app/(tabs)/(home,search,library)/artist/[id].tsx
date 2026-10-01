@@ -15,6 +15,7 @@ import { offlineArtistTracks } from '@/downloads/offline';
 import { isOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
+import { artistGenres, GenreChips } from '@/ui/GenreChips';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
@@ -116,6 +117,9 @@ export default function ArtistScreen() {
               style={{ marginLeft: isThisArtist && playing ? 0 : 3 }}
             />
           </Pressable>
+        </View>
+        <View style={{ paddingHorizontal: t.space.lg, marginTop: -t.space.sm }}>
+          <GenreChips genres={artistGenres(a?.Genres, albums.data)} />
         </View>
 
         {top.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
