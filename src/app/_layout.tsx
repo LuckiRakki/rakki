@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { checkForUpdate } from '@/lib/updates';
+import { startDownloads } from '@/downloads/manager';
 import { ensureSearchIndex } from '@/search/index';
 import { useModalTracker } from '@/ui/nav';
 import { OverlayHost } from '@/ui/OverlayHost';
@@ -60,6 +61,12 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
   const t = useTheme();
   useModalTracker();
 
+  // Downloads: load what's saved, finish anything unfinished, catch up playlists.
+  const userId = useAuth((s) => s.session?.userId);
+  useEffect(() => {
+    if (userId) startDownloads(userId);
+  }, [userId]);
+
   // Build or top up the fuzzy-search index once the first screens have loaded.
   useEffect(() => {
     if (!signedIn) return;
@@ -90,6 +97,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
               <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
               <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="login" />

@@ -14,6 +14,19 @@ export const BITRATE_OPTIONS: { value: Bitrate; label: string; detail: string }[
   { value: 96, label: 'Data saver', detail: '96 kbps AAC' },
 ];
 
+/**
+ * Download quality. Lossless files (FLAC, ALAC, WAV…) are converted to AAC in an .m4a for
+ * High/Normal; compressed files (MP3, AAC) are always kept as they are, since converting
+ * them saves little and costs quality.
+ */
+export type DownloadQuality = 'original' | 'high' | 'normal';
+
+export const DOWNLOAD_QUALITY_OPTIONS: { value: DownloadQuality; label: string; detail: string }[] = [
+  { value: 'original', label: 'Original', detail: 'Lossless stays lossless (about 30 MB a song)' },
+  { value: 'high', label: 'High', detail: 'Lossless files as 256 kbps AAC (about 8 MB a song)' },
+  { value: 'normal', label: 'Normal', detail: 'Lossless files as 128 kbps AAC (about 4 MB a song)' },
+];
+
 /** Spicy = the full word-by-word engine (default, the focus). Regular = clean line by line. */
 export type LyricsMode = 'spicy' | 'regular';
 
@@ -21,13 +34,22 @@ interface Settings {
   wifiBitrate: Bitrate;
   cellularBitrate: Bitrate;
   lyricsMode: LyricsMode;
+  downloadQuality: DownloadQuality;
+  /** Off = downloads wait for Wi-Fi. */
+  downloadOnCellular: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
 // New keys don't need a bump: missing keys fall back to their defaults.
 const VERSION = 1;
 const KEY = 'rakki.settings';
-const DEFAULTS: Settings = { wifiBitrate: 0, cellularBitrate: 256, lyricsMode: 'spicy' };
+const DEFAULTS: Settings = {
+  wifiBitrate: 0,
+  cellularBitrate: 256,
+  lyricsMode: 'spicy',
+  downloadQuality: 'original',
+  downloadOnCellular: false,
+};
 
 function load(): Settings {
   try {

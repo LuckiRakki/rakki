@@ -15,6 +15,8 @@ import {
   startRadio,
   tracksOf,
 } from '@/library/actions';
+import { confirmRemove, downloadCollection } from '@/downloads/manager';
+import { useDownloads } from '@/downloads/store';
 import { Artwork } from '@/ui/Artwork';
 import { goTo } from '@/ui/nav';
 import { useOverlays, type MenuContext } from '@/ui/overlays';
@@ -57,6 +59,19 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
     accent: liked,
   };
 
+  // Download / Remove download. A song already downloaded as part of an album or playlist
+  // shows neither (remove it from there).
+  const kind = item.Type === 'Audio' ? 'song' : item.Type === 'MusicAlbum' ? 'album' : item.Type === 'Playlist' ? 'playlist' : null;
+  const dl = useDownloads.getState();
+  const collectionId = item.Type === 'Audio' ? `song:${item.Id}` : item.Id;
+  const download: Action[] = !kind
+    ? []
+    : dl.collections[collectionId]
+      ? [{ icon: 'arrow-down-circle', label: 'Remove download', run: () => confirmRemove(collectionId, item.Name), accent: true, afterClose: true }]
+      : item.Type === 'Audio' && dl.tracks[item.Id]
+        ? []
+        : [{ icon: 'arrow-down-circle-outline', label: 'Download', run: () => downloadCollection(kind, item) }];
+
   const removeHere: Action[] =
     context?.playlistId && context.entryId
       ? [
@@ -76,6 +91,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         { icon: 'add-circle-outline', label: 'Add to playlist', run: addToPlaylist },
         { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
         { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
+        ...download,
         ...(item.AlbumId ? [{ icon: 'disc-outline' as IconName, label: 'Go to album', run: go(`/album/${item.AlbumId}`) }] : []),
         ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`) }] : []),
         { icon: 'radio-outline', label: 'Song radio', run: () => startRadio(item) },
@@ -86,6 +102,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         { icon: 'add-circle-outline', label: 'Add to playlist', run: addToPlaylist },
         { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
         { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
+        ...download,
         ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`) }] : []),
         { icon: 'radio-outline', label: 'Album radio', run: () => startRadio(item) },
       ];
@@ -99,6 +116,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
       return [
         { icon: 'play-forward-outline', label: 'Play next', run: () => playNext(item) },
         { icon: 'list-outline', label: 'Add to queue', run: () => addToQueue(item) },
+        ...download,
         { icon: 'radio-outline', label: 'Playlist radio', run: () => startRadio(item) },
         { icon: 'albums-outline', label: 'Go to playlist', run: go(`/playlist/${item.Id}`) },
         { icon: 'create-outline', label: 'Rename playlist', run: () => renamePlaylist(item), afterClose: true },

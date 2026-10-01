@@ -6,10 +6,13 @@ import { withAlpha } from '@/lib/color';
 import { songCount } from '@/lib/format';
 import { usePlayer } from '@/player/store';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
+import { DownloadButton } from '@/ui/DownloadButton';
 import { LikedArt } from '@/ui/LikedArt';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
+
+const LIKED = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
 
 export default function LikedSongsScreen() {
   const t = useTheme();
@@ -33,6 +36,7 @@ export default function LikedSongsScreen() {
           if (list.length) usePlayer.getState().playQueue(list, { source });
         }}
         onShuffle={() => list.length && usePlayer.getState().playQueue(list, { source, shuffle: true })}
+        download={list.length ? <DownloadButton kind="liked" item={LIKED} /> : undefined}
       />
       {liked.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
       {!liked.isLoading && list.length === 0 ? (

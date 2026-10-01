@@ -6,6 +6,8 @@ import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { localArtUri, localAudioUri } from '@/downloads/store';
+import { emitLikedChanged } from '@/lib/events';
 import { ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { engine, type RakkiTrack, type RepeatMode } from '@/player/engine';
@@ -79,11 +81,12 @@ function toTracks(queue: QueueEntry[]): RakkiTrack[] {
   return queue.map(({ key, item }) => ({
     key,
     id: item.Id,
-    url: client.streamUrl(item.Id, kbps),
+    // Downloaded songs play from the phone, even when online.
+    url: localAudioUri(item.Id) ?? client.streamUrl(item.Id, kbps),
     title: item.Name,
     artist: artistLine(item),
     album: item.Album ?? '',
-    artworkUrl: client.imageUrl(item, 600) ?? null,
+    artworkUrl: localArtUri(item.AlbumId ?? item.Id) ?? client.imageUrl(item, 600) ?? null,
     duration: ticksToSeconds(item.RunTimeTicks),
     gain: 1,
   }));
@@ -236,14 +239,17 @@ export const usePlayer = create<PlayerState>((set, get) => ({
         e.item.Id === itemId ? { ...e, item: { ...e.item, UserData: { ...e.item.UserData, IsFavorite: favorite } } } : e,
       ),
     });
-    client?.setFavorite(itemId, favorite).catch(() => {
-      // Roll back if the server refused.
-      set({
-        queue: get().queue.map((e) =>
-          e.item.Id === itemId ? { ...e, item: { ...e.item, UserData: { ...e.item.UserData, IsFavorite: !favorite } } } : e,
-        ),
+    client
+      ?.setFavorite(itemId, favorite)
+      .then(emitLikedChanged)
+      .catch(() => {
+        // Roll back if the server refused.
+        set({
+          queue: get().queue.map((e) =>
+            e.item.Id === itemId ? { ...e, item: { ...e.item, UserData: { ...e.item.UserData, IsFavorite: !favorite } } } : e,
+          ),
+        });
       });
-    });
   },
 
   stop() {

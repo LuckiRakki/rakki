@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 
 import type { JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { downloadsSupported, lyricsFile } from '@/downloads/files';
+import { useDownloads } from '@/downloads/store';
 import type { JellyfinLyricsDto, Lyrics, LyricsBundle, TtmlDto } from '@/lyrics/types';
 
 const TICKS_PER_MS = 10_000;
@@ -77,6 +79,15 @@ export async function fetchLrc(client: JellyfinClient, itemId: string): Promise<
 }
 
 /** Both sources for a song, fetched in parallel and cached. */
+async function savedLyrics(itemId: string): Promise<LyricsBundle | null> {
+  if (!downloadsSupported || !useDownloads.getState().tracks[itemId]?.lyrics) return null;
+  try {
+    return (await lyricsFile(itemId).json()) as LyricsBundle;
+  } catch {
+    return null;
+  }
+}
+
 export function useLyrics(itemId: string | undefined) {
   const client = useAuth((s) => s.client);
   return useQuery({
@@ -84,6 +95,9 @@ export function useLyrics(itemId: string | undefined) {
     enabled: !!client && !!itemId,
     staleTime: 30 * 60_000,
     queryFn: async (): Promise<LyricsBundle> => {
+      // Downloaded songs use the lyrics saved with them (works offline, no request).
+      const saved = await savedLyrics(itemId!);
+      if (saved) return saved;
       const [ttml, lrc] = await Promise.all([fetchTtml(client!, itemId!), fetchLrc(client!, itemId!)]);
       return { ttml, lrc };
     },

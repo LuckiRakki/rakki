@@ -4,6 +4,7 @@ import { PixelRatio, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { localArtUri, useDownloads } from '@/downloads/store';
 import { useTheme } from '@/ui/theme';
 
 // Request a few fixed sizes so the same image is shared by the disk cache across screens.
@@ -28,7 +29,10 @@ export function Artwork({
   const r = rounded ?? t.radius.art;
   const client = useAuth((s) => s.client);
   const box = { width: size, height: size, borderRadius: r };
-  const uri = item && client?.imageUrl(item, bucket(size * PixelRatio.get()));
+  // Saved cover art (downloaded albums/playlists) works offline and loads instantly.
+  const artId = item ? (item.Type === 'Audio' ? item.AlbumId : item.Id) : undefined;
+  const hasLocal = useDownloads((s) => !!artId && !!s.art[artId]);
+  const uri = (hasLocal ? localArtUri(artId) : null) ?? (item && client?.imageUrl(item, bucket(size * PixelRatio.get())));
   const blurhash = item && client?.blurhash(item);
 
   if (!uri) {

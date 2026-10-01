@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import type { BaseItem } from '@/api/jellyfin';
 import { formatDuration, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
+import { useTrackDownload } from '@/downloads/store';
 import { Artwork } from '@/ui/Artwork';
 import { openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
@@ -31,6 +32,7 @@ export function TrackRow({
   rank?: number;
 }) {
   const t = useTheme();
+  const downloaded = useTrackDownload(track.Id);
   const indicator = (
     <Ionicons name={playing ? 'volume-high' : 'volume-mute'} size={16} color={t.colors.accent} />
   );
@@ -74,9 +76,14 @@ export function TrackRow({
         <T variant="bodyStrong" numberOfLines={1} color={active ? t.colors.accent : t.colors.text}>
           {track.Name}
         </T>
-        <T variant="caption" numberOfLines={1}>
-          {artistLine(track)}
-        </T>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {downloaded === 'done' ? (
+            <Ionicons name="arrow-down-circle" size={13} color={t.colors.accent} style={{ marginRight: 4 }} />
+          ) : null}
+          <T variant="caption" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {artistLine(track)}
+          </T>
+        </View>
       </View>
       {track.UserData?.IsFavorite ? (
         <Ionicons name="heart" size={14} color={t.colors.accent} style={{ marginRight: t.space.sm }} />

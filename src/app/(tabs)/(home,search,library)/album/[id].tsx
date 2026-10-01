@@ -11,6 +11,7 @@ import { songCount, ticksToSeconds } from '@/lib/format';
 import { openMenu } from '@/ui/overlays';
 import { usePlayer } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
+import { DownloadButton } from '@/ui/DownloadButton';
 import { Artwork } from '@/ui/Artwork';
 import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
@@ -71,9 +72,12 @@ export default function AlbumScreen() {
             .join(' · ')}
         </T>
         <View style={styles.actions}>
-          <Pressable hitSlop={8} onPress={() => play(true)}>
-            <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
-          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
+            <Pressable hitSlop={8} onPress={() => play(true)}>
+              <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
+            </Pressable>
+            {album.data && list.length ? <DownloadButton kind="album" item={album.data} /> : null}
+          </View>
           <Pressable
             onPress={() => play()}
             style={({ pressed }) => [styles.playBtn, pressed && { transform: [{ scale: 0.95 }] }]}>

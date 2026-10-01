@@ -5,6 +5,7 @@ import { Alert, Platform } from 'react-native';
 import type { BaseItem } from '@/api/jellyfin';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { emitLikedChanged } from '@/lib/events';
 import { usePlayer } from '@/player/store';
 import { showToast } from '@/ui/overlays';
 
@@ -56,7 +57,10 @@ export async function startRadio(item: BaseItem) {
 export async function setLiked(item: BaseItem, liked: boolean) {
   const inQueue = usePlayer.getState().queue.some((e) => e.item.Id === item.Id);
   if (inQueue) usePlayer.getState().setFavorite(item.Id, liked);
-  else await client().setFavorite(item.Id, liked);
+  else {
+    await client().setFavorite(item.Id, liked);
+    emitLikedChanged();
+  }
   const what = item.Type === 'Audio' ? 'Liked Songs' : 'your Liked';
   showToast(liked ? `Added to ${what}` : `Removed from ${what}`);
   void queryClient.invalidateQueries({

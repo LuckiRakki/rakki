@@ -1,15 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CLIENT_VERSION } from '@/api/jellyfin';
 import { signOut } from '@/auth/actions';
 import { useAuth } from '@/auth/store';
+import { useDownloads } from '@/downloads/store';
+import { formatBytes, songCount } from '@/lib/format';
 import { buildStamp, checkForUpdate, getUpdateInfo, versionLabel, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
-import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
+import { BITRATE_OPTIONS, DOWNLOAD_QUALITY_OPTIONS, useSettings } from '@/settings/store';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { UserAvatar } from '@/ui/UserAvatar';
@@ -21,6 +23,12 @@ export default function SettingsScreen() {
   const session = useAuth((s) => s.session);
   const wifi = useSettings((s) => s.wifiBitrate);
   const cellular = useSettings((s) => s.cellularBitrate);
+  const downloadQuality = useSettings((s) => s.downloadQuality);
+  const downloadOnCellular = useSettings((s) => s.downloadOnCellular);
+  const downloadSummary = useDownloads((s) => {
+    const done = Object.values(s.tracks).filter((x) => x.state === 'done');
+    return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
+  });
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
@@ -60,8 +68,14 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        <QualityPicker title="Streaming quality on Wi-Fi" value={wifi} onChange={(v) => useSettings.getState().set('wifiBitrate', v)} />
-        <QualityPicker
+        <OptionPicker
+          options={BITRATE_OPTIONS}
+          title="Streaming quality on Wi-Fi"
+          value={wifi}
+          onChange={(v) => useSettings.getState().set('wifiBitrate', v)}
+        />
+        <OptionPicker
+          options={BITRATE_OPTIONS}
           title="Streaming quality on cellular"
           value={cellular}
           onChange={(v) => useSettings.getState().set('cellularBitrate', v)}
@@ -70,6 +84,36 @@ export default function SettingsScreen() {
           Applies to songs that haven&apos;t started buffering yet. Anything above the limit is
           converted to AAC by your server.
         </T>
+
+        <OptionPicker
+          options={DOWNLOAD_QUALITY_OPTIONS}
+          title="Download quality"
+          value={downloadQuality}
+          onChange={(v) => useSettings.getState().set('downloadQuality', v)}
+        />
+        <T variant="caption" style={{ marginTop: t.space.sm, fontSize: t.size(12) }}>
+          Applies to new downloads. MP3s and other compressed files are always kept as they are.
+        </T>
+        <View style={[styles.card, { marginTop: t.space.md }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flex: 1, marginRight: t.space.md }}>
+              <T variant="bodyStrong">Download using cellular</T>
+              <T variant="caption" style={{ fontSize: t.size(12) }}>
+                Off: downloads wait for Wi-Fi.
+              </T>
+            </View>
+            <Switch
+              value={downloadOnCellular}
+              onValueChange={(v) => useSettings.getState().set('downloadOnCellular', v)}
+              trackColor={{ true: t.colors.accent, false: t.colors.surface3 }}
+            />
+          </View>
+          <Pressable
+            onPress={() => router.push('/downloads')}
+            style={({ pressed }) => [styles.signOut, pressed && { opacity: 0.7 }]}>
+            <T variant="bodyStrong">Manage downloads · {downloadSummary}</T>
+          </Pressable>
+        </View>
 
         <T variant="label" style={styles.section}>
           About
@@ -101,14 +145,16 @@ export default function SettingsScreen() {
   );
 }
 
-function QualityPicker({
+function OptionPicker<V extends string | number>({
   title,
+  options,
   value,
   onChange,
 }: {
   title: string;
-  value: Bitrate;
-  onChange: (v: Bitrate) => void;
+  options: { value: V; label: string; detail: string }[];
+  value: V;
+  onChange: (v: V) => void;
 }) {
   const t = useTheme();
   const styles = useStyles();
@@ -118,7 +164,7 @@ function QualityPicker({
         {title}
       </T>
       <View style={[styles.card, { paddingVertical: t.space.xs }]}>
-        {BITRATE_OPTIONS.map((o) => (
+        {options.map((o) => (
           <Pressable key={o.value} onPress={() => onChange(o.value)} style={styles.option}>
             <View style={{ flex: 1 }}>
               <T variant="bodyStrong" color={o.value === value ? t.colors.accent : t.colors.text}>

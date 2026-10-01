@@ -57,6 +57,8 @@ export interface BaseItem {
   SongCount?: number;
   UserData?: { IsFavorite?: boolean; PlayCount?: number; LastPlayedDate?: string };
   DateCreated?: string;
+  /** Audio file container, e.g. "mp3", "flac", "mov,mp4,m4a,3gp,3g2,mj2". */
+  Container?: string;
 }
 
 export type SearchKind = 'songs' | 'albums' | 'artists' | 'playlists';
@@ -730,6 +732,30 @@ export class JellyfinClient {
    * cap) is transcoded to AAC over HLS, the same approach as Finamp.
    * @param maxKbps 0 = no cap (original file whenever possible).
    */
+  /**
+   * Where to download a song from, and the file extension to save it with. Original quality
+   * is the untouched file. High/Normal convert lossless files to AAC in an .m4a (iOS's own
+   * format: exact seeking and duration); compressed files are always kept as they are.
+   */
+  downloadSource(item: BaseItem, quality: 'original' | 'high' | 'normal'): { url: string; ext: string; kbps: number | null } {
+    const { serverUrl, token } = this.session;
+    const container = (item.Container ?? '').toLowerCase();
+    const ext = container.includes('m4a') || container.includes('mp4') ? 'm4a' : container.split(',')[0];
+    // The saved file's extension is how iOS knows its format, so anything iOS can't play as-is
+    // (or of unknown format) is converted.
+    const iosPlayable = ['mp3', 'm4a', 'aac', 'flac', 'alac', 'wav', 'aiff', 'aif', 'caf'].includes(ext);
+    const lossless = ['flac', 'alac', 'wav', 'aiff', 'aif'].includes(ext);
+    if (iosPlayable && (quality === 'original' || !lossless)) {
+      return { url: `${serverUrl}/Audio/${item.Id}/stream${query({ static: true, ApiKey: token })}`, ext, kbps: null };
+    }
+    const kbps = quality === 'normal' ? 128 : quality === 'high' ? 256 : 320;
+    return {
+      url: `${serverUrl}/Audio/${item.Id}/stream.m4a${query({ AudioCodec: 'aac', AudioBitRate: kbps * 1000, AudioChannels: 2, ApiKey: token })}`,
+      ext: 'm4a',
+      kbps,
+    };
+  }
+
   streamUrl(trackId: string, maxKbps = 0): string {
     const { serverUrl, userId, deviceId, token } = this.session;
     return `${serverUrl}/Audio/${trackId}/universal${query({

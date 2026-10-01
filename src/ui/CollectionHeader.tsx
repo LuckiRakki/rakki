@@ -21,6 +21,7 @@ export function CollectionHeader({
   onShuffle,
   onMore,
   onEdit,
+  download,
 }: {
   art: ReactNode;
   tint: string;
@@ -31,6 +32,8 @@ export function CollectionHeader({
   onShuffle: () => void;
   onMore?: () => void;
   onEdit?: () => void;
+  /** The download toggle (DownloadButton), next to Shuffle. */
+  download?: ReactNode;
 }) {
   const t = useTheme();
   const styles = useStyles();
@@ -53,6 +56,7 @@ export function CollectionHeader({
           <Pressable hitSlop={8} onPress={onShuffle}>
             <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
           </Pressable>
+          {download ? <View style={{ marginLeft: t.space.lg }}>{download}</View> : null}
           {onEdit ? (
             <Pressable hitSlop={8} onPress={onEdit} accessibilityLabel="Edit playlist" style={{ marginLeft: t.space.lg }}>
               <Ionicons name="pencil" size={22} color={t.colors.textSecondary} />

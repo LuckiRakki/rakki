@@ -9,6 +9,7 @@ import { songCount, ticksToSeconds } from '@/lib/format';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
+import { DownloadButton } from '@/ui/DownloadButton';
 import { openMenu } from '@/ui/overlays';
 import { PlaylistEditor } from '@/ui/PlaylistEditor';
 import { T } from '@/ui/T';
@@ -60,6 +61,7 @@ export default function PlaylistScreen() {
         onShuffle={() => list.length && usePlayer.getState().playQueue(list, { source, shuffle: true })}
         onMore={p ? () => openMenu(p) : undefined}
         onEdit={p && list.length ? () => setEditing(true) : undefined}
+        download={p && list.length ? <DownloadButton kind="playlist" item={p} /> : undefined}
       />
       {items.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
       {!items.isLoading && list.length === 0 ? (
