@@ -54,13 +54,24 @@ app-side code ships over the air now and does nothing until that build is instal
 - [x] **Entitlements in the build.** SideStore learns which app group to register from each
   binary's entitlements, and an unsigned build has none. The iOS workflow now signs ad hoc with
   the entitlements (frameworks, then the widget extension, then the app) and prints them.
+- [x] **No push entitlement.** `expo-widgets` adds `aps-environment` even with push off, and a
+  free Apple ID can't have it. Patched to respect `enablePushNotifications`; the build also
+  strips it before signing.
+- [x] **Optimized widget.** `expo-widgets` gives the widget target the same settings for Debug
+  and Release (`-Onone`, so Xcode also bundles a 7 MB debug dylib). Patched: Release builds with
+  `-O`, whole module, no debug dylib (widgets have little memory).
 - [ ] **App IDs:** the widget extension takes one more of the free account's 10 App IDs per
   week (Rakki + widgets = 2). If SideStore asks whether to keep app extensions, keep them.
 
 ## Build
 - [x] `ios.yml` has a new **check** variant: the release build without publishing, to make
   sure native changes compile while the downloadable build stays as it is.
-- [ ] Compile check on CI (branch `phase-6-widgets`).
+- [x] Compile check on CI (branch `phase-6-widgets`), 2026-10-01: four check builds passed
+  (widgets; + Photos picker and backup exclusion; + no push entitlement), then a fourth with the
+  optimized widget (one 7 MB binary, no debug dylib). Inspected the .ipa:
+  `ExpoWidgetsTarget.appex` with the widget runtime bundle, bundle ID
+  `com.luckirakki.rakki.ExpoWidgetsTarget`, app group on both, `rakki` URL scheme, Photos
+  permission only (no camera/microphone), iOS 16.4 minimum.
 - [ ] On the phone, in the final build: add both widgets, check art, progress, links, the
   Lock Screen versions and that they follow an account switch.
 
