@@ -247,6 +247,12 @@ export default function CustomizeScreen() {
             />
           </Field>
           <Toggle label="Progress line" value={a.miniProgress} onChange={(v) => set('miniProgress', v)} />
+          <Toggle
+            label="Visualizer"
+            detail="Little bars by the song while it plays"
+            value={a.miniVisualizer}
+            onChange={(v) => set('miniVisualizer', v)}
+          />
           <Toggle label="Tab labels" detail="Home, Search, Your Library under the icons" value={a.tabLabels} onChange={(v) => set('tabLabels', v)} />
         </Section>
 

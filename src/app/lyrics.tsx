@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +15,7 @@ import { createPlaybackClock } from '@/lyrics/clock';
 import { creditLine, useLyrics } from '@/lyrics/fetch';
 import { LyricsStage, pickLyrics } from '@/lyrics/LyricsStage';
 import { usePlayer } from '@/player/store';
+import { useProgress } from '@/player/useProgress';
 import { useSettings, type LyricsMode } from '@/settings/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
@@ -32,6 +34,8 @@ export default function LyricsScreen() {
   const mode = useSettings((s) => s.lyricsMode);
   const { data, isLoading } = useLyrics(track?.Id);
   const clock = useMemo(() => createPlaybackClock(), []);
+  // The visualizer instead of the lyrics (songs without lyrics get it on their own).
+  const [visualizer, setVisualizer] = useState(false);
 
   const lyrics = pickLyrics(data, mode);
   const credit = lyrics ? creditLine(lyrics) : null;
@@ -59,6 +63,7 @@ export default function LyricsScreen() {
         artUri={track ? client?.imageUrl(track, 600) : undefined}
         tint={tint}
         footerSpace={footerSpace}
+        visualizer={visualizer}
         header={
           <GestureDetector gesture={swipeDown}>
             <View style={{ paddingTop: insets.top + t.space.xs }}>
@@ -67,6 +72,19 @@ export default function LyricsScreen() {
                   <Ionicons name="chevron-down" size={28} color={t.colors.text} />
                 </Pressable>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
+                  {lyrics ? (
+                    <Pressable
+                      hitSlop={10}
+                      onPress={() => setVisualizer(!visualizer)}
+                      accessibilityLabel={visualizer ? 'Show lyrics' : 'Show visualizer'}
+                      accessibilityState={{ selected: visualizer }}>
+                      <Ionicons
+                        name={visualizer ? 'stats-chart' : 'stats-chart-outline'}
+                        size={21}
+                        color={visualizer ? t.colors.accent : t.colors.text}
+                      />
+                    </Pressable>
+                  ) : null}
                   <Pressable hitSlop={10} onPress={() => router.push('/lyrics-style')} accessibilityLabel="Lyrics style">
                     <Ionicons name="options-outline" size={24} color={t.colors.text} />
                   </Pressable>
@@ -81,6 +99,7 @@ export default function LyricsScreen() {
 
       {/* Footer: credit (required for Spicy Lyrics API lyrics) + transport */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
+        <UpNext />
         {credit ? (
           <T variant="caption" numberOfLines={1} style={styles.credit}>
             {credit}
@@ -99,6 +118,42 @@ export default function LyricsScreen() {
         </View>
       </View>
     </View>
+  );
+}
+
+const UP_NEXT_SECONDS = 15;
+
+/** The next song, slid up above the controls for the last seconds of this one. Tap for the queue. */
+function UpNext() {
+  const t = useTheme();
+  const styles = useStyles();
+  const next = usePlayer((s) => s.queue[s.index + 1]?.item);
+  const repeatOne = usePlayer((s) => s.repeat === 'one');
+  const { position, duration } = useProgress(500);
+  const remaining = duration - position;
+  if (!next || repeatOne || duration < 30 || remaining <= 0 || remaining > UP_NEXT_SECONDS) return null;
+  return (
+    <Animated.View
+      entering={t.reduceMotion ? undefined : FadeInDown.duration(300)}
+      exiting={t.reduceMotion ? undefined : FadeOutDown.duration(200)}
+      style={styles.upNextWrap}>
+      <Pressable
+        onPress={() => router.push('/queue')}
+        accessibilityLabel={`Up next: ${next.Name}`}
+        style={({ pressed }) => [styles.upNext, pressed && { opacity: 0.8 }]}>
+        <Artwork item={next} size={40} />
+        <View style={{ flex: 1, marginLeft: t.space.md }}>
+          <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(11), color: 'rgba(255,255,255,0.7)' }}>Up next</T>
+          <T variant="bodyStrong" numberOfLines={1}>
+            {next.Name}
+          </T>
+          <T variant="caption" numberOfLines={1} style={{ color: 'rgba(255,255,255,0.75)' }}>
+            {artistLine(next)}
+          </T>
+        </View>
+        <Ionicons name="list" size={20} color={t.colors.text} />
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -167,6 +222,15 @@ const useStyles = makeStyles((t) => ({
     shadowOffset: { width: 0, height: 8 },
   },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
+  upNextWrap: { alignSelf: 'stretch', paddingHorizontal: t.space.lg, marginBottom: t.space.md },
+  upNext: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: t.space.sm,
+    paddingRight: t.space.md,
+    borderRadius: t.radius.card,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   credit: { fontSize: t.size(11), marginBottom: t.space.sm, paddingHorizontal: t.space.xl, opacity: 0.8 },
   transport: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxl },
   play: {

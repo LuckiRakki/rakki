@@ -7,23 +7,26 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAppearsOn, useArtistAlbums, useItem, useSimilar, useTopTracks } from '@/api/queries';
+import type { BaseItem } from '@/api/jellyfin';
+import { useAppearsOn, useArtistAlbums, useArtistPopular, useItem, useSimilar, useTopTracks } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { setLiked, startRadio } from '@/library/actions';
 import { offlineArtistTracks } from '@/downloads/offline';
-import { isOffline } from '@/lib/online';
+import { isSingleOrEp } from '@/lib/items';
+import { formatCount } from '@/lib/lastfm';
+import { isOffline, useOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
+import { useSettings, type PopularSort } from '@/settings/store';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { artistGenres, GenreChips } from '@/ui/GenreChips';
+import { openReleases } from '@/ui/nav';
+import { openOptions, showToast } from '@/ui/overlays';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
-
-/** Singles and EPs: releases with only a few songs. */
-const isSingleOrEp = (count?: number) => (count ?? 0) > 0 && (count ?? 0) <= 6;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,6 +39,10 @@ export default function ArtistScreen() {
   const appearsOn = useAppearsOn(id);
   const top = useTopTracks(id);
   const similar = useSimilar(id);
+  const lastfm = useArtistPopular(id, artist.data?.Name);
+  const offline = useOffline();
+  const hasKey = useSettings((s) => s.lastfmApiKey.trim().length > 0);
+  const popularSort = useSettings((s) => s.popularSort);
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
   const isThisArtist = usePlayer((s) => s.source?.type === 'artist' && s.source.id === id);
@@ -55,9 +62,30 @@ export default function ArtistScreen() {
   const tint = artColor(blurhash);
   const liked = a?.UserData?.IsFavorite ?? false;
   const source = { type: 'artist' as const, id, name: a?.Name ?? 'Artist' };
-  const popular = top.data ?? [];
-  const full = albums.data?.filter((x) => !isSingleOrEp(x.ChildCount)) ?? [];
-  const singles = albums.data?.filter((x) => isSingleOrEp(x.ChildCount)) ?? [];
+  // Popular: Last.fm's worldwide order and counts when set up and online, otherwise your plays.
+  const byLastfm = popularSort === 'lastfm' && hasKey && !offline && !!lastfm.data?.length;
+  const rows: { track: BaseItem; subtitle: string }[] = byLastfm
+    ? lastfm.data!.map((x) => ({ track: x.track, subtitle: `${formatCount(x.playcount)} plays` }))
+    : (top.data ?? []).map((track) => ({ track, subtitle: myPlays(track) }));
+  const popular = rows.map((r) => r.track);
+  const popularLoading = popularSort === 'lastfm' && hasKey && !offline ? lastfm.isLoading : top.isLoading;
+
+  function chooseSort() {
+    openOptions({
+      title: 'Sort popular songs by',
+      options: [
+        { key: 'lastfm', label: 'Popular worldwide (Last.fm)' },
+        { key: 'mine', label: 'My plays' },
+      ],
+      selected: popularSort,
+      onSelect: (key) => {
+        if (key === 'lastfm' && !hasKey) showToast('Add a Last.fm API key in Settings first');
+        useSettings.getState().set('popularSort', key as PopularSort);
+      },
+    });
+  }
+  const full = albums.data?.filter((x) => !isSingleOrEp(x)) ?? [];
+  const singles = albums.data?.filter((x) => isSingleOrEp(x)) ?? [];
 
   function play() {
     if (isThisArtist) return usePlayer.getState().toggle();
@@ -122,16 +150,29 @@ export default function ArtistScreen() {
           <GenreChips genres={artistGenres(a?.Genres, albums.data)} />
         </View>
 
-        {top.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
+        {popularLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
         {popular.length ? (
           <View style={{ marginTop: t.space.lg }}>
-            <SectionTitle title="Popular" />
-            {popular.slice(0, more ? 10 : 5).map((track, i) => (
+            <View style={styles.popularHead}>
+              <T variant="heading" style={{ flex: 1 }}>
+                Popular
+              </T>
+              <Pressable
+                hitSlop={8}
+                onPress={chooseSort}
+                accessibilityLabel={`Sort by ${byLastfm ? 'Last.fm plays' : 'my plays'}`}
+                style={styles.sort}>
+                <Ionicons name="swap-vertical" size={15} color={t.colors.text} />
+                <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13) }}>{byLastfm ? 'Last.fm' : 'My plays'}</T>
+              </Pressable>
+            </View>
+            {rows.slice(0, more ? 10 : 5).map(({ track, subtitle }, i) => (
               <TrackRow
                 key={track.Id}
                 track={track}
                 rank={i + 1}
                 art
+                subtitle={subtitle}
                 active={track.Id === currentId}
                 playing={playing}
                 onPress={() => usePlayer.getState().playQueue(popular, { startIndex: i, source })}
@@ -144,11 +185,24 @@ export default function ArtistScreen() {
                 </T>
               </Pressable>
             ) : null}
+            {byLastfm ? (
+              <T variant="caption" style={styles.source}>
+                Worldwide plays from Last.fm
+              </T>
+            ) : popularSort === 'lastfm' && hasKey && !offline && lastfm.isError ? (
+              <T variant="caption" style={styles.source}>
+                Couldn’t get Last.fm play counts, so these are your plays
+              </T>
+            ) : null}
           </View>
         ) : null}
 
-        <Shelf title="Discography" items={full} />
-        <Shelf title="Singles and EPs" items={singles} />
+        <Shelf title="Discography" items={full} onShowAll={full.length > 3 ? () => openReleases(id, 'albums') : undefined} />
+        <Shelf
+          title="Singles and EPs"
+          items={singles}
+          onShowAll={singles.length > 3 ? () => openReleases(id, 'singles') : undefined}
+        />
         <Shelf title="Appears on" items={appearsOn.data} />
         <Shelf title="Fans also like" items={similar.data} size={130} />
 
@@ -171,6 +225,13 @@ export default function ArtistScreen() {
 }
 
 const StyleHero = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 } as const;
+
+/** "12 plays", "1 play", "Not played yet": your own plays of a song. */
+function myPlays(track: BaseItem): string {
+  const n = track.UserData?.PlayCount ?? 0;
+  if (!n) return 'Not played yet';
+  return n === 1 ? '1 play' : `${formatCount(n)} plays`;
+}
 
 const useStyles = makeStyles((t) => ({
   hero: { height: 340, justifyContent: 'flex-end', overflow: 'hidden' },
@@ -207,6 +268,9 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'center',
   },
   seeMore: { alignSelf: 'flex-start', marginLeft: t.space.lg, marginTop: t.space.sm, paddingVertical: t.space.xs },
+  popularHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.lg, marginBottom: t.space.md },
+  sort: { flexDirection: 'row', alignItems: 'center', gap: t.space.xs },
+  source: { paddingHorizontal: t.space.lg, marginTop: t.space.sm, fontSize: t.size(11), color: t.colors.textMuted },
   back: {
     position: 'absolute',
     left: t.space.md,

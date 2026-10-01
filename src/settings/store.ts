@@ -30,6 +30,9 @@ export const DOWNLOAD_QUALITY_OPTIONS: { value: DownloadQuality; label: string; 
 /** Spicy = the full word-by-word engine (default, the focus). Regular = clean line by line. */
 export type LyricsMode = 'spicy' | 'regular';
 
+/** An artist's Popular songs: by worldwide plays on Last.fm, or by your own plays. */
+export type PopularSort = 'lastfm' | 'mine';
+
 interface Settings {
   wifiBitrate: Bitrate;
   cellularBitrate: Bitrate;
@@ -43,6 +46,9 @@ interface Settings {
   normalize: boolean;
   /** When the queue runs out, keep going with similar songs. */
   autoplay: boolean;
+  /** The user's own Last.fm API key (worldwide play counts). Empty = not set up. */
+  lastfmApiKey: string;
+  popularSort: PopularSort;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -58,6 +64,8 @@ const DEFAULTS: Settings = {
   offlineMode: false,
   normalize: true,
   autoplay: true,
+  lastfmApiKey: '',
+  popularSort: 'lastfm',
 };
 
 function load(): Settings {

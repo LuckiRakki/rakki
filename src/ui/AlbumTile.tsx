@@ -17,7 +17,18 @@ function subtitleOf(item: BaseItem): string {
 }
 
 /** Art + title + subtitle for shelves and grids: albums, playlists, and artists (round art). */
-export function ItemTile({ item, size, onPress }: { item: BaseItem; size: number; onPress?: () => void }) {
+export function ItemTile({
+  item,
+  size,
+  onPress,
+  subtitle,
+}: {
+  item: BaseItem;
+  size: number;
+  onPress?: () => void;
+  /** Replaces the usual subtitle (the artist). */
+  subtitle?: string;
+}) {
   const t = useTheme();
   const round = item.Type === 'MusicArtist';
   return (
@@ -34,7 +45,7 @@ export function ItemTile({ item, size, onPress }: { item: BaseItem; size: number
         {item.Name}
       </T>
       <T variant="caption" numberOfLines={1} style={{ textAlign: round ? 'center' : 'left' }}>
-        {subtitleOf(item)}
+        {subtitle ?? subtitleOf(item)}
       </T>
     </Pressable>
   );

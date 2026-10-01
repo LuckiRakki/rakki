@@ -1,14 +1,17 @@
-import type { ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import { RegularLyricsView } from '@/lyrics/RegularLyricsView';
 import type { Lyrics, LyricsBundle } from '@/lyrics/types';
+import { usePlayer } from '@/player/store';
 import type { LyricsMode } from '@/settings/store';
 import { SpicyBackdrop } from '@/spicy/Backdrop';
 import type { SpicyLayout } from '@/spicy/scene';
 import { SpicyLyrics } from '@/spicy/SpicyLyrics';
 import { T } from '@/ui/T';
-import { makeStyles } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
+import { Visualizer } from '@/ui/Visualizer';
 
 /**
  * Which lyrics each mode shows. Spicy prefers word-timed TTML (falling back to LRC, drawn
@@ -43,6 +46,7 @@ export function LyricsStage({
   tint,
   header,
   footerSpace = 0,
+  visualizer = false,
 }: {
   lyrics: Lyrics | null;
   loading: boolean;
@@ -54,6 +58,8 @@ export function LyricsStage({
   tint: string;
   header?: ReactNode;
   footerSpace?: number;
+  /** Show the visualizer instead of the lyrics. */
+  visualizer?: boolean;
 }) {
   const styles = useStyles();
   const layout: SpicyLayout = { anchor: ANCHOR, fadeTop: FADE_TOP, fadeBottom: footerSpace + 40 };
@@ -66,7 +72,11 @@ export function LyricsStage({
       )}
       {header}
       <View style={{ flex: 1 }}>
-        {lyrics ? (
+        {visualizer && lyrics ? (
+          <View style={[styles.empty, { paddingBottom: footerSpace }]}>
+            <VisualizerPanel />
+          </View>
+        ) : lyrics ? (
           mode === 'spicy' ? (
             <SpicyLyrics
               key={lyricsKey(lyrics)}
@@ -89,20 +99,59 @@ export function LyricsStage({
             />
           )
         ) : (
-          <View style={styles.empty}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <T variant="heading" style={{ textAlign: 'center' }}>
-                No lyrics for this song
-              </T>
-            )}
+          <View style={[styles.empty, { paddingBottom: footerSpace }]}>
+            {loading ? <ActivityIndicator color="#fff" /> : <NoLyrics />}
           </View>
         )}
       </View>
     </View>
   );
 }
+
+/** The full-width visualizer for the lyrics panel. */
+function VisualizerPanel() {
+  const { width } = useWindowDimensions();
+  return <Visualizer bars={28} width={width - 64} height={200} color="rgba(255,255,255,0.9)" gap={5} radius={3} mirrored />;
+}
+
+/**
+ * A song without lyrics: says so, then after a second the message fades out and the
+ * visualizer fades in. Starts over for each song.
+ */
+function NoLyrics() {
+  const songId = usePlayer((s) => s.queue[s.index]?.item.Id ?? '');
+  return <NoLyricsSequence key={songId} />;
+}
+
+function NoLyricsSequence() {
+  const t = useTheme();
+  const text = useSharedValue(1);
+  const viz = useSharedValue(0);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const quick = t.reduceMotion;
+      text.set(withTiming(0, { duration: quick ? 0 : 350 }));
+      viz.set(withDelay(quick ? 0 : 250, withTiming(1, { duration: quick ? 0 : 600 })));
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [text, viz, t.reduceMotion]);
+  const textStyle = useAnimatedStyle(() => ({ opacity: text.get() }));
+  const vizStyle = useAnimatedStyle(() => ({ opacity: viz.get() }));
+  return (
+    <View style={{ flex: 1, alignSelf: 'stretch' }}>
+      <Animated.View style={[StyleSheet.absoluteFill, CENTER, vizStyle]}>
+        <VisualizerPanel />
+      </Animated.View>
+      <Animated.View style={[StyleSheet.absoluteFill, CENTER, textStyle]}>
+        <T variant="heading" style={{ textAlign: 'center' }}>
+          No lyrics for this song
+        </T>
+      </Animated.View>
+    </View>
+  );
+}
+
+const CENTER = { alignItems: 'center', justifyContent: 'center' } as const;
 
 function lyricsKey(l: Lyrics) {
   return `${l.kind}:${l.lines.length}:${l.lines[0]?.startMs ?? 0}:${l.lines[0]?.text ?? ''}`;

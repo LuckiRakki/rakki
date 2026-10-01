@@ -56,6 +56,8 @@ export interface Appearance {
   // ---- Mini-player & tab bar ----
   miniPlayer: 'tinted' | 'solid' | 'glass';
   miniProgress: boolean;
+  /** Little moving bars next to the song while it plays. */
+  miniVisualizer: boolean;
   tabLabels: boolean;
   // ---- Now playing ----
   playerBackground: 'gradient' | 'blur' | 'solid';
@@ -84,6 +86,7 @@ export const APPEARANCE_DEFAULTS: Appearance = {
   greeting: true,
   miniPlayer: 'tinted',
   miniProgress: true,
+  miniVisualizer: true,
   tabLabels: true,
   playerBackground: 'gradient',
   lyricsCard: true,

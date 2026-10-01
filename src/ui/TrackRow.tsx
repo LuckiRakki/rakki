@@ -23,6 +23,7 @@ export function TrackRow({
   onLongPress,
   art = false,
   rank,
+  subtitle,
 }: {
   track: BaseItem;
   active: boolean;
@@ -31,6 +32,8 @@ export function TrackRow({
   onLongPress?: () => void;
   art?: boolean;
   rank?: number;
+  /** Replaces the artist line (e.g. play counts on an artist's Popular songs). */
+  subtitle?: string;
 }) {
   const t = useTheme();
   const downloaded = useTrackDownload(track.Id);
@@ -85,7 +88,7 @@ export function TrackRow({
             <Ionicons name="arrow-down-circle" size={13} color={t.colors.accent} style={{ marginRight: 4 }} />
           ) : null}
           <T variant="caption" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {artistLine(track)}
+            {subtitle ?? artistLine(track)}
           </T>
         </View>
       </View>

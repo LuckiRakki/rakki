@@ -6,7 +6,7 @@ export const SECTIONS = {
   type: ['font', 'textScale', 'titleWeight'],
   shape: ['roundness', 'density', 'gridColumns'],
   home: ['homeOrder', 'homeHidden', 'quickPicks', 'greeting'],
-  mini: ['miniPlayer', 'miniProgress', 'tabLabels'],
+  mini: ['miniPlayer', 'miniProgress', 'miniVisualizer', 'tabLabels'],
   player: ['playerBackground', 'lyricsCard'],
   feel: ['haptics', 'motion'],
 } satisfies Record<string, (keyof Appearance)[]>;

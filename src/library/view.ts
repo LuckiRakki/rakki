@@ -5,7 +5,7 @@ import { create } from 'zustand';
 
 import { readPref, writePref } from '@/lib/prefs';
 
-export type LibraryTab = 'playlists' | 'albums' | 'songs' | 'artists' | 'downloads';
+export type LibraryTab = 'playlists' | 'albums' | 'songs' | 'artists' | 'genres' | 'downloads';
 export type LibraryLayout = 'grid' | 'list';
 
 export interface SortOption {
@@ -44,6 +44,12 @@ export const SORTS: Record<LibraryTab, SortOption[]> = {
     { key: 'recent', label: 'Recently added', sortBy: 'DateCreated,SortName', sortOrder: 'Descending' },
     RANDOM,
   ],
+  // Sorted on the phone (one list of every genre).
+  genres: [
+    { key: 'count', label: 'Most albums', sortBy: '', sortOrder: 'Descending' },
+    { key: 'alpha', label: 'Alphabetical', sortBy: '', sortOrder: 'Ascending' },
+    RANDOM,
+  ],
   // Sorted on the phone (downloads aren't a server query).
   downloads: [
     { key: 'recent', label: 'Recently downloaded', sortBy: '', sortOrder: 'Descending' },
@@ -57,6 +63,7 @@ const DEFAULT_LAYOUT: Record<LibraryTab, LibraryLayout> = {
   albums: 'grid',
   songs: 'list',
   artists: 'list',
+  genres: 'grid',
   downloads: 'list',
 };
 const TAB_KEY = 'rakki.libraryTab';
@@ -69,7 +76,9 @@ interface Saved {
 
 function savedTab(): LibraryTab {
   const v = readPref(TAB_KEY);
-  return v === 'playlists' || v === 'artists' || v === 'albums' || v === 'songs' || v === 'downloads' ? v : 'albums';
+  return v === 'playlists' || v === 'artists' || v === 'albums' || v === 'songs' || v === 'genres' || v === 'downloads'
+    ? v
+    : 'albums';
 }
 
 function savedView(): Saved {

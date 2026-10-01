@@ -12,6 +12,7 @@ import { formatBytes, songCount } from '@/lib/format';
 import { appVersion, buildStamp, checkForUpdate, getUpdateInfo, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, DOWNLOAD_QUALITY_OPTIONS, useSettings } from '@/settings/store';
+import { LastfmSettings } from '@/ui/LastfmSettings';
 import { Toggle } from '@/ui/SettingRows';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -233,6 +234,8 @@ export default function SettingsScreen() {
             <T variant="bodyStrong">Manage downloads · {downloadSummary}</T>
           </Pressable>
         </View>
+
+        <LastfmSettings />
 
         <T variant="label" style={styles.section}>
           About

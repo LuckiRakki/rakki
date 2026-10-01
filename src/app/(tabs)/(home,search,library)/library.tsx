@@ -4,8 +4,8 @@ import { useState, type ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { BaseItem } from '@/api/jellyfin';
-import { useAlbumArtists, useAlbums, useLikedSongs, usePlaylists, useTracks } from '@/api/queries';
+import type { BaseItem, GenreCount } from '@/api/jellyfin';
+import { useAlbumArtists, useAlbums, useGenreCounts, useLikedSongs, usePlaylists, useTracks } from '@/api/queries';
 import { songCount } from '@/lib/format';
 import { kindLine } from '@/lib/items';
 import { useDownloads, type DownloadedCollection } from '@/downloads/store';
@@ -22,9 +22,11 @@ import {
   type SortOption,
 } from '@/library/view';
 import { ItemTile } from '@/ui/AlbumTile';
+import { Artwork } from '@/ui/Artwork';
+import { GenreTile } from '@/ui/GenreTile';
 import { Chip, ItemRow } from '@/ui/ItemRow';
 import { LikedArt } from '@/ui/LikedArt';
-import { openItem } from '@/ui/nav';
+import { openGenre, openItem } from '@/ui/nav';
 import { openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
@@ -36,6 +38,7 @@ const TABS: { key: LibraryTab; label: string }[] = [
   { key: 'albums', label: 'Albums' },
   { key: 'songs', label: 'Songs' },
   { key: 'artists', label: 'Artists' },
+  { key: 'genres', label: 'Genres' },
   { key: 'downloads', label: 'Downloaded' },
 ];
 
@@ -124,6 +127,7 @@ export default function LibraryScreen() {
       {tab === 'albums' ? <Albums header={header} sort={sort} layout={layout} /> : null}
       {tab === 'songs' ? <Songs header={header} sort={sort} layout={layout} /> : null}
       {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} /> : null}
+      {tab === 'genres' ? <Genres header={header} sort={sort} layout={layout} /> : null}
       {tab === 'playlists' ? <Playlists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'downloads' ? <Downloaded header={header} sort={sort} layout={layout} /> : null}
     </View>
@@ -212,6 +216,68 @@ function Artists({ header, sort, layout }: ListProps) {
       }}
       renderItem={({ item }) => (grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle="Artist" />)}
     />
+  );
+}
+
+/** Every genre in the library (offline: the downloaded albums' genres). */
+function Genres({ header, sort, layout }: ListProps) {
+  const t = useTheme();
+  const seed = useLibraryView((s) => s.shuffleSeed);
+  const genres = useGenreCounts();
+  const refresh = usePullToRefresh(sort, genres.refetch);
+  const { width } = useWindowDimensions();
+  const all = genres.data ?? [];
+  const items =
+    sort.key === 'random'
+      ? seededShuffle(all, seed)
+      : sort.key === 'alpha'
+        ? [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+        : all;
+  const grid = layout === 'grid';
+  const gap = t.space.md;
+  const tile = Math.floor((width - t.space.lg * 2 - gap) / 2);
+  return (
+    <FlatList
+      key={`genres-${layout}`}
+      data={items}
+      keyExtractor={(g) => g.name}
+      numColumns={grid ? 2 : 1}
+      columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
+      contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? gap : 0 }}
+      refreshControl={refresh}
+      ListHeaderComponent={header}
+      ListEmptyComponent={genres.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
+      renderItem={({ item }) =>
+        grid ? <GenreTile genre={item} width={tile} height={Math.round(tile * 0.56)} /> : <GenreRow genre={item} />
+      }
+    />
+  );
+}
+
+function GenreRow({ genre }: { genre: GenreCount }) {
+  const t = useTheme();
+  return (
+    <Pressable
+      onPress={() => openGenre(genre.name)}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: t.space.lg,
+        paddingVertical: t.space.sm,
+        backgroundColor: pressed ? t.colors.surface : 'transparent',
+      })}>
+      {genre.album ? (
+        <Artwork item={genre.album} size={48} />
+      ) : (
+        <View style={{ width: 48, height: 48, borderRadius: t.radius.art, backgroundColor: t.colors.surface2 }} />
+      )}
+      <View style={{ flex: 1, marginLeft: t.space.md }}>
+        <T variant="bodyStrong" numberOfLines={1}>
+          {genre.name}
+        </T>
+        <T variant="caption">{genre.count === 1 ? '1 album' : `${genre.count} albums`}</T>
+      </View>
+    </Pressable>
   );
 }
 

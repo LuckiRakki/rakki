@@ -11,13 +11,16 @@ import {
   offlineArtistAlbums,
   offlineArtistTracks,
   offlineGenreAlbums,
+  offlineGenreCounts,
   offlineItem,
   offlineLikedTracks,
   offlinePlaylistTracks,
 } from '@/downloads/offline';
 import { useDownloads } from '@/downloads/store';
 import { seededShuffle } from '@/library/view';
+import { artistTopTracks, matchPopular } from '@/lib/lastfm';
 import { useOffline } from '@/lib/online';
+import { useSettings } from '@/settings/store';
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 5 * 60_000, retry: 1 } },
@@ -193,10 +196,26 @@ export const useTopTracks = (id?: string) =>
     enabled: !!id,
     offline: () => offlineArtistTracks(id!).slice(0, 10),
   });
+/**
+ * The artist's songs in the library, ordered by worldwide plays on Last.fm (with the counts).
+ * Off without a Last.fm key; online only.
+ */
+export function useArtistPopular(artistId?: string, artistName?: string) {
+  const hasKey = useSettings((s) => s.lastfmApiKey.trim().length > 0);
+  return useUserQuery(
+    ['artistPopular', artistId, artistName],
+    async (c) => {
+      const [top, library] = await Promise.all([artistTopTracks(artistName!), c.getArtistTracks(artistId!)]);
+      return matchPopular(top, library, artistId!).slice(0, 10);
+    },
+    { enabled: !!artistId && !!artistName && hasKey, staleTime: 6 * 60 * 60_000 },
+  );
+}
+
 export const useSimilar = (id?: string) => useUserQuery(['similar', id], (c) => c.getSimilar(id!, 12), { enabled: !!id });
 
 export const useGenreCounts = () =>
-  useUserQuery(['genreCounts'], (c) => c.getGenreCounts(), { staleTime: 24 * 60 * 60_000 });
+  useUserQuery(['genreCounts'], (c) => c.getGenreCounts(), { staleTime: 24 * 60 * 60_000, offline: offlineGenreCounts });
 export const useGenreAlbums = (genre?: string) =>
   useUserQuery(['genreAlbums', genre], async (c) => (await c.getGenreAlbums(genre!)).Items, {
     enabled: !!genre,

@@ -57,6 +57,8 @@ export const openAlbum = (id: string) => goTo(`/album/${id}`);
 export const openArtist = (id: string) => goTo(`/artist/${id}`);
 export const openPlaylist = (id: string) => goTo(`/playlist/${id}`);
 export const openGenre = (name: string) => goTo(`/genre/${encodeURIComponent(name)}`);
+/** All of an artist's albums, or all their singles and EPs. */
+export const openReleases = (artistId: string, kind: 'albums' | 'singles') => goTo(`/releases/${artistId}?kind=${kind}`);
 
 /** Switch to the Library tab, showing the given chip. */
 export function openLibrary(tab: LibraryTab) {

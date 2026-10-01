@@ -430,6 +430,12 @@ export class JellyfinClient {
     return r.Items.filter((a) => !a.AlbumArtists?.some((x) => x.Id === artistId));
   }
 
+  /** Every song the artist is on (for matching Last.fm's top tracks). */
+  async getArtistTracks(artistId: string): Promise<BaseItem[]> {
+    const r = await this.items({ IncludeItemTypes: 'Audio', ArtistIds: artistId, Limit: 2000 });
+    return r.Items;
+  }
+
   /** The artist's most played songs (by this user), then alphabetical. */
   async getTopTracks(artistId: string, limit = 10): Promise<BaseItem[]> {
     const r = await this.items({

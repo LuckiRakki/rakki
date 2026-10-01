@@ -1,7 +1,7 @@
 // What the app shows offline, built from what's downloaded: albums, playlists, Liked Songs,
 // artists, and the songs that are actually on the phone. Albums or artists you didn't
 // download as a whole still appear with the songs you have (from a playlist, say).
-import type { BaseItem } from '@/api/jellyfin';
+import type { BaseItem, GenreCount } from '@/api/jellyfin';
 import { useDownloads, type DownloadedCollection } from '@/downloads/store';
 
 function state() {
@@ -91,6 +91,17 @@ export function offlineArtistTracks(artistId: string): BaseItem[] {
 /** Albums in a genre that you downloaded. */
 export function offlineGenreAlbums(genre: string): BaseItem[] {
   return downloadedAlbums().filter((a) => a.Genres?.includes(genre));
+}
+
+/** Genres of the downloaded albums, most albums first (Library → Genres offline). */
+export function offlineGenreCounts(): GenreCount[] {
+  const byGenre = new Map<string, BaseItem[]>();
+  for (const album of downloadedAlbums()) {
+    for (const g of album.Genres ?? []) byGenre.set(g, [...(byGenre.get(g) ?? []), album]);
+  }
+  return [...byGenre]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([name, albums]) => ({ name, count: albums.length, album: albums.find((x) => x.ImageTags?.Primary) ?? albums[0] }));
 }
 
 function albumFromTrack(t: BaseItem): BaseItem {

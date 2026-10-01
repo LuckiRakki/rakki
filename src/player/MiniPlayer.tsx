@@ -14,6 +14,7 @@ import { useProgress } from '@/player/useProgress';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { Visualizer } from '@/ui/Visualizer';
 
 /**
  * Spotify-style mini-player on top of the tab bar, tinted by the art colour.
@@ -29,7 +30,7 @@ export function MiniPlayer() {
   const { position, duration } = useProgress(500);
 
   if (!track) return null;
-  const { miniPlayer: style, miniProgress } = t.appearance;
+  const { miniPlayer: style, miniProgress, miniVisualizer } = t.appearance;
   // Tinted: the art's colour (toned by Art tint). Solid: a plain surface. Glass: frosted blur.
   const background =
     style === 'tinted' ? t.tint(artColor(client?.blurhash(track), t.colors.surface3)) : style === 'solid' ? t.colors.surface2 : 'transparent';
@@ -67,6 +68,11 @@ export function MiniPlayer() {
               {artistLine(track)}
             </T>
           </View>
+          {miniVisualizer ? (
+            <View style={styles.viz}>
+              <Visualizer bars={4} width={16} height={14} color={t.colors.text} />
+            </View>
+          ) : null}
           <Pressable
             hitSlop={10}
             onPress={() => {
@@ -113,6 +119,7 @@ const useStyles = makeStyles((t) => ({
   text: { flex: 1, marginHorizontal: 10 },
   title: { fontFamily: t.fonts.semibold, fontSize: t.size(13) },
   btn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  viz: { marginRight: 6, opacity: 0.85 },
   track: {
     position: 'absolute',
     left: t.space.sm,
