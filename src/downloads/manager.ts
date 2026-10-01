@@ -13,7 +13,20 @@ import { tracksOf } from '@/library/actions';
 import { fetchLrc, fetchTtml } from '@/lyrics/fetch';
 import { useSettings } from '@/settings/store';
 import { showToast } from '@/ui/overlays';
-import { artFile, audioFile, deleteAllFiles, deleteQuietly, downloadsSupported, lyricsFile } from '@/downloads/files';
+import {
+  artFile,
+  audioFile,
+  deleteAllFiles,
+  deleteAudio,
+  deleteQuietly,
+  downloadsSupported,
+  hasOldLayout,
+  lyricsFile,
+  moveFromOldLayout,
+  musicPath,
+  prepareAudioFile,
+  removeOldLayout,
+} from '@/downloads/files';
 import {
   loadDownloads,
   persistDownloads,
@@ -68,12 +81,19 @@ export function kick() {
   }
 }
 
+/** Files already used by other songs (so two songs never get the same name). */
+function takenPaths(exceptId?: string): Set<string> {
+  const taken = new Set<string>();
+  for (const [id, t] of Object.entries(useDownloads.getState().tracks)) if (id !== exceptId && t.file) taken.add(t.file);
+  return taken;
+}
+
 async function downloadTrack(c: JellyfinClient, id: string) {
   const track = useDownloads.getState().tracks[id];
   if (!track) return;
   const src = c.downloadSource(track.item, useSettings.getState().downloadQuality);
-  const name = `${id}.${src.ext}`;
-  const file = audioFile(name);
+  const path = musicPath(track.item, src.ext, takenPaths(id));
+  const file = prepareAudioFile(path);
   deleteQuietly(file);
   // Converted files don't announce their size, so estimate it from the bitrate.
   const estimate = src.kbps ? src.kbps * 125 * ticksToSeconds(track.item.RunTimeTicks) : 0;
@@ -95,10 +115,10 @@ async function downloadTrack(c: JellyfinClient, id: string) {
     const result = await task.downloadAsync();
     if (!result) return; // paused
     if (!useDownloads.getState().tracks[id]) {
-      deleteQuietly(file); // removed while downloading
+      deleteAudio(path); // removed while downloading
       return;
     }
-    setTrack(id, { state: 'done', file: name, bytes: file.size ?? 0, kbps: src.kbps });
+    setTrack(id, { state: 'done', file: path, bytes: file.size ?? 0, kbps: src.kbps });
     const lyrics = await saveLyrics(c, id);
     if (lyrics) setTrack(id, { lyrics: true });
   } catch (e) {
@@ -232,7 +252,7 @@ function collectGarbage() {
     active.get(id)?.cancel();
     active.delete(id);
     if (downloadsSupported) {
-      if (t.file) deleteQuietly(audioFile(t.file));
+      if (t.file) deleteAudio(t.file);
       deleteQuietly(lyricsFile(id));
     }
   }
@@ -293,9 +313,35 @@ export async function syncCollections() {
 }
 
 /** After sign-in / launch: load, re-queue anything unfinished, catch up on changes. */
+/**
+ * Update 16 saved songs as downloads/<id>.<ext>, with art and lyrics beside them. Move them to
+ * Music/<Artist>/<Album>/… and .rakki/; anything that can't be moved is downloaded again.
+ */
+function migrateOldLayout() {
+  if (!hasOldLayout()) return;
+  const { tracks, art } = useDownloads.getState();
+  const nextTracks = { ...tracks };
+  const taken = takenPaths();
+  for (const [id, t] of Object.entries(tracks)) {
+    if (!t.file || t.file.includes('/')) continue;
+    const ext = t.file.split('.').pop() ?? 'audio';
+    const path = musicPath(t.item, ext, taken);
+    const moved = t.state === 'done' && moveFromOldLayout([t.file], prepareAudioFile(path));
+    if (moved) taken.add(path);
+    const lyrics = !!t.lyrics && moveFromOldLayout(['lyrics', `${id}.json`], lyricsFile(id));
+    nextTracks[id] = moved ? { ...t, file: path, lyrics } : { ...t, state: 'queued', file: undefined, lyrics: false };
+  }
+  const nextArt: typeof art = {};
+  for (const id of Object.keys(art)) if (moveFromOldLayout(['art', `${id}.jpg`], artFile(id))) nextArt[id] = true;
+  useDownloads.setState({ tracks: nextTracks, art: nextArt });
+  persistDownloads();
+  removeOldLayout();
+}
+
 export function startDownloads(userId: string) {
   if (!downloadsSupported) return;
   loadDownloads(userId);
+  migrateOldLayout();
   useDownloads.setState((s) => {
     const tracks = { ...s.tracks };
     for (const [id, t] of Object.entries(tracks)) {

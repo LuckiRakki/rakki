@@ -32,6 +32,15 @@ Checked before starting (2026-10-01):
   Remove download in the long-press menu; accent arrow on downloaded songs; Settings →
   Downloads (quality, cellular, Manage downloads); Downloads screen (sizes, free space, retry,
   remove, remove all).
+- [x] Readable files (user asked 2026-10-01 to see them in the Files app): songs saved as
+  Documents/Music/<Artist>/<Album>/<01 Title>.<ext>; Rakki's art/lyrics in hidden
+  Documents/.rakki/; update 16's flat `downloads/<id>` layout is migrated on launch. Empty
+  Artist/Album folders are removed with their last song.
+- [x] Library → "Downloaded" chip: downloaded albums, playlists, Liked Songs (with progress),
+  then single songs; sort (Recently downloaded / Alphabetical) and grid/list.
+- [ ] Files app folder ("On My iPhone → Rakki"): needs `UIFileSharingEnabled` +
+  `LSSupportsOpeningDocumentsInPlace` in Info.plist (added to app.json), so it only appears
+  after the next native .ipa build. Deleting/moving files there makes Rakki re-download them.
 - [ ] Verified on the phone (downloads can't run in the web preview).
 
 ## 4b. Offline mode — next
