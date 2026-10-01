@@ -21,7 +21,15 @@ export interface PopularTrack {
   playcount: number;
 }
 
-export class LastfmError extends Error {}
+export class LastfmError extends Error {
+  constructor(
+    message: string,
+    /** Last.fm's error code (6 = not found). */
+    readonly code?: number,
+  ) {
+    super(message);
+  }
+}
 
 async function call(params: Record<string, string>, key: string): Promise<unknown> {
   const query = new URLSearchParams({ ...params, api_key: key, format: 'json' }).toString();
@@ -30,7 +38,7 @@ async function call(params: Record<string, string>, key: string): Promise<unknow
   try {
     const res = await fetch(`${API}?${query}`, { signal: controller.signal });
     const json = (await res.json()) as { error?: number; message?: string };
-    if (json.error) throw new LastfmError(json.message ?? `Last.fm error ${json.error}`);
+    if (json.error) throw new LastfmError(json.message ?? `Last.fm error ${json.error}`, json.error);
     return json;
   } catch (e) {
     if (e instanceof LastfmError) throw e;
@@ -110,6 +118,53 @@ export function matchPopular(top: LastfmTrack[], library: BaseItem[], artistId: 
     out.push({ track: best, playcount: entry.playcount });
   }
   return out;
+}
+
+/** A title without featuring credits or edition notes, for a second try: "Nights (feat. X)" → "Nights". */
+function plainTitle(title: string): string {
+  return title
+    .replace(/\s*[([](?:feat|ft|with|featuring)\b[^)\]]*[)\]]/gi, '')
+    .replace(/\s*[([][^)\]]*\b(?:remaster(?:ed)?|version|mono|stereo|deluxe|bonus|explicit|clean)\b[^)\]]*[)\]]/gi, '')
+    .replace(/\s-\s.*\b(?:remaster(?:ed)?|version|mono|stereo|edit)\b.*$/i, '')
+    .trim();
+}
+
+/** Worldwide plays of one song, kept for a week; null when Last.fm doesn't know it. */
+export async function trackPlaycount(artist: string, title: string): Promise<number | null> {
+  const key = useSettings.getState().lastfmApiKey.trim();
+  if (!key) throw new LastfmError('No Last.fm API key.');
+  const cacheKey = `rakki.lastfm.track.${artist.toLowerCase()}|${title.toLowerCase()}`;
+  try {
+    const kept = JSON.parse(readPref(cacheKey) ?? 'null') as { at: number; plays: number | null } | null;
+    if (kept && Date.now() - kept.at < KEEP_MS) return kept.plays;
+  } catch {
+    // Fetch again.
+  }
+  const lookup = async (name: string) => {
+    const json = (await call({ method: 'track.getinfo', artist, track: name, autocorrect: '1' }, key)) as {
+      track?: { playcount?: string };
+    };
+    return json.track?.playcount !== undefined ? Number(json.track.playcount) || 0 : null;
+  };
+  let plays: number | null = null;
+  try {
+    plays = await lookup(title);
+  } catch (e) {
+    if (!(e instanceof LastfmError) || e.code !== 6) throw e;
+    const plain = plainTitle(title);
+    if (plain && plain !== title) plays = await lookup(plain).catch(() => null);
+  }
+  writePref(cacheKey, JSON.stringify({ at: Date.now(), plays }));
+  return plays;
+}
+
+/** "1.2M", "345K", "12": short play counts for tight rows. */
+export function formatCompact(n: number): string {
+  const short = (x: number) => (x >= 100 ? String(Math.round(x)) : x.toFixed(1).replace(/\.0$/, ''));
+  if (n >= 1e9) return `${short(n / 1e9)}B`;
+  if (n >= 1e6) return `${short(n / 1e6)}M`;
+  if (n >= 1e3) return `${short(n / 1e3)}K`;
+  return String(Math.round(n));
 }
 
 /** "1,234,567". */

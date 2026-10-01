@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getRoutePicker } from '../../modules/rakki-audio';
 import { HeartButton } from '@/ui/HeartButton';
 import { thud, tick } from '@/lib/haptics';
+import { useMusicVideos } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
@@ -25,6 +26,7 @@ import { openAlbum } from '@/ui/nav';
 import { openAddToPlaylist, openMenu, openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { findVideoFor, playMusicVideo } from '@/video/musicVideos';
 
 const RoutePicker = getRoutePicker();
 
@@ -52,6 +54,8 @@ export default function PlayerScreen() {
   const error = usePlayer((s) => s.error);
   const { position, duration } = useProgress(250);
   const sleepLabel = useSleepLabel();
+  const videos = useMusicVideos();
+  const video = track && videos.data ? findVideoFor(track, videos.data) : undefined;
 
   if (!track) {
     return (
@@ -181,10 +185,22 @@ export default function PlayerScreen() {
             ) : (
               <Ionicons name="phone-portrait-outline" size={22} color={t.colors.textMuted} />
             )}
-            <Pressable hitSlop={12} onPress={() => router.push('/lyrics')} style={styles.lyricsBtn}>
-              <Ionicons name="mic" size={18} color="#000" />
-              <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: '#000' }}>Lyrics</T>
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.sm }}>
+              <Pressable hitSlop={12} onPress={() => router.push('/lyrics')} style={styles.lyricsBtn}>
+                <Ionicons name="mic" size={18} color="#000" />
+                <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: '#000' }}>Lyrics</T>
+              </Pressable>
+              {video ? (
+                <Pressable
+                  hitSlop={8}
+                  onPress={() => void playMusicVideo(video)}
+                  accessibilityLabel="Watch the music video"
+                  style={styles.videoBtn}>
+                  <Ionicons name="film-outline" size={17} color={t.colors.text} />
+                  <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13) }}>Video</T>
+                </Pressable>
+              ) : null}
+            </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
               {sleepLabel ? (
                 <Pressable
@@ -272,5 +288,15 @@ const useStyles = makeStyles((t) => ({
     height: 34,
     borderRadius: t.radius.pill,
     backgroundColor: t.colors.text,
+  },
+  videoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: t.radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
 }));

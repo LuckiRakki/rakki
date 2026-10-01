@@ -6,6 +6,20 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 0.10.0 (2026-10-01)
+- **Music videos.** Videos from Jellyfin's Music Videos library are matched to songs by
+  artist and title ("CONFETTI - ARMY STYLE (OFFICIAL MUSIC VIDEO)" finds "army style"):
+  - a **Video** button next to Lyrics in the player when the song has one;
+  - **Watch music video** in the song's menu;
+  - a **Music videos** row on the artist's page.
+  The song pauses while the video plays. MP4/MOV with H.264/HEVC plays as it is; anything else
+  (WebM, AV1, MKV…) is converted by the server to 720p H.264 on the fly. This build opens videos
+  in iOS's own player; the in-app player (picture in picture, AirPlay, full screen in
+  landscape) comes with the next native build (expo-video).
+- **Last.fm plays on albums**: each song's worldwide plays under it ("Frank Ocean · 1.2M
+  plays"), looked up three at a time and kept a week. Settings → Last.fm → Plays on albums
+  turns it off.
+
 ## 0.9.0 (2026-10-01)
 - **Artist pages: Popular sorted your way.** A sort control on Popular: *Popular worldwide
   (Last.fm)*, with each song's play count from Last.fm, or *My plays*, with your own play

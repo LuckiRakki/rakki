@@ -4,19 +4,21 @@ import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 
 import { checkLastfmKey, LastfmError } from '@/lib/lastfm';
 import { useSettings } from '@/settings/store';
+import { Toggle } from '@/ui/SettingRows';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const GET_KEY_URL = 'https://www.last.fm/api/account/create';
 
 /**
- * Settings → Last.fm: the user's own API key, for worldwide play counts on artist pages. It's
- * kept on the phone only.
+ * Settings → Last.fm: the user's own API key, for worldwide play counts on artist and album
+ * pages. It's kept on the phone only.
  */
 export function LastfmSettings() {
   const t = useTheme();
   const styles = useStyles();
   const saved = useSettings((s) => s.lastfmApiKey);
+  const albumPlays = useSettings((s) => s.lastfmAlbumPlays);
   const [key, setKey] = useState(saved);
   const [state, setState] = useState<{ checking: boolean; result: string | null }>({ checking: false, result: null });
 
@@ -45,8 +47,8 @@ export function LastfmSettings() {
       <View style={styles.card}>
         <T variant="bodyStrong">Worldwide play counts</T>
         <T variant="caption" style={{ fontSize: t.size(12), marginTop: 2 }}>
-          Artist pages can sort their popular songs by plays on Last.fm. That needs a free Last.fm
-          API key: create one, then paste it here. It stays on this phone.
+          Plays on Last.fm for artists&apos; popular songs and on album pages. That needs a free
+          Last.fm API key: create one, then paste it here. It stays on this phone.
         </T>
         <TextInput
           value={key}
@@ -78,6 +80,12 @@ export function LastfmSettings() {
             {state.checking ? <ActivityIndicator color={t.colors.text} /> : <T variant="bodyStrong">Check</T>}
           </Pressable>
         </View>
+        <Toggle
+          label="Plays on albums"
+          detail="Last.fm play counts under each song on album pages"
+          value={albumPlays}
+          onChange={(v) => useSettings.getState().set('lastfmAlbumPlays', v)}
+        />
       </View>
     </>
   );

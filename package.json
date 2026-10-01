@@ -1,7 +1,7 @@
 {
   "name": "rakki",
   "main": "expo-router/entry",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "license": "AGPL-3.0-only",
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
@@ -36,6 +36,7 @@
     "expo-symbols": "~57.0.3",
     "expo-system-ui": "~57.0.4",
     "expo-updates": "~57.0.24",
+    "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",
     "expo-widgets": "~57.0.22",
     "react": "19.2.3",

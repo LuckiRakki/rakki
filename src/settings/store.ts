@@ -49,6 +49,8 @@ interface Settings {
   /** The user's own Last.fm API key (worldwide play counts). Empty = not set up. */
   lastfmApiKey: string;
   popularSort: PopularSort;
+  /** Last.fm play counts under each song on album pages (with a key). */
+  lastfmAlbumPlays: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -66,6 +68,7 @@ const DEFAULTS: Settings = {
   autoplay: true,
   lastfmApiKey: '',
   popularSort: 'lastfm',
+  lastfmAlbumPlays: true,
 };
 
 function load(): Settings {

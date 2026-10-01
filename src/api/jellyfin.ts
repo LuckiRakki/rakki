@@ -65,6 +65,13 @@ export interface BaseItem {
   NormalizationGain?: number;
   /** Credits (composers etc.), when the file has them and the request asked for People. */
   People?: { Name: string; Id: string; Type?: string; Role?: string }[];
+  /** Music videos (Fields=MediaSources): the file's container and streams. */
+  MediaSources?: {
+    Id: string;
+    Container?: string;
+    Bitrate?: number;
+    MediaStreams?: { Type: 'Video' | 'Audio' | 'Subtitle' | string; Codec?: string; Width?: number; Height?: number }[];
+  }[];
 }
 
 export type SearchKind = 'songs' | 'albums' | 'artists' | 'playlists';
@@ -428,6 +435,63 @@ export class JellyfinClient {
       Limit: 40,
     });
     return r.Items.filter((a) => !a.AlbumArtists?.some((x) => x.Id === artistId));
+  }
+
+  /** Every music video (the Music Videos library), with what's needed to play them. */
+  async getMusicVideos(): Promise<BaseItem[]> {
+    const r = await this.items({ IncludeItemTypes: 'MusicVideo', Fields: 'MediaSources', SortBy: 'SortName', Limit: 2000 });
+    return r.Items;
+  }
+
+  /**
+   * Where to stream a music video from. MP4/MOV with H.264/HEVC and AAC/MP3/ALAC plays as it is;
+   * anything else (WebM, AV1, Opus, MKV…) is converted by the server to H.264/AAC over HLS, at
+   * most 720p so the server keeps up (4K AV1 is heavy to decode).
+   */
+  videoStreamUrl(video: BaseItem, playSessionId: string): string {
+    const { serverUrl, deviceId, token } = this.session;
+    const source = video.MediaSources?.[0];
+    const streams = source?.MediaStreams ?? [];
+    const v = streams.find((s) => s.Type === 'Video')?.Codec?.toLowerCase();
+    const a = streams.find((s) => s.Type === 'Audio')?.Codec?.toLowerCase();
+    const container = source?.Container?.toLowerCase() ?? '';
+    const playsAsIs =
+      ['mp4', 'm4v', 'mov'].some((c) => container.split(',').includes(c)) &&
+      (v === 'h264' || v === 'hevc') &&
+      (!a || a === 'aac' || a === 'mp3' || a === 'alac');
+    if (playsAsIs) {
+      return `${serverUrl}/Videos/${video.Id}/stream${query({ static: true, MediaSourceId: source?.Id ?? video.Id, ApiKey: token })}`;
+    }
+    return `${serverUrl}/Videos/${video.Id}/master.m3u8${query({
+      MediaSourceId: source?.Id ?? video.Id,
+      DeviceId: deviceId,
+      PlaySessionId: playSessionId,
+      VideoCodec: 'h264',
+      AudioCodec: 'aac',
+      TranscodingMaxAudioChannels: 2,
+      SegmentContainer: 'ts',
+      MaxStreamingBitrate: 8_000_000,
+      VideoBitrate: 6_000_000,
+      AudioBitrate: 192_000,
+      MaxWidth: 1280,
+      MaxHeight: 720,
+      ApiKey: token,
+    })}`;
+  }
+
+  /** Stop the server's conversion once a video is closed. */
+  stopVideoEncoding(playSessionId: string) {
+    return this.send('DELETE', '/Videos/ActiveEncodings', undefined, {
+      DeviceId: this.session.deviceId,
+      PlaySessionId: playSessionId,
+    });
+  }
+
+  /** A music video's 16:9 thumbnail. */
+  videoThumbUrl(video: BaseItem, width = 640): string | undefined {
+    const tag = video.ImageTags?.Primary;
+    if (!tag) return undefined;
+    return `${this.session.serverUrl}/Items/${video.Id}/Images/Primary${query({ maxWidth: width, quality: 85, tag })}`;
   }
 
   /** Every song the artist is on (for matching Last.fm's top tracks). */

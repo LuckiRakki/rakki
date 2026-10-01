@@ -21,6 +21,7 @@ import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
+import { prefetchMusicVideos } from '@/video/musicVideos';
 import { startWidgets } from '@/widgets';
 
 SplashScreen.preventAutoHideAsync();
@@ -70,6 +71,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     restoreQueue(userId);
     // Listens from the last time Rakki was offline.
     void sendKeptListens();
+    prefetchMusicVideos();
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);
@@ -108,6 +110,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="player" options={{ presentation: 'modal' }} />
               <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
               <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
               <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
               <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
               <Stack.Screen name="customize" options={{ presentation: 'modal' }} />

@@ -8,7 +8,7 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
-import { useAppearsOn, useArtistAlbums, useArtistPopular, useItem, useSimilar, useTopTracks } from '@/api/queries';
+import { useAppearsOn, useArtistAlbums, useArtistPopular, useItem, useMusicVideos, useSimilar, useTopTracks } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { setLiked, startRadio } from '@/library/actions';
@@ -27,6 +27,8 @@ import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
+import { VideoShelf } from '@/ui/VideoShelf';
+import { videosByArtist } from '@/video/musicVideos';
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,6 +42,7 @@ export default function ArtistScreen() {
   const top = useTopTracks(id);
   const similar = useSimilar(id);
   const lastfm = useArtistPopular(id, artist.data?.Name);
+  const videos = useMusicVideos();
   const offline = useOffline();
   const hasKey = useSettings((s) => s.lastfmApiKey.trim().length > 0);
   const popularSort = useSettings((s) => s.popularSort);
@@ -203,6 +206,7 @@ export default function ArtistScreen() {
           items={singles}
           onShowAll={singles.length > 3 ? () => openReleases(id, 'singles') : undefined}
         />
+        <VideoShelf title="Music videos" videos={videosByArtist(a?.Name, videos.data)} />
         <Shelf title="Appears on" items={appearsOn.data} />
         <Shelf title="Fans also like" items={similar.data} size={130} />
 

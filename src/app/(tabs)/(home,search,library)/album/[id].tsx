@@ -5,10 +5,12 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAlbumTracks, useItem } from '@/api/queries';
+import { useAlbumLastfmPlays, useAlbumTracks, useItem } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { songCount, ticksToSeconds } from '@/lib/format';
+import { artistLine } from '@/lib/items';
+import { formatCompact } from '@/lib/lastfm';
 import { openMenu } from '@/ui/overlays';
 import { usePlayer } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
@@ -41,6 +43,7 @@ export default function AlbumScreen() {
   const cover = useCoverStyle(y);
 
   const list = tracks.data ?? [];
+  const plays = useAlbumLastfmPlays(id, tracks.data).data;
   const multiDisc = new Set(list.map((t) => t.ParentIndexNumber ?? 1)).size > 1;
   const minutes = Math.round(list.reduce((sum, t) => sum + ticksToSeconds(t.RunTimeTicks), 0) / 60);
   const tint = artColor(album.data && client?.blurhash(album.data));
@@ -135,6 +138,7 @@ export default function AlbumScreen() {
               ) : null}
               <TrackRow
                 track={item}
+                subtitle={plays?.[item.Id] !== undefined ? `${artistLine(item)} · ${formatCompact(plays[item.Id])} plays` : undefined}
                 active={item.Id === currentId}
                 playing={playing}
                 onPress={() => usePlayer.getState().playQueue(list, { startIndex: index, source })}

@@ -25,6 +25,7 @@ import { useOverlays, type MenuContext } from '@/ui/overlays';
 import { CLOSE_MS, SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { cachedMusicVideos, findVideoFor, playMusicVideo } from '@/video/musicVideos';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 interface Action {
@@ -102,9 +103,16 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ]
       : [];
 
+  // A song with a music video in the library.
+  const musicVideo = item.Type === 'Audio' ? findVideoFor(item, cachedMusicVideos()) : undefined;
+  const watch: Action[] = musicVideo
+    ? [{ icon: 'film-outline', label: 'Watch music video', run: () => playMusicVideo(musicVideo), afterClose: true }]
+    : [];
+
   switch (item.Type) {
     case 'Audio':
       return [
+        ...watch,
         like,
         ...removeHere,
         { icon: 'add-circle-outline', label: 'Add to playlist', run: addToPlaylist },

@@ -18,7 +18,7 @@ import {
 } from '@/downloads/offline';
 import { useDownloads } from '@/downloads/store';
 import { seededShuffle } from '@/library/view';
-import { artistTopTracks, matchPopular } from '@/lib/lastfm';
+import { artistTopTracks, LastfmError, matchPopular, trackPlaycount } from '@/lib/lastfm';
 import { useOffline } from '@/lib/online';
 import { useSettings } from '@/settings/store';
 
@@ -211,6 +211,40 @@ export function useArtistPopular(artistId?: string, artistName?: string) {
     { enabled: !!artistId && !!artistName && hasKey, staleTime: 6 * 60 * 60_000 },
   );
 }
+
+/**
+ * Last.fm plays for each of an album's songs, by song id (Settings → Last.fm → Plays on albums).
+ * Three lookups at a time, to stay well inside Last.fm's rate limit; each is kept a week.
+ */
+export function useAlbumLastfmPlays(albumId?: string, tracks?: BaseItem[]) {
+  const on = useSettings((s) => s.lastfmAlbumPlays && s.lastfmApiKey.trim().length > 0);
+  return useUserQuery(
+    ['albumLastfmPlays', albumId, tracks?.length ?? 0],
+    async () => {
+      const list = tracks ?? [];
+      const plays: Record<string, number> = {};
+      let next = 0;
+      const worker = async () => {
+        while (next < list.length) {
+          const track = list[next++];
+          try {
+            const n = await trackPlaycount(track.Artists?.[0] ?? track.AlbumArtist ?? '', track.Name);
+            if (n !== null) plays[track.Id] = n;
+          } catch (e) {
+            // A bad or suspended key stops the lot; anything else just skips that song.
+            if (e instanceof LastfmError && (e.code === 10 || e.code === 26)) throw e;
+          }
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+      return plays;
+    },
+    { enabled: on && !!albumId && !!tracks?.length, staleTime: 6 * 60 * 60_000 },
+  );
+}
+
+/** The Music Videos library (online only; it's small, so all of it). */
+export const useMusicVideos = () => useUserQuery(['musicVideos'], (c) => c.getMusicVideos(), { staleTime: 30 * 60_000 });
 
 export const useSimilar = (id?: string) => useUserQuery(['similar', id], (c) => c.getSimilar(id!, 12), { enabled: !!id });
 

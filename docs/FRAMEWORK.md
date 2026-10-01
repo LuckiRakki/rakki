@@ -404,11 +404,11 @@ The user wants to choose colours, sizes and similar details themselves. So every
 - iPad, head-unit APK, CarPlay (only with the $99 account), Navidrome.
 
 ### Ideas backlog (not scheduled; the user will decide scope later)
-- **Music video support** (the user's idea, 2026-10-01): play a song's music video when the library has one (Jellyfin music videos linked to the track or album), e.g. a video button in the player. Scope to decide: local files only, or online sources too.
+- ~~**Music video support**~~: built in 0.10.0 (see CHANGELOG): videos from the Music Videos library, matched to songs; iOS's player until the next native build brings the in-app one. Still open: online sources (e.g. YouTube) if wanted.
 - **Live-updating desktop app** (the user's idea, 2026-10-01): a desktop Rakki that updates itself live like the phone app does over the air. Options to weigh: Expo for web packaged with Electron/Tauri plus an auto-updater, or extending Feishin.
 - **SUB/WAVE radio integration.** The user runs a SUB/WAVE internet radio station, set up in an earlier session, at `http://100.103.153.111:7700/` (manual: https://www.getsubwave.com/manual). The idea is to integrate it into Rakki, e.g. listening to the station with its now-playing info. The user isn't sure of the scope yet, so read the manual and ask before designing anything.
 - ~~**Fuzzy search.**~~ Built in Phase 3 (the user said go, 2026-09-30): see docs/phase-3.md task 4.
-- **Online play counts on tracks (like Spotify).** Started 0.9.0: an artist's Popular songs sort by Last.fm worldwide plays (user's own API key). Still open: counts on album pages. Show a public "plays" number next to songs, e.g. in an artist's Popular list and on album tracks. This is not the user's own Jellyfin play count. Sources to weigh when we get to it:
+- **Online play counts on tracks (like Spotify).** Built: an artist's Popular songs sort by Last.fm worldwide plays (0.9.0) and album pages show each song's Last.fm plays (0.10.0, can be turned off). Uses the user's own API key. Show a public "plays" number next to songs, e.g. in an artist's Popular list and on album tracks. This is not the user's own Jellyfin play count. Sources to weigh when we get to it:
   - Last.fm `track.getInfo` gives global `playcount` and `listeners` with a free API key, matched by artist + title.
   - Spotify's public Web API only exposes a 0–100 `popularity` score, not play counts. The real counts sit behind Spotify's private web-player API, which is unofficial and against its terms. Many library files already carry Spotify IDs (the Downtify tagging work), which would make matching exact.
   - Either way: cache counts for days (they change slowly) and label the source.

@@ -7,7 +7,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { useLibraryView, type LibraryTab } from '@/library/view';
 
 /** Screens presented over the tabs. Pages can't open underneath them, so close them first. */
-const MODALS = ['/player', '/queue', '/lyrics', '/settings', '/downloads', '/customize', '/lyrics-style', '/add-account'];
+const MODALS = ['/player', '/queue', '/lyrics', '/video', '/settings', '/downloads', '/customize', '/lyrics-style', '/add-account'];
 let overModal = false;
 let currentPath = '/';
 
