@@ -221,3 +221,25 @@ index 54e67fb..55e9de5 100644
      return mod;
  }), (mod) => {
      mod.modResults['ExpoWidgets_EnablePushNotifications'] = props.enablePushNotifications;
+diff --git a/node_modules/expo-widgets/plugin/build/ios/xcode/addXCConfigurationList.js b/node_modules/expo-widgets/plugin/build/ios/xcode/addXCConfigurationList.js
+index abe17af..f4a4e8c 100644
+--- a/node_modules/expo-widgets/plugin/build/ios/xcode/addXCConfigurationList.js
++++ b/node_modules/expo-widgets/plugin/build/ios/xcode/addXCConfigurationList.js
+@@ -27,9 +27,16 @@ function addXCConfigurationList(xcodeProject, props) {
+             xcConfigurationList: xcodeProject.pbxXCConfigurationList()[existingConfigurationListUuid],
+         };
+     }
++    // Release: optimized, without the debug dylib (Xcode's previews stub). Widgets get little
++    // memory, so the shipped extension should be a real release build.
++    const releaseBuildSettings = {
++        SWIFT_OPTIMIZATION_LEVEL: `"-O"`,
++        SWIFT_COMPILATION_MODE: 'wholemodule',
++        ENABLE_DEBUG_DYLIB: 'NO',
++    };
+     return xcodeProject.addXCConfigurationList(['Debug', 'Release'].map((name) => ({
+         name,
+         isa: 'XCBuildConfiguration',
+-        buildSettings: { ...commonBuildSettings },
++        buildSettings: { ...commonBuildSettings, ...(name === 'Release' ? releaseBuildSettings : {}) },
+     })), 'Release', comment);
+ }
