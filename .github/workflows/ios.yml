@@ -71,20 +71,24 @@ jobs:
       # SideStore reads each binary's entitlements to know what to set up when it signs the app
       # with the Apple ID, like the app group the widgets share with the app. An unsigned build
       # carries none, so sign it ad hoc with them (SideStore replaces the signature anyway).
-      # Inside out: frameworks, then the widget extension, then the app.
+      # Inside out: frameworks, then the widget extension, then the app. Push notifications are
+      # removed: Rakki doesn't use them and a free Apple ID can't have them.
       - name: Embed entitlements
         run: |
           APP=$(find build/Build/Products -maxdepth 2 -name "*.app" -type d | head -n 1)
+          sign() {
+            cp "$2" entitlements.plist
+            plutil -remove aps-environment entitlements.plist 2>/dev/null || true
+            codesign --force --sign - --entitlements entitlements.plist "$1"
+            echo "== $(basename "$1")"; codesign -d --entitlements - --xml "$1" | plutil -p -
+          }
           find "$APP" -depth \( -name "*.framework" -o -name "*.dylib" \) -print0 | xargs -0 -I{} codesign --force --sign - {}
           for APPEX in "$APP"/PlugIns/*.appex; do
             [ -d "$APPEX" ] || continue
             NAME=$(basename "$APPEX" .appex)
-            codesign --force --sign - --entitlements "ios/$NAME/$NAME.entitlements" "$APPEX"
-            echo "== $NAME"; codesign -d --entitlements - --xml "$APPEX" | plutil -p -
+            sign "$APPEX" "ios/$NAME/$NAME.entitlements"
           done
-          APP_ENTITLEMENTS=$(find ios -maxdepth 2 -name "*.entitlements" -not -path "ios/ExpoWidgetsTarget/*" | head -n 1)
-          codesign --force --sign - --entitlements "$APP_ENTITLEMENTS" "$APP"
-          echo "== $(basename "$APP")"; codesign -d --entitlements - --xml "$APP" | plutil -p -
+          sign "$APP" "$(find ios -maxdepth 2 -name "*.entitlements" -not -path "ios/ExpoWidgetsTarget/*" | head -n 1)"
 
       - name: Package .ipa
         run: |
