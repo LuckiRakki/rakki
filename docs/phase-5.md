@@ -58,9 +58,21 @@ playing album, drawn by the real renderers.
   origin 'autoplay'; drag rules unit-tested). Not with repeat on or offline.
 - [ ] Verified on the phone (needs real playback: normalization, autoplay, timer fade).
 
-## 5d. Accounts
-- [ ] Several servers/users, switch between them.
-- [ ] Change your profile picture (pick an image from Files; upload to Jellyfin).
+## 5d. Accounts — built 2026-10-01
+- [x] Several accounts (servers/users): `useAuth.accounts` in the Keychain (`rakki.accounts`);
+  the existing sign-in becomes the first account. `src/auth/actions.ts`: signInAccount,
+  switchAccount, signOut, removeAccount. Before another account takes over, the active one is
+  wrapped up: queue + position saved (`suspendQueueForSwitch`), playback stopped, downloads in
+  progress cancelled (`stopDownloads` generation guard, pending save flushed), query cache
+  cleared. Per-account data (downloads, search index, queue, recent searches) reloads by user id.
+- [x] Settings → Account: Add account (same sign-in form, `src/auth/LoginForm.tsx`, as a modal),
+  Switch to (tap), remove (hold), Sign out (removes that account's downloads, switches to the next
+  account). Hold the avatar on Home for a quick switcher.
+- [x] Downloads never overwrite a file already on disk (another account may own it); "Remove all
+  downloads" removes only the active account's files.
+- [x] Profile picture: tap the avatar in Settings → pick a JPEG/PNG (iOS file picker) → POST
+  `/UserImage` (base64 body). Photos-app picking needs a native picker → final build.
+- [ ] Verified on the phone.
 
 ## 5e. Feel pass
 - [ ] Haptics on key actions, animation polish, reduced-motion paths.

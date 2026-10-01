@@ -393,18 +393,34 @@ function slimEntry(e: QueueEntry): QueueEntry {
   return { ...e, item };
 }
 
+function writeQueue(id: string) {
+  const { queue, index, shuffle, repeat, source } = usePlayer.getState();
+  writePref(queueKey(id), JSON.stringify({ v: 1, queue: queue.map(slimEntry), index, shuffle, repeat, source, unshuffledKeys }));
+}
+
 function saveQueueSoon() {
   if (saveTimer || !restored) return;
   saveTimer = setTimeout(() => {
     saveTimer = null;
     const id = userId();
-    if (!id) return;
-    const { queue, index, shuffle, repeat, source } = usePlayer.getState();
-    writePref(
-      queueKey(id),
-      JSON.stringify({ v: 1, queue: queue.map(slimEntry), index, shuffle, repeat, source, unshuffledKeys }),
-    );
+    if (id) writeQueue(id);
   }, 1000);
+}
+
+/**
+ * Before switching accounts: save this account's queue and position right now, then stop
+ * saving until the next account's queue has been restored (so stopping playback for the
+ * switch can't overwrite either account's saved queue).
+ */
+export function suspendQueueForSwitch() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = null;
+  const id = userId();
+  if (id && restored) {
+    writeQueue(id);
+    savePosition();
+  }
+  restored = false;
 }
 
 function savePosition() {

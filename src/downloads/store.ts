@@ -74,14 +74,25 @@ export function loadDownloads(userId: string) {
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Save soon (batched: a big album finishes many songs in a row). */
+function writeNow() {
+  const { userId, tracks, collections, art } = useDownloads.getState();
+  if (userId) writePref(keyFor(userId), JSON.stringify({ v: 1, tracks, collections, art }));
+}
+
 export function persistDownloads() {
   useDownloads.setState((s) => ({ rev: s.rev + 1 }));
   if (saveTimer) return;
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    const { userId, tracks, collections, art } = useDownloads.getState();
-    if (userId) writePref(keyFor(userId), JSON.stringify({ v: 1, tracks, collections, art }));
+    writeNow();
   }, 800);
+}
+
+/** Save straight away (before switching accounts, so nothing pending is lost). */
+export function flushDownloads() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = null;
+  writeNow();
 }
 
 // ---- Reading downloads (used by playback, artwork and lyrics) ----

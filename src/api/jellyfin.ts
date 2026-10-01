@@ -717,12 +717,26 @@ export class JellyfinClient {
   /** The user's Jellyfin profile picture, if they've set one. */
   userImageUrl(user: { Id: string; PrimaryImageTag?: string }, size = 120): string | undefined {
     if (!user.PrimaryImageTag) return undefined;
-    return `${this.session.serverUrl}/Users/${user.Id}/Images/Primary${query({
+    return `${this.session.serverUrl}/UserImage${query({
+      userId: user.Id,
       tag: user.PrimaryImageTag,
       fillWidth: size,
       fillHeight: size,
       quality: 90,
     })}`;
+  }
+
+  /** Set your profile picture. Jellyfin takes the image as base64 text in the body. */
+  uploadUserImage(base64: string, mimeType: string) {
+    const { serverUrl, deviceId, token, userId } = this.session;
+    return request<void>(`${serverUrl}/UserImage${query({ userId })}`, {
+      method: 'POST',
+      deviceId,
+      token,
+      timeoutMs: 60_000,
+      headers: { 'Content-Type': mimeType },
+      body: base64,
+    });
   }
 
   /** An artist's (or album's) wide backdrop image, if it has one. */

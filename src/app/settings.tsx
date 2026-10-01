@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CLIENT_VERSION } from '@/api/jellyfin';
-import { signOut } from '@/auth/actions';
-import { useAuth } from '@/auth/store';
+import { removeAccount, signOut, switchAccount } from '@/auth/actions';
+import { changeProfilePicture } from '@/auth/profile';
+import { accountKey, useAuth } from '@/auth/store';
 import { useDownloads } from '@/downloads/store';
 import { formatBytes, songCount } from '@/lib/format';
 import { buildStamp, checkForUpdate, getUpdateInfo, versionLabel, type UpdateInfo } from '@/lib/updates';
@@ -22,6 +23,31 @@ export default function SettingsScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const session = useAuth((s) => s.session);
+  const accounts = useAuth((s) => s.accounts);
+  const others = session ? accounts.filter((a) => accountKey(a) !== accountKey(session)) : accounts;
+  const hasDownloads = useDownloads((s) => Object.keys(s.collections).length > 0);
+
+  const confirmSignOut = () =>
+    Alert.alert(
+      `Sign out of ${session?.userName ?? 'this account'}?`,
+      [
+        hasDownloads ? 'Music downloaded with this account will be removed from this iPhone.' : '',
+        others.length ? `Rakki will switch to ${others[0].userName} on ${others[0].serverName}.` : '',
+      ]
+        .filter(Boolean)
+        .join(' ') || undefined,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign out',
+          style: 'destructive',
+          onPress: () => {
+            router.dismissAll();
+            void signOut();
+          },
+        },
+      ],
+    );
   const wifi = useSettings((s) => s.wifiBitrate);
   const cellular = useSettings((s) => s.cellularBitrate);
   const downloadQuality = useSettings((s) => s.downloadQuality);
@@ -54,7 +80,12 @@ export default function SettingsScreen() {
         </T>
         <View style={styles.card}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
-            <UserAvatar size={48} />
+            <Pressable onPress={() => void changeProfilePicture()} accessibilityLabel="Change profile picture">
+              <UserAvatar size={52} />
+              <View style={styles.cameraBadge}>
+                <Ionicons name="camera" size={12} color="#000" />
+              </View>
+            </Pressable>
             <View style={{ flex: 1 }}>
               <T variant="bodyStrong">{session?.userName}</T>
               <T variant="caption" style={{ marginTop: 2 }}>
@@ -62,14 +93,54 @@ export default function SettingsScreen() {
               </T>
             </View>
           </View>
-          <Pressable
-            onPress={() => {
-              router.back();
-              void signOut();
-            }}
-            style={({ pressed }) => [styles.signOut, pressed && { opacity: 0.7 }]}>
-            <T variant="bodyStrong">Sign out</T>
-          </Pressable>
+
+          {others.length ? (
+            <View style={{ marginTop: t.space.lg }}>
+              <T variant="label" style={{ marginBottom: t.space.xs }}>
+                Switch to
+              </T>
+              {others.map((a) => (
+                <Pressable
+                  key={accountKey(a)}
+                  onPress={() => {
+                    void switchAccount(a);
+                    router.dismissAll();
+                  }}
+                  onLongPress={() =>
+                    Alert.alert(`Remove ${a.userName}?`, `${a.serverName} will no longer be on this iPhone.`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: () => void removeAccount(a) },
+                    ])
+                  }
+                  style={({ pressed }) => [styles.accountRow, pressed && { opacity: 0.7 }]}>
+                  <View style={styles.initial}>
+                    <T style={{ fontFamily: t.fonts.bold, color: t.colors.text }}>{a.userName.charAt(0).toUpperCase()}</T>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: t.space.md }}>
+                    <T variant="bodyStrong">{a.userName}</T>
+                    <T variant="caption" numberOfLines={1} style={{ fontSize: t.size(12) }}>
+                      {a.serverName} · {a.serverUrl}
+                    </T>
+                  </View>
+                  <Ionicons name="swap-horizontal" size={20} color={t.colors.textSecondary} />
+                </Pressable>
+              ))}
+              <T variant="caption" style={{ fontSize: t.size(11), marginTop: t.space.xs }}>
+                Hold an account to remove it.
+              </T>
+            </View>
+          ) : null}
+
+          <View style={{ flexDirection: 'row', gap: t.space.sm }}>
+            <Pressable
+              onPress={() => router.push('/add-account')}
+              style={({ pressed }) => [styles.signOut, { flex: 1 }, pressed && { opacity: 0.7 }]}>
+              <T variant="bodyStrong">Add account</T>
+            </Pressable>
+            <Pressable onPress={confirmSignOut} style={({ pressed }) => [styles.signOut, { flex: 1 }, pressed && { opacity: 0.7 }]}>
+              <T variant="bodyStrong">Sign out</T>
+            </Pressable>
+          </View>
         </View>
 
         <Pressable
@@ -252,4 +323,24 @@ const useStyles = makeStyles((t) => ({
   },
   option: { flexDirection: 'row', alignItems: 'center', paddingVertical: t.space.sm },
   customize: { flexDirection: 'row', alignItems: 'center' },
+  cameraBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: t.colors.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: t.space.sm },
+  initial: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: t.colors.surface3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 }));

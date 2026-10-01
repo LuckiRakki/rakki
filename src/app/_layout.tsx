@@ -14,6 +14,7 @@ import { checkForUpdate } from '@/lib/updates';
 import { startDownloads } from '@/downloads/manager';
 import { restoreQueue } from '@/player/store';
 import { ensureSearchIndex } from '@/search/index';
+import { loadRecentSearches } from '@/search/recent';
 import { useModalTracker } from '@/ui/nav';
 import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
@@ -62,6 +63,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
   useEffect(() => {
     if (!userId) return;
     startDownloads(userId);
+    loadRecentSearches(userId);
     // After downloads load, so a restored queue plays downloaded songs from the phone.
     restoreQueue(userId);
   }, [userId]);
@@ -99,6 +101,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
               <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
               <Stack.Screen name="lyrics-style" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="add-account" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="login" />

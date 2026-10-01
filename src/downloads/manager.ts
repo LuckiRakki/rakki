@@ -17,7 +17,6 @@ import { showToast } from '@/ui/overlays';
 import {
   artFile,
   audioFile,
-  deleteAllFiles,
   deleteAudio,
   deleteQuietly,
   downloadsSupported,
@@ -29,6 +28,7 @@ import {
   removeOldLayout,
 } from '@/downloads/files';
 import {
+  flushDownloads,
   loadDownloads,
   persistDownloads,
   useDownloads,
@@ -38,6 +38,8 @@ import {
 
 const CONCURRENCY = 2;
 const active = new Map<string, DownloadTask>();
+/** Bumped when downloads stop for an account switch: older transfers then change nothing. */
+let generation = 0;
 
 function client(): JellyfinClient | null {
   return useAuth.getState().client;
@@ -92,8 +94,15 @@ function takenPaths(exceptId?: string): Set<string> {
 async function downloadTrack(c: JellyfinClient, id: string) {
   const track = useDownloads.getState().tracks[id];
   if (!track) return;
+  const myGeneration = generation;
   const src = c.downloadSource(track.item, useSettings.getState().downloadQuality);
-  const path = musicPath(track.item, src.ext, takenPaths(id));
+  // Never reuse a file that's already on disk: another account may own it.
+  const taken = takenPaths(id);
+  let path = musicPath(track.item, src.ext, taken);
+  while (audioFile(path).exists) {
+    taken.add(path);
+    path = musicPath(track.item, src.ext, taken);
+  }
   const file = prepareAudioFile(path);
   deleteQuietly(file);
   // Converted files don't announce their size, so estimate it from the bitrate.
@@ -114,7 +123,7 @@ async function downloadTrack(c: JellyfinClient, id: string) {
   setTrack(id, { state: 'downloading', error: undefined });
   try {
     const result = await task.downloadAsync();
-    if (!result) return; // paused
+    if (!result || myGeneration !== generation) return; // paused, or another account is active now
     if (!useDownloads.getState().tracks[id]) {
       deleteAudio(path); // removed while downloading
       return;
@@ -123,13 +132,15 @@ async function downloadTrack(c: JellyfinClient, id: string) {
     const lyrics = await saveLyrics(c, id);
     if (lyrics) setTrack(id, { lyrics: true });
   } catch (e) {
-    if (useDownloads.getState().tracks[id]) {
+    if (myGeneration === generation && useDownloads.getState().tracks[id]) {
       setTrack(id, { state: 'error', error: e instanceof Error ? e.message : String(e) });
     }
   } finally {
-    active.delete(id);
-    setProgress(id, null);
-    kick();
+    if (myGeneration === generation) {
+      active.delete(id);
+      setProgress(id, null);
+      kick();
+    }
   }
 }
 
@@ -274,12 +285,35 @@ export function confirmRemove(id: string, name: string) {
   ]);
 }
 
+/**
+ * Delete everything this account downloaded (Remove all downloads, and signing out). Other
+ * accounts' files on the phone are left alone.
+ */
 export function removeAllDownloads() {
   for (const task of active.values()) task.cancel();
   active.clear();
-  deleteAllFiles();
+  const { tracks, art } = useDownloads.getState();
+  if (downloadsSupported) {
+    for (const [id, t] of Object.entries(tracks)) {
+      if (t.file) deleteAudio(t.file);
+      deleteQuietly(lyricsFile(id));
+    }
+    for (const id of Object.keys(art)) deleteQuietly(artFile(id));
+  }
   useDownloads.setState({ tracks: {}, collections: {}, art: {}, progress: {} });
-  persistDownloads();
+  flushDownloads();
+}
+
+/**
+ * Before switching accounts: cancel transfers in progress. They stay "downloading" in this
+ * account's saved list, so they start again the next time this account is active.
+ */
+export function stopDownloads() {
+  flushDownloads();
+  generation++;
+  for (const task of active.values()) task.cancel();
+  active.clear();
+  useDownloads.setState({ progress: {} });
 }
 
 /** Try failed songs again. */

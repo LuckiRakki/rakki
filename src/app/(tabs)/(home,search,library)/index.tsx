@@ -15,11 +15,14 @@ import {
   useTopArtists,
 } from '@/api/queries';
 import type { ShelfId } from '@/appearance/store';
+import { switchAccount } from '@/auth/actions';
+import { accountKey, useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
 import { QuickTile } from '@/ui/AlbumTile';
 import { LikedArt } from '@/ui/LikedArt';
 import { openLibrary } from '@/ui/nav';
+import { openOptions } from '@/ui/overlays';
 import { Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -68,7 +71,11 @@ export default function HomeScreen() {
         pointerEvents="none"
       />
       <View style={styles.header}>
-        <Pressable onPress={() => router.push('/settings')} hitSlop={8} accessibilityLabel="Settings">
+        <Pressable
+          onPress={() => router.push('/settings')}
+          onLongPress={openAccountSwitcher}
+          hitSlop={8}
+          accessibilityLabel="Settings (hold to switch account)">
           <UserAvatar size={34} />
         </Pressable>
         {showGreeting ? <T variant="display">{greeting()}</T> : null}
@@ -102,6 +109,25 @@ export default function HomeScreen() {
       {homeOrder.filter((id) => !homeHidden.includes(id)).map((id) => shelves[id])}
     </ScrollView>
   );
+}
+
+/** Hold the avatar: switch between signed-in accounts (or add one). */
+function openAccountSwitcher() {
+  const { accounts, session } = useAuth.getState();
+  if (accounts.length < 2) return router.push('/add-account');
+  openOptions({
+    title: 'Switch account',
+    options: [
+      ...accounts.map((a) => ({ key: accountKey(a), label: `${a.userName} · ${a.serverName}` })),
+      { key: 'add', label: 'Add account' },
+    ],
+    selected: session ? accountKey(session) : undefined,
+    onSelect: (key) => {
+      if (key === 'add') return router.push('/add-account');
+      const next = accounts.find((a) => accountKey(a) === key);
+      if (next) void switchAccount(next);
+    },
+  });
 }
 
 function chunk<T>(arr: T[], n: number): T[][] {
