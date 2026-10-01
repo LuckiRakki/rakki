@@ -9,6 +9,8 @@ export interface MenuContext {
   playlistId?: string;
   /** The song's PlaylistItemId in that playlist. */
   entryId?: string;
+  /** Opened from the full player (adds player-only actions like the sleep timer). */
+  fromPlayer?: boolean;
 }
 
 /** A pick-one sheet: a title and choices, the current one ticked. */
@@ -33,6 +35,8 @@ interface Overlays {
   /** From the menu straight to Add to playlist in one update, so the overlay never closes between. */
   menuToAddToPlaylist(items: BaseItem[], title: string): void;
   openOptions(sheet: OptionsSheet): void;
+  /** From the menu straight to an options sheet in one update. */
+  menuToOptions(sheet: OptionsSheet): void;
   closeOptions(): void;
   closeAll(): void;
   showToast(text: string): void;
@@ -50,6 +54,7 @@ export const useOverlays = create<Overlays>((set) => ({
   closeAddToPlaylist: () => set({ addTo: null }),
   menuToAddToPlaylist: (items, title) => set({ menu: null, menuContext: null, addTo: { items, title } }),
   openOptions: (sheet) => set({ options: sheet }),
+  menuToOptions: (sheet) => set({ menu: null, menuContext: null, options: sheet }),
   closeOptions: () => set({ options: null }),
   closeAll: () => set({ menu: null, menuContext: null, addTo: null, options: null }),
   showToast: (text) => set({ toast: { text, id: Date.now() } }),

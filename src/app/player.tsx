@@ -13,13 +13,15 @@ import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
 import { LyricsCard } from '@/lyrics/LyricsCard';
+import { CreditsCard } from '@/player/CreditsCard';
 import { SeekBar } from '@/player/SeekBar';
+import { sleepSheet, useSleepLabel } from '@/player/sleep';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
 import { openAlbum } from '@/ui/nav';
-import { openMenu } from '@/ui/overlays';
+import { openMenu, openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -48,6 +50,7 @@ export default function PlayerScreen() {
   const repeat = usePlayer((s) => s.repeat);
   const error = usePlayer((s) => s.error);
   const { position, duration } = useProgress(250);
+  const sleepLabel = useSleepLabel();
 
   if (!track) {
     return (
@@ -95,7 +98,7 @@ export default function PlayerScreen() {
                 {source?.name ?? track.Album ?? ''}
               </T>
             </View>
-            <Pressable hitSlop={12} onPress={() => openMenu(track)}>
+            <Pressable hitSlop={12} onPress={() => openMenu(track, { fromPlayer: true })}>
               <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.text} />
             </Pressable>
           </View>
@@ -180,16 +183,27 @@ export default function PlayerScreen() {
               <Ionicons name="mic" size={18} color="#000" />
               <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: '#000' }}>Lyrics</T>
             </Pressable>
-            <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
-              <Ionicons name="list" size={26} color={t.colors.text} />
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
+              {sleepLabel ? (
+                <Pressable
+                  hitSlop={8}
+                  accessibilityLabel={`Sleep timer: ${sleepLabel}`}
+                  onPress={() => openOptions(sleepSheet(true))}
+                  style={styles.sleepPill}>
+                  <Ionicons name="moon" size={13} color={t.colors.accent} />
+                  <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(12), color: t.colors.accent }}>{sleepLabel}</T>
+                </Pressable>
+              ) : null}
+              <Pressable hitSlop={12} onPress={() => router.push('/queue')}>
+                <Ionicons name="list" size={26} color={t.colors.text} />
+              </Pressable>
+            </View>
           </View>
         </View>
-        {t.appearance.lyricsCard ? (
-          <View style={{ paddingHorizontal: t.space.lg }}>
-            <LyricsCard track={track} positionSec={position} />
-          </View>
-        ) : null}
+        <View style={{ paddingHorizontal: t.space.lg }}>
+          {t.appearance.lyricsCard ? <LyricsCard track={track} positionSec={position} /> : null}
+          <CreditsCard track={track} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -238,6 +252,16 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.accent,
   },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sleepPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    height: 24,
+    borderRadius: t.radius.pill,
+    borderWidth: 1,
+    borderColor: t.colors.accent,
+  },
   lyricsBtn: {
     flexDirection: 'row',
     alignItems: 'center',

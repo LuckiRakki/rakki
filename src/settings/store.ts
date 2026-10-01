@@ -39,6 +39,10 @@ interface Settings {
   downloadOnCellular: boolean;
   /** Act offline even when the server is reachable: only downloads, no data used. */
   offlineMode: boolean;
+  /** Even out loudness between songs (Jellyfin's per-song NormalizationGain). */
+  normalize: boolean;
+  /** When the queue runs out, keep going with similar songs. */
+  autoplay: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -52,6 +56,8 @@ const DEFAULTS: Settings = {
   downloadQuality: 'original',
   downloadOnCellular: false,
   offlineMode: false,
+  normalize: true,
+  autoplay: true,
 };
 
 function load(): Settings {

@@ -60,6 +60,10 @@ export interface BaseItem {
   DateCreated?: string;
   /** Audio file container, e.g. "mp3", "flac", "mov,mp4,m4a,3gp,3g2,mj2". */
   Container?: string;
+  /** dB to reach Jellyfin's loudness reference (-18 LUFS); negative = the song is louder. */
+  NormalizationGain?: number;
+  /** Credits (composers etc.), when the file has them and the request asked for People. */
+  People?: { Name: string; Id: string; Type?: string; Role?: string }[];
 }
 
 export type SearchKind = 'songs' | 'albums' | 'artists' | 'playlists';

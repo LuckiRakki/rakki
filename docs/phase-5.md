@@ -41,12 +41,22 @@ playing album, drawn by the real renderers.
 - Note: `SpicySettings`/`SPICY_DEFAULTS` moved to `src/spicy/settings.ts` (no Skia import), since
   importing scene.ts early loads Skia before CanvasKit in the web preview.
 
-## 5c. Parity
-- [ ] Queue restore after a restart (queue, position, shuffle/repeat; starts paused).
-- [ ] Volume normalization from Jellyfin's per-song NormalizationGain (on/off).
-- [ ] Sleep timer (minutes, or end of song).
-- [ ] Song credits (from Jellyfin's People: composers, lyricists, producers…).
-- [ ] Autoplay similar music when the queue ends (on/off).
+## 5c. Parity — built 2026-10-01
+- [x] Queue restore (`restoreQueue` in player/store.ts): queue, index, shuffle/repeat, source and
+  the pre-shuffle order saved per user (`rakki.queue.<user>`, debounced); position saved every
+  10 s while playing and when the app leaves the foreground. Comes back paused; the "started"
+  report is held until play is pressed.
+- [x] Normalization (Settings → Playback → Even out volume, on by default): gain =
+  10^((NormalizationGain + 4)/20) capped at 1 (aim -14 LUFS; 99% of songs have the tag, avg
+  -7.5 dB). Toggling re-applies to the playing song via setVolume.
+- [x] Sleep timer: player "..." → Sleep timer (5/15/30/45/60 min, end of this song); last 10 s
+  fade out; moon pill with the minutes left next to the queue button (tap to change/turn off).
+- [x] Credits card under the lyrics card: performers (tap → artist) and writers from composer
+  tags or TTML songwriters (only ~17% of files have composer tags).
+- [x] Autoplay (Settings → Playback, on by default): when the last song starts, up to 25 songs
+  from Jellyfin's instant mix are added as an "Autoplay · similar songs" queue section (new
+  origin 'autoplay'; drag rules unit-tested). Not with repeat on or offline.
+- [ ] Verified on the phone (needs real playback: normalization, autoplay, timer fade).
 
 ## 5d. Accounts
 - [ ] Several servers/users, switch between them.

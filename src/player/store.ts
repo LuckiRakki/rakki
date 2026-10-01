@@ -2,6 +2,7 @@
 // The queue is the source of truth; the engine gets a copy of it and reports back which entry
 // is playing. Entries carry a unique `key`, so the same song can be queued more than once.
 import * as Network from 'expo-network';
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -10,6 +11,7 @@ import { localArtUri, localAudioUri } from '@/downloads/store';
 import { emitLikedChanged } from '@/lib/events';
 import { ticksToSeconds } from '@/lib/format';
 import { isOffline } from '@/lib/online';
+import { readPref, writePref } from '@/lib/prefs';
 import { artistLine } from '@/lib/items';
 import { engine, type RakkiTrack, type RepeatMode } from '@/player/engine';
 import { reporter } from '@/player/reporting';
@@ -19,8 +21,11 @@ import { showToast } from '@/ui/overlays';
 export interface QueueEntry {
   key: string;
   item: BaseItem;
-  /** 'queued' = added with Play next / Add to queue (Spotify's "Next in queue"). */
-  origin: 'context' | 'queued';
+  /**
+   * 'queued' = added with Play next / Add to queue (Spotify's "Next in queue"); 'autoplay' =
+   * similar songs added when the queue was running out.
+   */
+  origin: 'context' | 'queued' | 'autoplay';
 }
 
 export interface QueueSource {
@@ -76,6 +81,17 @@ function maxKbps(): number {
   return onCellular ? s.cellularBitrate : s.wifiBitrate;
 }
 
+/**
+ * Volume factor for a song with normalization on. Jellyfin's gain targets -18 LUFS; Rakki aims
+ * at -14 (Spotify's "normal"), so loud songs come down and quiet ones stay at full volume
+ * (the player can't go above 1).
+ */
+const TARGET_OFFSET_DB = 4;
+function gainFor(item: BaseItem): number {
+  if (!useSettings.getState().normalize || item.NormalizationGain === undefined) return 1;
+  return Math.min(1, Math.pow(10, (item.NormalizationGain + TARGET_OFFSET_DB) / 20));
+}
+
 function toTracks(queue: QueueEntry[]): RakkiTrack[] {
   const client = useAuth.getState().client;
   if (!client) return [];
@@ -90,7 +106,7 @@ function toTracks(queue: QueueEntry[]): RakkiTrack[] {
     album: item.Album ?? '',
     artworkUrl: localArtUri(item.AlbumId ?? item.Id) ?? client.imageUrl(item, 600) ?? null,
     duration: ticksToSeconds(item.RunTimeTicks),
-    gain: 1,
+    gain: gainFor(item),
   }));
 }
 
@@ -314,7 +330,9 @@ engine.subscribe({
     const found = s.queue.findIndex((q) => q.key === e.key);
     reporter.stopped(e.previousPosition);
     const entry = s.queue[found];
-    if (entry && e.reason !== 'queueEnded') reporter.started(entry.item, entry.key);
+    // A restored queue loads paused: report the listen when play is pressed, not now.
+    if (entry && e.reason !== 'queueEnded' && !loadingRestoredQueue) reporter.started(entry.item, entry.key);
+    loadingRestoredQueue = false;
     usePlayer.setState({ index: found >= 0 ? found : s.index, error: null });
   },
   onError(e) {
@@ -347,8 +365,131 @@ try {
 }
 
 useSettings.subscribe((s, prev) => {
-  if (s.wifiBitrate !== prev.wifiBitrate || s.cellularBitrate !== prev.cellularBitrate) refreshUpcoming();
+  if (s.wifiBitrate !== prev.wifiBitrate || s.cellularBitrate !== prev.cellularBitrate || s.normalize !== prev.normalize) {
+    refreshUpcoming();
+  }
+  // The engine applies a song's gain when it starts or when the volume is set: re-set it so
+  // turning normalization on/off changes the song that's playing too.
+  if (s.normalize !== prev.normalize) void engine.setVolume(1);
 });
+
+// ---- Remember the queue across restarts --------------------------------------------------
+// The queue (with shuffle, repeat and where it came from) is saved when it changes; the
+// position every 10 s while playing and when Rakki goes to the background. On launch it comes
+// back paused where you left off.
+
+const queueKey = (userId: string) => `rakki.queue.${userId}`;
+const positionKey = (userId: string) => `rakki.queuePosition.${userId}`;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let restored = false;
+let loadingRestoredQueue = false;
+
+function userId(): string | null {
+  return useAuth.getState().session?.userId ?? null;
+}
+
+function slimEntry(e: QueueEntry): QueueEntry {
+  const { Overview: _o, BackdropImageTags: _b, GenreItems: _g, People: _p, ...item } = e.item;
+  return { ...e, item };
+}
+
+function saveQueueSoon() {
+  if (saveTimer || !restored) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    const id = userId();
+    if (!id) return;
+    const { queue, index, shuffle, repeat, source } = usePlayer.getState();
+    writePref(
+      queueKey(id),
+      JSON.stringify({ v: 1, queue: queue.map(slimEntry), index, shuffle, repeat, source, unshuffledKeys }),
+    );
+  }, 1000);
+}
+
+function savePosition() {
+  const id = userId();
+  if (id && restored && usePlayer.getState().queue.length) writePref(positionKey(id), String(engine.getProgress().position));
+}
+
+/** Bring back the last queue, paused at the same spot (once per launch). */
+export function restoreQueue(forUser: string) {
+  if (restored) return;
+  restored = true;
+  if (usePlayer.getState().queue.length) return;
+  try {
+    const saved = JSON.parse(readPref(queueKey(forUser)) ?? 'null') as {
+      v?: number;
+      queue?: QueueEntry[];
+      index?: number;
+      shuffle?: boolean;
+      repeat?: RepeatMode;
+      source?: QueueSource | null;
+      unshuffledKeys?: string[] | null;
+    } | null;
+    if (saved?.v !== 1 || !saved.queue?.length) return;
+    const index = Math.min(Math.max(saved.index ?? 0, 0), saved.queue.length - 1);
+    const position = Number(readPref(positionKey(forUser)) ?? 0) || 0;
+    unshuffledKeys = saved.unshuffledKeys ?? null;
+    usePlayer.setState({
+      queue: saved.queue,
+      index,
+      shuffle: !!saved.shuffle,
+      repeat: saved.repeat ?? 'off',
+      source: saved.source ?? null,
+      playing: false,
+    });
+    void engine.setRepeatMode(saved.repeat ?? 'off');
+    loadingRestoredQueue = true;
+    void engine.setQueue(toTracks(saved.queue), index, position, false);
+  } catch {
+    // Nothing usable saved.
+  }
+}
+
+usePlayer.subscribe((s, prev) => {
+  if (s.queue !== prev.queue || s.index !== prev.index || s.shuffle !== prev.shuffle || s.repeat !== prev.repeat) {
+    saveQueueSoon();
+  }
+  if (s.index !== prev.index || s.queue !== prev.queue) void maybeAutoplay();
+});
+setInterval(() => {
+  if (usePlayer.getState().playing) savePosition();
+}, 10_000);
+AppState.addEventListener('change', (state) => {
+  if (state !== 'active') {
+    savePosition();
+    saveQueueSoon();
+  }
+});
+
+// ---- Autoplay ------------------------------------------------------------------------
+// When the last song in the queue starts, add up to 25 similar songs (Jellyfin's instant mix
+// of that song) so the music carries on without a gap. Off with repeat, offline, or in Settings.
+
+let autoplayBusy = false;
+
+async function maybeAutoplay() {
+  const s = usePlayer.getState();
+  const client = useAuth.getState().client;
+  if (!client || autoplayBusy || !s.queue.length || s.index < s.queue.length - 1) return;
+  if (!useSettings.getState().autoplay || s.repeat !== 'off' || isOffline()) return;
+  autoplayBusy = true;
+  try {
+    const last = s.queue[s.queue.length - 1].item;
+    const mix = await client.getInstantMix(last.Id, 40);
+    const have = new Set(usePlayer.getState().queue.map((e) => e.item.Id));
+    const fresh = mix.filter((m) => !have.has(m.Id)).slice(0, 25);
+    const now = usePlayer.getState();
+    if (fresh.length && now.queue.length && now.index >= now.queue.length - 1) {
+      syncQueue([...now.queue, ...entries(fresh, 'autoplay')]);
+    }
+  } catch {
+    // No mix this time; the queue just ends.
+  } finally {
+    autoplayBusy = false;
+  }
+}
 
 // Web dev preview only: lets tests set up a queue from the browser console without playing.
 if (__DEV__ && typeof window !== 'undefined') {

@@ -12,6 +12,7 @@ import { useAuth } from '@/auth/store';
 import { watchServer } from '@/lib/online';
 import { checkForUpdate } from '@/lib/updates';
 import { startDownloads } from '@/downloads/manager';
+import { restoreQueue } from '@/player/store';
 import { ensureSearchIndex } from '@/search/index';
 import { useModalTracker } from '@/ui/nav';
 import { OverlayHost } from '@/ui/OverlayHost';
@@ -59,7 +60,10 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
   // Downloads: load what's saved, finish anything unfinished, catch up playlists.
   const userId = useAuth((s) => s.session?.userId);
   useEffect(() => {
-    if (userId) startDownloads(userId);
+    if (!userId) return;
+    startDownloads(userId);
+    // After downloads load, so a restored queue plays downloaded songs from the phone.
+    restoreQueue(userId);
   }, [userId]);
 
   // Build or top up the fuzzy-search index once the first screens have loaded.

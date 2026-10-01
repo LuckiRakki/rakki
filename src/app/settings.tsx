@@ -12,6 +12,7 @@ import { formatBytes, songCount } from '@/lib/format';
 import { buildStamp, checkForUpdate, getUpdateInfo, versionLabel, type UpdateInfo } from '@/lib/updates';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, DOWNLOAD_QUALITY_OPTIONS, useSettings } from '@/settings/store';
+import { Toggle } from '@/ui/SettingRows';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { UserAvatar } from '@/ui/UserAvatar';
@@ -26,6 +27,8 @@ export default function SettingsScreen() {
   const downloadQuality = useSettings((s) => s.downloadQuality);
   const downloadOnCellular = useSettings((s) => s.downloadOnCellular);
   const offlineMode = useSettings((s) => s.offlineMode);
+  const normalize = useSettings((s) => s.normalize);
+  const autoplay = useSettings((s) => s.autoplay);
   const downloadSummary = useDownloads((s) => {
     const done = Object.values(s.tracks).filter((x) => x.state === 'done');
     return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
@@ -98,6 +101,24 @@ export default function SettingsScreen() {
           Applies to songs that haven&apos;t started buffering yet. Anything above the limit is
           converted to AAC by your server.
         </T>
+
+        <T variant="label" style={styles.section}>
+          Playback
+        </T>
+        <View style={[styles.card, { paddingTop: t.space.xs }]}>
+          <Toggle
+            label="Even out volume"
+            detail="Turns loud songs down so everything plays at a similar level"
+            value={normalize}
+            onChange={(v) => useSettings.getState().set('normalize', v)}
+          />
+          <Toggle
+            label="Autoplay"
+            detail="When your queue ends, keep going with similar songs"
+            value={autoplay}
+            onChange={(v) => useSettings.getState().set('autoplay', v)}
+          />
+        </View>
 
         <OptionPicker
           options={DOWNLOAD_QUALITY_OPTIONS}

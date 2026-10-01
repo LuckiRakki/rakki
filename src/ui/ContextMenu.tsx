@@ -18,6 +18,7 @@ import {
 import { confirmRemove, downloadCollection } from '@/downloads/manager';
 import { useDownloads } from '@/downloads/store';
 import { useOffline } from '@/lib/online';
+import { sleepSheet, useSleepTimer } from '@/player/sleep';
 import { Artwork } from '@/ui/Artwork';
 import { goTo } from '@/ui/nav';
 import { useOverlays, type MenuContext } from '@/ui/overlays';
@@ -75,6 +76,21 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ? []
         : [{ icon: 'arrow-down-circle-outline', label: 'Download', run: () => downloadCollection(kind, item) }];
 
+  // From the full player: the sleep timer.
+  const sleep: Action[] = context?.fromPlayer
+    ? [
+        {
+          icon: 'moon-outline',
+          label: useSleepTimer.getState().endsAt || useSleepTimer.getState().endOfSong ? 'Sleep timer (on)' : 'Sleep timer',
+          run: () => {
+            const { endsAt, endOfSong } = useSleepTimer.getState();
+            useOverlays.getState().menuToOptions(sleepSheet(!!endsAt || endOfSong));
+          },
+          offline: true,
+        },
+      ]
+    : [];
+
   const removeHere: Action[] =
     context?.playlistId && context.entryId
       ? [
@@ -98,6 +114,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ...(item.AlbumId ? [{ icon: 'disc-outline' as IconName, label: 'Go to album', run: go(`/album/${item.AlbumId}`), offline: true }] : []),
         ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`), offline: true }] : []),
         { icon: 'radio-outline', label: 'Song radio', run: () => startRadio(item) },
+        ...sleep,
       ];
     case 'MusicAlbum':
       return [
@@ -163,7 +180,9 @@ export function ContextMenuPanel() {
               key={a.label}
               onPress={() => {
                 tick();
-                if (a.label !== 'Add to playlist' && !a.label.startsWith('Go to')) close();
+                // These switch to another sheet (or page) themselves.
+                const switches = a.label === 'Add to playlist' || a.label.startsWith('Go to') || a.label.startsWith('Sleep timer');
+                if (!switches) close();
                 if (a.afterClose) setTimeout(() => void a.run(), CLOSE_MS + 150);
                 else void a.run();
               }}
