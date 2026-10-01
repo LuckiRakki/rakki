@@ -14,7 +14,9 @@ import { LyricsCard } from '@/lyrics/LyricsCard';
 import { SeekBar } from '@/player/SeekBar';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
+import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
+import { openAlbum } from '@/ui/nav';
 import { openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -89,12 +91,20 @@ export default function PlayerScreen() {
           {/* Title + like */}
           <View style={styles.titleRow}>
             <View style={{ flex: 1, marginRight: t.space.md }}>
-              <T numberOfLines={1} style={{ fontFamily: t.fonts.bold, fontSize: t.size(22) }}>
+              <T
+                numberOfLines={1}
+                onPress={track.AlbumId ? () => openAlbum(track.AlbumId!) : undefined}
+                suppressHighlighting
+                style={{ fontFamily: t.fonts.bold, fontSize: t.size(22) }}>
                 {track.Name}
               </T>
-              <T variant="caption" numberOfLines={1} style={{ fontSize: t.size(16), marginTop: 2 }}>
-                {artistLine(track)}
-              </T>
+              <ArtistLinks
+                artists={track.ArtistItems}
+                fallback={artistLine(track)}
+                variant="caption"
+                numberOfLines={1}
+                style={{ fontSize: t.size(16), marginTop: 2 }}
+              />
             </View>
             <Pressable hitSlop={10} onPress={tap(() => p().setFavorite(track.Id, !favorite))}>
               <Ionicons

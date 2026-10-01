@@ -697,6 +697,22 @@ export class JellyfinClient {
     })}`;
   }
 
+  /** The signed-in user (name and profile picture tag). */
+  getMe() {
+    return this.get<{ Id: string; Name: string; PrimaryImageTag?: string }>('/Users/Me');
+  }
+
+  /** The user's Jellyfin profile picture, if they've set one. */
+  userImageUrl(user: { Id: string; PrimaryImageTag?: string }, size = 120): string | undefined {
+    if (!user.PrimaryImageTag) return undefined;
+    return `${this.session.serverUrl}/Users/${user.Id}/Images/Primary${query({
+      tag: user.PrimaryImageTag,
+      fillWidth: size,
+      fillHeight: size,
+      quality: 90,
+    })}`;
+  }
+
   /** An artist's (or album's) wide backdrop image, if it has one. */
   backdropUrl(item: BaseItem, width = 1200): string | undefined {
     const tag = item.BackdropImageTags?.[0];

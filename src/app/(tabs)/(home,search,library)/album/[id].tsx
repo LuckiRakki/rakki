@@ -132,6 +132,15 @@ export default function AlbumScreen() {
         style={[styles.back, { top: insets.top + t.space.sm }]}>
         <Ionicons name="chevron-back" size={24} color={t.colors.text} />
       </Pressable>
+      {album.data ? (
+        <Pressable
+          onPress={() => openMenu(album.data!)}
+          hitSlop={10}
+          accessibilityLabel="More options"
+          style={[styles.more, { top: insets.top + t.space.sm }]}>
+          <Ionicons name="ellipsis-horizontal" size={22} color={t.colors.text} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -175,6 +184,16 @@ const useStyles = makeStyles((t) => ({
   back: {
     position: 'absolute',
     left: t.space.md,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  more: {
+    position: 'absolute',
+    right: t.space.md,
     width: 36,
     height: 36,
     borderRadius: 18,

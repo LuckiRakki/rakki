@@ -12,6 +12,7 @@ import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { UserAvatar } from '@/ui/UserAvatar';
 
 export default function SettingsScreen() {
   const t = useTheme();
@@ -40,10 +41,15 @@ export default function SettingsScreen() {
           Account
         </T>
         <View style={styles.card}>
-          <T variant="bodyStrong">{session?.userName}</T>
-          <T variant="caption" style={{ marginTop: 2 }}>
-            {session?.serverName} · {session?.serverUrl}
-          </T>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
+            <UserAvatar size={48} />
+            <View style={{ flex: 1 }}>
+              <T variant="bodyStrong">{session?.userName}</T>
+              <T variant="caption" style={{ marginTop: 2 }}>
+                {session?.serverName} · {session?.serverUrl}
+              </T>
+            </View>
+          </View>
           <Pressable
             onPress={() => {
               router.back();

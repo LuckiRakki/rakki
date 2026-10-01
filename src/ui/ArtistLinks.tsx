@@ -1,11 +1,14 @@
 import { Fragment } from 'react';
-import type { TextProps } from 'react-native';
+import { Text, type TextProps } from 'react-native';
 
 import type { NameIdPair } from '@/api/jellyfin';
 import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
 
-/** Artist names where each one opens its artist page ("Tame Impala, Kali Uchis"). */
+/**
+ * Artist names where each one opens its artist page ("Tame Impala, Kali Uchis"). The names
+ * take the surrounding text style, so pass size/colour via `variant` and `style`.
+ */
 export function ArtistLinks({
   artists,
   fallback,
@@ -29,9 +32,9 @@ export function ArtistLinks({
       {list.map((a, i) => (
         <Fragment key={a.Id}>
           {i > 0 ? ', ' : ''}
-          <T variant={variant} onPress={() => openArtist(a.Id)} suppressHighlighting>
+          <Text onPress={() => openArtist(a.Id)} suppressHighlighting>
             {a.Name}
-          </T>
+          </Text>
         </Fragment>
       ))}
     </T>

@@ -79,6 +79,16 @@ function useUserQuery<T>(key: unknown[], fn: (client: NonNullable<ReturnType<typ
 
 export const useMostPlayed = () => useUserQuery(['mostPlayed'], (c) => c.getMostPlayedAlbums(16));
 export const useRediscover = () => useUserQuery(['rediscover'], (c) => c.getRediscoverAlbums(16));
+export function useMe() {
+  const client = useClient();
+  return useQuery({
+    queryKey: ['me', client?.session.userId],
+    enabled: !!client,
+    staleTime: 60 * 60_000,
+    queryFn: () => client!.getMe(),
+  });
+}
+
 export const useTopArtists = () => useUserQuery(['topArtists'], (c) => c.getTopArtists(12));
 export const useRandomAlbums = () => useUserQuery(['randomAlbums'], (c) => c.getRandomAlbums(16));
 export const useLikedSongs = () => useUserQuery(['likedSongs'], async (c) => (await c.getFavoriteTracks()).Items);

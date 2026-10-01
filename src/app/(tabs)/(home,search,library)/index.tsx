@@ -13,7 +13,6 @@ import {
   useRediscover,
   useTopArtists,
 } from '@/api/queries';
-import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
 import { QuickTile } from '@/ui/AlbumTile';
@@ -22,12 +21,12 @@ import { openLibrary } from '@/ui/nav';
 import { Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { UserAvatar } from '@/ui/UserAvatar';
 
 export default function HomeScreen() {
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const userName = useAuth((s) => s.session?.userName ?? '');
   const recent = useRecentlyPlayed();
   const added = useRecentlyAdded();
   const mostPlayed = useMostPlayed();
@@ -54,10 +53,8 @@ export default function HomeScreen() {
         pointerEvents="none"
       />
       <View style={styles.header}>
-        <Pressable onPress={() => router.push('/settings')} style={styles.avatar} hitSlop={8}>
-          <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(15), color: '#000' }}>
-            {userName.charAt(0).toUpperCase() || '?'}
-          </T>
+        <Pressable onPress={() => router.push('/settings')} hitSlop={8} accessibilityLabel="Settings">
+          <UserAvatar size={34} />
         </Pressable>
         <T variant="display">{greeting()}</T>
       </View>
@@ -109,14 +106,6 @@ const useStyles = makeStyles((t) => ({
     gap: t.space.md,
     paddingHorizontal: t.space.lg,
     marginBottom: t.space.lg,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: t.colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   grid: { paddingHorizontal: t.space.lg, gap: t.space.sm },
   gridRow: { flexDirection: 'row', gap: t.space.sm },

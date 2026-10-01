@@ -343,7 +343,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | Android head-unit build | ours | 6 |
 | CarPlay (**needs the $99 account**) | F | 6 |
 | Navidrome/Subsonic support | Fs | 6 (optional) |
-| *Not applicable on iOS:* Discord RPC, MPV backend, desktop mini-window | Fs | — |
+| *Not applicable on iOS:* MPV backend, desktop mini-window. (Discord RPC can't run on iOS directly; see the ideas backlog for a bridge.) | Fs | — |
 
 ---
 
@@ -409,6 +409,10 @@ The user wants to choose colours, sizes and similar details themselves. So every
   - Last.fm `track.getInfo` gives global `playcount` and `listeners` with a free API key, matched by artist + title.
   - Spotify's public Web API only exposes a 0–100 `popularity` score, not play counts. The real counts sit behind Spotify's private web-player API, which is unofficial and against its terms. Many library files already carry Spotify IDs (the Downtify tagging work), which would make matching exact.
   - Either way: cache counts for days (they change slowly) and label the source.
+- **Discord Rich Presence ("Listening to …" on the user's Discord profile).** For the end of the roadmap, alongside SUB/WAVE (the user's call, 2026-10-01). Known constraints before designing:
+  - Classic Rich Presence talks to the *desktop* Discord client over local IPC. An iPhone app can't do that, and a bot can't set a user's status. Logging in with the user's own token ("self-bot") breaks Discord's terms, so that's out.
+  - Most realistic route: a bridge that watches Jellyfin's sessions (Rakki already reports playback to Jellyfin, like Finamp) and sets presence through a Discord desktop client that's running somewhere, e.g. the PC. Open-source Jellyfin→Discord bridges already do this; check them first. Limitation: presence only shows while that desktop Discord is running.
+  - To investigate when we get there: whether Discord's newer Social SDK (which has mobile support) allows a non-game app to set a "Listening" activity from iOS.
 
 ---
 
