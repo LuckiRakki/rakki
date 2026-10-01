@@ -11,6 +11,7 @@ import {
   useRecentlyAdded,
   useRecentlyPlayed,
   useRediscover,
+  useTopArtists,
 } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   const rediscover = useRediscover();
   const random = useRandomAlbums();
   const playlists = usePlaylists();
+  const topArtists = useTopArtists();
 
   // Quick picks: Liked Songs plus the five most recently played albums.
   const quick = recent.data?.slice(0, 5) ?? [];
@@ -85,6 +87,7 @@ export default function HomeScreen() {
 
       <Shelf title="Jump back in" items={jumpBackIn} />
       <Shelf title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
+      <Shelf title="Artists you play" items={topArtists.data} />
       <Shelf title="Recently added" items={added.data} />
       <Shelf title="Most played" items={mostPlayed.data} />
       <Shelf title="Rediscover" items={rediscover.data} />

@@ -79,16 +79,17 @@ function useUserQuery<T>(key: unknown[], fn: (client: NonNullable<ReturnType<typ
 
 export const useMostPlayed = () => useUserQuery(['mostPlayed'], (c) => c.getMostPlayedAlbums(16));
 export const useRediscover = () => useUserQuery(['rediscover'], (c) => c.getRediscoverAlbums(16));
+export const useTopArtists = () => useUserQuery(['topArtists'], (c) => c.getTopArtists(12));
 export const useRandomAlbums = () => useUserQuery(['randomAlbums'], (c) => c.getRandomAlbums(16));
 export const useLikedSongs = () => useUserQuery(['likedSongs'], async (c) => (await c.getFavoriteTracks()).Items);
 
-export function useAlbumArtists() {
+export function useAlbumArtists(sortBy = 'SortName', sortOrder = 'Ascending') {
   const client = useClient();
   return useInfiniteQuery({
-    queryKey: ['albumArtists', client?.session.userId],
+    queryKey: ['albumArtists', client?.session.userId, sortBy, sortOrder],
     enabled: !!client,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => client!.getAlbumArtists({ startIndex: pageParam, limit: 100 }),
+    queryFn: ({ pageParam }) => client!.getAlbumArtists({ startIndex: pageParam, limit: 100, sortBy, sortOrder }),
     getNextPageParam: (last) => {
       const next = last.StartIndex + last.Items.length;
       return last.Items.length > 0 && next < last.TotalRecordCount ? next : undefined;

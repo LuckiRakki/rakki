@@ -445,6 +445,27 @@ export class JellyfinClient {
     return albumsOf(r.Items, limit);
   }
 
+  /** The album artists you play most, counted over your most played songs. */
+  async getTopArtists(limit = 12): Promise<BaseItem[]> {
+    const songs = await this.items({
+      IncludeItemTypes: 'Audio',
+      SortBy: 'PlayCount',
+      SortOrder: 'Descending',
+      Filters: 'IsPlayed',
+      EnableImages: false,
+      Limit: 400,
+    });
+    const plays = new Map<string, number>();
+    for (const s of songs.Items) {
+      for (const a of s.AlbumArtists?.length ? s.AlbumArtists : (s.ArtistItems ?? [])) {
+        plays.set(a.Id, (plays.get(a.Id) ?? 0) + (s.UserData?.PlayCount ?? 1));
+      }
+    }
+    const ids = [...plays].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([id]) => id);
+    const byId = new Map((await this.getItemsByIds(ids)).map((a) => [a.Id, a]));
+    return ids.map((id) => byId.get(id)).filter((a): a is BaseItem => !!a);
+  }
+
   async getRandomAlbums(limit = 16): Promise<BaseItem[]> {
     return (await this.items({ IncludeItemTypes: 'MusicAlbum', SortBy: 'Random', Limit: limit })).Items;
   }

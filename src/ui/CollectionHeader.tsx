@@ -20,6 +20,7 @@ export function CollectionHeader({
   onPlay,
   onShuffle,
   onMore,
+  onEdit,
 }: {
   art: ReactNode;
   tint: string;
@@ -29,6 +30,7 @@ export function CollectionHeader({
   onPlay: () => void;
   onShuffle: () => void;
   onMore?: () => void;
+  onEdit?: () => void;
 }) {
   const t = useTheme();
   const styles = useStyles();
@@ -51,6 +53,11 @@ export function CollectionHeader({
           <Pressable hitSlop={8} onPress={onShuffle}>
             <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
           </Pressable>
+          {onEdit ? (
+            <Pressable hitSlop={8} onPress={onEdit} accessibilityLabel="Edit playlist" style={{ marginLeft: t.space.lg }}>
+              <Ionicons name="pencil" size={22} color={t.colors.textSecondary} />
+            </Pressable>
+          ) : null}
           {onMore ? (
             <Pressable hitSlop={8} onPress={onMore} style={{ marginLeft: t.space.lg }}>
               <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.textSecondary} />

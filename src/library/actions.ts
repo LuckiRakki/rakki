@@ -81,6 +81,44 @@ export async function removeFromPlaylist(playlistId: string, entryId: string, na
   showToast(`Removed “${name}”`);
 }
 
+const playlistItemsKey = (playlistId: string) => ['playlistItems', client().session.userId, playlistId];
+
+/** Move a song within a playlist. The list updates at once; the server catches up. */
+export async function movePlaylistEntry(playlistId: string, from: number, to: number) {
+  const key = playlistItemsKey(playlistId);
+  const items = queryClient.getQueryData<BaseItem[]>(key);
+  const entryId = items?.[from]?.PlaylistItemId;
+  if (!items || !entryId || from === to) return;
+  const next = [...items];
+  next.splice(to, 0, next.splice(from, 1)[0]);
+  queryClient.setQueryData(key, next);
+  try {
+    await client().movePlaylistItem(playlistId, entryId, to);
+  } catch {
+    showToast('Couldn’t move that song. Try again.');
+    void queryClient.invalidateQueries({ queryKey: key });
+  }
+}
+
+/** Remove a song in the playlist editor: gone from the list at once, then from the server. */
+export async function removePlaylistEntry(playlistId: string, entryId: string) {
+  const key = playlistItemsKey(playlistId);
+  const items = queryClient.getQueryData<BaseItem[]>(key);
+  if (items) queryClient.setQueryData(key, items.filter((x) => x.PlaylistItemId !== entryId));
+  try {
+    await client().removeFromPlaylist(playlistId, [entryId]);
+  } catch {
+    showToast('Couldn’t remove that song. Try again.');
+  }
+  refreshPlaylists();
+}
+
+/** Rename without a dialog (the playlist editor's name field). */
+export async function savePlaylistName(playlistId: string, name: string) {
+  await client().renamePlaylist(playlistId, name);
+  refreshPlaylists();
+}
+
 /** Ask for a name (iOS prompt; plain prompt on web). */
 export function askName(title: string, message: string, initial = ''): Promise<string | null> {
   if (Platform.OS === 'ios') {

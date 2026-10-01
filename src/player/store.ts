@@ -39,6 +39,8 @@ interface PlayerState {
   addToQueue(items: BaseItem[]): void;
   removeAt(index: number): void;
   move(from: number, to: number): void;
+  /** Replace everything after the current song (the queue screen's drag-to-reorder). */
+  setUpcoming(entries: QueueEntry[]): void;
   skipTo(index: number): void;
   toggle(): void;
   next(): void;
@@ -162,6 +164,12 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
     syncQueue(next);
+  },
+
+  setUpcoming(entries) {
+    const { queue, index } = get();
+    if (!queue.length) return;
+    syncQueue([...queue.slice(0, index + 1), ...entries]);
   },
 
   skipTo(i) {
@@ -315,3 +323,8 @@ try {
 useSettings.subscribe((s, prev) => {
   if (s.wifiBitrate !== prev.wifiBitrate || s.cellularBitrate !== prev.cellularBitrate) refreshUpcoming();
 });
+
+// Web dev preview only: lets tests set up a queue from the browser console without playing.
+if (__DEV__ && typeof window !== 'undefined') {
+  (globalThis as { __rakkiPlayer?: typeof usePlayer }).__rakkiPlayer = usePlayer;
+}

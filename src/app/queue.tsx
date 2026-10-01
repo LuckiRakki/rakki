@@ -1,20 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, SectionList, View } from 'react-native';
+import { memo } from 'react';
+import { Pressable, View } from 'react-native';
+import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { artistLine } from '@/lib/items';
+import { queueRows, reorderedUpcoming } from '@/player/queueRows';
 import { usePlayer, type QueueEntry } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
-interface Row {
-  entry: QueueEntry;
-  index: number;
-}
-
-/** Spotify's queue: Now playing · Next in queue · Next from <source>. Drag-to-reorder: Phase 3. */
+/**
+ * Spotify's queue: Now playing · Next in queue · Next from <source>. Drag a song by its handle
+ * (or long-press the row) to reorder; see queueRows.ts for how drops move songs between
+ * sections.
+ */
 export default function QueueScreen() {
   const t = useTheme();
   const styles = useStyles();
@@ -25,16 +27,31 @@ export default function QueueScreen() {
   const playing = usePlayer((s) => s.playing);
 
   const current = queue[index];
-  let end = index + 1;
-  while (queue[end]?.origin === 'queued') end++;
-  const rows = (from: number, to: number): Row[] =>
-    queue.slice(from, to).map((entry, i) => ({ entry, index: from + i }));
+  const rows = queueRows(queue.slice(index + 1), source ? `Next from: ${source.name}` : 'Next up');
+  const onReorder = ({ from, to }: { from: number; to: number }) =>
+    usePlayer.getState().setUpcoming(reorderedUpcoming(rows, from, to));
 
-  const sections = [
-    { title: 'Now playing', data: current ? [{ entry: current, index }] : [] },
-    { title: 'Next in queue', data: rows(index + 1, end) },
-    { title: source ? `Next from: ${source.name}` : 'Next up', data: rows(end, queue.length) },
-  ].filter((s) => s.data.length > 0);
+  const nowPlaying = current ? (
+    <View>
+      <T variant="heading" style={styles.sectionTitle}>
+        Now playing
+      </T>
+      <Pressable
+        onPress={() => usePlayer.getState().toggle()}
+        style={({ pressed }) => [styles.row, pressed && { backgroundColor: t.colors.surface }]}>
+        <Artwork item={current.item} size={46} />
+        <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+          <T variant="bodyStrong" numberOfLines={1} color={t.colors.accent}>
+            {current.item.Name}
+          </T>
+          <T variant="caption" numberOfLines={1}>
+            {artistLine(current.item)}
+          </T>
+        </View>
+        <Ionicons name={playing ? 'volume-high' : 'pause'} size={18} color={t.colors.accent} />
+      </Pressable>
+    </View>
+  ) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
@@ -45,53 +62,70 @@ export default function QueueScreen() {
         <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Queue</T>
         <View style={{ width: 28 }} />
       </View>
-      <SectionList
-        sections={sections}
-        keyExtractor={(r) => r.entry.key}
-        stickySectionHeadersEnabled={false}
+      <ReorderableList
+        data={rows}
+        keyExtractor={(r) => r.key}
+        onReorder={onReorder}
+        ListHeaderComponent={nowPlaying}
         contentContainerStyle={{ paddingBottom: insets.bottom + t.space.xl }}
-        renderSectionHeader={({ section }) => (
-          <T variant="heading" style={styles.sectionTitle}>
-            {section.title}
-          </T>
-        )}
-        renderItem={({ item: { entry, index: i } }) => {
-          const isCurrent = i === index;
-          return (
-            <Pressable
-              onPress={() => (isCurrent ? usePlayer.getState().toggle() : usePlayer.getState().skipTo(i))}
-              style={({ pressed }) => [styles.row, pressed && { backgroundColor: t.colors.surface }]}>
-              <Artwork item={entry.item} size={46} />
-              <View style={{ flex: 1, marginHorizontal: t.space.md }}>
-                <T
-                  variant="bodyStrong"
-                  numberOfLines={1}
-                  color={isCurrent ? t.colors.accent : t.colors.text}>
-                  {entry.item.Name}
-                </T>
-                <T variant="caption" numberOfLines={1}>
-                  {artistLine(entry.item)}
-                </T>
-              </View>
-              {isCurrent ? (
-                <Ionicons name={playing ? 'volume-high' : 'pause'} size={18} color={t.colors.accent} />
-              ) : (
-                <Pressable hitSlop={10} onPress={() => usePlayer.getState().removeAt(i)}>
-                  <Ionicons name="remove-circle-outline" size={22} color={t.colors.textMuted} />
-                </Pressable>
-              )}
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) =>
+          item.kind === 'header' ? (
+            <T variant="heading" style={styles.sectionTitle}>
+              {item.title}
+            </T>
+          ) : (
+            <QueueRow entry={item.entry} />
+          )
+        }
         ListEmptyComponent={
-          <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
-            Your queue is empty.
-          </T>
+          current ? null : (
+            <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
+              Your queue is empty.
+            </T>
+          )
         }
       />
     </View>
   );
 }
+
+const QueueRow = memo(function QueueRow({ entry }: { entry: QueueEntry }) {
+  const t = useTheme();
+  const styles = useStyles();
+  const drag = useReorderableDrag();
+  // Look the position up at tap time: the queue may have changed since this row rendered.
+  const at = () => usePlayer.getState().queue.findIndex((e) => e.key === entry.key);
+  return (
+    <Pressable
+      onPress={() => usePlayer.getState().skipTo(at())}
+      onLongPress={drag}
+      delayLongPress={300}
+      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? t.colors.surface : t.colors.bg }]}>
+      <Artwork item={entry.item} size={46} />
+      <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+        <T variant="bodyStrong" numberOfLines={1}>
+          {entry.item.Name}
+        </T>
+        <T variant="caption" numberOfLines={1}>
+          {artistLine(entry.item)}
+        </T>
+      </View>
+      <Pressable
+        hitSlop={10}
+        accessibilityLabel={`Remove ${entry.item.Name} from the queue`}
+        onPress={() => usePlayer.getState().removeAt(at())}>
+        <Ionicons name="remove-circle-outline" size={22} color={t.colors.textMuted} />
+      </Pressable>
+      <Pressable
+        hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
+        onPressIn={drag}
+        accessibilityLabel={`Reorder ${entry.item.Name}`}
+        style={{ marginLeft: t.space.md }}>
+        <Ionicons name="reorder-three" size={26} color={t.colors.textSecondary} />
+      </Pressable>
+    </Pressable>
+  );
+});
 
 const useStyles = makeStyles((t) => ({
   header: {
@@ -101,6 +135,12 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.space.lg,
     paddingBottom: t.space.sm,
   },
-  sectionTitle: { paddingHorizontal: t.space.lg, paddingTop: t.space.xl, paddingBottom: t.space.sm, fontSize: t.size(17) },
+  sectionTitle: {
+    paddingHorizontal: t.space.lg,
+    paddingTop: t.space.xl,
+    paddingBottom: t.space.sm,
+    fontSize: t.size(17),
+    backgroundColor: t.colors.bg,
+  },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.lg, paddingVertical: t.space.sm },
 }));

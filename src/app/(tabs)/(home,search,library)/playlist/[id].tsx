@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 
 import { useItem, usePlaylistItems } from '@/api/queries';
@@ -9,6 +10,7 @@ import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { openMenu } from '@/ui/overlays';
+import { PlaylistEditor } from '@/ui/PlaylistEditor';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
@@ -22,6 +24,7 @@ export default function PlaylistScreen() {
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === id);
+  const [editing, setEditing] = useState(false);
 
   const p = playlist.data;
   const list = items.data ?? [];
@@ -36,6 +39,8 @@ export default function PlaylistScreen() {
       </View>
     );
   }
+
+  if (editing && p) return <PlaylistEditor playlist={p} items={list} onDone={() => setEditing(false)} />;
 
   const header = (
     <View>
@@ -54,6 +59,7 @@ export default function PlaylistScreen() {
         }}
         onShuffle={() => list.length && usePlayer.getState().playQueue(list, { source, shuffle: true })}
         onMore={p ? () => openMenu(p) : undefined}
+        onEdit={p && list.length ? () => setEditing(true) : undefined}
       />
       {items.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
       {!items.isLoading && list.length === 0 ? (
