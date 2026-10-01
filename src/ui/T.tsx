@@ -16,8 +16,8 @@ export function T({
 }
 
 const useStyles = makeStyles((t) => ({
-  display: { fontFamily: t.fonts.black, fontSize: t.size(28), color: t.colors.text, letterSpacing: -0.6 },
-  title: { fontFamily: t.fonts.bold, fontSize: t.size(24), color: t.colors.text, letterSpacing: -0.4 },
+  display: { fontFamily: t.fonts.display, fontSize: t.size(28), color: t.colors.text, letterSpacing: -0.6 },
+  title: { fontFamily: t.fonts.title, fontSize: t.size(24), color: t.colors.text, letterSpacing: -0.4 },
   heading: { fontFamily: t.fonts.bold, fontSize: t.size(20), color: t.colors.text, letterSpacing: -0.3 },
   body: { fontFamily: t.fonts.regular, fontSize: t.size(15), color: t.colors.text },
   bodyStrong: { fontFamily: t.fonts.semibold, fontSize: t.size(15), color: t.colors.text },

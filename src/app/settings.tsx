@@ -69,6 +69,19 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
+        <Pressable
+          onPress={() => router.push('/customize')}
+          style={({ pressed }) => [styles.card, styles.customize, { marginTop: t.space.xl }, pressed && { opacity: 0.7 }]}>
+          <Ionicons name="color-palette-outline" size={24} color={t.colors.accent} />
+          <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+            <T variant="bodyStrong">Customize</T>
+            <T variant="caption" style={{ fontSize: t.size(12) }}>
+              Colours, fonts, sizes, Home, player and more
+            </T>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={t.colors.textMuted} />
+        </Pressable>
+
         <OptionPicker
           options={BITRATE_OPTIONS}
           title="Streaming quality on Wi-Fi"
@@ -217,4 +230,5 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'center',
   },
   option: { flexDirection: 'row', alignItems: 'center', paddingVertical: t.space.sm },
+  customize: { flexDirection: 'row', alignItems: 'center' },
 }));

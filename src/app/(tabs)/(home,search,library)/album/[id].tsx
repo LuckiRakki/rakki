@@ -56,7 +56,7 @@ export default function AlbumScreen() {
   const header = (
     <View>
       <LinearGradient
-        colors={[tint, t.colors.bg]}
+        colors={[t.tint(tint), t.colors.bg]}
         style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
         <Artwork item={album.data ?? undefined} size={ART} style={styles.artShadow} />
       </LinearGradient>

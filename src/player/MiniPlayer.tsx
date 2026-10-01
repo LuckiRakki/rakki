@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { useAuth } from '@/auth/store';
@@ -26,7 +27,10 @@ export function MiniPlayer() {
   const { position, duration } = useProgress(500);
 
   if (!track) return null;
-  const tint = artColor(client?.blurhash(track), t.colors.surface3);
+  const { miniPlayer: style, miniProgress } = t.appearance;
+  // Tinted: the art's colour (toned by Art tint). Solid: a plain surface. Glass: frosted blur.
+  const background =
+    style === 'tinted' ? t.tint(artColor(client?.blurhash(track), t.colors.surface3)) : style === 'solid' ? t.colors.surface2 : 'transparent';
   const pct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
 
   const swipes = Gesture.Race(
@@ -47,7 +51,10 @@ export function MiniPlayer() {
   return (
     <View style={styles.wrap}>
       <GestureDetector gesture={swipes}>
-        <Pressable style={[styles.card, { backgroundColor: tint }]} onPress={() => router.push('/player')}>
+        <Pressable style={[styles.card, { backgroundColor: background }]} onPress={() => router.push('/player')}>
+          {style === 'glass' ? (
+            <BlurView intensity={70} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(40,40,40,0.35)' }]} />
+          ) : null}
           <Artwork item={track} size={40} />
           <View style={styles.text}>
             <T numberOfLines={1} style={styles.title}>
@@ -67,9 +74,11 @@ export function MiniPlayer() {
           <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()} style={styles.btn}>
             <Ionicons name="play-skip-forward" size={22} color={t.colors.text} />
           </Pressable>
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: `${pct}%` }]} />
-          </View>
+          {miniProgress ? (
+            <View style={styles.track}>
+              <View style={[styles.fill, { width: `${pct}%` }]} />
+            </View>
+          ) : null}
         </Pressable>
       </GestureDetector>
     </View>

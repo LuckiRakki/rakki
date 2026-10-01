@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import type { ReactNode } from 'react';
 import { router } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import {
   useRediscover,
   useTopArtists,
 } from '@/api/queries';
+import type { ShelfId } from '@/appearance/store';
 import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
 import { QuickTile } from '@/ui/AlbumTile';
@@ -35,9 +37,22 @@ export default function HomeScreen() {
   const playlists = usePlaylists();
   const topArtists = useTopArtists();
 
+  const { homeOrder, homeHidden, quickPicks, greeting: showGreeting } = t.appearance;
+
   // Quick picks: Liked Songs plus the five most recently played albums.
-  const quick = recent.data?.slice(0, 5) ?? [];
-  const jumpBackIn = recent.data?.slice(5) ?? [];
+  const quick = quickPicks ? (recent.data?.slice(0, 5) ?? []) : [];
+  const jumpBackIn = recent.data?.slice(quick.length) ?? [];
+  const shelves: Record<ShelfId, ReactNode> = {
+    jumpBackIn: <Shelf key="jumpBackIn" title="Jump back in" items={jumpBackIn} />,
+    playlists: (
+      <Shelf key="playlists" title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
+    ),
+    artists: <Shelf key="artists" title="Artists you play" items={topArtists.data} />,
+    recentlyAdded: <Shelf key="recentlyAdded" title="Recently added" items={added.data} />,
+    mostPlayed: <Shelf key="mostPlayed" title="Most played" items={mostPlayed.data} />,
+    rediscover: <Shelf key="rediscover" title="Rediscover" items={rediscover.data} />,
+    random: <Shelf key="random" title="Random picks" items={random.data} />,
+  };
   const refreshing = recent.isRefetching || added.isRefetching;
 
   return (
@@ -56,39 +71,35 @@ export default function HomeScreen() {
         <Pressable onPress={() => router.push('/settings')} hitSlop={8} accessibilityLabel="Settings">
           <UserAvatar size={34} />
         </Pressable>
-        <T variant="display">{greeting()}</T>
+        {showGreeting ? <T variant="display">{greeting()}</T> : null}
       </View>
 
-      <View style={styles.grid}>
-        {chunk([null, ...quick], 2).map((pair, i) => (
-          <View key={i} style={styles.gridRow}>
-            {pair.map((a) =>
-              a ? (
-                <QuickTile key={a.Id} album={a} />
-              ) : (
-                <Pressable
-                  key="liked"
-                  onPress={() => router.push('/liked')}
-                  style={({ pressed }) => [styles.likedTile, pressed && { backgroundColor: t.colors.surface3 }]}>
-                  <LikedArt size={56} />
-                  <T numberOfLines={2} style={{ flex: 1, paddingHorizontal: 10, fontFamily: t.fonts.bold, fontSize: t.size(13) }}>
-                    Liked Songs
-                  </T>
-                </Pressable>
-              ),
-            )}
-            {pair.length === 1 ? <View style={{ flex: 1 }} /> : null}
-          </View>
-        ))}
-      </View>
+      {quickPicks ? (
+        <View style={styles.grid}>
+          {chunk([null, ...quick], 2).map((pair, i) => (
+            <View key={i} style={styles.gridRow}>
+              {pair.map((a) =>
+                a ? (
+                  <QuickTile key={a.Id} album={a} />
+                ) : (
+                  <Pressable
+                    key="liked"
+                    onPress={() => router.push('/liked')}
+                    style={({ pressed }) => [styles.likedTile, pressed && { backgroundColor: t.colors.surface3 }]}>
+                    <LikedArt size={56} />
+                    <T numberOfLines={2} style={{ flex: 1, paddingHorizontal: 10, fontFamily: t.fonts.bold, fontSize: t.size(13) }}>
+                      Liked Songs
+                    </T>
+                  </Pressable>
+                ),
+              )}
+              {pair.length === 1 ? <View style={{ flex: 1 }} /> : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
 
-      <Shelf title="Jump back in" items={jumpBackIn} />
-      <Shelf title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
-      <Shelf title="Artists you play" items={topArtists.data} />
-      <Shelf title="Recently added" items={added.data} />
-      <Shelf title="Most played" items={mostPlayed.data} />
-      <Shelf title="Rediscover" items={rediscover.data} />
-      <Shelf title="Random picks" items={random.data} />
+      {homeOrder.filter((id) => !homeHidden.includes(id)).map((id) => shelves[id])}
     </ScrollView>
   );
 }

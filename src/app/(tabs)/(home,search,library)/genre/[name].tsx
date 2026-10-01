@@ -75,7 +75,8 @@ export default function GenreScreen() {
   }
 
   const gap = t.space.lg;
-  const tile = Math.floor((width - t.space.lg * 2 - gap) / 2);
+  const columns = t.appearance.gridColumns;
+  const tile = Math.floor((width - t.space.lg * 2 - gap * (columns - 1)) / columns);
 
   const header = (
     <View>
@@ -132,7 +133,8 @@ export default function GenreScreen() {
       <FlatList
         data={albumList}
         keyExtractor={(a) => a.Id}
-        numColumns={2}
+        key={`genre-albums-${columns}`}
+        numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
         contentContainerStyle={{ gap: t.space.xl, paddingBottom: t.space.xl }}
         ListHeaderComponent={header}

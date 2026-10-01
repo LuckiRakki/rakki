@@ -1,39 +1,41 @@
 // Design tokens (docs/FRAMEWORK.md §5), built from the user's appearance settings.
 //
-// Components never import fixed colours or sizes: they read the current theme with
+// Components never import fixed colours, sizes or fonts: they read the current theme with
 // `useTheme()` and build their styles with `makeStyles((t) => ({ … }))`, so every screen
-// follows the Customize screen live. Font families stay constant (Inter) for now.
+// follows the Customize screen live.
 import { createContext, useContext } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { FONTS } from '@/appearance/fonts';
 import { APPEARANCE_DEFAULTS, type Appearance } from '@/appearance/store';
-
-export const fonts = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  black: 'Inter_800ExtraBold',
-} as const;
+import { mix } from '@/lib/color';
 
 const DENSITY = { compact: 0.8, comfortable: 1, spacious: 1.2 } as const;
 
-export function buildTheme(a: Appearance) {
+/** Surface steps above the background (0–255 towards white), before the contrast setting. */
+const STEPS = { dark: [6, 18, 24], oled: [14, 26, 34] } as const;
+
+export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean } = {}) {
   const d = DENSITY[a.density];
   const r = Math.max(0, a.roundness);
-  const oled = a.background === 'oled';
+  const base = a.background === 'oled' ? '#000000' : '#121212';
+  const bg = a.background === 'tinted' ? mix(base, a.accent, 0.07) : base;
+  const steps = STEPS[a.background === 'oled' ? 'oled' : 'dark'];
+  const surface = (i: number) => mix(bg, '#ffffff', (steps[i] * a.surfaceContrast) / 255);
+  const faces = FONTS[a.font]?.faces ?? FONTS.inter.faces;
+  const heavy = a.titleWeight === 'heavy';
   return {
     appearance: a,
     colors: {
-      bg: oled ? '#000000' : '#121212',
-      surface: oled ? '#0e0e0e' : '#181818',
-      surface2: oled ? '#1a1a1a' : '#242424',
-      surface3: oled ? '#222222' : '#2A2A2A',
+      bg,
+      surface: surface(0),
+      surface2: surface(1),
+      surface3: surface(2),
       text: '#FFFFFF',
       textSecondary: 'rgba(255,255,255,0.70)',
       textMuted: 'rgba(255,255,255,0.50)',
       border: 'rgba(255,255,255,0.10)',
-      /** Rakki's accent (a "spicy" orange by default); album screens may use the art colour instead. */
+      /** Rakki's accent (a "spicy" orange by default, or Lucid's album colour). */
       accent: a.accent,
       danger: '#FF5470',
     },
@@ -46,9 +48,19 @@ export function buildTheme(a: Appearance) {
       xxl: Math.round(32 * d),
     },
     radius: { art: 4 * r, card: 8 * r, pill: 999 },
-    fonts,
+    fonts: {
+      ...faces,
+      /** Page titles ("Good evening", "Your Library"). */
+      display: heavy ? faces.black : faces.bold,
+      /** Album / playlist / screen titles. */
+      title: heavy ? faces.bold : faces.semibold,
+    },
     /** A font size scaled by the user's text size setting. */
     size: (n: number) => Math.round(n * a.textScale * 10) / 10,
+    /** An album-art colour toned by the "art tint" setting (0 = plain background). */
+    tint: (color: string) => mix(bg, color, a.artTint),
+    /** Skip or shorten animations (the setting, or iOS Reduce Motion when set to follow it). */
+    reduceMotion: a.motion === 'reduced' || (a.motion === 'system' && !!env.systemReduceMotion),
   };
 }
 

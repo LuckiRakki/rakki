@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { makeStyles } from '@/ui/theme';
+import { makeStyles, useTheme } from '@/ui/theme';
 
 const OPEN_MS = 260;
 export const CLOSE_MS = 200;
@@ -36,18 +36,21 @@ export function SheetPanel({
   // Opening mounts straight away; closing unmounts after the slide-out finishes.
   if (visible && !mounted) setMounted(true);
 
+  // Reduced motion: sheets appear and go almost at once instead of sliding.
+  const fast = useTheme().reduceMotion;
+
   useEffect(() => {
     if (visible) {
       drag.set(0);
-      offset.set(withTiming(0, { duration: OPEN_MS, easing: Easing.out(Easing.cubic) }));
+      offset.set(withTiming(0, { duration: fast ? 1 : OPEN_MS, easing: Easing.out(Easing.cubic) }));
     } else if (mounted) {
       offset.set(
-        withTiming(height, { duration: CLOSE_MS, easing: Easing.in(Easing.cubic) }, (done) => {
+        withTiming(height, { duration: fast ? 1 : CLOSE_MS, easing: Easing.in(Easing.cubic) }, (done) => {
           if (done) runOnJS(setMounted)(false);
         }),
       );
     }
-  }, [visible, mounted, height, offset, drag]);
+  }, [visible, mounted, height, offset, drag, fast]);
 
   const pan = Gesture.Pan()
     .activeOffsetY(10)

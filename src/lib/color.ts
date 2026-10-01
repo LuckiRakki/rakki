@@ -1,15 +1,33 @@
+/** [r, g, b] of "#rrggbb", "#rgb", "rgb(r, g, b)" or "rgba(...)" (black if unreadable). */
+export function parseColor(color: string): [number, number, number] {
+  const c = color.trim();
+  const m = c.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i);
+  if (m) return [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (/^#([0-9a-f]{3}){1,2}$/i.test(c)) {
+    const hex = c.length === 4 ? c.slice(1).split('').map((x) => x + x).join('') : c.slice(1);
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+  }
+  return [0, 0, 0];
+}
+
+/** True for a valid "#rrggbb" or "#rgb". */
+export function isHexColor(s: string): boolean {
+  return /^#([0-9a-f]{3}){1,2}$/i.test(s.trim());
+}
+
 /** `color` with its alpha replaced (accepts "#rrggbb", "#rgb", "rgb(r, g, b)" or "rgba(...)"). */
 export function withAlpha(color: string, alpha: number): string {
-  const c = color.trim();
-  let r = 0, g = 0, b = 0;
-  const m = c.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i);
-  if (m) {
-    [r, g, b] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  } else if (/^#([0-9a-f]{3}){1,2}$/i.test(c)) {
-    const hex = c.length === 4 ? c.slice(1).split('').map((x) => x + x).join('') : c.slice(1);
-    [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  }
+  const [r, g, b] = parseColor(color);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** `a` blended towards `b` by `amount` (0 = a, 1 = b), as "#rrggbb". */
+export function mix(a: string, b: string, amount: number): string {
+  const t = Math.max(0, Math.min(1, amount));
+  const ca = parseColor(a);
+  const cb = parseColor(b);
+  const hex = (i: number) => Math.round(ca[i] + (cb[i] - ca[i]) * t).toString(16).padStart(2, '0');
+  return `#${hex(0)}${hex(1)}${hex(2)}`;
 }
 
 type RGB = [number, number, number];

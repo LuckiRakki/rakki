@@ -13,6 +13,8 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
+import { useTheme } from '@/ui/theme';
+
 /**
  * A layer of the backdrop: one blurred copy of the cover, turning at its own speed and
  * drifting around its own small orbit. Several of these at different sizes, speeds and
@@ -83,8 +85,15 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
 export function SpicyBackdrop({ uri }: { uri?: string }) {
   const clock = useSharedValue(0);
   const pulse = useSharedValue(0);
+  // Reduced motion: the covers stay still and the glow doesn't pulse.
+  const still = useTheme().reduceMotion;
 
   useEffect(() => {
+    if (still) {
+      clock.value = 0;
+      pulse.value = 0.5;
+      return;
+    }
     // One long linear clock (1 h) drives every layer; each derives its own motion from it.
     clock.value = withRepeat(withTiming(3600, { duration: 3600 * 1000, easing: Easing.linear }), -1, false);
     pulse.value = withRepeat(
@@ -95,7 +104,7 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
       -1,
       false,
     );
-  }, [clock, pulse]);
+  }, [clock, pulse, still]);
 
   const breathe = useAnimatedStyle(() => ({ opacity: 0.12 * pulse.value }));
 

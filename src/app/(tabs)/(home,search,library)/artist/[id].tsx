@@ -67,7 +67,7 @@ export default function ArtistScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: t.space.xxl }}>
-        <View style={[styles.hero, { backgroundColor: tint }]}>
+        <View style={[styles.hero, { backgroundColor: t.tint(tint) }]}>
           {cover ? (
             <Image
               source={{ uri: cover }}

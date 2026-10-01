@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getRoutePicker } from '../../modules/rakki-audio';
+import { tick } from '@/lib/haptics';
 import { useAuth } from '@/auth/store';
+import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
 import { LyricsCard } from '@/lyrics/LyricsCard';
@@ -25,7 +27,7 @@ const RoutePicker = getRoutePicker();
 
 function tap(fn: () => void) {
   return () => {
-    void Haptics.selectionAsync().catch(() => {});
+    tick();
     fn();
   };
 }
@@ -56,13 +58,28 @@ export default function PlayerScreen() {
   }
 
   const tint = artColor(client?.blurhash(track));
+  const playerBackground = t.appearance.playerBackground;
+  const artUri = playerBackground === 'blur' ? (localArtUri(track.AlbumId ?? track.Id) ?? client?.imageUrl(track, 600)) : undefined;
   const art = Math.min(width - t.space.xl * 2, 420);
   const favorite = track.UserData?.IsFavorite ?? false;
   const p = usePlayer.getState;
 
   return (
     <View style={styles.root} onLayout={(e) => setPageHeight(e.nativeEvent.layout.height)}>
-      <LinearGradient colors={[tint, '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
+      {playerBackground === 'gradient' ? (
+        <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
+      ) : playerBackground === 'blur' ? (
+        <View style={StyleSheet.absoluteFill}>
+          <Image
+            source={artUri ? { uri: artUri } : undefined}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            blurRadius={60}
+            cachePolicy="memory-disk"
+          />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
+        </View>
+      ) : null}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + t.space.xl }}>
         <View style={{ height: pageHeight, paddingTop: insets.top + t.space.sm, paddingBottom: insets.bottom + t.space.md, paddingHorizontal: t.space.xl }}>
           {/* Header */}
@@ -168,9 +185,11 @@ export default function PlayerScreen() {
             </Pressable>
           </View>
         </View>
-        <View style={{ paddingHorizontal: t.space.lg }}>
-          <LyricsCard track={track} positionSec={position} />
-        </View>
+        {t.appearance.lyricsCard ? (
+          <View style={{ paddingHorizontal: t.space.lg }}>
+            <LyricsCard track={track} positionSec={position} />
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );

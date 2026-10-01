@@ -34,6 +34,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: t.colors.textMuted,
         tabBarStyle: { backgroundColor: t.colors.bg, borderTopWidth: 0, elevation: 0 },
         tabBarLabelStyle: { fontFamily: t.fonts.medium, fontSize: t.size(10) },
+        tabBarShowLabel: t.appearance.tabLabels,
       }}>
       <Tabs.Screen
         name="(home)"

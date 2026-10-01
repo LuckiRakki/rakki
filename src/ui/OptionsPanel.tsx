@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
 
+import { tick } from '@/lib/haptics';
 import { useOverlays } from '@/ui/overlays';
 import { SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
@@ -27,7 +27,7 @@ export function OptionsPanel() {
               <Pressable
                 key={o.key}
                 onPress={() => {
-                  void Haptics.selectionAsync().catch(() => {});
+                  tick();
                   close();
                   sheet.onSelect(o.key);
                 }}

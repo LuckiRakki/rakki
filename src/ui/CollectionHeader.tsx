@@ -40,7 +40,7 @@ export function CollectionHeader({
   const insets = useSafeAreaInsets();
   return (
     <View>
-      <LinearGradient colors={[tint, t.colors.bg]} style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
+      <LinearGradient colors={[t.tint(tint), t.colors.bg]} style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
         <View style={styles.artShadow}>{art}</View>
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>

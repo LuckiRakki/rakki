@@ -29,11 +29,13 @@ const TABS: { key: LibraryTab; label: string }[] = [
 ];
 
 /** Tile width for an n-column grid with the standard side gutters. */
-function useTileSize(columns: number) {
+/** Album grids follow Customize → Album grid columns; `extra` adds columns (artists' round tiles). */
+function useTileSize(extra = 0) {
   const t = useTheme();
+  const columns = t.appearance.gridColumns + extra;
   const { width } = useWindowDimensions();
   const gap = t.space.lg;
-  return { gap, tile: Math.floor((width - t.space.lg * 2 - gap * (columns - 1)) / columns) };
+  return { gap, columns, tile: Math.floor((width - t.space.lg * 2 - gap * (columns - 1)) / columns) };
 }
 
 export default function LibraryScreen() {
@@ -125,15 +127,15 @@ function Albums({ header, sort, layout }: ListProps) {
   const albums = useAlbums(sort.sortBy, sort.sortOrder);
   const items = albums.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
-  const { gap, tile } = useTileSize(2);
+  const { gap, tile, columns } = useTileSize();
   const subtitle = (a: BaseItem) =>
     sort.key === 'year' && a.ProductionYear ? `${kindLine(a)} · ${a.ProductionYear}` : kindLine(a);
   return (
     <FlatList
-      key={`albums-${layout}`}
+      key={`albums-${layout}-${columns}`}
       data={items}
       keyExtractor={(a) => a.Id}
-      numColumns={grid ? 2 : 1}
+      numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
       ListHeaderComponent={header}
@@ -153,13 +155,13 @@ function Artists({ header, sort, layout }: ListProps) {
   const artists = useAlbumArtists(sort.sortBy, sort.sortOrder);
   const items = artists.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
-  const { gap, tile } = useTileSize(3);
+  const { gap, tile, columns } = useTileSize(1);
   return (
     <FlatList
-      key={`artists-${layout}`}
+      key={`artists-${layout}-${columns}`}
       data={items}
       keyExtractor={(a) => a.Id}
-      numColumns={grid ? 3 : 1}
+      numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
       ListHeaderComponent={header}
@@ -182,7 +184,7 @@ function Playlists({ header, sort, layout }: ListProps) {
   const playlists = usePlaylists();
   const liked = useLikedSongs();
   const grid = layout === 'grid';
-  const { gap, tile } = useTileSize(2);
+  const { gap, tile, columns } = useTileSize();
   const likedLine = `Playlist${liked.data ? ` · ${songCount(liked.data.length)}` : ''}`;
 
   const sorted = [...(playlists.data ?? [])].sort((a, b) =>
@@ -196,10 +198,10 @@ function Playlists({ header, sort, layout }: ListProps) {
   if (grid) {
     return (
       <FlatList
-        key="playlists-grid"
+        key={`playlists-grid-${columns}`}
         data={data}
         keyExtractor={(p) => p.Id}
-        numColumns={2}
+        numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
         contentContainerStyle={{ paddingBottom: t.space.xl, gap: t.space.xl }}
         ListHeaderComponent={header}
@@ -311,7 +313,7 @@ function Downloaded({ header, sort, layout }: ListProps) {
   const t = useTheme();
   const collections = useDownloads((s) => s.collections);
   const grid = layout === 'grid';
-  const { gap, tile } = useTileSize(2);
+  const { gap, tile, columns } = useTileSize();
 
   const byName = (a: DownloadedCollection, b: DownloadedCollection) =>
     a.item.Name.localeCompare(b.item.Name, undefined, { sensitivity: 'base' });
@@ -347,10 +349,10 @@ function Downloaded({ header, sort, layout }: ListProps) {
 
   return (
     <FlatList
-      key={`downloads-${layout}`}
+      key={`downloads-${layout}-${columns}`}
       data={data}
       keyExtractor={(c) => c.id}
-      numColumns={grid ? 2 : 1}
+      numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
       ListHeaderComponent={header}

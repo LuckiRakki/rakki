@@ -1,12 +1,5 @@
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  useFonts,
-} from '@expo-google-fonts/inter';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +7,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { queryClient } from '@/api/queries';
+import { FONT_FILES } from '@/appearance/fonts';
 import { useAuth } from '@/auth/store';
 import { watchServer } from '@/lib/online';
 import { checkForUpdate } from '@/lib/updates';
@@ -28,13 +22,7 @@ import { ToastHost } from '@/ui/Toast';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-  });
+  const [fontsLoaded] = useFonts(FONT_FILES);
   const status = useAuth((s) => s.status);
   const signedIn = useAuth((s) => s.session !== null);
 
@@ -105,6 +93,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
               <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
               <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="login" />

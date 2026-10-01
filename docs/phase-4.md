@@ -60,7 +60,7 @@ Checked before starting (2026-10-01):
   playlist, edit playlist, new downloads).
 - [x] Downloads pause offline and resume (plus playlist sync) when the server is back.
 - [ ] Playback reports made offline are dropped for now (later: sync play counts).
-- [ ] Verified on the phone (Airplane mode + Tailscale off).
+- [x] Verified on the phone (the user moved on to Phase 5, 2026-10-01).
 
 ## Exit test
 In Airplane mode, downloaded albums play with lyrics.

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
 
+import { tick } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 import { artistLine } from '@/lib/items';
 import {
@@ -162,7 +162,7 @@ export function ContextMenuPanel() {
             <Pressable
               key={a.label}
               onPress={() => {
-                void Haptics.selectionAsync().catch(() => {});
+                tick();
                 if (a.label !== 'Add to playlist' && !a.label.startsWith('Go to')) close();
                 if (a.afterClose) setTimeout(() => void a.run(), CLOSE_MS + 150);
                 else void a.run();

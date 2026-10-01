@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "license": "AGPL-3.0-only",
   "dependencies": {
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/figtree": "^0.4.1",
     "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~57.0.21",
     "@expo/vector-icons": "^15.0.2",
     "@shopify/react-native-skia": "2.6.2",
