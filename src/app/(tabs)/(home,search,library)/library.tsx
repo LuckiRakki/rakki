@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import type { ReactElement } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { useState, type ReactElement } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -136,10 +136,30 @@ interface ListProps {
   layout: LibraryLayout;
 }
 
+/**
+ * Pull to refresh, like Home: with Random it reshuffles, otherwise it reloads from the server.
+ * `loadingNew` keeps the spinner up while a new shuffle loads (the old list stays meanwhile).
+ */
+function usePullToRefresh(sort: SortOption, refetch?: () => Promise<unknown>, loadingNew = false) {
+  const t = useTheme();
+  const [pulling, setPulling] = useState(false);
+  const onRefresh = async () => {
+    setPulling(true);
+    try {
+      if (sort.key === 'random') useLibraryView.getState().reshuffle();
+      else await refetch?.();
+    } finally {
+      setPulling(false);
+    }
+  };
+  return <RefreshControl refreshing={pulling || loadingNew} onRefresh={() => void onRefresh()} tintColor={t.colors.text} />;
+}
+
 function Albums({ header, sort, layout }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const albums = useAlbums(sort.sortBy, sort.sortOrder, seed);
+  const refresh = usePullToRefresh(sort, albums.refetch, albums.isPlaceholderData);
   const items = albums.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize();
@@ -153,6 +173,7 @@ function Albums({ header, sort, layout }: ListProps) {
       numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
+      refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={albums.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
       ListFooterComponent={albums.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
@@ -169,6 +190,7 @@ function Artists({ header, sort, layout }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const artists = useAlbumArtists(sort.sortBy, sort.sortOrder, seed);
+  const refresh = usePullToRefresh(sort, artists.refetch, artists.isPlaceholderData);
   const items = artists.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize(1);
@@ -180,6 +202,7 @@ function Artists({ header, sort, layout }: ListProps) {
       numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
+      refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={artists.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
       ListFooterComponent={artists.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
@@ -199,6 +222,7 @@ function Playlists({ header, sort, layout }: ListProps) {
   const offline = useOffline();
   const playlists = usePlaylists();
   const liked = useLikedSongs();
+  const refresh = usePullToRefresh(sort, playlists.refetch);
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize();
   const likedLine = `Playlist${liked.data ? ` · ${songCount(liked.data.length)}` : ''}`;
@@ -224,6 +248,7 @@ function Playlists({ header, sort, layout }: ListProps) {
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
         contentContainerStyle={{ paddingBottom: t.space.xl, gap: t.space.xl }}
+        refreshControl={refresh}
         ListHeaderComponent={header}
         renderItem={({ item }) =>
           item.Id === LIKED.Id ? (
@@ -250,6 +275,7 @@ function Playlists({ header, sort, layout }: ListProps) {
       data={data}
       keyExtractor={(p) => p.Id}
       contentContainerStyle={{ paddingBottom: t.space.xl }}
+      refreshControl={refresh}
       ListHeaderComponent={header}
       ListFooterComponent={
         offline ? null : (
@@ -332,6 +358,7 @@ function DownloadedTile({ c, size, onPress }: { c: DownloadedCollection; size: n
 function Downloaded({ header, sort, layout }: ListProps) {
   const t = useTheme();
   const collections = useDownloads((s) => s.collections);
+  const refresh = usePullToRefresh(sort);
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize();
 
@@ -377,6 +404,7 @@ function Downloaded({ header, sort, layout }: ListProps) {
       numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
+      refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
       renderItem={({ item }) =>
@@ -391,6 +419,7 @@ function Songs({ header, sort }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const tracks = useTracks(sort.sortBy, sort.sortOrder, seed);
+  const refresh = usePullToRefresh(sort, tracks.refetch, tracks.isPlaceholderData);
   const items = tracks.data?.pages.flatMap((p) => p.Items) ?? [];
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
@@ -400,6 +429,7 @@ function Songs({ header, sort }: ListProps) {
       data={items}
       keyExtractor={(x) => x.Id}
       contentContainerStyle={{ paddingBottom: t.space.xl }}
+      refreshControl={refresh}
       ListHeaderComponent={
         <View>
           {header}

@@ -1,4 +1,4 @@
-import { QueryClient, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, QueryClient, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import type { BaseItem, ItemsResult, JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
@@ -83,6 +83,8 @@ function usePagedQuery(
   return useInfiniteQuery({
     queryKey: [key[0], client?.session.userId, ...key.slice(1), mode],
     enabled: !!client,
+    // A new shuffle (or sort) keeps showing the old list until the new one arrives.
+    placeholderData: keepPreviousData,
     initialPageParam: 0,
     networkMode: isOffline ? 'always' : 'online',
     queryFn: ({ pageParam }): Promise<ItemsResult> => {

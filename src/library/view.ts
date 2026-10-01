@@ -87,6 +87,8 @@ interface LibraryView extends Saved {
   shuffleSeed: number;
   setTab(tab: LibraryTab): void;
   setSort(tab: LibraryTab, key: string): void;
+  /** A new random order (pull to refresh with Random). */
+  reshuffle(): void;
   toggleLayout(tab: LibraryTab): void;
 }
 
@@ -104,6 +106,7 @@ export const useLibraryView = create<LibraryView>((set, get) => {
       set({ sort: { ...get().sort, [tab]: key }, shuffleSeed: key === 'random' ? get().shuffleSeed + 1 : get().shuffleSeed });
       persist();
     },
+    reshuffle: () => set({ shuffleSeed: get().shuffleSeed + 1 }),
     toggleLayout: (tab) => {
       const current = get().layout[tab] ?? DEFAULT_LAYOUT[tab];
       set({ layout: { ...get().layout, [tab]: current === 'grid' ? 'list' : 'grid' } });

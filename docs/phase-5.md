@@ -100,6 +100,8 @@ playing album, drawn by the real renderers.
 - [x] Random sort on Albums, Songs, Artists, Playlists, Downloaded. Server lists fetch one random
   batch of 200 (Jellyfin reshuffles every request, so paging would repeat); picking Random
   again reshuffles (`shuffleSeed`); client lists use `seededShuffle`.
+- [x] Pull to refresh on every Library list: reshuffles with Random (old list stays until the new
+  one arrives: `placeholderData: keepPreviousData`), otherwise reloads from the server.
 - [x] Home: round shuffle button by the greeting → queue of 200 random songs ("Shuffled
   library"); offline, the downloaded songs shuffled.
 
