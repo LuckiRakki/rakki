@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 0.12.1 (2026-10-02)
+- **Japanese, Chinese, Korean (and other scripts) in Spicy lyrics.** Spicy mode draws with the
+  lyrics font only, which has no Japanese, so songs like "The Cruel Angel's Thesis" showed empty
+  boxes. Characters the font lacks now use an iOS system font that has them (Hiragino Sans,
+  PingFang, Apple SD Gothic Neo, Thonburi…), mixed freely with the lyrics font in one line.
+  Chinese and Japanese lines also wrap between characters now (they have no spaces), instead
+  of running off the screen. Regular mode was never affected.
+
 ## 0.12.0 (2026-10-01)
 - **Edit a station.** Long-press a station (Home or Library → Radio): *Edit station*, *Open
   website*, *Remove station*. Edit sets its name, your own picture for it (from Photos, cropped

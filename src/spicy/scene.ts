@@ -21,6 +21,7 @@ import {
 } from '@shopify/react-native-skia';
 
 import type { LyricLine, Lyrics, WordCue } from '@/lyrics/types';
+import { shapeText, type TextRun } from '@/spicy/fallback';
 import { SPICY_DEFAULTS, type SpicySettings } from '@/spicy/settings';
 import { Spline } from '@/spicy/Spline';
 import { Spring } from '@/spicy/Spring';
@@ -83,7 +84,9 @@ const BG_SUNG = 0.6;
 const BG_UNSUNG = 0.3;
 const OPACITY = { notsung: 0.51, sung: 0.497, active: 1 } as const;
 
-const RTL = /[֐-ࣿיִ-﷿ﹰ-﻿]/;
+/** Chinese and Japanese: no spaces between words, so a line may wrap between any characters. */
+const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303f\uff00-\uffef]/u;
+const RTL = /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufeff]/;
 
 type Phase = 'notsung' | 'active' | 'sung';
 const phaseAt = (ms: number, start: number, end: number): Phase =>
@@ -120,12 +123,15 @@ interface Mover {
 
 interface Letter extends Mover {
   text: string;
+  runs: TextRun[];
   x: number; // relative to the word's x
   w: number;
 }
 
 interface Word extends Mover {
   text: string;
+  /** The text by font (see fallback.ts): usually one run in the lyrics font. */
+  runs: TextRun[];
   x: number; // relative to the row's left edge
   w: number;
   line: number; // visual line within the row
@@ -137,6 +143,7 @@ type RowKind = 'lead' | 'bg' | 'plain' | 'credits' | 'unsynced';
 
 interface VisualLine {
   text: string; // plain rows only
+  runs: TextRun[];
   x: number;
   w: number;
 }
@@ -379,12 +386,12 @@ export class SpicyScene {
   }
 
   private measure(font: SkFont, text: string): number {
-    if (!text) return 0;
-    const ids = font.getGlyphIDs(text);
-    const widths = font.getGlyphWidths(ids);
-    let w = 0;
-    for (const x of widths) w += x;
-    return w;
+    return shapeText(font, text).w;
+  }
+
+  /** Draw text in its runs (characters the lyrics font lacks use a system font). */
+  private drawRuns(canvas: SkCanvas, runs: TextRun[], x: number, y: number, paint: SkPaint) {
+    for (const r of runs) canvas.drawText(r.text, x + r.dx, y, paint, r.font);
   }
 
   /** A synced line with word timings: words laid out and wrapped like the CSS flexbox. */
@@ -424,10 +431,12 @@ export class SpicyScene {
       const dur = cue.endMs - cue.startMs;
       const spelled = s.spellingEnabled && dur >= s.spellMinMs && !RTL.test(text);
       const endMs = spelled ? cue.endMs - Math.min(LETTER_TAIL_MS, dur / 2) : cue.endMs;
-      const w = this.measure(font, text);
+      const shaped = shapeText(font, text);
+      const w = shaped.w;
       const word: Word = {
         ...mover(cue.startMs, endMs, WORD_SCALE.at(0), WORD_LIFT.at(0)),
         text,
+        runs: shaped.runs,
         x: 0,
         w,
         line: 0,
@@ -439,9 +448,16 @@ export class SpicyScene {
         const span = (endMs - cue.startMs) / glyphs.length;
         let lx = 0;
         word.letters = glyphs.map((g, k) => {
-          const lw = this.measure(font, g);
+          const shapedLetter = shapeText(font, g);
+          const lw = shapedLetter.w;
           const ls = cue.startMs + k * span;
-          const letter: Letter = { ...mover(ls, ls + span, LETTER_SCALE.at(0), LETTER_LIFT.at(0)), text: g, x: lx, w: lw };
+          const letter: Letter = {
+            ...mover(ls, ls + span, LETTER_SCALE.at(0), LETTER_LIFT.at(0)),
+            text: g,
+            runs: shapedLetter.runs,
+            x: lx,
+            w: lw,
+          };
           lx += lw;
           return letter;
         });
@@ -453,6 +469,10 @@ export class SpicyScene {
       unit.w += w;
       if (!joins) {
         unit.gapAfter = next ? gapW : 0;
+        units.push(unit);
+        unit = null;
+      } else if (CJK.test(text) || CJK.test(next.text)) {
+        // Joined Chinese/Japanese syllables: no gap, but the line may wrap between them.
         units.push(unit);
         unit = null;
       }
@@ -495,16 +515,16 @@ export class SpicyScene {
     const row = this.baseRow(kind, group, right, font, seekMs, top);
     const maxW = kind === 'unsynced' ? this.width - this.pad * 2 : this.rowWidth();
     const space = this.measure(font, ' ');
-    const out: VisualLine[] = [];
+    const out: { text: string; w: number }[] = [];
     let cur = '';
     let curW = 0;
-    for (const word of text.split(/\s+/).filter(Boolean)) {
+    for (const word of text.split(/\s+/).filter(Boolean).flatMap((x) => this.breakLong(font, x, maxW))) {
       const w = this.measure(font, word);
       if (!cur) {
         cur = word;
         curW = w;
       } else if (curW + space + w > maxW) {
-        out.push({ text: cur, x: 0, w: curW });
+        out.push({ text: cur, w: curW });
         cur = word;
         curW = w;
       } else {
@@ -512,11 +532,30 @@ export class SpicyScene {
         curW += space + w;
       }
     }
-    if (cur || !out.length) out.push({ text: cur, x: 0, w: curW });
-    for (const l of out) l.x = this.lineX(right, l.w);
-    row.lines = out;
+    if (cur || !out.length) out.push({ text: cur, w: curW });
+    row.lines = out.map((l) => {
+      const shaped = shapeText(font, l.text);
+      return { text: l.text, runs: shaped.runs, w: shaped.w, x: this.lineX(right, shaped.w) };
+    });
     row.height = out.length * row.lineHeight;
     return row;
+  }
+
+  /** A word wider than the line (Chinese/Japanese lines have no spaces) in pieces that fit. */
+  private breakLong(font: SkFont, word: string, maxW: number): string[] {
+    if (this.measure(font, word) <= maxW) return [word];
+    const pieces: string[] = [];
+    let cur = '';
+    for (const ch of Array.from(word)) {
+      if (cur && this.measure(font, cur + ch) > maxW) {
+        pieces.push(cur);
+        cur = ch;
+      } else {
+        cur += ch;
+      }
+    }
+    if (cur) pieces.push(cur);
+    return pieces;
   }
 
   // ── Per frame ───────────────────────────────────────────────────────────────────
@@ -946,27 +985,27 @@ export class SpicyScene {
         if (ga > 0.004) {
           this.setWhite(this.glowPaint, ga * op);
           this.glowPaint.setMaskFilter(this.maskFor(4 + 2 * g));
-          canvas.drawText(w.text, w.x, baseY, this.glowPaint, font);
+          this.drawRuns(canvas, w.runs, w.x, baseY, this.glowPaint);
         }
         if (s.lineGlowEnabled && s.lineGlowAmount > 0) {
           this.setWhite(this.glowPaint, 0.6 * s.lineGlowAmount * op);
           this.glowPaint.setMaskFilter(this.maskFor(row.size * 0.1));
-          canvas.drawText(w.text, w.x, baseY, this.glowPaint, font);
+          this.drawRuns(canvas, w.runs, w.x, baseY, this.glowPaint);
         }
         this.sweepPaint(w.x, w.w, w.gp, sungA * op, unsungA * op);
         this.paint.setMaskFilter(null);
-        canvas.drawText(w.text, w.x, baseY, this.paint, font);
+        this.drawRuns(canvas, w.runs, w.x, baseY, this.paint);
       } else {
         // Unlit: flat glyphs, blurred by distance (the web mod's text-shadow trick).
         const a = (row.phase === 'sung' ? sungA : unsungA) * op;
         if (row.near && s.lineGlowEnabled && s.lineGlowAmount > 0 && !mf) {
           this.setWhite(this.glowPaint, 0.6 * s.lineGlowAmount * op);
           this.glowPaint.setMaskFilter(this.maskFor(row.size * 0.1));
-          canvas.drawText(w.text, w.x, baseY, this.glowPaint, font);
+          this.drawRuns(canvas, w.runs, w.x, baseY, this.glowPaint);
         }
         this.setWhite(this.paint, a);
         this.paint.setMaskFilter(mf);
-        canvas.drawText(w.text, w.x, baseY, this.paint, font);
+        this.drawRuns(canvas, w.runs, w.x, baseY, this.paint);
       }
       canvas.restore();
     }
@@ -990,11 +1029,11 @@ export class SpicyScene {
       if (ga > 0.004) {
         this.setWhite(this.glowPaint, ga * op);
         this.glowPaint.setMaskFilter(this.maskFor(4 + 12 * g));
-        canvas.drawText(L.text, x, baseY, this.glowPaint, row.font);
+        this.drawRuns(canvas, L.runs, x, baseY, this.glowPaint);
       }
       this.sweepPaint(x, L.w, L.rest === 'sung' && !L.live ? 100 : L.gp, sungA * op, unsungA * op);
       this.paint.setMaskFilter(null);
-      canvas.drawText(L.text, x, baseY, this.paint, row.font);
+      this.drawRuns(canvas, L.runs, x, baseY, this.paint);
       canvas.restore();
     }
   }
@@ -1029,7 +1068,7 @@ export class SpicyScene {
     if (ga > 0.004) {
       this.setWhite(this.glowPaint, ga * op);
       this.glowPaint.setMaskFilter(this.maskFor(4 + 8 * g));
-      row.lines.forEach((l, i) => canvas.drawText(l.text, l.x, top + i * row.lineHeight + row.baseline, this.glowPaint, row.font));
+      row.lines.forEach((l, i) => this.drawRuns(canvas, l.runs, l.x, top + i * row.lineHeight + row.baseline, this.glowPaint));
     }
     // Top→bottom sweep across the whole (possibly wrapped) line.
     const from = top + (row.height * row.gp) / 100;
@@ -1046,14 +1085,14 @@ export class SpicyScene {
         TileMode.Clamp,
       ),
     );
-    row.lines.forEach((l, i) => canvas.drawText(l.text, l.x, top + i * row.lineHeight + row.baseline, this.paint, row.font));
+    row.lines.forEach((l, i) => this.drawRuns(canvas, l.runs, l.x, top + i * row.lineHeight + row.baseline, this.paint));
     this.paint.setShader(null);
   }
 
   private drawPlainText(canvas: SkCanvas, row: Row, top: number, alpha: number, blur: number) {
     this.setWhite(this.paint, alpha);
     this.paint.setMaskFilter(this.maskFor(blur));
-    row.lines.forEach((l, i) => canvas.drawText(l.text, l.x, top + i * row.lineHeight + row.baseline, this.paint, row.font));
+    row.lines.forEach((l, i) => this.drawRuns(canvas, l.runs, l.x, top + i * row.lineHeight + row.baseline, this.paint));
     this.paint.setMaskFilter(null);
   }
 
