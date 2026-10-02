@@ -118,3 +118,6 @@ jobs:
             gh release create ios-latest --title "Rakki for iPhone (latest build)" --notes "$NOTES" --prerelease
           fi
           gh release upload ios-latest "$IPA_NAME.ipa" --clobber
+          # The title follows the app's version (the notes are written by hand per release).
+          VERSION=$(node -p "require('./app.json').expo.version")
+          gh release edit ios-latest --title "Rakki $VERSION"
