@@ -1,3 +1,19 @@
+# Rakki: project notes for coding agents
+
+Read these first; they override the generic Expo guidance below where they differ.
+
+- **Docs:** the plan and decisions are in `docs/FRAMEWORK.md`, what changed per version in
+  `docs/CHANGELOG.md` (add an entry with every version bump; the a.b.c scheme is FRAMEWORK §10).
+- **Builds don't use `eas build`.** iOS builds run on GitHub Actions (`.github/workflows/ios.yml`,
+  variants `release` / `dev` / `check`), unsigned, and are installed with SideStore. JS changes
+  ship as over-the-air updates: every push to `main` runs `update.yml` (`eas update`).
+- **Native code** (`modules/rakki-audio`, native packages, app.json plugins) only reaches the
+  phone with a new build; bump `runtimeVersion` in app.json when it changes.
+- Native modules are guarded (`requireOptionalNativeModule`) so updates still run on older builds.
+- Run `npm run typecheck` and `npm run lint` before declaring a task done.
+
+---
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data

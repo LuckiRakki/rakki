@@ -1,5 +1,7 @@
 # Phase 5: Parity and polish
 
+> **Status: done** (2026-10-01). Kept as the record of what was built.
+
 Goal (FRAMEWORK.md §7): the in-depth customizer, plus the Finamp/Feishin features still
 missing, and a feel pass. Everything here is JavaScript (fonts are assets), so it ships over
 the air. Native-only items wait for the one final build (the user's call, 2026-10-01).

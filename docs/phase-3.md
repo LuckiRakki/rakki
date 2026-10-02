@@ -1,5 +1,7 @@
 # Phase 3: Browse and library UX
 
+> **Status: done**, signed off 2026-10-01. Kept as the record of what was built.
+
 Goal (FRAMEWORK.md §7): find and play anything in the 6.8k-track library in three taps or
 fewer, and it feels like Spotify. Everything here is JavaScript, so it ships as
 over-the-air updates. No new native build is needed.

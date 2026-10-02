@@ -1,8 +1,10 @@
 # Rakki — Project Framework
 
 > Named **Rakki** (2026-09-29). Bundle ID `com.luckirakki.rakki`: never change it, or iOS treats it as a new app.
-> Status: **v1 draft, 2026-09-29.** All §10 decisions are made.
-> Nothing is built yet.
+> Written 2026-09-29 as the plan, kept up to date as it was built.
+> **Status 2026-10-02: version 1.0.0.** Phases 0–6 are done; the 1.0.0 native build is out
+> (see [CHANGELOG.md](CHANGELOG.md)). Where the build differs from the original plan, the
+> sections below say what was actually done.
 
 ## 0. What we're building
 
@@ -65,25 +67,26 @@ Every screen, animation, gesture and lyrics tweak is plain TypeScript and **show
   - a synchronous `getProgress()` for the lyrics
 - On web and in Expo Go, an `expo-audio` fallback engine sits behind the same interface (`src/player/engine.ts`).
 
-### Packages (✅ = works in Expo Go, stage A)
+### Packages (as built, 1.0.0)
 
 | Concern | Package |
 |---|---|
-| App shell, routing, tabs | `expo`, `expo-router` ✅ (native tabs plus a stack per tab, like Spotify) |
-| Server data and caching | `@tanstack/react-query` ✅ (same as Feishin) |
-| Client state (player, UI) | `zustand` ✅ (same as Feishin) |
-| HTTP | `axios` ✅, with the Jellyfin client and normalisers ported from Feishin |
-| Local DB | `expo-sqlite` ✅ + `drizzle-orm` (cache, downloads index, persisted queue); `expo-sqlite/kv-store` for settings |
-| Secrets | `expo-secure-store` ✅ (token in the Keychain) |
-| Audio (stage A) | `expo-audio` ✅ (foreground only; enough to prototype) |
-| Audio (stage B+) | `modules/rakki-audio`: our Swift engine (AVQueuePlayer treadmill, remote commands, now playing, AirPlay) |
-| Downloads | `expo-file-system` ✅ (foreground) → `@kesha-antonov/react-native-background-downloader` (iOS background URLSession, stage B) |
-| Lists | `@shopify/flash-list` ✅ (6.8k-track library) |
-| Animation / gestures | `react-native-reanimated` ✅, `react-native-gesture-handler` ✅ |
-| Lyrics rendering | `@shopify/react-native-skia` ✅ (GPU canvas: gradient sweep shader, blur glow) |
-| Images | `expo-image` ✅ (disk cache, **native blurhash placeholders**) |
-| Look | `expo-blur` ✅, `expo-linear-gradient` ✅, `expo-haptics` ✅, `@expo-google-fonts/inter` ✅ |
-| Dev client | `expo-dev-client` (stage B) |
+| App shell, routing, tabs | `expo` (SDK 57), `expo-router` (a stack per tab, like Spotify) |
+| Server data and caching | `@tanstack/react-query` (same as Feishin) |
+| Client state (player, UI, settings) | `zustand`, persisted with `expo-sqlite/kv-store` |
+| HTTP | `fetch` with our own Jellyfin client (`src/api/jellyfin.ts`); no axios |
+| Secrets | `expo-secure-store` (tokens in the Keychain, several accounts) |
+| Audio | `modules/rakki-audio`, our Swift engine (AVQueuePlayer treadmill, remote commands, now playing, AirPlay picker, audio-tap levels); `expo-audio` as the fallback on web |
+| Downloads | `expo-file-system` (background `DownloadTask`s) |
+| Lists | React Native `FlatList`; `react-native-reorderable-list` for drag-to-reorder |
+| Animation / gestures | `react-native-reanimated`, `react-native-gesture-handler` |
+| Lyrics rendering | `@shopify/react-native-skia` (sweep shader, blur glow, font fallback runs) |
+| Images | `expo-image` (disk cache, blurhash placeholders) |
+| Look | `expo-blur`, `expo-linear-gradient`, `expo-haptics`, Inter / DM Sans / Figtree / Plus Jakarta Sans |
+| Video | `expo-video` (in-app music videos, from 1.0.0) |
+| Widgets, icons, photos | `expo-widgets` (patched for SideStore's app groups), `expo-alternate-app-icons`, `expo-image-picker` |
+| Updates | `expo-updates` (EAS Update, channel `production`) |
+| Dev client | `expo-dev-client` (the Rakki Dev app) |
 
 **Art colours for free:** Jellyfin sends `ImageBlurHashes` for every image. A blurhash encodes a small grid of colours, so we pick the most vivid one for gradients and the mini-player tint. This needs **no image decode**.
 
@@ -94,22 +97,31 @@ Every screen, animation, gesture and lyrics tweak is plain TypeScript and **show
 ```
  Windows PC                              GitHub (public repo)                    iPhone 13
  ──────────                              ────────────────────                    ─────────
- npx expo start  ── live code over ──────────────────────────────────────────▶  Expo Go (A)
-   (Tailscale IP)   Wi-Fi / Tailscale                                            Rakki-dev (B)
-                                         Actions: macos runner
- git push  ────────────────────────────▶ expo prebuild → pod install →
-                                         xcodebuild (unsigned) → Payload.zip
-                                         → .ipa artifact / Release ──────────▶  SideStore installs
+ npm run phone -- --dev-client ── live code over Tailscale ─────────────────▶  Rakki Dev
+ git push main ────────────────────────▶ check.yml: typecheck + lint
+                                         update.yml: EAS Update ──────────────▶ Rakki downloads
+                                                                                 it on next launch
+ Actions → iOS build (by hand) ────────▶ ios.yml: expo prebuild → pod install →
+                                         xcodebuild (unsigned, ad-hoc signed
+                                         entitlements) → Rakki.ipa ───────────▶ SideStore installs
                                                                                  + re-signs weekly
- npx expo run:android  → APK for the head unit (built locally, no cloud)
 ```
 
-- **Daily:** run `npx expo start` on the PC, with `REACT_NATIVE_PACKAGER_HOSTNAME` = the PC's Tailscale IP. The phone reaches it anywhere Tailscale is on (which it already needs to be for Jellyfin), not just on home Wi-Fi.
-- **Workflows:**
-  - `.github/workflows/ios-dev.yml`: manual trigger, builds the dev client (stage B) `.ipa`.
-  - `.github/workflows/ios-release.yml`: runs on a tag, builds the release (stage C) `.ipa` and attaches it to a GitHub Release.
-  - `.github/workflows/check.yml`: every push, on `ubuntu` (free and fast); runs `tsc`, `eslint` and `jest`, including the Spicy golden traces.
-- **Repo: public** (decided). Public repos get **unlimited free** macOS minutes. Safe because the login screen keeps the server address and credentials out of the code, and the Spicy API key lives on the server.
+- **Everyday changes ship over the air.** Every push to `main` that touches app code runs
+  `update.yml`: typecheck and lint, then `eas update` to the `production` channel. The app
+  checks on launch (and from Settings → About). Each update carries its number and commit
+  (`RAKKI_UPDATE` / `RAKKI_COMMIT`, shown in Settings → About).
+- **Native changes need a build.** `ios.yml` runs by hand with a variant:
+  - `release`: the everyday app, published as the `ios-latest` GitHub Release (`Rakki.ipa`).
+  - `dev`: "Rakki Dev" (its own bundle id), which loads the code live from the PC.
+  - `check`: the release build without publishing it, to prove native changes compile.
+- **Runtime versions:** an update only reaches builds with the same `runtimeVersion`
+  (app.json). It names the native build and changes only with one: `0.2.0` (2026-10-01),
+  `1.0.0` (2026-10-02). `expo.version` is Rakki's own a.b.c version (§10, decision 6).
+- **Repo: public** (decided). Public repos get **unlimited free** macOS minutes. Safe because
+  the login screen keeps the server address and credentials out of the code.
+- Publishing from the PC (`eas update`) times out on its slow upload, which is why it runs on
+  GitHub. It needs the `EXPO_TOKEN` repository secret (a personal token).
 
 ### College Macs (Xcode): the hands-on tool, not the main pipeline
 
@@ -151,9 +163,9 @@ Shared-machine hygiene:
 └───────┬───────────────┬────────┘     └──────┬──────────────────┬────────┘
         │               │                     │                  │ position
 ┌───────▼──────┐ ┌──────▼──────────┐ ┌────────▼───────┐ ┌────────▼────────┐
-│ axios → HTTP │ │ SQLite (drizzle)│ │ src/downloads  │ │ src/spicy       │
-│              │ │ cache, dl index,│ │ bg URLSession, │ │ engine (TS from │
-│              │ │ queue, settings │ │ files on disk  │ │ web mod) + Skia │
+│ fetch → HTTP │ │ kv-store        │ │ src/downloads  │ │ src/spicy       │
+│              │ │ settings, queue,│ │ bg URLSession, │ │ engine (TS from │
+│              │ │ dl index, search│ │ files on disk  │ │ web mod) + Skia │
 └──────┬───────┘ └─────────────────┘ └────────────────┘ │ renderer        │
        │                                                └─────────────────┘
   Jellyfin 10.11 + Spicy Lyrics plugin
@@ -162,26 +174,28 @@ Shared-machine hygiene:
 ### Folder layout
 
 ```
-app/                    expo-router
-  _layout.tsx           providers, mini-player overlay, auth gate
-  login.tsx
-  (tabs)/_layout.tsx    Home / Search / Library
-  (tabs)/home/…  (tabs)/search/…  (tabs)/library/…
-  album/[id].tsx  artist/[id].tsx  playlist/[id].tsx  genre/[id].tsx
-  player.tsx  queue.tsx  lyrics.tsx  settings/…
-src/
-  api/jellyfin/         client.ts, endpoints/*.ts, types.ts, normalize.ts (ported from Feishin)
-  server/               MusicServer interface → JellyfinServer (room for Navidrome later)
-  db/                   drizzle schema, migrations
-  player/               engine.ts (native/fallback), store.ts (queue), reporting.ts, useProgress.ts
-modules/rakki-audio/    Swift engine (ios/RakkiPlayer.swift, RakkiAudioModule.swift) + index.ts
-  downloads/
-  spicy/
-    engine/             Spring.ts, Spline.ts, curves.ts, timeline.ts, ttml.ts  ← from the web mod
-    render/             LyricsCanvas.tsx (Skia), worklets, Backdrop.tsx
-  ui/                   tokens.ts, components (Tile, TrackRow, Header, ContextSheet, Chip)
-  stores/               zustand stores
-__tests__/spicy/        golden traces (same fixtures as the web mod)
+src/app/                 Expo Router screens
+  (tabs)/(home,search,library)/   Home, Search, Library and the pages shared by all three tabs:
+                                  album/[id], artist/[id], playlist/[id], genre/[name],
+                                  releases/[id], liked
+  player, queue, lyrics, video, settings, customize, lyrics-style, downloads,
+  login, add-account, add-station, edit-station, library-tabs     (modal screens)
+src/api/                 Jellyfin client, React Query hooks
+src/auth/                accounts (Keychain), sign-in, profile picture
+src/player/              engine.ts (native / fallback), store.ts (queue), reporting, sleep timer,
+                         offline listens, MiniPlayer
+src/lyrics/              loading (TTML / LRC / plain → one model), Regular mode, LyricsStage
+src/spicy/               the Spicy renderer: Spring, Spline, scene.ts (Skia), font fallback
+src/library/             Library tabs, sorting, actions (play, shuffle, radio, playlists)
+src/search/              on-device fuzzy index + server search
+src/downloads/           download manager, files on disk, offline data
+src/radio/               stations, SUB/WAVE API, live now-playing, radio lyrics timing
+src/video/               music video matching and the in-app player
+src/widgets/             widget layouts and the data the app shares with them
+src/appearance/          the customizer store, presets, fonts, Lucid accent
+src/settings/  src/ui/  src/lib/      settings store, shared components, helpers
+modules/rakki-audio/     Swift: RakkiPlayer (engine), RakkiLevels (visualizer tap), module
+patches/                 patch-package (expo-widgets app-group fix for SideStore)
 ```
 
 ### Key technical designs
@@ -190,8 +204,8 @@ __tests__/spicy/        golden traces (same fixtures as the web mod)
 - **Streaming:** `/Audio/{id}/universal` with a container list iOS plays natively (AAC/ALAC/MP3/FLAC) and a transcode fallback. Separate max bitrate for Wi-Fi and cellular.
 - **Playback reporting:** `/Sessions/Playing`, `…/Progress`, `…/Stopped`. This updates play counts and Last.fm (through the server) and feeds "Recently played".
 - **Normalization:** `NormalizationGain` (LUFS, Jellyfin 10.9+), falling back to the ReplayGain tag, applied as per-track volume (attenuate only).
-- **Queue persistence:** save the queue, index and position to SQLite, and restore on launch.
-- **Offline:** the downloads index is in SQLite. The player uses a local file before a stream. Offline mode hides anything that isn't downloaded.
+- **Queue persistence:** the queue, index and position are saved (kv-store, per user) and restored on launch.
+- **Offline:** the downloads index is in kv-store; songs are real files under Documents/Music. The player uses a local file before a stream. Offline mode shows only what's downloaded.
 - **Images:** `/Items/{id}/Images/Primary?maxWidth=…&tag=…` through `expo-image`, with the blurhash placeholder shown first.
 
 ### Two lyric systems: **Spicy** (the focus, default) and **Regular**
@@ -223,9 +237,9 @@ The user wants both, with the effort going into Spicy. Both share one data layer
   - Each word gets 3 springs (scale, lift, glow) chasing spline targets.
   - Held words (1000 ms or longer) split into letters with a `1/(1+d^2.8)` falloff.
   - Lines are lit only inside their own `[start, end)`, and inactive lines blur by `1.25px × distance`.
-  - Mark the hot functions as Reanimated **worklets**, so they run on the UI thread at 60 fps with no JS-thread jank.
+  - Planned as UI-thread worklets; **as built** the scene ticks on the JS thread with `requestAnimationFrame` and records an `SkPicture` per frame, which holds 60 fps on the iPhone 13 (confirmed on device, 2026-09-30).
 - **Rendering (Skia canvas):**
-  - Word layout (Skia Paragraph) is computed once per line.
+  - Word layout is computed once per song and size (`SkFont` measurement; characters the font lacks are drawn with iOS system fonts, see `src/spicy/fallback.ts`).
   - Each frame only updates transforms, the gradient-sweep shader position and the blur-mask glow. No React re-renders per frame.
   - Only the `[active-2 … active+1]` line window ticks.
   - Letters are split only for held words. (These are the perf lessons from the head unit.)
@@ -304,46 +318,46 @@ The user wants to choose colours, sizes and similar details themselves. So every
 
 ## 6. Feature matrix (Finamp ∪ Feishin, iOS-applicable)
 
-`F` = Finamp, `Fs` = Feishin. Phase numbers refer to §7.
+`F` = Finamp, `Fs` = Feishin. Phase numbers refer to §7. Status as of 1.0.0.
 
-| Feature | From | Phase |
-|---|---|---|
-| Login: server URL (http ok), password, Quick Connect, multiple servers/users | F, Fs | 0 / 5 |
-| Browse albums / artists / songs / genres / playlists, sort and filter | F, Fs | 0 / 3 |
-| Stream with transcoding choice (Wi-Fi vs cellular bitrate) | F | 1 |
-| Background audio, lock screen, Control Center, AirPlay | F | 1 |
-| Queue: play next, add, reorder, remove, clear, shuffle, repeat | F, Fs | 1 |
-| Playback reporting (play counts, Last.fm through the server) | F, Fs | 1 |
-| Mini-player and full player | F, Fs | 1 |
-| Gapless (native AVQueuePlayer treadmill; verify on device) | F | 1 |
-| **Spicy Lyrics mode**, the focus (word, bg vocals, duets, letters, dots, attribution) | ours | 2 |
-| **Regular lyrics mode** (line-by-line, Spotify-style) + Spicy ⇄ Regular toggle | F, Fs | 2 |
-| Shared lyrics data layer (TTML + LRC + plain, one model) | ours | 2 |
-| Home carousels | Fs | 3 |
-| Search with filters and genre tiles | F, Fs | 3 |
-| Album / artist / playlist pages (popular, discography, similar) | Fs | 3 |
-| Favorites everywhere | F, Fs | 3 |
-| Playlist create / edit / reorder / delete | F, Fs | 3 |
-| **Spotify-style "Add to playlist" sheet** that clearly shows which playlists already contain the song (user: "very important"), plus New playlist | ours | 3 |
-| Context sheets (long-press) | F, Fs | 3 |
-| Art-colour theming (from blurhash) and placeholders | F, Fs | 3 |
-| Downloads: album/playlist/artist, transcoded downloads, storage manager | F | 4 |
-| Offline mode | F | 4 |
-| Queue restore on launch | F | 5 |
-| Instant mix / artist radio / auto-continue when the queue ends | F, Fs | 5 |
-| Normalization (NormalizationGain / ReplayGain) | F | 5 |
-| Sleep timer | F | 5 |
-| Credits / "Written by" / about the artist | Fs | 5 |
-| Theme plumbing: every colour/size/font from a persisted `useTheme()` store | ours | 1 |
-| Lyrics customizer (Spicy knobs + Regular options) | ours | 2 |
-| **In-depth customizer** screen: colours, type, shape/density, Home layout, player, presets, import/export | ours | 5 |
-| Lyrics screen truly full-screen (no sheet gap at the top) with header/footer fades | ours | 5 |
-| **Widgets:** home screen (jump back in / resume) and lock screen (open Rakki, last played), Live Activity | new | 6 |
-| iPad / landscape | F | 6 |
-| Android head-unit build | ours | 6 |
-| CarPlay (**needs the $99 account**) | F | 6 |
-| Navidrome/Subsonic support | Fs | 6 (optional) |
-| *Not applicable on iOS:* MPV backend, desktop mini-window. (Discord RPC can't run on iOS directly; see the ideas backlog for a bridge.) | Fs | — |
+| Feature | From | Phase | Status |
+|---|---|---|---|
+| Login: server URL (http ok), password, Quick Connect, multiple servers/users | F, Fs | 0 / 5 | ✅ |
+| Browse albums / artists / songs / genres / playlists, sort and filter | F, Fs | 0 / 3 | ✅ |
+| Stream with transcoding choice (Wi-Fi vs cellular bitrate) | F | 1 | ✅ |
+| Background audio, lock screen, Control Center, AirPlay | F | 1 | ✅ |
+| Queue: play next, add, reorder, remove, clear, shuffle, repeat | F, Fs | 1 | ✅ |
+| Playback reporting (play counts, Last.fm through the server) | F, Fs | 1 | ✅ |
+| Mini-player and full player | F, Fs | 1 | ✅ |
+| Gapless (native AVQueuePlayer treadmill; verify on device) | F | 1 | ✅ |
+| **Spicy Lyrics mode**, the focus (word, bg vocals, duets, letters, dots, attribution) | ours | 2 | ✅ |
+| **Regular lyrics mode** (line-by-line, Spotify-style) + Spicy ⇄ Regular toggle | F, Fs | 2 | ✅ |
+| Shared lyrics data layer (TTML + LRC + plain, one model) | ours | 2 | ✅ |
+| Home carousels | Fs | 3 | ✅ |
+| Search with filters and genre tiles | F, Fs | 3 | ✅ |
+| Album / artist / playlist pages (popular, discography, similar) | Fs | 3 | ✅ |
+| Favorites everywhere | F, Fs | 3 | ✅ |
+| Playlist create / edit / reorder / delete | F, Fs | 3 | ✅ |
+| **Spotify-style "Add to playlist" sheet** that clearly shows which playlists already contain the song (user: "very important"), plus New playlist | ours | 3 | ✅ |
+| Context sheets (long-press) | F, Fs | 3 | ✅ |
+| Art-colour theming (from blurhash) and placeholders | F, Fs | 3 | ✅ |
+| Downloads: album/playlist/artist, transcoded downloads, storage manager | F | 4 | ✅ albums, playlists, Liked Songs, songs (no whole-artist download) |
+| Offline mode | F | 4 | ✅ |
+| Queue restore on launch | F | 5 | ✅ |
+| Instant mix / artist radio / auto-continue when the queue ends | F, Fs | 5 | ✅ |
+| Normalization (NormalizationGain / ReplayGain) | F | 5 | ✅ |
+| Sleep timer | F | 5 | ✅ |
+| Credits / "Written by" / about the artist | Fs | 5 | ✅ |
+| Theme plumbing: every colour/size/font from a persisted `useTheme()` store | ours | 1 | ✅ |
+| Lyrics customizer (Spicy knobs + Regular options) | ours | 2 | ✅ |
+| **In-depth customizer** screen: colours, type, shape/density, Home layout, player, presets, import/export | ours | 5 | ✅ |
+| Lyrics screen truly full-screen (no sheet gap at the top) with header/footer fades | ours | 5 | ✅ |
+| **Widgets:** home screen (jump back in / resume) and lock screen (open Rakki, last played), Live Activity | new | 6 | ✅ (Live Activity skipped) |
+| iPad / landscape | F | 6 | not built |
+| Android head-unit build | ours | 6 | not built |
+| CarPlay (**needs the $99 account**) | F | 6 | not built |
+| Navidrome/Subsonic support | Fs | 6 (optional) | not built |
+| *Not applicable on iOS:* MPV backend, desktop mini-window. (Discord RPC can't run on iOS directly; see the ideas backlog for a bridge.) | Fs | — | |
 
 ---
 
@@ -351,7 +365,14 @@ The user wants to choose colours, sizes and similar details themselves. So every
 
 **v1 = Phases 0–4** (a daily driver). Phases 5–6 are polish and extras.
 
-### Phase 0: Foundations (stage A, Expo Go, no Mac build)
+**Status 2026-10-02: all phases done.** Phases 3–6 have their own task lists
+(docs/phase-3.md … phase-6.md). After Phase 6 came the 0.7–0.12 updates (versioning, offline
+listens, Last.fm, music videos, radio, station editing) and the **1.0.0 native build**:
+audio-tap visualizer, live radio lock screen, in-app video player, launch screen. Not built:
+iPad, the Android head-unit build, CarPlay and Navidrome (Phase 6 extras), and two backlog
+ideas (Discord Rich Presence, a desktop app).
+
+### Phase 0: Foundations (stage A, Expo Go, no Mac build) ✅
 - `create-expo-app` (TypeScript), AGPL licence, git repo and public GitHub remote, folder layout, tokens, tab shell.
 - Login screen (URL + password + Quick Connect), Albums list, album page, **foreground** playback with `expo-audio`.
 - CI: `check.yml` + a first `ios-dev.yml` run, installed via SideStore. This proves the risky pipeline before we depend on it.
@@ -360,7 +381,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
   - **Decision (user):** skip the Phase 0 test build. The first iOS build and the SideStore setup move to the **start of Phase 1**, where we need the dev build anyway, so we build once instead of twice.
   - Expo Go (SDK 57+) on iOS requires Expo Go and the PC's Expo CLI to be signed in to the **same Expo account** (luckirakki). This doesn't apply to our own dev build.
 
-### Phase 1: Player core (stage B, dev build)
+### Phase 1: Player core (stage B, dev build) ✅
 - **First:** add `expo-dev-client` + the Rakki audio engine, run `ios.yml` once, and set up SideStore to install Rakki Dev. This is the pipeline test moved from Phase 0.
   - ✅ Done: the first dev build compiled on the first attempt (Xcode 26.6, ~11 min compile).
   - It also includes Skia, `expo-sqlite` and `expo-network`, so Phase 2 needs no new build.
@@ -369,30 +390,30 @@ The user wants to choose colours, sizes and similar details themselves. So every
 - Gapless test on a known gapless album.
 - **Exit:** you can listen to a whole album with the screen locked using lock-screen controls, it shows in Jellyfin's "Now playing" and play counts, and we have a verdict on gapless.
 
-### Phase 2: Lyrics (Spicy first, then Regular)
+### Phase 2: Lyrics (Spicy first, then Regular) ✅ (signed off 2026-09-30)
 1. **Shared data layer:** TTML/LRC/plain normalised to one model, with the unsynced guard and attribution.
 2. **Spicy mode (most of the phase):** engine copied and ported to worklets, golden traces in `jest`, Skia canvas, full-screen view, backdrop, settings, LRC-in-Spicy-style fallback.
 3. **Regular mode:** line-by-line renderer, the Spicy ⇄ Regular toggle, and the default-mode setting.
 4. **Lyrics card** under the full player, following the current mode.
 - **Exit:** the traces match; a release build on the iPhone holds 60 fps in Spicy mode through a dense TTML song (checked with the perf monitor); the toggle switches modes mid-song without losing position.
 
-### Phase 3: Browse and library UX
+### Phase 3: Browse and library UX ✅ (signed off 2026-10-01)
 - Home, Search, Library, Artist, Playlist, context sheets, favorites, playlist editing, art colours.
 - **Exit:** you can find and play anything in the 6.8k-track library in 3 taps or fewer, and it feels like Spotify.
 
-### Phase 4: Offline
+### Phase 4: Offline ✅ (2026-10-01)
 - Background downloads, transcoded downloads, storage screen, offline mode, local-first playback. Our own TTML sidecar lyrics are cached with downloads (never API lyrics).
 - **Exit:** in Airplane mode, downloaded albums play with lyrics.
 
-### Phase 5: Parity and polish
+### Phase 5: Parity and polish ✅ (2026-10-01)
 - Queue restore, instant mix/radio, normalization, sleep timer, credits, multi-server, custom gapless module if Phase 1 said so, haptics and animation pass.
 - **The in-depth customizer screen** (§5): every area, live previews, presets, reset, theme import/export.
 - **Lyrics screen covers the whole screen** (user feedback, 2026-09-30).
   - Today it opens as an iOS sheet, which leaves a strip of the player visible at the top. Present it full-screen and keep swipe-down-to-close with our own gesture.
   - Add soft dark fades behind the header and footer, so lyrics scrolling under the title, toggle and credit line stay readable.
 
-### Phase 6: Extras
-- **Widgets: built 2026-10-01** (see docs/phase-6.md). Now Playing (small, medium, Lock Screen) and Jump Back In (medium, large) through `expo-widgets`, with a patch for SideStore's app-group renaming. Live Activity skipped (no Dynamic Island; the Lock Screen already has media controls). Arrives with the final native build. The original plan:
+### Phase 6: Extras ✅ widgets (2026-10-01)
+- **Widgets: built 2026-10-01** (see docs/phase-6.md). Now Playing (small, medium, Lock Screen) and Jump Back In (medium, large) through `expo-widgets`, with a patch for SideStore's app-group renaming. Live Activity skipped (no Dynamic Island; the Lock Screen already has media controls). Arrived with the 0.2.0 native build. The original plan:
 - **Widgets** (user request, 2026-09-30; like YouTube Music / Spotify):
   - **Home screen:** a small widget (last played art, tap to resume) and a medium "Jump back in" grid (recent albums/playlists, each opens in Rakki).
   - **Lock screen:** a circular Rakki button that opens the app, and a rectangular "last played" that resumes it.
@@ -404,16 +425,13 @@ The user wants to choose colours, sizes and similar details themselves. So every
 - iPad, head-unit APK, CarPlay (only with the $99 account), Navidrome.
 
 ### Ideas backlog (not scheduled; the user will decide scope later)
-- ~~**Music video support**~~: built in 0.10.0 (see CHANGELOG): videos from the Music Videos library, matched to songs; iOS's player until the next native build brings the in-app one. Still open: online sources (e.g. YouTube) if wanted.
-- **Live-updating desktop app** (the user's idea, 2026-10-01): a desktop Rakki that updates itself live like the phone app does over the air. Options to weigh: Expo for web packaged with Electron/Tauri plus an auto-updater, or extending Feishin.
-- ~~**SUB/WAVE radio integration.**~~ Built in 0.11.0 (see CHANGELOG): a Radio section like Feishin's, SUB/WAVE stations recognised by address with now playing, DJ/show, requests and history. The original note: The user runs a SUB/WAVE internet radio station, set up in an earlier session, at `http://100.103.153.111:7700/` (manual: https://www.getsubwave.com/manual). The idea is to integrate it into Rakki, e.g. listening to the station with its now-playing info. The user isn't sure of the scope yet, so read the manual and ask before designing anything.
+- ~~**Music video support**~~: built in 0.10.0 (see CHANGELOG): videos from the Music Videos library, matched to songs; iOS's player until the in-app player came with the 1.0.0 build. Still open: online sources (e.g. YouTube) if wanted.
+- **Live-updating desktop app** (the user's idea, 2026-10-01; still in the backlog): a desktop Rakki that updates itself live like the phone app does over the air. Options to weigh: Expo for web packaged with Electron/Tauri plus an auto-updater, or extending Feishin.
+- ~~**SUB/WAVE radio integration.**~~ Built in 0.11.0 (see CHANGELOG): a Radio section like Feishin's, SUB/WAVE stations recognised by address with now playing, DJ/show, requests and history. 0.12.0 added station editing (name, picture, website), radio lyrics that follow the live stream, and live stop/play; 1.0.0 the live lock screen. SUB/WAVE manual: https://www.getsubwave.com/manual.
 - ~~**Fuzzy search.**~~ Built in Phase 3 (the user said go, 2026-09-30): see docs/phase-3.md task 4.
-- **Online play counts on tracks (like Spotify).** Built: an artist's Popular songs sort by Last.fm worldwide plays (0.9.0) and album pages show each song's Last.fm plays (0.10.0, can be turned off). Uses the user's own API key. Show a public "plays" number next to songs, e.g. in an artist's Popular list and on album tracks. This is not the user's own Jellyfin play count. Sources to weigh when we get to it:
-  - Last.fm `track.getInfo` gives global `playcount` and `listeners` with a free API key, matched by artist + title.
-  - Spotify's public Web API only exposes a 0–100 `popularity` score, not play counts. The real counts sit behind Spotify's private web-player API, which is unofficial and against its terms. Many library files already carry Spotify IDs (the Downtify tagging work), which would make matching exact.
-  - Either way: cache counts for days (they change slowly) and label the source.
-- **For the final native build** (the user wants all native changes in one build at the end): the Files app folder (Info.plist already set), excluding downloads from iCloud backup (done), widgets (Phase 6, done), a **new app icon** (done: the user's neko as the main icon, plus Neko player and Lyric lines as alternates you can pick in Customize), and a Photos picker for the profile picture (expo-image-picker, done). Version 0.2.0. Status in docs/phase-6.md.
-- **Discord Rich Presence ("Listening to …" on the user's Discord profile).** For the end of the roadmap, alongside SUB/WAVE (the user's call, 2026-10-01). Known constraints before designing:
+- ~~**Online play counts on tracks (like Spotify).**~~ Built: an artist's Popular songs sort by Last.fm worldwide plays (0.9.0) and album pages show each song's Last.fm plays (0.10.0, can be turned off), with the user's own API key, cached for days and labelled. Spotify was ruled out: its public API only has a 0–100 popularity score, and the real counts sit behind its private API (against its terms).
+- ~~**Native builds**~~ (the user batches native changes): **0.2.0** (2026-10-01): the Files app folder, downloads kept out of iCloud backups, widgets, the neko app icon plus the Neko player and Lyric lines alternates (Customize → App icon), the Photos picker. **1.0.0** (2026-10-02): the audio-tap visualizer, the live radio lock screen, the in-app video player (expo-video), the launch screen.
+- **Discord Rich Presence ("Listening to …" on the user's Discord profile).** Still in the backlog (the user's call, 2026-10-02: ship 1.0.0 first). Known constraints before designing:
   - Classic Rich Presence talks to the *desktop* Discord client over local IPC. An iPhone app can't do that, and a bot can't set a user's status. Logging in with the user's own token ("self-bot") breaks Discord's terms, so that's out.
   - Most realistic route: a bridge that watches Jellyfin's sessions (Rakki already reports playback to Jellyfin, like Finamp) and sets presence through a Discord desktop client that's running somewhere, e.g. the PC. Open-source Jellyfin→Discord bridges already do this; check them first. Limitation: presence only shows while that desktop Discord is running.
   - To investigate when we get there: whether Discord's newer Social SDK (which has mobile support) allows a non-game app to set a "Listening" activity from iOS.
@@ -424,7 +442,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 
 - **Source of truth for Spicy behaviour:** the canonical web-mod repo `OneDrive\Desktop\SpicyLyrics-Jellyfin\src` (not the stale Downloads copy).
 - **Judge perf only in a release build on the iPhone.** Dev builds run JS slower and are misleading.
-- Each phase gets a task list in `docs/phase-N.md` before coding starts, ticked off as it ships.
+- Each phase gets a task list in `docs/phase-N.md` before coding starts, ticked off as it ships. Each version bump gets a `docs/CHANGELOG.md` entry.
 - We borrow from Feishin and Spicy Lyrics freely (AGPL) and credit it in `NOTICE.md`.
 - Commit small and keep `check.yml` green. Build a new dev client only when native deps change.
 
@@ -454,4 +472,4 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | 3 | Repo | **Public** on GitHub (unlimited free Mac builds; no secrets in code). |
 | 4 | Server access | **Login screen with a server URL field, like Finamp.** http allowed through an ATS exception. |
 | 5 | Name | **Rakki** (`com.luckirakki.rakki`). |
-| 6 | Versioning | **a.b.c** (the user's call, 2026-10-01): **a** = major updates with lots of new features; **b** = smaller but notable changes (backend changes, new UI elements); **c** = bug fixes and very minor things. Started at 0.7.0; 1.0.0 once the user is happy with it. `expo.version` carries it in every update; `runtimeVersion` separately names the native build (`0.2.0` = the build installed 2026-10-01) and only changes with a new native build. |
+| 6 | Versioning | **a.b.c** (the user's call, 2026-10-01): **a** = major updates with lots of new features; **b** = smaller but notable changes (backend changes, new UI elements); **c** = bug fixes and very minor things. Started at 0.7.0; 1.0.0 once the user is happy with it. `expo.version` carries it in every update; `runtimeVersion` separately names the native build (`0.2.0` = 2026-10-01, `1.0.0` = 2026-10-02) and only changes with a new native build. **1.0.0 reached 2026-10-02.** |

@@ -1,5 +1,7 @@
 # Phase 4: Offline
 
+> **Status: done** (2026-10-01; downloads and offline mode confirmed on the phone). Kept as the record of what was built.
+
 Goal (FRAMEWORK.md §7): in Airplane mode, downloaded albums play with lyrics.
 
 Checked before starting (2026-10-01):

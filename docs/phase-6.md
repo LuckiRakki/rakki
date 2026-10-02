@@ -1,5 +1,7 @@
 # Phase 6: Widgets
 
+> **Status: done.** The widgets shipped in the 0.2.0 native build (2026-10-01). Kept as the record of what was built.
+
 Goal (FRAMEWORK.md §7): Home Screen and Lock Screen widgets, like Spotify / YouTube Music.
 Widgets are native (a WidgetKit extension), so they arrive with the one final build; the
 app-side code ships over the air now and does nothing until that build is installed.
