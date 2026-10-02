@@ -1,0 +1,192 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "solid": "display-p3:0.07058,0.07059,0.07060,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "display-p3:0.01176,0.01177,0.01534,1.00000"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "iPod",
+      "layers": [
+        {
+          "image-name": "buttons.png",
+          "name": "buttons",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "display-p3:0.14117,0.14118,0.16277,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "screen.png",
+          "name": "screen",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "display-p3:0.07058,0.07059,0.07060,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "display-p3:0.01176,0.01177,0.01534,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "accent.png",
+          "name": "accent",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "display-p3:0.07058,0.07059,0.07060,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "display-p3:0.01176,0.01177,0.01534,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "ipod.png",
+          "name": "ipod",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "display-p3:0.99996,1.00000,1.00000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      }
+    },
+    {
+      "name": "Cat",
+      "layers": [
+        {
+          "image-name": "cat.png",
+          "name": "cat",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "display-p3:0.14117,0.14118,0.16277,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.45
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "blur-material": 0.3
+    },
+    {
+      "name": "Backdrop",
+      "layers": [
+        {
+          "image-name": "backdrop.png",
+          "name": "backdrop",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "display-p3:0.02353,0.02353,0.03068,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "display-p3:0.00784,0.00784,0.00785,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "lighting": "individual",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

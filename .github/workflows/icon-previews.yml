@@ -1,0 +1,47 @@
+name: Icon previews
+
+# Renders every icons/*.icon (Icon Composer bundles) the way iOS 26 shows them, with Xcode's
+# ictool: Default, Dark, Clear and Tinted. Lives only on the icon-previews branch.
+on:
+  push:
+    branches: [icon-previews]
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Render
+        run: |
+          ICTOOL=""
+          for c in "/Applications/Icon Composer.app/Contents/Executables/ictool" \
+                   "$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool" \
+                   /Applications/Xcode*.app/Contents/Applications/Icon\ Composer.app/Contents/Executables/ictool; do
+            if [ -x "$c" ]; then ICTOOL="$c"; break; fi
+          done
+          echo "ictool: $ICTOOL"
+          "$ICTOOL" --help 2>&1 | head -40 || true
+          mkdir -p previews
+          for icon in icons/*.icon; do
+            name=$(basename "$icon" .icon)
+            for r in Default Dark ClearLight ClearDark TintedLight TintedDark; do
+              out="previews/${name}-${r}.png"
+              "$ICTOOL" "$icon" --export-image --output-file "$out" --platform iOS --rendition "$r" \
+                --width 256 --height 256 --scale 1 >/dev/null 2>&1 \
+              || "$ICTOOL" "$icon" --export-preview iOS "$r" 256 256 1 "$out" 2>&1 | tail -2
+            done
+          done
+          ls previews | head -120
+          ls previews | wc -l
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: icon-previews
+          path: previews
