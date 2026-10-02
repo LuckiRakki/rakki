@@ -1,7 +1,9 @@
-// A bar visualizer. The player can't hand the audio to JavaScript yet (that needs a native
-// audio tap), so the bars don't follow the actual sound: they move like music while a song
-// plays, with a steady beat at a tempo of the song's own (from its id), low bars thumping on
-// the beat and high ones shimmering, and settle when paused. Runs on the UI thread.
+// A bar visualizer. From build 1.0.0 the bars follow the actual sound: the native player taps
+// each song's audio and hands over band levels (low to high), read here once a frame. Where
+// there are none (older builds, songs the server transcodes to HLS, AirPlay, the web preview)
+// they move like music instead: a steady beat at a tempo of the song's own (from its id), low
+// bars thumping on the beat and high ones shimmering. Either way they settle when paused.
+// Drawn on the UI thread.
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -12,6 +14,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
+import { engine } from '@/player/engine';
 import { usePlayer } from '@/player/store';
 import { useTheme } from '@/ui/theme';
 
@@ -46,6 +49,8 @@ export function Visualizer({
   const time = useSharedValue(0);
   const energy = useSharedValue(playing ? 1 : 0);
   const bpm = useSharedValue(tempoFor(songId));
+  /** The real levels, one per bar; null: simulate. */
+  const levels = useSharedValue<number[] | null>(null);
   const moving = playing && !t.reduceMotion;
 
   const frame = useFrameCallback((info) => {
@@ -61,6 +66,18 @@ export function Visualizer({
     bpm.set(tempoFor(songId));
   }, [songId, bpm]);
 
+  // Read the levels on the JS thread each frame while playing (one cheap native call).
+  useEffect(() => {
+    if (!moving) return;
+    let raf = 0;
+    const read = () => {
+      levels.set(engine.getLevels(bars));
+      raf = requestAnimationFrame(read);
+    };
+    raf = requestAnimationFrame(read);
+    return () => cancelAnimationFrame(raf);
+  }, [moving, bars, levels]);
+
   const barWidth = Math.max(1, (width - gap * (bars - 1)) / bars);
   return (
     <View
@@ -74,6 +91,7 @@ export function Visualizer({
           time={time}
           energy={energy}
           bpm={bpm}
+          levels={levels}
           width={barWidth}
           height={height}
           color={color}
@@ -91,6 +109,7 @@ function Bar({
   time,
   energy,
   bpm,
+  levels,
   width,
   height,
   color,
@@ -102,6 +121,7 @@ function Bar({
   time: SharedValue<number>;
   energy: SharedValue<number>;
   bpm: SharedValue<number>;
+  levels: SharedValue<number[] | null>;
   width: number;
   height: number;
   color: string;
@@ -109,6 +129,11 @@ function Bar({
   mirrored: boolean;
 }) {
   const style = useAnimatedStyle(() => {
+    const real = levels.get();
+    if (real) {
+      const level = real[index] ?? 0;
+      return { transform: [{ scaleY: 0.12 + 0.88 * Math.min(1, Math.max(0, level)) * energy.get() }] };
+    }
     const t = time.get();
     const beat = (t * bpm.get()) / 60;
     // Sharp attack on each beat, then a decay; a softer off-beat in between.

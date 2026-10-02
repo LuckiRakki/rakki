@@ -60,6 +60,9 @@ final class RakkiPlayer: NSObject {
   private var isLive: Bool { tracks.indices.contains(index) && tracks[index].live }
 
   private var itemKeys: [ObjectIdentifier: String] = [:]
+  /// Each item's audio tap, for the visualizer (RakkiLevels).
+  private var itemTokens: [ObjectIdentifier: Int] = [:]
+  private let meter = RakkiLevels()
   private var itemObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
   private var playerObservations: [NSKeyValueObservation] = []
   private var timeObserver: Any?
@@ -159,6 +162,7 @@ final class RakkiPlayer: NSObject {
     }
     activateSession()
     intendsToPlay = true
+    meter.resumed()
     player.play()
     emitState()
     updateNowPlaying()
@@ -179,6 +183,7 @@ final class RakkiPlayer: NSObject {
   func stop() {
     intendsToPlay = false
     player.pause()
+    meter.setCurrent(nil)
     removeAllItems()
     tracks = []
     index = 0
@@ -276,6 +281,14 @@ final class RakkiPlayer: NSObject {
     return ["position": position, "duration": snapDuration, "buffered": snapBuffered, "playing": snapPlaying]
   }
 
+  /// The visualizer's band levels (see RakkiLevels.read). Any thread.
+  func levels(count: Int) -> [Double]? {
+    lock.lock()
+    let playing = snapPlaying
+    lock.unlock()
+    return meter.read(count: count, playing: playing)
+  }
+
   // MARK: - Treadmill
 
   private func jump(to target: Int, position: Double) {
@@ -336,6 +349,9 @@ final class RakkiPlayer: NSObject {
     let item = AVPlayerItem(url: track.url)
     let id = ObjectIdentifier(item)
     itemKeys[id] = track.key
+    let token = meter.register()
+    itemTokens[id] = token
+    meter.attach(to: item, token: token)
     itemObservations[id] = item.observe(\.status, options: [.new]) { [weak self] item, _ in
       onMain {
         self?.itemStatusChanged(item)
@@ -349,6 +365,9 @@ final class RakkiPlayer: NSObject {
     itemObservations[id]?.invalidate()
     itemObservations[id] = nil
     itemKeys[id] = nil
+    if let token = itemTokens.removeValue(forKey: id) {
+      meter.forget(token)
+    }
   }
 
   private func removeAllItems() {
@@ -434,6 +453,7 @@ final class RakkiPlayer: NSObject {
     }
     positionBeforeJump = nil
     lastEndedKey = nil
+    meter.setCurrent(player.currentItem.flatMap { itemTokens[ObjectIdentifier($0)] })
     guard tracks.indices.contains(index) else { return }
     let track = tracks[index]
     writeSnapshot(position: pendingSeek ?? 0, duration: track.duration, buffered: 0, playing: player.rate != 0)

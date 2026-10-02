@@ -2,7 +2,7 @@
   "expo": {
     "name": "Rakki",
     "slug": "rakki",
-    "version": "0.12.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/rakki.png",
     "scheme": "rakki",
@@ -40,8 +40,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#121212",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "image": "./assets/images/splash.png",
+          "imageWidth": 160
         }
       ],
       "expo-secure-store",
@@ -111,7 +111,7 @@
         "projectId": "6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc"
       }
     },
-    "runtimeVersion": "0.2.0",
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc",
       "requestHeaders": {

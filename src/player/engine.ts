@@ -42,6 +42,8 @@ export interface PlayerEngine {
   setVolume(volume: number): Promise<void>;
   stop(): Promise<void>;
   getProgress(): Progress;
+  /** The visualizer's band levels (0–1, low to high), or null where there are none to read. */
+  getLevels(count: number): number[] | null;
   subscribe(handlers: EngineHandlers): () => void;
 }
 
@@ -61,6 +63,7 @@ function nativeEngine(mod: NonNullable<typeof RakkiAudio>): PlayerEngine {
     setVolume: (v) => mod.setVolume(v),
     stop: () => mod.stop(),
     getProgress: () => mod.getProgress(),
+    getLevels: (count) => mod.getLevels?.(count) ?? null,
     subscribe(h) {
       const subs = [
         mod.addListener('onState', h.onState),
@@ -229,6 +232,7 @@ function fallbackEngine(): PlayerEngine {
       emit.state();
     },
     getProgress: () => last,
+    getLevels: () => null,
     subscribe(h) {
       listeners.add(h);
       return () => listeners.delete(h);

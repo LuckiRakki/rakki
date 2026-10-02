@@ -6,6 +6,19 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.0.0, native build (2026-10-02)
+Rakki 1.0. A new app to install (SideStore), bringing everything that was waiting for a native
+build. Over-the-air updates now go to this build (runtime 1.0.0); 0.2.0 stays on update 33.
+- **The visualizer follows the music.** The player taps each song's audio and splits it into
+  frequency bands (low to high), so the bars in the mini-player and the lyrics screen move with
+  the actual sound. Songs the server transcodes (HLS) and AirPlay can't be tapped; there the
+  bars keep the simulated beat.
+- **Live lock screen for radio**: LIVE instead of a time bar, a stop square instead of pause, no
+  skip or seek. Stopping and playing again reconnects, so it's live again.
+- **Music videos play in Rakki** (expo-video): picture in picture, AirPlay, full screen in
+  landscape, instead of iOS's player sheet.
+- **Launch screen** shows Rakki's neko icon (it was still Expo's template logo).
+
 ## 0.12.1 (2026-10-02)
 - **Japanese, Chinese, Korean (and other scripts) in Spicy lyrics.** Spicy mode draws with the
   lyrics font only, which has no Japanese, so songs like "The Cruel Angel's Thesis" showed empty

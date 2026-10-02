@@ -81,6 +81,11 @@ declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
   getProgress(): Progress;
   /** Keep a folder out of iCloud backups. Missing in builds from before 0.2.0. */
   excludeFromBackup?(uri: string): boolean;
+  /**
+   * The visualizer's `count` band levels (0–1, low to high) for what's playing; null when the
+   * song can't be tapped (HLS, AirPlay). Synchronous. Missing in builds from before 1.0.0.
+   */
+  getLevels?(count: number): number[] | null;
 }
 
 /** null where the native engine isn't built in (web, Android, Expo Go). */

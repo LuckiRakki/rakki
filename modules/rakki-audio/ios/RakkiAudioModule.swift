@@ -114,6 +114,12 @@ public class RakkiAudioModule: Module {
       return existing.progress()
     }
 
+    /// Synchronous, for the visualizer every frame: `count` band levels (0–1, low to high) of
+    /// what's playing, or null when it can't be tapped (HLS, AirPlay): then it simulates.
+    Function("getLevels") { (count: Int) -> [Double]? in
+      self.currentPlayer()?.levels(count: count)
+    }
+
     /// Keeps a folder (and everything in it) out of iCloud and computer backups: downloads can
     /// always be fetched again, so they shouldn't fill up the user's iCloud storage.
     Function("excludeFromBackup") { (uri: String) -> Bool in
