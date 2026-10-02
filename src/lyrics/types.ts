@@ -23,7 +23,10 @@ export interface LyricLine {
 
 export interface AttributionPerson {
   username: string;
+  /** Their Spicy Lyrics profile (https), or empty. */
   url: string;
+  /** Their Discord profile picture (https), when the plugin passes it on. */
+  avatar?: string;
 }
 
 export interface Lyrics {
@@ -57,8 +60,8 @@ export interface TtmlDto {
   Songwriters?: string[];
   Source?: string;
   Attribution?: {
-    Uploader?: { Username: string; Url: string } | null;
-    Maker?: { Username: string; Url: string } | null;
+    Uploader?: { Username: string; Url: string; Avatar?: string } | null;
+    Maker?: { Username: string; Url: string; Avatar?: string } | null;
   } | null;
 }
 

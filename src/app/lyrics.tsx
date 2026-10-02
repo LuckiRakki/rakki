@@ -12,7 +12,7 @@ import { artColor } from '@/lib/blurhash';
 import { useScreenAwake } from '@/lib/keepAwake';
 import { artistLine } from '@/lib/items';
 import { createPlaybackClock } from '@/lyrics/clock';
-import { creditLine, useLyrics } from '@/lyrics/fetch';
+import { useLyrics } from '@/lyrics/fetch';
 import { LyricsStage, pickLyrics } from '@/lyrics/LyricsStage';
 import { ticksToSeconds } from '@/lib/format';
 import { usePlayer } from '@/player/store';
@@ -20,7 +20,10 @@ import { useProgress } from '@/player/useProgress';
 import { useOnAir } from '@/radio/live';
 import { radioPositionMs, useOnAirSong } from '@/radio/sync';
 import { useSettings, type LyricsMode } from '@/settings/store';
+import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
+import { Marquee } from '@/ui/Marquee';
+import { openAlbum } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -55,9 +58,8 @@ export default function LyricsScreen() {
   const [visualizer, setVisualizer] = useState(false);
 
   const lyrics = pickLyrics(data, mode);
-  const credit = lyrics ? creditLine(lyrics) : null;
   const tint = artColor(track && client?.blurhash(track));
-  const footerSpace = FOOTER_H + insets.bottom + (credit ? 18 : 0);
+  const footerSpace = FOOTER_H + insets.bottom;
 
   // The screen is full-screen (no sheet), so swiping down on the header closes it.
   const swipeDown = Gesture.Pan()
@@ -118,11 +120,6 @@ export default function LyricsScreen() {
       {/* Footer: credit (required for Spicy Lyrics API lyrics) + transport */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
         <UpNext />
-        {credit ? (
-          <T variant="caption" numberOfLines={1} style={styles.credit}>
-            {credit}
-          </T>
-        ) : null}
         <View style={styles.transport}>
           <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
             <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
@@ -180,18 +177,29 @@ function NowPlayingHeader({ track }: { track: BaseItem }) {
   const t = useTheme();
   const styles = useStyles();
   const albumLine = [track.Album, track.ProductionYear].filter(Boolean).join(' · ');
+  // Radio has no album page to go to.
+  const album = track.AlbumId && !track.Radio ? () => openAlbum(track.AlbumId!) : undefined;
   return (
     <View style={styles.nowPlaying}>
-      <Artwork item={track} size={92} rounded={t.radius.card} style={styles.art} />
+      <Pressable disabled={!album} onPress={album}>
+        <Artwork item={track} size={92} rounded={t.radius.card} style={styles.art} />
+      </Pressable>
       <View style={{ flex: 1, marginLeft: t.space.lg }}>
-        <T numberOfLines={2} style={{ fontFamily: t.fonts.black, fontSize: t.size(22), letterSpacing: -0.4 }}>
-          {track.Name}
-        </T>
-        <T numberOfLines={1} style={{ fontFamily: t.fonts.semibold, fontSize: t.size(15), color: t.colors.textSecondary, marginTop: 2 }}>
-          {artistLine(track)}
-        </T>
+        <Pressable disabled={!album} onPress={album}>
+          <Marquee text={track.Name} style={{ fontFamily: t.fonts.black, fontSize: t.size(22), letterSpacing: -0.4 }} />
+        </Pressable>
+        <ArtistLinks
+          artists={track.ArtistItems}
+          fallback={artistLine(track)}
+          numberOfLines={1}
+          style={{ fontFamily: t.fonts.semibold, fontSize: t.size(15), color: t.colors.textSecondary, marginTop: 2 }}
+        />
         {albumLine ? (
-          <T numberOfLines={1} style={{ fontFamily: t.fonts.medium, fontSize: t.size(13), color: t.colors.textMuted, marginTop: 2 }}>
+          <T
+            numberOfLines={1}
+            onPress={album}
+            suppressHighlighting
+            style={{ fontFamily: t.fonts.medium, fontSize: t.size(13), color: t.colors.textMuted, marginTop: 2 }}>
             {albumLine}
           </T>
         ) : null}
@@ -249,7 +257,6 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.radius.card,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  credit: { fontSize: t.size(11), marginBottom: t.space.sm, paddingHorizontal: t.space.xl, opacity: 0.8 },
   transport: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxl },
   play: {
     width: 52,

@@ -1,4 +1,5 @@
-import { Canvas, Picture, Skia, useFont, type SkPicture } from '@shopify/react-native-skia';
+import { Canvas, Picture, Skia, useFont, type SkImage, type SkPicture } from '@shopify/react-native-skia';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -24,6 +25,9 @@ function emptyPicture(): SkPicture {
  * Spicy mode: the full word-by-word engine drawn with Skia. Each animation frame advances
  * the scene to the current playback time and records a fresh Skia picture of it.
  */
+/** Credits' profile pictures, kept for the session. */
+const avatarCache = new Map<string, SkImage>();
+
 export function SpicyLyricsView({
   lyrics,
   nowMs,
@@ -87,14 +91,47 @@ export function SpicyLyricsView({
     return () => cancelAnimationFrame(raf);
   }, [scene, active, size.w, size.h, nowMs, durationMs, picture]);
 
+  // Credits' profile pictures: loaded once per URL, handed to each new scene.
+  useEffect(() => {
+    if (!scene) return;
+    let alive = true;
+    for (const url of scene.avatarUrls()) {
+      const cached = avatarCache.get(url);
+      if (cached) {
+        scene.setImage(url, cached);
+        continue;
+      }
+      Skia.Data.fromURI(url)
+        .then((data) => {
+          const image = Skia.Image.MakeImageFromEncoded(data);
+          if (!image) return;
+          avatarCache.set(url, image);
+          if (alive) scene.setImage(url, image);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      alive = false;
+    };
+  }, [scene]);
+
   const gesture = Gesture.Exclusive(
     Gesture.Pan()
       .runOnJS(true)
       .minDistance(8)
-      .onChange((e) => scene?.scrollBy(e.changeY)),
+      .onBegin(() => scene?.holdScroll())
+      .onChange((e) => scene?.scrollBy(e.changeY))
+      // Let go: keep scrolling and slow down, like a normal list.
+      .onEnd((e) => scene?.fling(e.velocityY)),
     Gesture.Tap()
       .runOnJS(true)
+      .onBegin(() => scene?.holdScroll())
       .onEnd((e) => {
+        const link = scene?.linkAt(e.x, e.y);
+        if (link) {
+          void WebBrowser.openBrowserAsync(link);
+          return;
+        }
         const ms = scene?.seekTimeAt(e.y);
         if (ms !== null && ms !== undefined) onSeek(ms);
       }),

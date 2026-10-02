@@ -12,6 +12,7 @@ import { artistLine } from '@/lib/items';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { Artwork } from '@/ui/Artwork';
+import { Marquee } from '@/ui/Marquee';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { Visualizer } from '@/ui/Visualizer';
@@ -61,9 +62,7 @@ export function MiniPlayer() {
           ) : null}
           <Artwork item={track} size={40} />
           <View style={styles.text}>
-            <T numberOfLines={1} style={styles.title}>
-              {track.Name}
-            </T>
+            <Marquee text={track.Name} style={styles.title} />
             <T variant="caption" numberOfLines={1} style={{ fontSize: t.size(12) }}>
               {artistLine(track)}
             </T>

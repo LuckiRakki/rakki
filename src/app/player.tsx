@@ -21,6 +21,7 @@ import { sleepSheet, useSleepLabel } from '@/player/sleep';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { ArtistLinks } from '@/ui/ArtistLinks';
+import { Marquee } from '@/ui/Marquee';
 import { Artwork } from '@/ui/Artwork';
 import { openAlbum } from '@/ui/nav';
 import { openAddToPlaylist, openMenu, openOptions } from '@/ui/overlays';
@@ -131,13 +132,9 @@ export default function PlayerScreen() {
           {/* Title + like */}
           <View style={styles.titleRow}>
             <View style={{ flex: 1, marginRight: t.space.md }}>
-              <T
-                numberOfLines={1}
-                onPress={track.AlbumId ? () => openAlbum(track.AlbumId!) : undefined}
-                suppressHighlighting
-                style={{ fontFamily: t.fonts.bold, fontSize: t.size(22) }}>
-                {track.Name}
-              </T>
+              <Pressable disabled={!track.AlbumId} onPress={() => track.AlbumId && openAlbum(track.AlbumId)}>
+                <Marquee text={track.Name} style={{ fontFamily: t.fonts.bold, fontSize: t.size(22) }} />
+              </Pressable>
               <ArtistLinks
                 artists={track.ArtistItems}
                 fallback={artistLine(track)}

@@ -10,16 +10,19 @@
 // here once per song/size in the constructor.
 import {
   BlendMode,
+  ClipOp,
   BlurStyle,
   Skia,
   TileMode,
   type SkCanvas,
   type SkColor,
   type SkFont,
+  type SkImage,
   type SkMaskFilter,
   type SkPaint,
 } from '@shopify/react-native-skia';
 
+import { creditRows } from '@/lyrics/fetch';
 import type { LyricLine, Lyrics, WordCue } from '@/lyrics/types';
 import { shapeText, type TextRun } from '@/spicy/fallback';
 import { SPICY_DEFAULTS, type SpicySettings } from '@/spicy/settings';
@@ -169,6 +172,11 @@ interface Row {
   gp: number;
   near: boolean;
   blur: number;
+  /** Credits: opened on tap (a Spicy Lyrics profile). */
+  link?: string;
+  /** Credits: a round profile picture before the text, `lead` wide (with its gap). */
+  avatar?: string;
+  lead?: number;
 }
 
 interface Group {
@@ -224,6 +232,11 @@ export class SpicyScene {
   private scrollT = 1;
   private manual = false;
   private manualUntil = 0;
+  /** A swipe's leftover speed (px/s), coasting to a stop like an iOS scroll view. */
+  private flingV = 0;
+  /** Profile pictures for the credits, by URL (loaded by the view). */
+  private readonly images = new Map<string, SkImage>();
+  private readonly imagePaint: SkPaint;
 
   // interlude dots
   private dots = { visible: false, progress: 0, after: -1, right: false };
@@ -252,6 +265,8 @@ export class SpicyScene {
     this.paint = Skia.Paint();
     this.paint.setAntiAlias(true);
     this.glowPaint = Skia.Paint();
+    this.imagePaint = Skia.Paint();
+    this.imagePaint.setAntiAlias(true);
     this.glowPaint.setAntiAlias(true);
     this.white = Skia.Color(settings.color);
     this.rgb = hexToRgb(settings.color);
@@ -319,23 +334,26 @@ export class SpicyScene {
       this.groups.push({ first, last: this.rows.length - 1, startMs: start, endMs: end });
     }
 
-    // "Written by: …" once the lyrics are done.
-    if (lyrics.songwriters?.length && this.rows.length) {
+    // The credits once the lyrics are done: "Written by", then who provided the lyrics.
+    const credits = creditRows(lyrics);
+    if (credits.length && this.rows.length) {
       const lastEnd = Math.max(...this.groups.map((g) => g.endMs));
       const lastRight = this.rows[this.rows.length - 1].right;
-      y += gap + fonts.credits.getSize() * 0.6;
-      const row = this.plainRow(
-        'credits',
-        this.groups.length,
-        lastRight,
-        fonts.credits,
-        `Written by: ${lyrics.songwriters.join(', ')}`,
-        lastEnd,
-        y,
-      );
-      row.startMs = lastEnd;
-      row.endMs = lastEnd + 600000;
-      this.groups.push({ first: this.rows.length - 1, last: this.rows.length - 1, startMs: row.startMs, endMs: row.endMs });
+      const size = fonts.credits.getSize();
+      const first = this.rows.length;
+      y += gap + size * 0.6;
+      credits.forEach((c, i) => {
+        // A little extra space between "Written by" and the lyrics credits.
+        if (i > 0 && i === (lyrics.songwriters?.length ? 1 : 0)) y += size * 0.5;
+        const lead = c.avatar ? Math.round(size * 1.5) : 0;
+        const row = this.plainRow('credits', this.groups.length, lastRight, fonts.credits, c.text, lastEnd, y, lead);
+        row.startMs = lastEnd;
+        row.endMs = lastEnd + 600000;
+        row.link = c.link;
+        row.avatar = c.avatar;
+        y = row.top + row.height + size * 0.25;
+      });
+      this.groups.push({ first, last: this.rows.length - 1, startMs: lastEnd, endMs: lastEnd + 600000 });
     }
   }
 
@@ -511,9 +529,19 @@ export class SpicyScene {
   }
 
   /** A line-by-line (LRC), credit or unsynced line: plain text, wrapped on spaces. */
-  private plainRow(kind: 'plain' | 'credits' | 'unsynced', group: number, right: boolean, font: SkFont, text: string, seekMs: number, top: number): Row {
+  private plainRow(
+    kind: 'plain' | 'credits' | 'unsynced',
+    group: number,
+    right: boolean,
+    font: SkFont,
+    text: string,
+    seekMs: number,
+    top: number,
+    lead = 0,
+  ): Row {
     const row = this.baseRow(kind, group, right, font, seekMs, top);
-    const maxW = kind === 'unsynced' ? this.width - this.pad * 2 : this.rowWidth();
+    row.lead = lead;
+    const maxW = (kind === 'unsynced' ? this.width - this.pad * 2 : this.rowWidth()) - lead;
     const space = this.measure(font, ' ');
     const out: { text: string; w: number }[] = [];
     let cur = '';
@@ -535,7 +563,7 @@ export class SpicyScene {
     if (cur || !out.length) out.push({ text: cur, w: curW });
     row.lines = out.map((l) => {
       const shaped = shapeText(font, l.text);
-      return { text: l.text, runs: shaped.runs, w: shaped.w, x: this.lineX(right, shaped.w) };
+      return { text: l.text, runs: shaped.runs, w: shaped.w, x: this.lineX(right, shaped.w + lead) + lead };
     });
     row.height = out.length * row.lineHeight;
     return row;
@@ -587,6 +615,7 @@ export class SpicyScene {
   tick(ms: number, dt: number, durationMs = 0) {
     dt = Math.min(MAX_FRAME_S, Math.max(0, dt));
     const now = Date.now();
+    if (this.flingV !== 0) this.coast(dt);
     if (this.manual && now > this.manualUntil) {
       this.manual = false;
       this.centeredGroup = -1;
@@ -876,7 +905,69 @@ export class SpicyScene {
     this.manualUntil = Date.now() + MANUAL_RESUME_MS;
     const minY = this.anchorY - this.contentHeight;
     const maxY = this.topRest;
-    this.scrollY = Math.max(minY, Math.min(maxY, this.scrollY + dy));
+    const next = Math.max(minY, Math.min(maxY, this.scrollY + dy));
+    if (next !== this.scrollY + dy) this.flingV = 0; // hit an end
+    this.scrollY = next;
+  }
+
+  /** A finger touched down: stop any coasting. */
+  holdScroll() {
+    this.flingV = 0;
+  }
+
+  /** The finger lifted at `velocity` px/s: keep going and slow down, like iOS. */
+  fling(velocity: number) {
+    this.flingV = Math.abs(velocity) > 60 ? velocity : 0;
+  }
+
+  private coast(dt: number) {
+    this.scrollBy(this.flingV * dt);
+    // UIScrollView's normal deceleration: 0.998 of the speed left per millisecond.
+    this.flingV *= Math.pow(0.998, dt * 1000);
+    if (Math.abs(this.flingV) < 20) this.flingV = 0;
+  }
+
+  /** The credit link under view point (x, y), if any. */
+  linkAt(x: number, y: number): string | null {
+    const cy = y - this.scrollY;
+    for (const row of this.rows) {
+      if (!row.link || cy < row.top - 6 || cy > row.top + row.height + 6) continue;
+      const line = row.lines[0];
+      if (!line) continue;
+      const left = line.x - (row.lead ?? 0) - 8;
+      const right = Math.max(...row.lines.map((l) => l.x + l.w)) + 8;
+      if (x >= left && x <= right) return row.link;
+    }
+    return null;
+  }
+
+  /** The profile pictures the credits want (the view loads them and hands them back). */
+  avatarUrls(): string[] {
+    return [...new Set(this.rows.map((r) => r.avatar).filter((u): u is string => !!u))];
+  }
+
+  setImage(url: string, image: SkImage) {
+    this.images.set(url, image);
+  }
+
+  private drawAvatar(canvas: SkCanvas, row: Row, top: number, alpha: number) {
+    if (!row.avatar || !row.lead || !row.lines.length) return;
+    const size = row.lead - Math.round(row.size * 0.4);
+    const x = row.lines[0].x - row.lead;
+    const y = top + (row.lineHeight - size) / 2;
+    const rect = Skia.XYWHRect(x, y, size, size);
+    const image = this.images.get(row.avatar);
+    canvas.save();
+    canvas.clipRRect(Skia.RRectXY(rect, size / 2, size / 2), ClipOp.Intersect, true);
+    if (image) {
+      this.imagePaint.setAlphaf(alpha);
+      canvas.drawImageRect(image, Skia.XYWHRect(0, 0, image.width(), image.height()), rect, this.imagePaint);
+    } else {
+      this.imagePaint.setColor(this.white);
+      this.imagePaint.setAlphaf(0.15 * alpha);
+      canvas.drawRect(rect, this.imagePaint);
+    }
+    canvas.restore();
   }
 
   // ── Drawing ─────────────────────────────────────────────────────────────────────
@@ -1058,6 +1149,7 @@ export class SpicyScene {
   private drawPlainRow(canvas: SkCanvas, row: Row, top: number, glowMul: number) {
     const lit = row.phase === 'active' || (row.glow && !row.glow.resting);
     const op = row.opacity;
+    this.drawAvatar(canvas, row, top, op);
     if (!lit) {
       const a = row.phase === 'sung' ? SUNG : LINE_UNSUNG;
       this.drawPlainText(canvas, row, top, a * op, row.blur);

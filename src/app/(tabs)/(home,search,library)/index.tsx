@@ -22,6 +22,7 @@ import { accountKey, useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
 import { greeting } from '@/lib/format';
 import { QuickTile } from '@/ui/AlbumTile';
+import { Rise } from '@/ui/Rise';
 import { LikedArt } from '@/ui/LikedArt';
 import { tick } from '@/lib/haptics';
 import { playRandom } from '@/library/actions';
@@ -80,59 +81,69 @@ export default function HomeScreen() {
         style={[StyleSheet.absoluteFill, { height: 320 }]}
         pointerEvents="none"
       />
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.push('/settings')}
-          onLongPress={openAccountSwitcher}
-          hitSlop={8}
-          accessibilityLabel="Settings (hold to switch account)">
-          <UserAvatar size={34} />
-        </Pressable>
-        {showGreeting ? (
-          <T variant="display" numberOfLines={1} style={{ flex: 1 }}>
-            {greeting()}
-          </T>
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
-        <Pressable
-          onPress={() => {
-            tick();
-            void playRandom();
-          }}
-          hitSlop={8}
-          accessibilityLabel="Shuffle your whole library"
-          style={({ pressed }) => [styles.shuffle, pressed && { transform: [{ scale: 0.94 }] }]}>
-          <Ionicons name="shuffle" size={20} color="#000" />
-        </Pressable>
-      </View>
+      <Rise order={0}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => router.push('/settings')}
+            onLongPress={openAccountSwitcher}
+            hitSlop={8}
+            accessibilityLabel="Settings (hold to switch account)">
+            <UserAvatar size={34} />
+          </Pressable>
+          {showGreeting ? (
+            <T variant="display" numberOfLines={1} style={{ flex: 1 }}>
+              {greeting()}
+            </T>
+          ) : (
+            <View style={{ flex: 1 }} />
+          )}
+          <Pressable
+            onPress={() => {
+              tick();
+              void playRandom();
+            }}
+            hitSlop={8}
+            accessibilityLabel="Shuffle your whole library"
+            style={({ pressed }) => [styles.shuffle, pressed && { transform: [{ scale: 0.94 }] }]}>
+            <Ionicons name="shuffle" size={20} color="#000" />
+          </Pressable>
+        </View>
+      </Rise>
 
       {quickPicks ? (
-        <View style={styles.grid}>
-          {chunk([null, ...quick], 2).map((pair, i) => (
-            <View key={i} style={styles.gridRow}>
-              {pair.map((a) =>
-                a ? (
-                  <QuickTile key={a.Id} album={a} />
-                ) : (
-                  <Pressable
-                    key="liked"
-                    onPress={() => router.push('/liked')}
-                    style={({ pressed }) => [styles.likedTile, pressed && { backgroundColor: t.colors.surface3 }]}>
-                    <LikedArt size={56} />
-                    <T numberOfLines={2} style={{ flex: 1, paddingHorizontal: 10, fontFamily: t.fonts.bold, fontSize: t.size(13) }}>
-                      Liked Songs
-                    </T>
-                  </Pressable>
-                ),
-              )}
-              {pair.length === 1 ? <View style={{ flex: 1 }} /> : null}
-            </View>
-          ))}
-        </View>
+        <Rise order={1}>
+          <View style={styles.grid}>
+            {chunk([null, ...quick], 2).map((pair, i) => (
+              <View key={i} style={styles.gridRow}>
+                {pair.map((a) =>
+                  a ? (
+                    <QuickTile key={a.Id} album={a} />
+                  ) : (
+                    <Pressable
+                      key="liked"
+                      onPress={() => router.push('/liked')}
+                      style={({ pressed }) => [styles.likedTile, pressed && { backgroundColor: t.colors.surface3 }]}>
+                      <LikedArt size={56} />
+                      <T numberOfLines={2} style={{ flex: 1, paddingHorizontal: 10, fontFamily: t.fonts.bold, fontSize: t.size(13) }}>
+                        Liked Songs
+                      </T>
+                    </Pressable>
+                  ),
+                )}
+                {pair.length === 1 ? <View style={{ flex: 1 }} /> : null}
+              </View>
+            ))}
+          </View>
+        </Rise>
       ) : null}
 
-      {homeOrder.filter((id) => !homeHidden.includes(id)).map((id) => shelves[id])}
+      {homeOrder
+        .filter((id) => !homeHidden.includes(id))
+        .map((id, i) => (
+          <Rise key={id} order={i + 2}>
+            {shelves[id]}
+          </Rise>
+        ))}
     </ScrollView>
   );
 }

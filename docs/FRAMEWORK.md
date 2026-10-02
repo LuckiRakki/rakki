@@ -431,6 +431,17 @@ ideas (Discord Rich Presence, a desktop app).
 - ~~**Fuzzy search.**~~ Built in Phase 3 (the user said go, 2026-09-30): see docs/phase-3.md task 4.
 - ~~**Online play counts on tracks (like Spotify).**~~ Built: an artist's Popular songs sort by Last.fm worldwide plays (0.9.0) and album pages show each song's Last.fm plays (0.10.0, can be turned off), with the user's own API key, cached for days and labelled. Spotify was ruled out: its public API only has a 0–100 popularity score, and the real counts sit behind its private API (against its terms).
 - ~~**Native builds**~~ (the user batches native changes): **0.2.0** (2026-10-01): the Files app folder, downloads kept out of iCloud backups, widgets, the neko app icon plus the Neko player and Lyric lines alternates (Customize → App icon), the Photos picker. **1.0.0** (2026-10-02): the audio-tap visualizer, the live radio lock screen, the in-app video player (expo-video), the launch screen.
+- **Next native build (planned, not built yet; the user's notes, 2026-10-02):**
+  - App icon color picker: all 17 palettes (Classic … Midnight, assets/icons/variants) as
+    built-in presets in Customize → App icon with previews; iOS only switches between icons
+    bundled in the build, so new colors mean a new build. Each preset as Liquid Glass (.icon,
+    assets/icons/source/liquid_glass.py) and flat (recolor.py), with a Rakki setting to choose
+    glass or flat (iOS has no per-app glass switch). expo-alternate-app-icons only makes flat
+    .appiconset alternates: the glass ones need a small config plugin; check with a `check`
+    build first.
+  - Launch screen: the Neko player icon on a transparent background, not too big.
+  - From 1.0.1: the player sets its audio session before every play and never holds the
+    display awake (already in the code).
 - **Discord Rich Presence ("Listening to …" on the user's Discord profile).** Still in the backlog (the user's call, 2026-10-02: ship 1.0.0 first). Known constraints before designing:
   - Classic Rich Presence talks to the *desktop* Discord client over local IPC. An iPhone app can't do that, and a bot can't set a user's status. Logging in with the user's own token ("self-bot") breaks Discord's terms, so that's out.
   - Most realistic route: a bridge that watches Jellyfin's sessions (Rakki already reports playback to Jellyfin, like Finamp) and sets presence through a Discord desktop client that's running somewhere, e.g. the PC. Open-source Jellyfin→Discord bridges already do this; check them first. Limitation: presence only shows while that desktop Discord is running.

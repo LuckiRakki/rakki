@@ -1,9 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, View } from 'react-native';
 
 import { withAlpha } from '@/lib/color';
+import { creditRows } from '@/lyrics/fetch';
 import { useLyricsStyle } from '@/lyrics/style';
 import type { Lyrics } from '@/lyrics/types';
 import { T } from '@/ui/T';
@@ -126,6 +129,7 @@ export function RegularLyricsView({
           </View>
         );
       })}
+      <Credits lyrics={lyrics} align={align} />
     </Animated.ScrollView>
       {fadeColor && fadeTop > 0 ? (
         <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: fadeTop, opacity: topFadeOpacity }}>
@@ -139,6 +143,30 @@ export function RegularLyricsView({
           style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: fadeBottom }}
         />
       ) : null}
+    </View>
+  );
+}
+
+/** After the last line: who wrote it, and who provided the lyrics (tap a name for their profile). */
+function Credits({ lyrics, align }: { lyrics: Lyrics; align: 'left' | 'center' }) {
+  const t = useTheme();
+  const rows = creditRows(lyrics);
+  if (!rows.length) return null;
+  const written = lyrics.songwriters?.length ? 1 : 0;
+  return (
+    <View style={{ marginTop: t.space.md, gap: 6, alignItems: align === 'center' ? 'center' : 'flex-start' }}>
+      {rows.map((row, i) => (
+        <Pressable
+          key={row.text}
+          disabled={!row.link}
+          onPress={() => row.link && void WebBrowser.openBrowserAsync(row.link)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: i === written && i > 0 ? t.space.sm : 0 }}>
+          {row.avatar ? (
+            <Image source={{ uri: row.avatar }} style={{ width: 22, height: 22, borderRadius: 11 }} contentFit="cover" />
+          ) : null}
+          <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(14), color: 'rgba(255,255,255,0.7)' }}>{row.text}</T>
+        </Pressable>
+      ))}
     </View>
   );
 }

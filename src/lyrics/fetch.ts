@@ -8,8 +8,8 @@ import type { JellyfinLyricsDto, Lyrics, LyricsBundle, TtmlDto } from '@/lyrics/
 
 const TICKS_PER_MS = 10_000;
 
-function person(p?: { Username: string; Url: string } | null) {
-  return p?.Username ? { username: p.Username, url: p.Url ?? '' } : undefined;
+function person(p?: { Username: string; Url: string; Avatar?: string } | null) {
+  return p?.Username ? { username: p.Username, url: p.Url ?? '', avatar: p.Avatar || undefined } : undefined;
 }
 
 /** Word-level lyrics from the Spicy Lyrics plugin, or null. */
@@ -102,6 +102,44 @@ export function useLyrics(itemId: string | undefined) {
       return { ttml, lrc };
     },
   });
+}
+
+/** One line of the credits at the end of the lyrics. */
+export interface CreditRow {
+  text: string;
+  /** Opens on tap (a Spicy Lyrics profile, or the Spicy Lyrics site). */
+  link?: string;
+  /** A round profile picture before the text. */
+  avatar?: string;
+}
+
+function providerName(source?: string): string | null {
+  return source === 'spicy_lyrics'
+    ? 'Spicy Lyrics'
+    : source === 'apple_music'
+      ? 'Apple Music'
+      : source === 'spotify'
+        ? 'Spotify'
+        : null;
+}
+
+/**
+ * The credits after the last line: who wrote the song, then who provided the lyrics (required
+ * by the Spicy Lyrics API Terms), with the people who synced and uploaded them.
+ */
+export function creditRows(l: Lyrics): CreditRow[] {
+  const rows: CreditRow[] = [];
+  if (l.songwriters?.length) rows.push({ text: `Written by: ${l.songwriters.join(', ')}` });
+  const provider = providerName(l.source);
+  if (provider) {
+    rows.push({ text: `Lyrics provided by ${provider}`, link: l.source === 'spicy_lyrics' ? 'https://spicylyrics.org' : undefined });
+  }
+  const { maker, uploader } = l.attribution ?? {};
+  if (maker) rows.push({ text: `Synced by ${maker.username}`, link: maker.url || undefined, avatar: maker.avatar });
+  if (uploader && uploader.username !== maker?.username) {
+    rows.push({ text: `Uploaded by ${uploader.username}`, link: uploader.url || undefined, avatar: uploader.avatar });
+  }
+  return rows;
 }
 
 /** The credit line shown under the lyrics (required by the Spicy Lyrics API Terms). */

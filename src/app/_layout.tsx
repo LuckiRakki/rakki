@@ -23,6 +23,7 @@ import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
 import { prefetchMusicVideos } from '@/video/musicVideos';
 import { resetScreenAwake } from '@/lib/keepAwake';
+import { OpeningFade } from '@/ui/Rise';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 
@@ -110,26 +111,28 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={navTheme}>
           <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.bg } }}>
-            <Stack.Protected guard={signedIn}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="player" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-              <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="lyrics-style" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="add-account" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="add-station" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="edit-station" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="library-tabs" options={{ presentation: 'modal' }} />
-            </Stack.Protected>
-            <Stack.Protected guard={!signedIn}>
-              <Stack.Screen name="login" />
-            </Stack.Protected>
-          </Stack>
+          <OpeningFade>
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.bg } }}>
+              <Stack.Protected guard={signedIn}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="player" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+                <Stack.Screen name="video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+                <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="lyrics-style" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="add-account" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="add-station" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="edit-station" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="library-tabs" options={{ presentation: 'modal' }} />
+              </Stack.Protected>
+              <Stack.Protected guard={!signedIn}>
+                <Stack.Screen name="login" />
+              </Stack.Protected>
+            </Stack>
+          </OpeningFade>
           <OverlayHost />
           <ToastHost />
         </ThemeProvider>

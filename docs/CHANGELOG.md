@@ -6,6 +6,21 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.1.0 (2026-10-02)
+- **Long titles scroll.** In the mini-player, the player and the lyrics header, a title too
+  long to fit rests, slides along until its end has come past, then rests again (still with
+  Reduce Motion: cut off with "…").
+- **Lyrics header links**: the title, cover and album line open the album; each artist name
+  opens that artist.
+- **Spicy lyrics scroll like a normal list**: a swipe keeps going and slows down (iOS's own
+  deceleration) instead of stopping dead when you let go; touching stops it.
+- **Lyrics credits moved into the lyrics**, after "Written by": "Lyrics provided by Spicy
+  Lyrics", then who synced and who uploaded them, with their Discord picture and a tap to open
+  their Spicy Lyrics profile (Spicy and Regular modes). Pictures need the updated server
+  plugin. The lyrics card under the player keeps its one-line credit.
+- **Opening animation**: after the launch screen the app fades in and Home's sections rise into
+  place one after another (only while the app opens; not with Reduce Motion).
+
 ## 1.0.1 (2026-10-02)
 - **Music no longer stops when the phone locks or you leave the app.** In the background,
   React Native runs a drawing loop (requestAnimationFrame) with no frame pacing, as fast as it

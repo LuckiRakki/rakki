@@ -48,3 +48,6 @@ example
 
 # Skia web preview runtime (copied from node_modules by `npm run web:setup`)
 /public/canvaskit.wasm
+
+# Icon color variants (PSD + PNG, ~170 MB): kept on the PC, not in the repo
+assets/icons/variants/
