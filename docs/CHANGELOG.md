@@ -6,6 +6,21 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.0.1 (2026-10-02)
+- **Music no longer stops when the phone locks or you leave the app.** In the background,
+  React Native runs a drawing loop (requestAnimationFrame) with no frame pacing, as fast as it
+  can. The new real-level visualizer read its levels in such a loop whenever music played, so
+  the CPU stayed busy and iOS killed Rakki after about a minute (its limit for background apps).
+  The visualizer and Spicy lyrics now stop drawing whenever Rakki isn't on screen, and the
+  progress bars stop polling too.
+- **The screen sleeps as usual again**, except on the lyrics and music video screens.
+  Keep-awake holds are now counted per screen with fixed tags, and cleared at launch.
+- **Lock screen controls after a music video**: expo-video switched the audio session to
+  "movie, mixed with other apps", which hides Rakki's lock screen controls. Closing a video
+  now sets it back.
+- Next native build: the player sets its audio session again before every play, and never
+  holds the display awake itself.
+
 ## 1.0.0, native build (2026-10-02)
 Rakki 1.0. A new app to install (SideStore), bringing everything that was waiting for a native
 build. Over-the-air updates now go to this build (runtime 1.0.0); 0.2.0 stays on update 33.

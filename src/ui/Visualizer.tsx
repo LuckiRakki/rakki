@@ -14,6 +14,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
+import { useAppActive } from '@/lib/appActive';
 import { engine } from '@/player/engine';
 import { usePlayer } from '@/player/store';
 import { useTheme } from '@/ui/theme';
@@ -51,7 +52,9 @@ export function Visualizer({
   const bpm = useSharedValue(tempoFor(songId));
   /** The real levels, one per bar; null: simulate. */
   const levels = useSharedValue<number[] | null>(null);
-  const moving = playing && !t.reduceMotion;
+  // Never in the background: frame loops there turn into busy loops (see lib/appActive.ts).
+  const active = useAppActive();
+  const moving = playing && !t.reduceMotion && active;
 
   const frame = useFrameCallback((info) => {
     time.set(time.get() + (info.timeSincePreviousFrame ?? 16) / 1000);

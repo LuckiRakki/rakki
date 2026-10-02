@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMusicVideos } from '@/api/queries';
+import { useScreenAwake } from '@/lib/keepAwake';
+import { reclaimAudioSession } from '@/player/engine';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { inAppVideo } from '@/video/musicVideos';
@@ -18,6 +20,10 @@ export default function VideoScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const video = useMusicVideos().data?.find((v) => v.Id === id);
+  useScreenAwake('video');
+  // expo-video leaves the audio session set up for movies, mixed with other audio, which hides
+  // Rakki's lock screen controls; take it back once its player has let go.
+  useEffect(() => () => void setTimeout(reclaimAudioSession, 800), []);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000', paddingTop: insets.top }}>

@@ -8,6 +8,7 @@ import type { Lyrics } from '@/lyrics/types';
 import { useShallow } from 'zustand/react/shallow';
 
 import { FONT_FILES, FONTS } from '@/appearance/fonts';
+import { useAppActive } from '@/lib/appActive';
 import { useLyricsStyle } from '@/lyrics/style';
 import { SPICY_LAYOUT_DEFAULTS, SpicyScene, type SpicyLayout } from '@/spicy/scene';
 import { useTheme } from '@/ui/theme';
@@ -53,6 +54,8 @@ export function SpicyLyricsView({
     [style.spicy, style.color, t.colors.accent],
   );
   const picture = useSharedValue<SkPicture>(emptyPicture());
+  // Drawing stops in the background (a frame loop there is a busy loop; see lib/appActive.ts).
+  const active = useAppActive();
 
   const scene = useMemo(
     () =>
@@ -67,7 +70,7 @@ export function SpicyLyricsView({
   );
 
   useEffect(() => {
-    if (!scene) return;
+    if (!scene || !active) return;
     let raf = 0;
     let last = 0;
     const bounds = Skia.XYWHRect(0, 0, size.w, size.h);
@@ -82,7 +85,7 @@ export function SpicyLyricsView({
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [scene, size.w, size.h, nowMs, durationMs, picture]);
+  }, [scene, active, size.w, size.h, nowMs, durationMs, picture]);
 
   const gesture = Gesture.Exclusive(
     Gesture.Pan()

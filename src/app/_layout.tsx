@@ -22,6 +22,7 @@ import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
 import { prefetchMusicVideos } from '@/video/musicVideos';
+import { resetScreenAwake } from '@/lib/keepAwake';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 
@@ -82,6 +83,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
   useEffect(() => {
     startWidgets();
     watchRadio();
+    // The screen sleeps as usual except on lyrics and music videos (lib/keepAwake.ts).
+    resetScreenAwake();
   }, []);
 
   // Build or top up the fuzzy-search index once the first screens have loaded.

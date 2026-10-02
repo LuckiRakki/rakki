@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -10,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
+import { useScreenAwake } from '@/lib/keepAwake';
 import { artistLine } from '@/lib/items';
 import { createPlaybackClock } from '@/lyrics/clock';
 import { creditLine, useLyrics } from '@/lyrics/fetch';
@@ -29,7 +29,7 @@ const FOOTER_H = 110;
 export default function LyricsScreen() {
   const t = useTheme();
   const styles = useStyles();
-  useKeepAwake();
+  useScreenAwake('lyrics');
   const insets = useSafeAreaInsets();
   const client = useAuth((s) => s.client);
   const track = usePlayer((s) => s.queue[s.index]?.item);

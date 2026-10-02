@@ -83,6 +83,8 @@ final class RakkiPlayer: NSObject {
     super.init()
     player.actionAtItemEnd = .advance
     player.automaticallyWaitsToMinimizeStalling = true
+    // Music never holds the display awake (the lyrics and video screens ask for that themselves).
+    player.preventsDisplaySleepDuringVideoPlayback = false
     configureSession()
     observePlayer()
     setupRemoteCommands()
@@ -573,8 +575,14 @@ final class RakkiPlayer: NSObject {
     try? session.setCategory(.playback, mode: .default, policy: .longFormAudio, options: [])
   }
 
+  /// Before every play: other code can change the shared session (expo-video sets it up for
+  /// movies, mixed with other audio, which hides Rakki's lock screen controls), so set ours again.
   private func activateSession() {
-    try? AVAudioSession.sharedInstance().setActive(true)
+    let session = AVAudioSession.sharedInstance()
+    if session.category != .playback || session.mode != .default || !session.categoryOptions.isEmpty {
+      configureSession()
+    }
+    try? session.setActive(true)
   }
 
   @objc private func onInterruption(_ note: Notification) {

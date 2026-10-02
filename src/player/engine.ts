@@ -241,3 +241,15 @@ function fallbackEngine(): PlayerEngine {
 }
 
 export const engine: PlayerEngine = RakkiAudio ? nativeEngine(RakkiAudio) : fallbackEngine();
+
+/**
+ * Set the audio session back to music playback (not mixed with other apps), so the lock screen
+ * and headphone controls are Rakki's. Needed after a music video: expo-video changes the
+ * session and nothing changes it back. Builds from after 1.0.0 also do this on every play.
+ */
+export function reclaimAudioSession() {
+  if (!RakkiAudio) return;
+  void setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(
+    () => {},
+  );
+}
