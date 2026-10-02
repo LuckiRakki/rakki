@@ -29,6 +29,8 @@ import { makeStyles, useTheme } from '@/ui/theme';
 import { findVideoFor, playMusicVideo } from '@/video/musicVideos';
 import { useOnAir } from '@/radio/live';
 import { RadioCard } from '@/radio/RadioCard';
+import { stationWebsite, useStations } from '@/radio/stations';
+import { openStationWebsite } from '@/radio/StationViews';
 
 const RoutePicker = getRoutePicker();
 
@@ -62,6 +64,9 @@ export default function PlayerScreen() {
   const stationId = track?.Radio?.stationId;
   const onAir = useOnAir((s) => (stationId ? s.byStation[stationId] : undefined));
   const radio = !!stationId;
+  const station = useStations((s) => (stationId ? s.stations.find((x) => x.id === stationId) : undefined));
+  // Plain streams have no song info, so no lyrics either (SUB/WAVE stations do).
+  const plainRadio = !!station && !station.apiBase;
 
   if (!track) {
     return (
@@ -141,7 +146,13 @@ export default function PlayerScreen() {
                 style={{ fontSize: t.size(16), marginTop: 2 }}
               />
             </View>
-            {radio ? null : (
+            {radio ? (
+              station && stationWebsite(station) ? (
+                <Pressable hitSlop={10} onPress={() => openStationWebsite(station)} accessibilityLabel={`Open ${station.name}'s website`}>
+                  <Ionicons name="globe-outline" size={26} color={t.colors.text} />
+                </Pressable>
+              ) : null
+            ) : (
               <HeartButton
                 liked={favorite}
                 onToggle={(v) => p().setFavorite(track.Id, v)}
@@ -168,11 +179,12 @@ export default function PlayerScreen() {
           {/* Transport */}
           {radio ? (
             <View style={[styles.controls, { justifyContent: 'center' }]}>
-              <Pressable onPress={tap(() => p().toggle())} style={styles.playBtn} accessibilityLabel={playing ? 'Pause' : 'Play'}>
+              {/* Live: stop, not pause (play again picks it up live). */}
+              <Pressable onPress={tap(() => p().toggle())} style={styles.playBtn} accessibilityLabel={playing ? 'Stop' : 'Play'}>
                 {buffering ? (
                   <ActivityIndicator color="#000" />
                 ) : (
-                  <Ionicons name={playing ? 'pause' : 'play'} size={34} color="#000" style={{ marginLeft: playing ? 0 : 4 }} />
+                  <Ionicons name={playing ? 'stop' : 'play'} size={playing ? 30 : 34} color="#000" style={{ marginLeft: playing ? 0 : 4 }} />
                 )}
               </Pressable>
             </View>
@@ -213,17 +225,22 @@ export default function PlayerScreen() {
           ) : null}
 
           {/* Output + queue */}
+          {/* Three columns: the middle (Lyrics, Video) stays centred under play/pause. */}
           <View style={styles.bottomRow}>
-            {RoutePicker ? (
-              <RoutePicker style={{ width: 30, height: 30 }} tintColor={t.colors.text} activeTintColor={t.colors.accent} />
-            ) : (
-              <Ionicons name="phone-portrait-outline" size={22} color={t.colors.textMuted} />
-            )}
+            <View style={styles.side}>
+              {RoutePicker ? (
+                <RoutePicker style={{ width: 30, height: 30 }} tintColor={t.colors.text} activeTintColor={t.colors.accent} />
+              ) : (
+                <Ionicons name="phone-portrait-outline" size={22} color={t.colors.textMuted} />
+              )}
+            </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.sm }}>
-              <Pressable hitSlop={12} onPress={() => router.push('/lyrics')} style={styles.lyricsBtn}>
-                <Ionicons name="mic" size={18} color="#000" />
-                <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: '#000' }}>Lyrics</T>
-              </Pressable>
+              {plainRadio ? null : (
+                <Pressable hitSlop={12} onPress={() => router.push('/lyrics')} style={styles.lyricsBtn}>
+                  <Ionicons name="mic" size={18} color="#000" />
+                  <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: '#000' }}>Lyrics</T>
+                </Pressable>
+              )}
               {video ? (
                 <Pressable
                   hitSlop={8}
@@ -235,7 +252,7 @@ export default function PlayerScreen() {
                 </Pressable>
               ) : null}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
+            <View style={[styles.side, { justifyContent: 'flex-end', gap: t.space.md }]}>
               {sleepLabel ? (
                 <Pressable
                   hitSlop={8}
@@ -312,6 +329,7 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.accent,
   },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  side: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 44, marginBottom: t.space.sm },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: t.colors.accent },
   sleepPill: {

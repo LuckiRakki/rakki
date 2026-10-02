@@ -83,7 +83,7 @@ export function MiniPlayer() {
             {buffering ? (
               <ActivityIndicator color={t.colors.text} />
             ) : (
-              <Ionicons name={playing ? 'pause' : 'play'} size={26} color={t.colors.text} />
+              <Ionicons name={playing ? (track.Radio ? 'stop' : 'pause') : 'play'} size={playing && track.Radio ? 22 : 26} color={t.colors.text} />
             )}
           </Pressable>
           {track.Radio ? null : (

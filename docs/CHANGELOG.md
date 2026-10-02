@@ -6,6 +6,30 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 0.12.0 (2026-10-01)
+- **Edit a station.** Long-press a station (Home or Library → Radio): *Edit station*, *Open
+  website*, *Remove station*. Edit sets its name, your own picture for it (from Photos, cropped
+  square) and a website; the stream stays as added. The picture shows on the station, in the
+  player and on the lock screen (for SUB/WAVE: while no song cover is on air). SUB/WAVE
+  stations open their own page if you don't set a website. The live player has a website
+  button where the heart would be.
+- **Radio lyrics (SUB/WAVE).** Lyrics now work on the station: the song on air is found in
+  your library (same title and artist) and its lyrics follow what you hear. Icecast sends a
+  burst of past audio when you connect (WALT: about 22 s), so you hear the station that much
+  late; Rakki measures each station's burst once and offsets for it (about a second either
+  way). Plain streams have no song info, so the Lyrics button is gone there.
+- **Live controls.** The station's play button is a stop square: playing again reconnects, so
+  it's live again (and the lyrics stay in step) instead of carrying on from where it stopped.
+  The lock screen does the same (LIVE, stop, no skip or seek) from the 1.0.0 native build.
+- **Lyrics button centred** under play/pause (the row is three columns now, so the sides no
+  longer push it off).
+- **Accent colour on radio**: with Lucid on, a station uses your own accent instead of the last
+  album's colour.
+- **Reorder the Library tabs.** Hold any chip (Playlists, Albums…) to drag them into your
+  order, e.g. Radio before Genres. Reset puts them back.
+- **Home's Radio row**: SUB/WAVE stations first, then the most recently played. Library → Radio
+  can sort by *Recently played* too.
+
 ## 0.11.0 (2026-10-01)
 - **Radio, with SUB/WAVE built in.** Library → Radio → *Add a station*: paste a SUB/WAVE
   station's address (e.g. its Tailscale name) and Rakki finds its name, stream and API on

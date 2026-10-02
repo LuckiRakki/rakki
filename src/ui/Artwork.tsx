@@ -32,9 +32,9 @@ export function Artwork({
   // Saved cover art (downloaded albums/playlists) works offline and loads instantly.
   const artId = item ? (item.Type === 'Audio' ? item.AlbumId : item.Id) : undefined;
   const hasLocal = useDownloads((s) => !!artId && !!s.art[artId]);
-  // A radio station shows the cover of the song on air (from the station).
+  // A radio station shows the cover of the song on air (from the station), else your picture.
   const uri = item?.Radio
-    ? item.Radio.coverUrl
+    ? (item.Radio.coverUrl ?? item.Radio.imageUri)
     : ((hasLocal ? localArtUri(artId) : null) ?? (item && client?.imageUrl(item, bucket(size * PixelRatio.get()))));
   const blurhash = item && client?.blurhash(item);
 

@@ -8,6 +8,18 @@ import { readPref, writePref } from '@/lib/prefs';
 export type LibraryTab = 'playlists' | 'albums' | 'songs' | 'artists' | 'genres' | 'radio' | 'downloads';
 export type LibraryLayout = 'grid' | 'list';
 
+/** The Library's chips, in their default order. */
+export const LIBRARY_TABS: { key: LibraryTab; label: string }[] = [
+  { key: 'playlists', label: 'Playlists' },
+  { key: 'albums', label: 'Albums' },
+  { key: 'songs', label: 'Songs' },
+  { key: 'artists', label: 'Artists' },
+  { key: 'genres', label: 'Genres' },
+  { key: 'radio', label: 'Radio' },
+  { key: 'downloads', label: 'Downloaded' },
+];
+const DEFAULT_ORDER = LIBRARY_TABS.map((x) => x.key);
+
 export interface SortOption {
   key: string;
   label: string;
@@ -47,6 +59,7 @@ export const SORTS: Record<LibraryTab, SortOption[]> = {
   // Your radio stations (on the phone).
   radio: [
     { key: 'recent', label: 'Recently added', sortBy: '', sortOrder: 'Descending' },
+    { key: 'played', label: 'Recently played', sortBy: '', sortOrder: 'Descending' },
     { key: 'alpha', label: 'Alphabetical', sortBy: '', sortOrder: 'Ascending' },
   ],
   // Sorted on the phone (one list of every genre).
@@ -74,6 +87,7 @@ const DEFAULT_LAYOUT: Record<LibraryTab, LibraryLayout> = {
 };
 const TAB_KEY = 'rakki.libraryTab';
 const VIEW_KEY = 'rakki.libraryView';
+const ORDER_KEY = 'rakki.libraryTabOrder';
 
 interface Saved {
   sort: Partial<Record<LibraryTab, string>>;
@@ -93,6 +107,17 @@ function savedTab(): LibraryTab {
     : 'albums';
 }
 
+/** Your chip order; chips added in later updates go on the end. */
+function savedOrder(): LibraryTab[] {
+  try {
+    const saved = JSON.parse(readPref(ORDER_KEY) ?? '[]') as unknown;
+    const known = Array.isArray(saved) ? saved.filter((k): k is LibraryTab => DEFAULT_ORDER.includes(k)) : [];
+    return [...new Set(known), ...DEFAULT_ORDER.filter((k) => !known.includes(k))];
+  } catch {
+    return DEFAULT_ORDER;
+  }
+}
+
 function savedView(): Saved {
   try {
     const v = JSON.parse(readPref(VIEW_KEY) ?? '{}') as Partial<Saved>;
@@ -104,9 +129,13 @@ function savedView(): Saved {
 
 interface LibraryView extends Saved {
   tab: LibraryTab;
+  /** The chips, in your order (hold one to change it). */
+  tabOrder: LibraryTab[];
   /** Bumped every time Random is picked, for a new shuffle (not saved). */
   shuffleSeed: number;
   setTab(tab: LibraryTab): void;
+  /** A new chip order (null: back to the default). */
+  setTabOrder(order: LibraryTab[] | null): void;
   setSort(tab: LibraryTab, key: string): void;
   /** A new random order (pull to refresh with Random). */
   reshuffle(): void;
@@ -117,11 +146,17 @@ export const useLibraryView = create<LibraryView>((set, get) => {
   const persist = () => writePref(VIEW_KEY, JSON.stringify({ sort: get().sort, layout: get().layout }));
   return {
     tab: savedTab(),
+    tabOrder: savedOrder(),
     shuffleSeed: 1,
     ...savedView(),
     setTab: (tab) => {
       writePref(TAB_KEY, tab);
       set({ tab });
+    },
+    setTabOrder: (order) => {
+      const tabOrder = order ?? DEFAULT_ORDER;
+      writePref(ORDER_KEY, JSON.stringify(tabOrder));
+      set({ tabOrder });
     },
     setSort: (tab, key) => {
       set({ sort: { ...get().sort, [tab]: key }, shuffleSeed: key === 'random' ? get().shuffleSeed + 1 : get().shuffleSeed });

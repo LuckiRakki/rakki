@@ -9,10 +9,12 @@ import { useAlbumArtists, useAlbums, useGenreCounts, useLikedSongs, usePlaylists
 import { songCount } from '@/lib/format';
 import { kindLine } from '@/lib/items';
 import { useDownloads, type DownloadedCollection } from '@/downloads/store';
+import { thud } from '@/lib/haptics';
 import { useOffline } from '@/lib/online';
 import { createPlaylist, playRandom } from '@/library/actions';
 import {
   layoutFor,
+  LIBRARY_TABS,
   seededShuffle,
   SORTS,
   sortFor,
@@ -35,16 +37,6 @@ import { useTheme } from '@/ui/theme';
 import { usePlayer } from '@/player/store';
 import { TrackRow } from '@/ui/TrackRow';
 
-const TABS: { key: LibraryTab; label: string }[] = [
-  { key: 'playlists', label: 'Playlists' },
-  { key: 'albums', label: 'Albums' },
-  { key: 'songs', label: 'Songs' },
-  { key: 'artists', label: 'Artists' },
-  { key: 'genres', label: 'Genres' },
-  { key: 'radio', label: 'Radio' },
-  { key: 'downloads', label: 'Downloaded' },
-];
-
 /** Tile width for an n-column grid with the standard side gutters. */
 /** Album grids follow Customize → Album grid columns; `extra` adds columns (artists' round tiles). */
 function useTileSize(extra = 0) {
@@ -59,6 +51,7 @@ export default function LibraryScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tab = useLibraryView((s) => s.tab);
+  const tabOrder = useLibraryView((s) => s.tabOrder);
   const sort = useLibraryView((s) => sortFor(s, s.tab));
   const layout = useLibraryView((s) => layoutFor(s, s.tab));
   const offline = useOffline();
@@ -88,12 +81,16 @@ export default function LibraryScreen() {
         showsHorizontalScrollIndicator={false}
         style={{ marginTop: t.space.md, flexGrow: 0 }}
         contentContainerStyle={{ gap: t.space.sm, paddingHorizontal: t.space.lg }}>
-        {TABS.map((x) => (
+        {tabOrder.map((key) => (
           <Chip
-            key={x.key}
-            label={x.label}
-            active={tab === x.key}
-            onPress={() => useLibraryView.getState().setTab(x.key)}
+            key={key}
+            label={LIBRARY_TABS.find((x) => x.key === key)?.label ?? key}
+            active={tab === key}
+            onPress={() => useLibraryView.getState().setTab(key)}
+            onLongPress={() => {
+              thud();
+              router.push('/library-tabs');
+            }}
           />
         ))}
       </ScrollView>
@@ -230,7 +227,9 @@ function Radio({ header, sort }: ListProps) {
   const list =
     sort.key === 'alpha'
       ? [...stations].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-      : [...stations].sort((a, b) => b.addedAt - a.addedAt);
+      : sort.key === 'played'
+        ? [...stations].sort((a, b) => (b.lastPlayedAt ?? 0) - (a.lastPlayedAt ?? 0) || b.addedAt - a.addedAt)
+        : [...stations].sort((a, b) => b.addedAt - a.addedAt);
   return (
     <FlatList
       data={list}

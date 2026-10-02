@@ -49,7 +49,17 @@ export function ItemRow({
 }
 
 /** A pill-shaped filter chip (Library / Search). */
-export function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+export function Chip({
+  label,
+  active,
+  onPress,
+  onLongPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  onLongPress?: () => void;
+}) {
   const t = useTheme();
   return (
     <Pressable
@@ -57,6 +67,8 @@ export function Chip({ label, active, onPress }: { label: string; active: boolea
         tick();
         onPress();
       }}
+      onLongPress={onLongPress}
+      delayLongPress={400}
       style={{
         paddingHorizontal: t.space.md,
         height: 32,

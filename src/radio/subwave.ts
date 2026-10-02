@@ -8,6 +8,8 @@ export interface OnAir {
   album?: string;
   /** SUB/WAVE's id for the song (its Navidrome id). */
   songId?: string;
+  /** When the song started on the station (ms), for following its lyrics. */
+  startedAtMs?: number;
   coverUrl?: string;
   show?: string;
   dj?: string;
@@ -40,7 +42,7 @@ const cover = (apiBase: string, songId?: string) => (songId ? `${apiBase}/cover/
 /** What's playing now, with the show and DJ. */
 export async function fetchOnAir(apiBase: string): Promise<OnAir> {
   const json = await getJson<{
-    nowPlaying?: { title?: string; artist?: string; album?: string; subsonic_id?: string };
+    nowPlaying?: { title?: string; artist?: string; album?: string; subsonic_id?: string; timestamp?: number };
     dj?: { name?: string; avatar?: string; station?: string };
     activeShow?: { name?: string; persona?: { name?: string; avatar?: string } };
   }>(`${apiBase}/now-playing`);
@@ -51,6 +53,7 @@ export async function fetchOnAir(apiBase: string): Promise<OnAir> {
     artist: np.artist ?? '',
     album: np.album,
     songId: np.subsonic_id,
+    startedAtMs: np.timestamp ? np.timestamp * 1000 : undefined,
     coverUrl: cover(apiBase, np.subsonic_id),
     show: json.activeShow?.name,
     dj: json.activeShow?.persona?.name ?? json.dj?.name,

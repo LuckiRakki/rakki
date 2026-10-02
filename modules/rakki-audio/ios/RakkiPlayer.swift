@@ -13,6 +13,7 @@ struct RakkiTrack {
   let artworkUrl: URL?
   let duration: Double
   let gain: Float
+  let live: Bool
 
   init?(_ r: TrackRecord) {
     guard let url = URL(string: r.url) else { return nil }
@@ -25,6 +26,7 @@ struct RakkiTrack {
     artworkUrl = r.artworkUrl.flatMap { URL(string: $0) }
     duration = r.duration
     gain = Float(max(0, min(1, r.gain)))
+    live = r.live
   }
 }
 
@@ -52,6 +54,10 @@ final class RakkiPlayer: NSObject {
   private var positionBeforeJump: Double?
   private var lastEndedKey: String?
   private var pendingSeek: Double?
+  /// A live stream that was stopped: playing it again reconnects, so it's live again rather
+  /// than carrying on from where it stopped.
+  private var liveStopped = false
+  private var isLive: Bool { tracks.indices.contains(index) && tracks[index].live }
 
   private var itemKeys: [ObjectIdentifier: String] = [:]
   private var itemObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
@@ -108,6 +114,7 @@ final class RakkiPlayer: NSObject {
       positionBeforeJump = snapshotPosition()
     }
     tracks = newTracks
+    liveStopped = false
     guard !tracks.isEmpty else {
       stop()
       return
@@ -146,7 +153,8 @@ final class RakkiPlayer: NSObject {
 
   func play() {
     guard !tracks.isEmpty else { return }
-    if player.currentItem == nil {
+    if player.currentItem == nil || liveStopped {
+      liveStopped = false
       jump(to: min(index, tracks.count - 1), position: 0)
     }
     activateSession()
@@ -159,6 +167,7 @@ final class RakkiPlayer: NSObject {
   func pause() {
     intendsToPlay = false
     player.pause()
+    if isLive { liveStopped = true }
     emitState()
     updateNowPlaying()
   }
@@ -617,8 +626,26 @@ final class RakkiPlayer: NSObject {
       self?.seek(to: event.positionTime)
       return .success
     }
+    // Live streams stop instead of pausing (see updateRemoteCommands).
+    handle(center.stopCommand) { [weak self] _ in
+      self?.pause()
+      return .success
+    }
     center.skipForwardCommand.isEnabled = false
     center.skipBackwardCommand.isEnabled = false
+    updateRemoteCommands()
+  }
+
+  /// A live stream gets radio controls, like SUB/WAVE's own app: a stop square instead of
+  /// pause, and no skipping or seeking.
+  private func updateRemoteCommands() {
+    let center = MPRemoteCommandCenter.shared()
+    let live = isLive
+    center.pauseCommand.isEnabled = !live
+    center.stopCommand.isEnabled = live
+    center.nextTrackCommand.isEnabled = !live
+    center.previousTrackCommand.isEnabled = !live
+    center.changePlaybackPositionCommand.isEnabled = !live
   }
 
   private func updateNowPlaying() {
@@ -627,19 +654,25 @@ final class RakkiPlayer: NSObject {
       return
     }
     let track = tracks[index]
-    let snapshot = progress()
+    updateRemoteCommands()
     var info: [String: Any] = [
       MPMediaItemPropertyTitle: track.title,
       MPMediaItemPropertyArtist: track.artist,
       MPMediaItemPropertyAlbumTitle: track.album,
-      MPMediaItemPropertyPlaybackDuration: (snapshot["duration"] as? Double) ?? track.duration,
-      MPNowPlayingInfoPropertyElapsedPlaybackTime: (snapshot["position"] as? Double) ?? 0,
       MPNowPlayingInfoPropertyPlaybackRate: player.timeControlStatus == .playing ? 1.0 : 0.0,
       MPNowPlayingInfoPropertyDefaultPlaybackRate: 1.0,
-      MPNowPlayingInfoPropertyPlaybackQueueIndex: index,
-      MPNowPlayingInfoPropertyPlaybackQueueCount: tracks.count,
       MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
     ]
+    if track.live {
+      // No length, position or queue: the lock screen shows LIVE.
+      info[MPNowPlayingInfoPropertyIsLiveStream] = true
+    } else {
+      let snapshot = progress()
+      info[MPMediaItemPropertyPlaybackDuration] = (snapshot["duration"] as? Double) ?? track.duration
+      info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = (snapshot["position"] as? Double) ?? 0
+      info[MPNowPlayingInfoPropertyPlaybackQueueIndex] = index
+      info[MPNowPlayingInfoPropertyPlaybackQueueCount] = tracks.count
+    }
     if let url = track.artworkUrl {
       if let artwork = artworkCache[url] {
         info[MPMediaItemPropertyArtwork] = artwork

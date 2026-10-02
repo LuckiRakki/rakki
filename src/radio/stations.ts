@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 
 import { readPref, writePref } from '@/lib/prefs';
+import { deleteStationImage } from '@/radio/stationImage';
 
 export interface Station {
   id: string;
@@ -12,7 +13,26 @@ export interface Station {
   streamUrl: string;
   /** SUB/WAVE's API ("https://host/api"); missing for plain streams. */
   apiBase?: string;
+  /** Your own picture for the station: its file name (stationImage.ts). */
+  image?: string;
+  /** The station's website ("Open website"). SUB/WAVE stations default to their address. */
+  website?: string;
   addedAt: number;
+  lastPlayedAt?: number;
+}
+
+/** Where "Open website" goes: the one you set, else a SUB/WAVE station's own page. */
+export function stationWebsite(station: Station): string | undefined {
+  return station.website || station.apiBase?.replace(/\/api\/?$/, '') || undefined;
+}
+
+/**
+ * Home's order: SUB/WAVE stations first, then the most recently played (never-played ones by
+ * when they were added).
+ */
+export function homeOrder(stations: Station[]): Station[] {
+  const when = (s: Station) => s.lastPlayedAt ?? s.addedAt;
+  return [...stations].sort((a, b) => Number(!!b.apiBase) - Number(!!a.apiBase) || when(b) - when(a));
 }
 
 const KEY = 'rakki.radioStations';
@@ -30,6 +50,8 @@ function load(): Station[] {
 interface StationsState {
   stations: Station[];
   add(station: Omit<Station, 'id' | 'addedAt'>): Station;
+  update(id: string, patch: Partial<Pick<Station, 'name' | 'image' | 'website'>>): void;
+  markPlayed(id: string): void;
   remove(id: string): void;
 }
 
@@ -44,7 +66,18 @@ export const useStations = create<StationsState>((set, get) => ({
     set({ stations });
     return added;
   },
+  update(id, patch) {
+    const stations = get().stations.map((s) => (s.id === id ? { ...s, ...patch } : s));
+    writePref(KEY, JSON.stringify(stations));
+    set({ stations });
+  },
+  markPlayed(id) {
+    const stations = get().stations.map((s) => (s.id === id ? { ...s, lastPlayedAt: Date.now() } : s));
+    writePref(KEY, JSON.stringify(stations));
+    set({ stations });
+  },
   remove(id) {
+    deleteStationImage(get().stations.find((s) => s.id === id)?.image);
     const stations = get().stations.filter((s) => s.id !== id);
     writePref(KEY, JSON.stringify(stations));
     set({ stations });

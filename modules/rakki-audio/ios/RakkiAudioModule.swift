@@ -15,6 +15,8 @@ struct TrackRecord: Record {
   @Field var duration: Double = 0
   /// Linear volume factor for normalization (1 = unchanged). iOS can only attenuate.
   @Field var gain: Double = 1
+  /// A live stream (radio): the lock screen shows it as live, with stop and no skip or seek.
+  @Field var live: Bool = false
 }
 
 public class RakkiAudioModule: Module {

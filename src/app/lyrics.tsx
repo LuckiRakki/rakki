@@ -14,8 +14,11 @@ import { artistLine } from '@/lib/items';
 import { createPlaybackClock } from '@/lyrics/clock';
 import { creditLine, useLyrics } from '@/lyrics/fetch';
 import { LyricsStage, pickLyrics } from '@/lyrics/LyricsStage';
+import { ticksToSeconds } from '@/lib/format';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
+import { useOnAir } from '@/radio/live';
+import { radioPositionMs, useOnAirSong } from '@/radio/sync';
 import { useSettings, type LyricsMode } from '@/settings/store';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
@@ -32,8 +35,22 @@ export default function LyricsScreen() {
   const track = usePlayer((s) => s.queue[s.index]?.item);
   const playing = usePlayer((s) => s.playing);
   const mode = useSettings((s) => s.lyricsMode);
-  const { data, isLoading } = useLyrics(track?.Id);
-  const clock = useMemo(() => createPlaybackClock(), []);
+  // A SUB/WAVE station: the lyrics of the song on air, from the same song in your library,
+  // timed from when it started on the station (see radio/sync.ts).
+  const streamUrl = track?.Radio?.streamUrl;
+  const onAir = useOnAir((s) => (track?.Radio ? s.byStation[track.Radio.stationId] : undefined));
+  const radioSong = useOnAirSong(streamUrl ? onAir?.title : undefined, onAir?.artist);
+  const lyricsFor = streamUrl ? (radioSong.data ?? undefined) : track;
+  const { data, isLoading } = useLyrics(lyricsFor?.Id);
+  const startedAt = onAir?.startedAtMs;
+  const songMs = radioSong.data ? ticksToSeconds(radioSong.data.RunTimeTicks) * 1000 : 0;
+  const clock = useMemo(
+    () =>
+      streamUrl && startedAt
+        ? { nowMs: () => radioPositionMs(startedAt, streamUrl), durationMs: () => songMs }
+        : createPlaybackClock(),
+    [streamUrl, startedAt, songMs],
+  );
   // The visualizer instead of the lyrics (songs without lyrics get it on their own).
   const [visualizer, setVisualizer] = useState(false);
 
@@ -55,12 +72,13 @@ export default function LyricsScreen() {
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <LyricsStage
         lyrics={lyrics}
-        loading={isLoading}
+        loading={isLoading || (!!streamUrl && radioSong.isLoading)}
         mode={mode}
         nowMs={clock.nowMs}
         durationMs={clock.durationMs}
-        onSeek={(ms) => usePlayer.getState().seek(ms / 1000)}
-        artUri={track ? client?.imageUrl(track, 600) : undefined}
+        // A live stream can't seek.
+        onSeek={streamUrl ? () => {} : (ms) => usePlayer.getState().seek(ms / 1000)}
+        artUri={track?.Radio ? (track.Radio.coverUrl ?? track.Radio.imageUri) : track ? client?.imageUrl(track, 600) : undefined}
         tint={tint}
         footerSpace={footerSpace}
         visualizer={visualizer}

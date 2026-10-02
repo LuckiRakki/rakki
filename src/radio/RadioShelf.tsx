@@ -1,15 +1,20 @@
+import { useMemo } from 'react';
 import { FlatList, View } from 'react-native';
 
-import { useStations } from '@/radio/stations';
+import { homeOrder, useStations } from '@/radio/stations';
 import { StationTile } from '@/radio/StationViews';
 import { openLibrary } from '@/ui/nav';
 import { SectionTitle } from '@/ui/Shelf';
 import { useTheme } from '@/ui/theme';
 
-/** Home's Radio row: your stations, with what's on air. Nothing until a station is added. */
+/**
+ * Home's Radio row: your stations, with what's on air (SUB/WAVE first, then the last played).
+ * Nothing until a station is added.
+ */
 export function RadioShelf() {
   const t = useTheme();
-  const stations = useStations((s) => s.stations);
+  const all = useStations((s) => s.stations);
+  const stations = useMemo(() => homeOrder(all), [all]);
   if (!stations.length) return null;
   return (
     <View style={{ marginTop: t.space.xl }}>

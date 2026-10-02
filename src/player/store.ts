@@ -14,7 +14,9 @@ import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 import { artistLine } from '@/lib/items';
 import { engine, type RakkiTrack, type RepeatMode } from '@/player/engine';
-import type { Station } from '@/radio/stations';
+import { useStations, type Station } from '@/radio/stations';
+import { stationImageUri } from '@/radio/stationImage';
+import { measureBurst, noteRadioConnect } from '@/radio/sync';
 import { reporter } from '@/player/reporting';
 import { useSettings } from '@/settings/store';
 import { showToast } from '@/ui/overlays';
@@ -109,9 +111,11 @@ function toTracks(queue: QueueEntry[]): RakkiTrack[] {
         title: item.Name,
         artist: artistLine(item),
         album: item.Album ?? '',
-        artworkUrl: item.Radio.coverUrl ?? null,
+        // The song on air's cover (SUB/WAVE), else your picture for the station.
+        artworkUrl: item.Radio.coverUrl ?? item.Radio.imageUri ?? null,
         duration: 0,
         gain: 1,
+        live: true,
       };
     }
     return {
@@ -203,9 +207,13 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       Name: station.name,
       Type: 'Radio',
       Album: station.name,
-      Radio: { stationId: station.id, streamUrl: station.streamUrl },
+      Radio: { stationId: station.id, streamUrl: station.streamUrl, imageUri: stationImageUri(station.image) },
     };
     const queue = entries([item], 'context');
+    useStations.getState().markPlayed(station.id);
+    noteRadioConnect();
+    // SUB/WAVE: how far behind the station you'll hear it, for the lyrics.
+    if (station.apiBase) measureBurst(station.streamUrl);
     unshuffledKeys = null;
     set({ queue, index: 0, source: { type: 'radio', id: station.id, name: station.name }, error: null, buffering: true });
     void engine.setRepeatMode('one');
@@ -264,7 +272,14 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   },
 
   toggle() {
-    if (get().queue.length) void engine.togglePlayPause();
+    const s = get();
+    if (!s.queue.length) return;
+    // A station is stopped, not paused: it starts again live (a fresh connection), not from
+    // where it stopped.
+    const radio = s.queue[s.index]?.item.Radio;
+    const station = radio && !s.playing && !s.buffering && useStations.getState().stations.find((x) => x.id === radio.stationId);
+    if (station) return get().playStation(station);
+    void engine.togglePlayPause();
   },
 
   next() {
@@ -374,6 +389,8 @@ engine.subscribe({
   onTrackChange(e) {
     const s = usePlayer.getState();
     const found = s.queue.findIndex((q) => q.key === e.key);
+    // A station's stream reconnected (repeat-one): its delay starts over.
+    if (s.queue[found]?.item.Radio) noteRadioConnect();
     reporter.stopped(e.previousPosition);
     const entry = s.queue[found];
     // A restored queue loads paused: report the listen when play is pressed, not now.
@@ -558,6 +575,23 @@ async function maybeAutoplay() {
 // Web dev preview only: lets tests set up a queue from the browser console without playing.
 if (__DEV__ && typeof window !== 'undefined') {
   (globalThis as { __rakkiPlayer?: typeof usePlayer }).__rakkiPlayer = usePlayer;
+}
+
+/** The station that's on was edited: its new name and picture show in the player and on the lock screen. */
+export function refreshPlayingStation(station: Station) {
+  const { queue, index, source } = usePlayer.getState();
+  const entry = queue[index];
+  const radio = entry?.item.Radio;
+  if (!radio || radio.stationId !== station.id) return;
+  const item: BaseItem = {
+    ...entry.item,
+    // A plain stream shows the station's name; SUB/WAVE shows the song on air.
+    ...(station.apiBase ? {} : { Name: station.name, Album: station.name }),
+    Radio: { ...radio, imageUri: stationImageUri(station.image) },
+  };
+  const next = queue.map((e, i) => (i === index ? { ...e, item } : e));
+  usePlayer.setState({ queue: next, source: source?.type === 'radio' ? { ...source, name: station.name } : source });
+  void engine.updateQueue(toTracks(next));
 }
 
 /**

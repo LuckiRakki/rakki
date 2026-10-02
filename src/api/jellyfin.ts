@@ -66,7 +66,7 @@ export interface BaseItem {
   /** Credits (composers etc.), when the file has them and the request asked for People. */
   People?: { Name: string; Id: string; Type?: string; Role?: string }[];
   /** A radio station playing in the queue (not a Jellyfin item; see src/radio). */
-  Radio?: { stationId: string; streamUrl: string; coverUrl?: string };
+  Radio?: { stationId: string; streamUrl: string; coverUrl?: string; imageUri?: string };
   /** Music videos (Fields=MediaSources): the file's container and streams. */
   MediaSources?: {
     Id: string;

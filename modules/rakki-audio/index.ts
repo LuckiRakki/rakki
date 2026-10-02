@@ -21,6 +21,8 @@ export interface RakkiTrack {
   duration: number;
   /** Linear volume factor, 0–1. */
   gain: number;
+  /** A live stream (radio): the lock screen shows it as live, with stop instead of pause and no skipping. Builds before 1.0.0 ignore it. */
+  live?: boolean;
 }
 
 export interface StateEvent {

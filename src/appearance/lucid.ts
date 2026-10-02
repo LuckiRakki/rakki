@@ -20,6 +20,7 @@ export function useLucidAccent(enabled: boolean): string | null {
     if (current) writePref(LAST_KEY, current);
   }, [current]);
 
-  if (!enabled) return null;
+  // A radio station has no album colour: your own accent, not the last album's.
+  if (!enabled || track?.Radio) return null;
   return current ?? readPref(LAST_KEY);
 }

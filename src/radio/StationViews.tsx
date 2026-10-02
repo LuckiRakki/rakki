@@ -1,11 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Alert, Pressable, View } from 'react-native';
 
+import { thud } from '@/lib/haptics';
 import { usePlayer } from '@/player/store';
 import { useStationOnAir } from '@/radio/live';
-import { useStations, type Station } from '@/radio/stations';
+import { stationImageUri } from '@/radio/stationImage';
+import { stationWebsite, useStations, type Station } from '@/radio/stations';
 import type { OnAir } from '@/radio/subwave';
+import { openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
@@ -16,11 +21,12 @@ function onAirLine(info: OnAir | undefined): string | null {
   return info.show ?? null;
 }
 
-/** The song on air's cover, or a radio tile until there is one. */
+/** The song on air's cover, else your picture for the station, else a radio tile. */
 export function StationArt({ station, size, info }: { station: Station; size: number; info?: OnAir }) {
   const t = useTheme();
   const box = { width: size, height: size, borderRadius: t.radius.art };
-  if (info?.coverUrl) return <Image source={{ uri: info.coverUrl }} style={box} contentFit="cover" transition={200} />;
+  const uri = info?.coverUrl ?? stationImageUri(station.image);
+  if (uri) return <Image source={{ uri }} style={box} contentFit="cover" transition={200} />;
   return (
     <View style={[box, { backgroundColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' }]}>
       <Ionicons name="radio" size={size * 0.42} color={t.colors.accent} accessibilityLabel={station.name} />
@@ -41,12 +47,34 @@ function LiveBadge() {
 const useIsPlaying = (station: Station) =>
   usePlayer((s) => s.queue[s.index]?.item.Radio?.stationId === station.id && s.playing);
 
-/** Long press: remove the station (after asking). */
 export function confirmRemoveStation(station: Station) {
   Alert.alert(`Remove ${station.name}?`, 'You can add it again any time with its address.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Remove', style: 'destructive', onPress: () => useStations.getState().remove(station.id) },
   ]);
+}
+
+export function openStationWebsite(station: Station) {
+  const site = stationWebsite(station);
+  if (site) void WebBrowser.openBrowserAsync(site);
+}
+
+/** Long press: edit the station, open its website, or remove it. */
+export function stationOptions(station: Station) {
+  thud();
+  openOptions({
+    title: station.name,
+    options: [
+      { key: 'edit', label: 'Edit station' },
+      ...(stationWebsite(station) ? [{ key: 'site', label: 'Open website' }] : []),
+      { key: 'remove', label: 'Remove station' },
+    ],
+    onSelect: (key) => {
+      if (key === 'edit') router.push({ pathname: '/edit-station', params: { id: station.id } });
+      else if (key === 'site') openStationWebsite(station);
+      else confirmRemoveStation(station);
+    },
+  });
 }
 
 /** A station in Library → Radio. */
@@ -58,7 +86,7 @@ export function StationRow({ station }: { station: Station }) {
   return (
     <Pressable
       onPress={() => usePlayer.getState().playStation(station)}
-      onLongPress={() => confirmRemoveStation(station)}
+      onLongPress={() => stationOptions(station)}
       delayLongPress={350}
       style={({ pressed }) => ({
         flexDirection: 'row',
@@ -94,7 +122,7 @@ export function StationTile({ station, size = 148 }: { station: Station; size?: 
   return (
     <Pressable
       onPress={() => usePlayer.getState().playStation(station)}
-      onLongPress={() => confirmRemoveStation(station)}
+      onLongPress={() => stationOptions(station)}
       delayLongPress={350}
       style={({ pressed }) => ({ width: size, opacity: pressed ? 0.8 : 1 })}>
       <StationArt station={station} size={size} info={info} />

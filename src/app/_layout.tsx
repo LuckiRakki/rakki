@@ -120,6 +120,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               <Stack.Screen name="lyrics-style" options={{ presentation: 'modal' }} />
               <Stack.Screen name="add-account" options={{ presentation: 'modal' }} />
               <Stack.Screen name="add-station" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="edit-station" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="library-tabs" options={{ presentation: 'modal' }} />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="login" />

@@ -18,6 +18,8 @@ const MODALS = [
   '/lyrics-style',
   '/add-account',
   '/add-station',
+  '/edit-station',
+  '/library-tabs',
 ];
 let overModal = false;
 let currentPath = '/';
