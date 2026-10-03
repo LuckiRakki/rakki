@@ -6,6 +6,19 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.2.0, native build (2026-10-03)
+A new app to install (SideStore). Over-the-air updates now go to this build (runtime 1.2.0);
+1.0.0 stays on update 37.
+- **App icon colours.** Customize → App icon: 17 palettes (Classic, Sage, Sky, Lemon, Sand,
+  Lavender, Coral, Mint, Blush, Aqua, Peach, Periwinkle, Mocha, Cyan, Lime, Pink, Midnight) in
+  three styles: **Liquid Glass** (iOS 26's layered look, with its own Dark, Clear and Tinted
+  versions), **Depth** (flat, with the cat's shadow) and **Flat**. Neko player and Lyric lines
+  are still there. Switching style keeps the colour.
+- **The main icon is Classic in Liquid Glass**; older iOS versions get a flat version of it.
+- **Launch screen**: the Neko player, small, on a clear background.
+- From 1.0.1: the player sets its audio session before every play and never holds the display
+  awake itself.
+
 ## 1.1.1 (2026-10-02)
 - **Widgets: new background.** Two colours from the album cover: its brightest, most colourful
   one on top, fading into its darkest one, kept dark but in its own colour (much less black

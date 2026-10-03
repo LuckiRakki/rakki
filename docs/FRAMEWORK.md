@@ -431,7 +431,7 @@ ideas (Discord Rich Presence, a desktop app).
 - ~~**Fuzzy search.**~~ Built in Phase 3 (the user said go, 2026-09-30): see docs/phase-3.md task 4.
 - ~~**Online play counts on tracks (like Spotify).**~~ Built: an artist's Popular songs sort by Last.fm worldwide plays (0.9.0) and album pages show each song's Last.fm plays (0.10.0, can be turned off), with the user's own API key, cached for days and labelled. Spotify was ruled out: its public API only has a 0–100 popularity score, and the real counts sit behind its private API (against its terms).
 - ~~**Native builds**~~ (the user batches native changes): **0.2.0** (2026-10-01): the Files app folder, downloads kept out of iCloud backups, widgets, the neko app icon plus the Neko player and Lyric lines alternates (Customize → App icon), the Photos picker. **1.0.0** (2026-10-02): the audio-tap visualizer, the live radio lock screen, the in-app video player (expo-video), the launch screen.
-- **Next native build (planned, not built yet; the user's notes, 2026-10-02):**
+- ~~**Next native build**~~ (the user's notes, 2026-10-02): **built as 1.2.0** (2026-10-03). Icons from assets/icons/source/build_app_icons.py; glass alternates via plugins/withGlassAlternateIcons.js. The plan was:
   - App icon color picker: all 17 palettes (Classic … Midnight, assets/icons/variants) as
     built-in presets in Customize → App icon with previews; iOS only switches between icons
     bundled in the build, so new colors mean a new build. Each preset as Liquid Glass (.icon,
