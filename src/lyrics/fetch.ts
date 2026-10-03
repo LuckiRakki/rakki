@@ -111,6 +111,8 @@ export interface CreditRow {
   link?: string;
   /** A round profile picture before the text. */
   avatar?: string;
+  /** Lyrics credits sit a size below "Written by". */
+  small?: boolean;
 }
 
 function providerName(source?: string): string | null {
@@ -132,12 +134,16 @@ export function creditRows(l: Lyrics): CreditRow[] {
   if (l.songwriters?.length) rows.push({ text: `Written by: ${l.songwriters.join(', ')}` });
   const provider = providerName(l.source);
   if (provider) {
-    rows.push({ text: `Lyrics provided by ${provider}`, link: l.source === 'spicy_lyrics' ? 'https://spicylyrics.org' : undefined });
+    rows.push({
+      text: `Lyrics provided by ${provider}`,
+      link: l.source === 'spicy_lyrics' ? 'https://spicylyrics.org' : undefined,
+      small: true,
+    });
   }
   const { maker, uploader } = l.attribution ?? {};
-  if (maker) rows.push({ text: `Synced by ${maker.username}`, link: maker.url || undefined, avatar: maker.avatar });
+  if (maker) rows.push({ text: `Synced by ${maker.username}`, link: maker.url || undefined, avatar: maker.avatar, small: true });
   if (uploader && uploader.username !== maker?.username) {
-    rows.push({ text: `Uploaded by ${uploader.username}`, link: uploader.url || undefined, avatar: uploader.avatar });
+    rows.push({ text: `Uploaded by ${uploader.username}`, link: uploader.url || undefined, avatar: uploader.avatar, small: true });
   }
   return rows;
 }

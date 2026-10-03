@@ -1,6 +1,7 @@
 // A one-line text that scrolls when it doesn't fit (a long song title): it rests, slides along
 // until the end has come past, then rests at the start again, like Spotify. Text that fits
-// stays still. Runs on the UI thread; with Reduce Motion the end is cut off with "…" instead.
+// stays still. Runs on the UI thread. With Reduce Motion, or Settings → Scroll long titles off,
+// the end is cut off with "…" instead.
 import { useEffect, useState } from 'react';
 import { View, type StyleProp, type TextStyle } from 'react-native';
 import Animated, {
@@ -14,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useSettings } from '@/settings/store';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
@@ -27,7 +29,8 @@ export function Marquee({ text, style }: { text: string; style?: StyleProp<TextS
   const [textW, setTextW] = useState(0);
   const x = useSharedValue(0);
   const overflows = boxW > 0 && textW > boxW + 1;
-  const scrolls = overflows && !t.reduceMotion;
+  const enabled = useSettings((s) => s.scrollTitles);
+  const scrolls = overflows && enabled && !t.reduceMotion;
 
   useEffect(() => {
     cancelAnimation(x);

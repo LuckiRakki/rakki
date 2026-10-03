@@ -340,13 +340,17 @@ export class SpicyScene {
       const lastEnd = Math.max(...this.groups.map((g) => g.endMs));
       const lastRight = this.rows[this.rows.length - 1].right;
       const size = fonts.credits.getSize();
+      // The lyrics credits a size below "Written by".
+      const typeface = fonts.credits.getTypeface();
+      const smallFont = typeface ? Skia.Font(typeface, size * 0.8) : fonts.credits;
       const first = this.rows.length;
       y += gap + size * 0.6;
       credits.forEach((c, i) => {
         // A little extra space between "Written by" and the lyrics credits.
         if (i > 0 && i === (lyrics.songwriters?.length ? 1 : 0)) y += size * 0.5;
-        const lead = c.avatar ? Math.round(size * 1.5) : 0;
-        const row = this.plainRow('credits', this.groups.length, lastRight, fonts.credits, c.text, lastEnd, y, lead);
+        const font = c.small ? smallFont : fonts.credits;
+        const lead = c.avatar ? Math.round(font.getSize() * 1.5) : 0;
+        const row = this.plainRow('credits', this.groups.length, lastRight, font, c.text, lastEnd, y, lead);
         row.startMs = lastEnd;
         row.endMs = lastEnd + 600000;
         row.link = c.link;

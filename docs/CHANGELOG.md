@@ -6,6 +6,15 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.1.1 (2026-10-02)
+- **Widgets: new background.** Two colours from the album cover: its brightest, most colourful
+  one on top, fading into its darkest one, kept dark but in its own colour (much less black
+  than before). The cover's colours come from its blurhash, so nothing extra is downloaded.
+- **Lyrics credits** ("Lyrics provided by", "Synced by", "Uploaded by") are a size smaller than
+  "Written by". The Discord pictures now come through: the server plugin was updated.
+- **Settings → Playback → Scroll long titles**: turn the scrolling titles off (long titles are
+  then cut off with "…").
+
 ## 1.1.0 (2026-10-02)
 - **Long titles scroll.** In the mini-player, the player and the lyrics header, a title too
   long to fit rests, slides along until its end has come past, then rests again (still with

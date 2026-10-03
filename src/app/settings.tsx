@@ -55,6 +55,7 @@ export default function SettingsScreen() {
   const offlineMode = useSettings((s) => s.offlineMode);
   const normalize = useSettings((s) => s.normalize);
   const autoplay = useSettings((s) => s.autoplay);
+  const scrollTitles = useSettings((s) => s.scrollTitles);
   const downloadSummary = useDownloads((s) => {
     const done = Object.values(s.tracks).filter((x) => x.state === 'done');
     return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
@@ -188,6 +189,12 @@ export default function SettingsScreen() {
             detail="When your queue ends, keep going with similar songs"
             value={autoplay}
             onChange={(v) => useSettings.getState().set('autoplay', v)}
+          />
+          <Toggle
+            label="Scroll long titles"
+            detail="Song titles too long to fit slide along now and then. Off: they're cut off"
+            value={scrollTitles}
+            onChange={(v) => useSettings.getState().set('scrollTitles', v)}
           />
         </View>
 

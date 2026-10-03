@@ -162,9 +162,11 @@ function Credits({ lyrics, align }: { lyrics: Lyrics; align: 'left' | 'center' }
           onPress={() => row.link && void WebBrowser.openBrowserAsync(row.link)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: i === written && i > 0 ? t.space.sm : 0 }}>
           {row.avatar ? (
-            <Image source={{ uri: row.avatar }} style={{ width: 22, height: 22, borderRadius: 11 }} contentFit="cover" />
+            <Image source={{ uri: row.avatar }} style={{ width: 18, height: 18, borderRadius: 9 }} contentFit="cover" />
           ) : null}
-          <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(14), color: 'rgba(255,255,255,0.7)' }}>{row.text}</T>
+          <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(row.small ? 12 : 14), color: 'rgba(255,255,255,0.7)' }}>
+            {row.text}
+          </T>
         </Pressable>
       ))}
     </View>

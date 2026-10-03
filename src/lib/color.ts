@@ -58,6 +58,31 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 /**
+ * A widget's background from its album cover's colours: the brightest, most colourful one on
+ * top (kept mid-tone so text stays readable) fading into the darkest one, held dark but in its
+ * own hue so it never turns flat black. Covers without colour get a deep grey-blue.
+ */
+export function widgetGradient(colors: RGB[] | null, seed: string): [string, string] {
+  const hsl = (colors ?? []).map(rgbToHsl);
+  if (!hsl.length) {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    hsl.push([Math.abs(hash) % 360, 0.45, 0.4]);
+  }
+  // Brightest + most colourful: lightness counts, saturation counts more.
+  const primary = hsl.reduce((a, b) => (b[2] + b[1] * 1.4 > a[2] + a[1] * 1.4 ? b : a));
+  const darkest = hsl.reduce((a, b) => (b[2] < a[2] ? b : a));
+  const grey = (c: [number, number, number]) => c[1] < 0.12;
+  const [h1, s1, l1] = grey(primary) ? [220, 0.12, primary[2]] : primary;
+  // A colourless darkest patch takes the primary's hue, so the fade stays in one family.
+  const [h2, s2] = grey(darkest) ? [h1, Math.min(s1, 0.4)] : darkest;
+  return [
+    hslToHex(h1, Math.min(Math.max(s1, grey(primary) ? s1 : 0.35), 0.75), Math.min(Math.max(l1, 0.34), 0.5)),
+    hslToHex(h2, Math.min(Math.max(s2, 0.25), 0.6), Math.min(Math.max(darkest[2], 0.1), 0.18)),
+  ];
+}
+
+/**
  * An accent colour from an average art colour: same hue, pushed to a saturation and lightness
  * that read well on a dark background (album averages are often muddy or dark).
  */

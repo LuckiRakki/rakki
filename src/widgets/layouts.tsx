@@ -38,8 +38,10 @@ export interface NowPlayingProps {
   album?: string;
   /** The album art: a file URL in the shared widgets folder. */
   art?: string;
-  /** Background colour, from the art. */
+  /** Background colour, from the art (builds before 1.1.1 only knew this one). */
   color?: string;
+  /** Background gradient from the art: its brightest colour, then its darkest. */
+  colors?: string[];
   playing?: boolean;
   /** While playing: when the song started and when it will end (ms), for a live progress bar. */
   start?: number;
@@ -58,6 +60,7 @@ export interface WidgetAlbum {
 export interface JumpBackInProps {
   albums?: WidgetAlbum[];
   color?: string;
+  colors?: string[];
 }
 
 /** The song playing (or played last). Small/medium on the Home Screen, all three on the Lock Screen. */
@@ -71,8 +74,8 @@ export function NowPlayingLayout(props: NowPlayingProps, env: WidgetEnvironment)
   const backdrop = containerBackground(
     {
       type: 'linearGradient',
-      colors: [props.color ?? '#2a2a2a', '#121212'],
-      startPoint: { x: 0, y: 0 },
+      colors: props.colors ?? [props.color ?? '#2a2a2a', '#121212'],
+      startPoint: { x: 0.2, y: 0 },
       endPoint: { x: 0.8, y: 1 },
     },
     'widget',
@@ -214,9 +217,9 @@ export function JumpBackInLayout(props: JumpBackInProps, env: WidgetEnvironment)
   const backdrop = containerBackground(
     {
       type: 'linearGradient',
-      colors: [props.color ?? '#2a2a2a', '#121212'],
-      startPoint: { x: 0, y: 0 },
-      endPoint: { x: 0.6, y: 1 },
+      colors: props.colors ?? [props.color ?? '#2a2a2a', '#121212'],
+      startPoint: { x: 0.2, y: 0 },
+      endPoint: { x: 0.8, y: 1 },
     },
     'widget',
   );

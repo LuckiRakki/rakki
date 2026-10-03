@@ -51,6 +51,8 @@ interface Settings {
   popularSort: PopularSort;
   /** Last.fm play counts under each song on album pages (with a key). */
   lastfmAlbumPlays: boolean;
+  /** Long song titles scroll (mini-player, player, lyrics); off: cut off with "…". */
+  scrollTitles: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -69,6 +71,7 @@ const DEFAULTS: Settings = {
   lastfmApiKey: '',
   popularSort: 'lastfm',
   lastfmAlbumPlays: true,
+  scrollTitles: true,
 };
 
 function load(): Settings {

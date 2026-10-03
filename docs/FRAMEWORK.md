@@ -442,6 +442,12 @@ ideas (Discord Rich Presence, a desktop app).
   - Launch screen: the Neko player icon on a transparent background, not too big.
   - From 1.0.1: the player sets its audio session before every play and never holds the
     display awake (already in the code).
+- **Lyrics on the Home Screen / Lock Screen** (the user's idea, 2026-10-02; backlog, not
+  started). Widgets can't animate or follow playback live, so real Spicy karaoke is out. What
+  works: a timeline with one entry per lyric line at its timestamp (keeps time on its own;
+  pausing or seeking needs the app to reload the timeline, and reloads are budgeted), or a Live
+  Activity on the Lock Screen that the app updates line by line while it plays in the
+  background (closest to live; a native build).
 - **Discord Rich Presence ("Listening to …" on the user's Discord profile).** Still in the backlog (the user's call, 2026-10-02: ship 1.0.0 first). Known constraints before designing:
   - Classic Rich Presence talks to the *desktop* Discord client over local IPC. An iPhone app can't do that, and a bot can't set a user's status. Logging in with the user's own token ("self-bot") breaks Discord's terms, so that's out.
   - Most realistic route: a bridge that watches Jellyfin's sessions (Rakki already reports playback to Jellyfin, like Finamp) and sets presence through a Discord desktop client that's running somewhere, e.g. the PC. Open-source Jellyfin→Discord bridges already do this; check them first. Limitation: presence only shows while that desktop Discord is running.

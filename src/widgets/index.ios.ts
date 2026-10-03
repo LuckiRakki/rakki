@@ -11,8 +11,8 @@ import type { BaseItem } from '@/api/jellyfin';
 import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { localArtUri } from '@/downloads/store';
-import { blurhashAverage } from '@/lib/blurhash';
-import { tileColor } from '@/lib/color';
+import { blurhashAverage, blurhashColors } from '@/lib/blurhash';
+import { tileColor, widgetGradient } from '@/lib/color';
 import { ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { isOffline } from '@/lib/online';
@@ -111,6 +111,7 @@ async function pushNowPlaying() {
     album: track.Album,
     art,
     color: tileColor(blurhashAverage(client.blurhash(track)), track.AlbumId ?? track.Id),
+    colors: widgetGradient(blurhashColors(client.blurhash(track)), track.AlbumId ?? track.Id),
   });
 
   const progress = engine.getProgress();
@@ -167,7 +168,8 @@ async function pushJumpBackIn(items: BaseItem[] | undefined) {
   );
   const first = picked[0];
   const color = first ? tileColor(blurhashAverage(client.blurhash(first)), first.Id) : undefined;
-  send('jumpBackIn', widget, [{ date: new Date(), props: compact({ albums, color }) }]);
+  const colors = first ? widgetGradient(blurhashColors(client.blurhash(first)), first.Id) : undefined;
+  send('jumpBackIn', widget, [{ date: new Date(), props: compact({ albums, color, colors }) }]);
   removeLeftoverArt();
 }
 
