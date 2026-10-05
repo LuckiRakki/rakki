@@ -7,9 +7,6 @@ import { create } from 'zustand';
 import type { BaseItem } from '@/api/jellyfin';
 import { matchKey } from '@/lib/lastfm';
 
-/** How many videos the queue tops itself up to when a video starts. */
-const QUEUE_SIZE = 15;
-
 /**
  * What to play after `current`: another video by the same artist not seen yet, else any other
  * one not seen, at random. null when there's nothing new.
@@ -44,8 +41,11 @@ interface VideoSession {
   backTo(index: number): void;
   remove(index: number): void;
   setUpNext(list: BaseItem[]): void;
-  /** Top Up next up from the library (VideoHost, when a video starts). */
-  fill(videos: BaseItem[] | undefined): void;
+  /**
+   * Keep Up next at `size` videos (Settings → Playback → Videos queued ahead): top it up from
+   * the library, or cut it down to that. VideoHost, when a video starts or the setting changes.
+   */
+  fill(videos: BaseItem[] | undefined, size: number): void;
   stop(): void;
 }
 
@@ -95,14 +95,18 @@ export const useVideoSession = create<VideoSession>((set, get) => ({
   setUpNext(list) {
     set({ upNext: list });
   },
-  fill(videos) {
+  fill(videos, size) {
     const { video, history, upNext } = get();
-    if (!video || !videos?.length || upNext.length >= QUEUE_SIZE) return;
+    if (upNext.length > size) {
+      set({ upNext: upNext.slice(0, size) });
+      return;
+    }
+    if (!video || !videos?.length || upNext.length === size) return;
     const seen = new Set([video.Id, ...history.map((v) => v.Id), ...upNext.map((v) => v.Id)]);
     const list = [...upNext];
     // Each pick follows the one before it: the same artist's videos first, then something new.
     let from = list[list.length - 1] ?? video;
-    while (list.length < QUEUE_SIZE) {
+    while (list.length < size) {
       const pick = nextVideo(from, videos, seen);
       if (!pick) break;
       list.push(pick);

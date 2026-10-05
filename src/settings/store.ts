@@ -55,6 +55,8 @@ interface Settings {
   scrollTitles: boolean;
   /** When a music video ends, play a similar one. */
   videoAutoplay: boolean;
+  /** How many music videos the queue picks ahead (it tops up as they play). */
+  videoQueueSize: number;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -75,6 +77,7 @@ const DEFAULTS: Settings = {
   lastfmAlbumPlays: true,
   scrollTitles: true,
   videoAutoplay: true,
+  videoQueueSize: 3,
 };
 
 function load(): Settings {

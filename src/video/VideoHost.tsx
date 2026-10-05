@@ -44,6 +44,7 @@ function Host({ video }: { video: BaseItem }) {
     p.play();
   });
   const countdown = useVideoSession((s) => s.countdown);
+  const queueSize = useSettings((s) => s.videoQueueSize);
 
   // Share the player; when this video ends (or is replaced), give the audio session back and
   // let the server stop converting it.
@@ -56,10 +57,10 @@ function Host({ video }: { video: BaseItem }) {
     };
   }, [player, client, session]);
 
-  // Top the queue up as soon as this one starts.
+  // Top the queue up as soon as this one starts (and keep it to the size set in Settings).
   useEffect(() => {
-    useVideoSession.getState().fill(videos);
-  }, [video, videos]);
+    useVideoSession.getState().fill(videos, queueSize);
+  }, [video, videos, queueSize]);
 
   // The end: count down on the open video screen, or go straight on while minimized.
   useEffect(() => {

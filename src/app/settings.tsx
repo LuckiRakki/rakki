@@ -13,7 +13,8 @@ import { appVersion, buildStamp, checkForUpdate, getUpdateInfo, type UpdateInfo 
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, DOWNLOAD_QUALITY_OPTIONS, useSettings } from '@/settings/store';
 import { LastfmSettings } from '@/ui/LastfmSettings';
-import { Toggle } from '@/ui/SettingRows';
+import { Segmented } from '@/ui/Segmented';
+import { Field, Toggle } from '@/ui/SettingRows';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { UserAvatar } from '@/ui/UserAvatar';
@@ -57,6 +58,7 @@ export default function SettingsScreen() {
   const autoplay = useSettings((s) => s.autoplay);
   const scrollTitles = useSettings((s) => s.scrollTitles);
   const videoAutoplay = useSettings((s) => s.videoAutoplay);
+  const videoQueueSize = useSettings((s) => s.videoQueueSize);
   const downloadSummary = useDownloads((s) => {
     const done = Object.values(s.tracks).filter((x) => x.state === 'done');
     return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
@@ -203,6 +205,13 @@ export default function SettingsScreen() {
             value={videoAutoplay}
             onChange={(v) => useSettings.getState().set('videoAutoplay', v)}
           />
+          <Field label="Music videos queued ahead" hint="How many the video queue picks in advance. It tops up as they play.">
+            <Segmented
+              value={videoQueueSize}
+              onChange={(v) => useSettings.getState().set('videoQueueSize', v)}
+              options={[1, 2, 3, 5, 10].map((n) => ({ value: n, label: String(n) }))}
+            />
+          </Field>
         </View>
 
         <OptionPicker

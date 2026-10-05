@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.5.2 (2026-10-04)
+- The music video queue picks only 3 videos ahead now (was 15) and tops up as they play.
+  Settings → Playback → Music videos queued ahead changes it (1, 2, 3, 5 or 10).
+
 ## 1.5.1 (2026-10-04)
 - Music video screen: the video and its title, artist and album sit centred between the top
   and Up next (no more big gap). The album is a row with the song's album cover (tap to open
