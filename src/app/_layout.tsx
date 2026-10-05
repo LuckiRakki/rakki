@@ -127,6 +127,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
                   // Over the app (not instead of it), so swiping the video down shows the app behind.
                   options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
                 />
+                <Stack.Screen name="video-queue" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="customize" options={{ presentation: 'modal' }} />

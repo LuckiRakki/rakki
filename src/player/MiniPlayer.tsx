@@ -25,8 +25,8 @@ const VideoMini = inAppVideo ? lazy(() => import('@/video/VideoViews').then((m) 
 
 /**
  * Spotify-style mini-player on top of the tab bar, tinted by the art colour.
- * Tap opens the full player; swipe left/right skips. While a music video plays, it's the video
- * instead (live, unless the video screen itself is open).
+ * Tap (or swipe up) opens the full player; swipe left/right skips. While a music video plays,
+ * it's the video instead (live, unless the video screen itself is open).
  */
 export function MiniPlayer() {
   const t = useTheme();
@@ -54,6 +54,10 @@ export function MiniPlayer() {
   const pct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
 
   const swipes = Gesture.Race(
+    Gesture.Fling()
+      .direction(Directions.UP)
+      .runOnJS(true)
+      .onStart(() => router.push('/player')),
     Gesture.Fling()
       .direction(Directions.LEFT)
       .runOnJS(true)

@@ -22,17 +22,21 @@ export const inAppVideo = Platform.OS !== 'web' && !!requireOptionalNativeModule
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * A video title reduced to the song title for matching:
- * "CONFETTI - ARMY STYLE (OFFICIAL MUSIC VIDEO)" → "army style".
+ * A video's title without the artist and "(Official Music Video)" bits:
+ * "CONFETTI - ARMY STYLE (OFFICIAL MUSIC VIDEO)" → "ARMY STYLE".
  */
-export function videoKey(name: string, artists: string[]): string {
+export function videoTitle(name: string, artists: string[]): string {
   let title = name.replace(
     /[([][^)\]]*\b(?:official|music video|video|lyrics?|visuali[sz]er|audio|hd|4k|uhd|remastered)\b[^)\]]*[)\]]/gi,
     '',
   );
   for (const artist of artists) title = title.replace(new RegExp(`^\\s*${escape(artist)}\\s*[-–—:|]\\s*`, 'i'), '');
-  title = title.replace(/\s*[-–—|]\s*(?:official\s+)?(?:music\s+)?video\s*$/i, '');
-  return matchKey(title);
+  return title.replace(/\s*[-–—|]\s*(?:official\s+)?(?:music\s+)?video\s*$/i, '').trim();
+}
+
+/** A video title reduced to the song title for matching ("army style"). */
+export function videoKey(name: string, artists: string[]): string {
+  return matchKey(videoTitle(name, artists));
 }
 
 /** The music video for a song, if the library has one. */
@@ -57,19 +61,6 @@ export function videosByArtist(artist: string | undefined, videos: BaseItem[] | 
 /** The newest music videos first (Home). */
 export function newestVideos(videos: BaseItem[] | undefined, limit = 12): BaseItem[] {
   return [...(videos ?? [])].sort((a, b) => (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')).slice(0, limit);
-}
-
-/**
- * What to play after `current`: another video by the same artist you haven't watched yet,
- * else any other one you haven't, at random. null when there's nothing new.
- */
-export function nextVideo(current: BaseItem, videos: BaseItem[] | undefined, watched: Set<string>): BaseItem | null {
-  const fresh = (videos ?? []).filter((v) => v.Id !== current.Id && !watched.has(v.Id));
-  if (!fresh.length) return null;
-  const artists = new Set((current.Artists ?? []).map(matchKey));
-  const same = fresh.filter((v) => (v.Artists ?? []).some((a) => artists.has(matchKey(a))));
-  const pool = same.length ? same : fresh;
-  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 /** Music videos whose title or artist has every word of the search. */

@@ -95,7 +95,7 @@ export default function PlayerScreen() {
       {playerBackground === 'moving' ? (
         // The cover's colours flowing slowly behind everything (still with reduced motion).
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.tint(tint), overflow: 'hidden' }]} pointerEvents="none">
-          <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : 1.6} />
+          <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} />
           <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
           <LinearGradient
             colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.6)']}

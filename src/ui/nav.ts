@@ -12,6 +12,7 @@ const MODALS = [
   '/queue',
   '/lyrics',
   '/video',
+  '/video-queue',
   '/settings',
   '/downloads',
   '/customize',

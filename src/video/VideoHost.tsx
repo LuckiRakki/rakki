@@ -1,7 +1,7 @@
 // Owns the music video player at the app's root, so the video keeps playing when its screen is
-// swiped down (the mini-player shows it). Handles what happens at the end: with autoplay on, a
-// 5-second "Up next" countdown while the video screen is open, or straight to the next video
-// while it's minimized. Starting a song stops the video. Loaded lazily, only on builds with
+// swiped down (the mini-player shows it). Keeps the queue topped up and handles the end: with
+// autoplay on, a 5-second "Up next" countdown while the video screen is open, or straight on to
+// the next video otherwise. Starting a song stops the video. Loaded lazily, only on builds with
 // expo-video's native side.
 import { usePathname } from 'expo-router';
 import { useVideoPlayer } from 'expo-video';
@@ -13,7 +13,7 @@ import { useAuth } from '@/auth/store';
 import { reclaimAudioSession } from '@/player/engine';
 import { usePlayer } from '@/player/store';
 import { useSettings } from '@/settings/store';
-import { nextVideo, newPlaySessionId } from '@/video/musicVideos';
+import { newPlaySessionId } from '@/video/musicVideos';
 import { useVideoSession } from '@/video/session';
 
 export const COUNTDOWN_S = 5;
@@ -44,7 +44,6 @@ function Host({ video }: { video: BaseItem }) {
     p.play();
   });
   const countdown = useVideoSession((s) => s.countdown);
-  const next = useVideoSession((s) => s.next);
 
   // Share the player; when this video ends (or is replaced), give the audio session back and
   // let the server stop converting it.
@@ -57,18 +56,17 @@ function Host({ video }: { video: BaseItem }) {
     };
   }, [player, client, session]);
 
-  // What comes next, picked as soon as this one starts.
+  // Top the queue up as soon as this one starts.
   useEffect(() => {
-    useVideoSession.setState({ next: nextVideo(video, videos, new Set(useVideoSession.getState().watched)) });
+    useVideoSession.getState().fill(videos);
   }, [video, videos]);
 
   // The end: count down on the open video screen, or go straight on while minimized.
   useEffect(() => {
     const sub = player.addListener('playToEnd', () => {
-      const { next: upNext } = useVideoSession.getState();
-      if (!useSettings.getState().videoAutoplay || !upNext) return;
+      if (!useSettings.getState().videoAutoplay || !useVideoSession.getState().upNext.length) return;
       if (pathname === '/video') useVideoSession.setState({ countdown: COUNTDOWN_S });
-      else useVideoSession.getState().play(upNext);
+      else useVideoSession.getState().next();
     });
     return () => sub.remove();
   }, [player, pathname]);
@@ -77,10 +75,10 @@ function Host({ video }: { video: BaseItem }) {
     if (countdown === null) return;
     const id = setTimeout(() => {
       if (countdown > 1) useVideoSession.setState({ countdown: countdown - 1 });
-      else if (next) useVideoSession.getState().play(next);
+      else useVideoSession.getState().next();
     }, 1000);
     return () => clearTimeout(id);
-  }, [countdown, next]);
+  }, [countdown]);
 
   return null;
 }

@@ -6,6 +6,24 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.5.0 (2026-10-04)
+- **A new look for the music video screen**: the video's colours flowing slowly behind it (like
+  Now Playing's Moving background), the video as a rounded card, a cleaner title (without
+  "(Official Music Video)" and the artist), and the next three videos underneath.
+- **Artist and album links** on the video screen: tap an artist for their page, or the album
+  (found through the matching song in your library) for the album.
+- **The music video queue**: a real queue now (more by the same artist first, then other videos
+  you haven't watched). Queue (on the video screen) opens all of it: what you've watched, what's
+  on, and everything up next; tap one to play it, drag to reorder, remove what you don't want.
+- **Swipe the video sideways** to go to the next or previous one, and new previous/next buttons
+  in the controls (previous restarts the video first, like songs).
+- **The controls fade properly**: they now fade a few seconds after your last tap and come back
+  with a tap (they used to stay up the whole time). Full screen too.
+- **Swipe up on the mini-player** to open the player (songs and videos). Swiping the video
+  mini-player left or right goes through the video queue.
+- **Moving background speed**: Customize → Now playing → Movement (0 is still); slower by
+  default than in 1.4.0. It sets the music video screen's speed too.
+
 ## 1.4.0 (2026-10-04)
 - **Music videos keep playing in the mini-player.** Swipe the video screen down (or tap the
   chevron) and it tucks into the mini-player as a small live video, with play/pause and stop;

@@ -269,6 +269,9 @@ export default function CustomizeScreen() {
               ]}
             />
           </Field>
+          <Field label="Movement (also music videos)" value={a.playerMotion === 0 ? 'Still' : `${a.playerMotion.toFixed(1)}×`}>
+            <Slider value={a.playerMotion} min={0} max={2.5} step={0.1} onChange={(v) => set('playerMotion', v)} />
+          </Field>
           <Toggle label="Lyrics card" detail="Below the controls; scroll down to see it" value={a.lyricsCard} onChange={(v) => set('lyricsCard', v)} />
         </Section>
 

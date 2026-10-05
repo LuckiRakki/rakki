@@ -7,7 +7,7 @@ export const SECTIONS = {
   shape: ['roundness', 'density', 'gridColumns'],
   home: ['homeOrder', 'homeHidden', 'quickPicks', 'greeting'],
   mini: ['miniPlayer', 'miniProgress', 'miniVisualizer', 'tabLabels'],
-  player: ['playerBackground', 'lyricsCard'],
+  player: ['playerBackground', 'playerMotion', 'lyricsCard'],
   feel: ['haptics', 'motion'],
 } satisfies Record<string, (keyof Appearance)[]>;
 

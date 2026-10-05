@@ -72,6 +72,8 @@ export interface Appearance {
   tabLabels: boolean;
   // ---- Now playing ----
   playerBackground: 'moving' | 'gradient' | 'blur' | 'solid';
+  /** How fast the Moving background flows (0 = still); also the music video screen's. */
+  playerMotion: number;
   lyricsCard: boolean;
   // ---- Feel ----
   haptics: boolean;
@@ -100,6 +102,7 @@ export const APPEARANCE_DEFAULTS: Appearance = {
   miniVisualizer: true,
   tabLabels: true,
   playerBackground: 'moving',
+  playerMotion: 1,
   lyricsCard: true,
   haptics: true,
   motion: 'system',
