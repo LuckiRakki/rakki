@@ -6,6 +6,11 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.5.1 (2026-10-04)
+- Music video screen: the video and its title, artist and album sit centred between the top
+  and Up next (no more big gap). The album is a row with the song's album cover (tap to open
+  it) instead of an underlined link; without an album, just the year shows.
+
 ## 1.5.0 (2026-10-04)
 - **A new look for the music video screen**: the video's colours flowing slowly behind it (like
   Now Playing's Moving background), the video as a rounded card, a cleaner title (without

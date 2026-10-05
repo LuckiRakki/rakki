@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import { useScreenAwake } from '@/lib/keepAwake';
 import { useSettings } from '@/settings/store';
 import { FlowingCover } from '@/spicy/Backdrop';
 import { ArtistLinks } from '@/ui/ArtistLinks';
+import { Artwork } from '@/ui/Artwork';
 import { Marquee } from '@/ui/Marquee';
 import { openAlbum } from '@/ui/nav';
 import { T } from '@/ui/T';
@@ -156,44 +157,62 @@ export default function VideoScreen() {
           </Pressable>
         </View>
 
-        <View style={[styles.card, { width: cardW, height: stageH }]}>
-          {video ? (
-            <VideoCarousel video={video} width={cardW} height={stageH} radius={t.radius.card}>
-              {stage}
-            </VideoCarousel>
-          ) : (
-            <ActivityIndicator color={t.colors.text} style={{ flex: 1 }} />
-          )}
-        </View>
-
-        {video ? (
-          <View style={{ paddingHorizontal: t.space.xl, marginTop: t.space.xl }}>
-            <Marquee
-              text={videoTitle(video.Name, video.Artists ?? []) || video.Name}
-              style={{ fontFamily: t.fonts.bold, fontSize: t.size(24) }}
-            />
-            <ArtistLinks
-              artists={artists}
-              fallback={video.Artists?.join(', ')}
-              variant="caption"
-              numberOfLines={1}
-              style={{ fontSize: t.size(16), marginTop: 2, color: t.colors.text }}
-            />
-            {album || video.ProductionYear ? (
-              <T variant="caption" numberOfLines={1} style={{ fontSize: t.size(14), marginTop: 4 }}>
-                {album && albumId ? (
-                  <Text onPress={() => openAlbum(albumId)} suppressHighlighting style={{ textDecorationLine: 'underline' }}>
-                    {album}
-                  </Text>
-                ) : (
-                  (album ?? '')
-                )}
-                {album && video.ProductionYear ? ' · ' : ''}
-                {video.ProductionYear ?? ''}
-              </T>
-            ) : null}
+        {/* The video and what it is, centred in the space above Up next. */}
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <View style={[styles.card, { width: cardW, height: stageH }]}>
+            {video ? (
+              <VideoCarousel video={video} width={cardW} height={stageH} radius={t.radius.card}>
+                {stage}
+              </VideoCarousel>
+            ) : (
+              <ActivityIndicator color={t.colors.text} style={{ flex: 1 }} />
+            )}
           </View>
-        ) : null}
+
+          {video ? (
+            <View style={{ paddingHorizontal: t.space.xl, marginTop: t.space.xl }}>
+              <Marquee
+                text={videoTitle(video.Name, video.Artists ?? []) || video.Name}
+                style={{ fontFamily: t.fonts.bold, fontSize: t.size(24) }}
+              />
+              <ArtistLinks
+                artists={artists}
+                fallback={video.Artists?.join(', ')}
+                variant="caption"
+                numberOfLines={1}
+                style={{ fontSize: t.size(16), marginTop: 2, color: t.colors.text }}
+              />
+              {album && albumId ? (
+                // The song's album, with its cover: tap to open it.
+                <Pressable
+                  onPress={() => openAlbum(albumId)}
+                  style={({ pressed }) => [styles.album, pressed && { opacity: 0.7 }]}
+                  accessibilityLabel={`Open the album ${album}`}>
+                  {song ? (
+                    <Artwork item={song} size={48} rounded={6} />
+                  ) : (
+                    <View style={styles.albumIcon}>
+                      <Ionicons name="disc-outline" size={24} color={t.colors.textSecondary} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+                    <T variant="bodyStrong" numberOfLines={1}>
+                      {album}
+                    </T>
+                    <T variant="caption" numberOfLines={1}>
+                      {['Album', video.ProductionYear ?? song?.ProductionYear].filter(Boolean).join(' · ')}
+                    </T>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={t.colors.textSecondary} />
+                </Pressable>
+              ) : video.ProductionYear ? (
+                <T variant="caption" style={{ fontSize: t.size(14), marginTop: 4 }}>
+                  {video.ProductionYear}
+                </T>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
 
         <UpNext bottom={insets.bottom} />
       </Animated.View>
@@ -209,7 +228,7 @@ function UpNext({ bottom }: { bottom: number }) {
   const countdown = useVideoSession((s) => s.countdown);
   const autoplay = useSettings((s) => s.videoAutoplay);
   return (
-    <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: t.space.lg, paddingBottom: bottom + t.space.md }}>
+    <View style={{ paddingHorizontal: t.space.lg, paddingBottom: bottom + t.space.md }}>
       <View style={styles.upNextHeader}>
         <T variant="heading" style={{ fontSize: t.size(17), flex: 1 }}>
           Up next
@@ -282,6 +301,22 @@ const useStyles = makeStyles((t) => ({
     shadowOpacity: 0.5,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
+  },
+  album: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: t.space.lg,
+    padding: t.space.sm,
+    borderRadius: t.radius.card,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  albumIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   upNextHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: t.space.sm },
   queueButton: {
