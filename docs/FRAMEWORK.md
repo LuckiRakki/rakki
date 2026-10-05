@@ -443,15 +443,31 @@ ideas (Discord Rich Presence, a desktop app).
   - From 1.0.1: the player sets its audio session before every play and never holds the
     display awake (already in the code).
 - **Next native build (planned; the user's notes, 2026-10-04):**
-  - **Siri** through App Intents / App Shortcuts ("Play my liked songs in Rakki", "Shuffle my
-    library in Rakki", "Resume Rakki", pause/next). These need no Siri entitlement, so they work
-    with the free Apple ID + SideStore. Free-form "Play <any song> on Rakki" is SiriKit media
-    (INPlayMediaIntent), which needs the Siri capability: paid developer account only. App
-    Intents must live in the app target (a local Swift module or a config plugin that adds the
-    Swift files to the target); check with a `check` build.
   - **Music videos turn with the phone**: allow landscape in the app (it's portrait-only today)
     and lock every screen except the video player to portrait (expo-screen-orientation), so a
     video goes full screen sideways on its own and back.
+- **Siri** (the user's request, 2026-10-04; backlog, not started). Wants it smart: "Play All I
+  Wanted by Paramore", "Play Brand New Eyes by Paramore", "Play Brand New Eyes", best match,
+  fast. Constraints and design:
+  - One-sentence requests for any title ("Play X" with no app phrase) are SiriKit media
+    (INPlayMediaIntent): the Siri capability needs a PAID developer account. Not possible with
+    the free Apple ID + SideStore.
+  - Free route (App Intents, no entitlement): one sentence for fixed commands ("Shuffle my
+    library in Rakki", "Play my liked songs in Rakki", "Resume Rakki", pause, next); anything
+    else in two steps: "Play in Rakki" → "What should I play?" → free-form answer (a String
+    parameter with a requestValueDialog). App Shortcut entity parameters only suit a short
+    list (Apple suggests ~10 suggested entities).
+  - Plays in the background via AudioPlaybackIntent; instant if Rakki is running, a few seconds
+    from cold. The intent (Swift, in the app target via a config plugin) hands the text to JS
+    and waits for the answer; requests queue until the JS runtime is up.
+  - Matching in JS on the phone with the existing fuzzy search index (server search as
+    fallback): parse "X by Y" and words like album/song/playlist/"songs by"/shuffle/liked;
+    phonetic + typo-tolerant matching (Siri spellings like "Paramour"); score = exact title >
+    artist agreement > plays/liked; title track ambiguity → play the album from that track;
+    album-only name → album; artist only → shuffle their songs, popular first. Siri answers
+    "Playing <title> by <artist>", or "I couldn't find that in your library" below a
+    confidence threshold.
+  - With a paid account later, the same matcher would power one-sentence SiriKit requests.
 - **Lyrics on the Home Screen / Lock Screen** (the user's idea, 2026-10-02; backlog, not
   started). Widgets can't animate or follow playback live, so real Spicy karaoke is out. What
   works: a timeline with one entry per lyric line at its timestamp (keeps time on its own;
