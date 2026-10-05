@@ -71,7 +71,7 @@ export interface Appearance {
   miniVisualizer: boolean;
   tabLabels: boolean;
   // ---- Now playing ----
-  playerBackground: 'gradient' | 'blur' | 'solid';
+  playerBackground: 'moving' | 'gradient' | 'blur' | 'solid';
   lyricsCard: boolean;
   // ---- Feel ----
   haptics: boolean;
@@ -99,13 +99,13 @@ export const APPEARANCE_DEFAULTS: Appearance = {
   miniProgress: true,
   miniVisualizer: true,
   tabLabels: true,
-  playerBackground: 'gradient',
+  playerBackground: 'moving',
   lyricsCard: true,
   haptics: true,
   motion: 'system',
 };
 
-const VERSION = 1;
+const VERSION = 2;
 const KEY = 'rakki.appearance';
 const KEYS = Object.keys(APPEARANCE_DEFAULTS) as (keyof Appearance)[];
 
@@ -130,7 +130,9 @@ function load(): Appearance {
     const raw = readPref(KEY);
     if (!raw) return APPEARANCE_DEFAULTS;
     const parsed = JSON.parse(raw) as Partial<Appearance> & { _v?: number };
-    if (parsed._v !== VERSION) return APPEARANCE_DEFAULTS;
+    // 1 → 2: the old default background (Gradient) becomes the new one (Moving).
+    if (parsed._v === 1 && parsed.playerBackground === 'gradient') parsed.playerBackground = 'moving';
+    else if (parsed._v !== VERSION && parsed._v !== 1) return APPEARANCE_DEFAULTS;
     return normalizeAppearance(parsed);
   } catch {
     return APPEARANCE_DEFAULTS;

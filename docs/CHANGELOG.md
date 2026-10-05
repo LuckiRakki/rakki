@@ -6,6 +6,22 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.4.0 (2026-10-04)
+- **Music videos keep playing in the mini-player.** Swipe the video screen down (or tap the
+  chevron) and it tucks into the mini-player as a small live video, with play/pause and stop;
+  tap it to open the video again. Starting a song stops the video. Autoplay goes straight on to
+  the next video while it's minimized.
+- **Full screen fixed.** Full screen is now Rakki's own: the video turned sideways across the
+  whole screen with the same controls (tap to show them) and a button back out, instead of
+  Apple's full screen, which could leave you stuck with no controls.
+- **The whole queue.** The queue now shows the songs already played too ("Show N songs" above
+  Now playing); tap one to go back to it.
+- **Moving background** for Now Playing: the cover's colours flowing slowly behind the player,
+  like the Spicy Lyrics screen (Customize → Now playing → Background → Moving; the new default,
+  and what Gradient switches to). Still with reduced motion.
+- **Swipe the cover to skip.** Drag the Now Playing cover sideways and the next (or previous)
+  song's cover slides in; let go and it skips there.
+
 ## 1.3.0 (2026-10-04)
 - **Playlist pictures**: Edit playlist → tap the cover (or "Change picture") to pick a photo.
 - **Search by lyrics**: type a line you remember (two words or more) and Search shows "From the

@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { queryClient } from '@/api/queries';
@@ -21,13 +21,17 @@ import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
 import { ToastHost } from '@/ui/Toast';
-import { prefetchMusicVideos } from '@/video/musicVideos';
+import { inAppVideo, prefetchMusicVideos } from '@/video/musicVideos';
 import { resetScreenAwake } from '@/lib/keepAwake';
 import { OpeningFade } from '@/ui/Rise';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 
 SplashScreen.preventAutoHideAsync();
+
+// The music video player lives here, above the screens, so it keeps playing when the video
+// screen is swiped down (expo-video builds only).
+const VideoHost = inAppVideo ? lazy(() => import('@/video/VideoHost')) : null;
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(FONT_FILES);
@@ -118,7 +122,11 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
                 <Stack.Screen name="player" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="video" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+                <Stack.Screen
+                  name="video"
+                  // Over the app (not instead of it), so swiping the video down shows the app behind.
+                  options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
+                />
                 <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
@@ -133,6 +141,11 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
               </Stack.Protected>
             </Stack>
           </OpeningFade>
+          {VideoHost && signedIn ? (
+            <Suspense fallback={null}>
+              <VideoHost />
+            </Suspense>
+          ) : null}
           <OverlayHost />
           <ToastHost />
         </ThemeProvider>

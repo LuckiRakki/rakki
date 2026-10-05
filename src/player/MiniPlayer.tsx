@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { lazy, Suspense } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -16,10 +17,16 @@ import { Marquee } from '@/ui/Marquee';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { Visualizer } from '@/ui/Visualizer';
+import { inAppVideo } from '@/video/musicVideos';
+import { useVideoSession } from '@/video/session';
+
+// While a music video plays, the mini-player shows it instead (expo-video builds only).
+const VideoMini = inAppVideo ? lazy(() => import('@/video/VideoViews').then((m) => ({ default: m.VideoMini }))) : null;
 
 /**
  * Spotify-style mini-player on top of the tab bar, tinted by the art colour.
- * Tap opens the full player; swipe left/right skips.
+ * Tap opens the full player; swipe left/right skips. While a music video plays, it's the video
+ * instead (live, unless the video screen itself is open).
  */
 export function MiniPlayer() {
   const t = useTheme();
@@ -29,7 +36,16 @@ export function MiniPlayer() {
   const buffering = usePlayer((s) => s.buffering);
   const client = useAuth((s) => s.client);
   const { position, duration } = useProgress(500);
+  const video = useVideoSession((s) => s.video);
+  const pathname = usePathname();
 
+  if (video && VideoMini) {
+    return (
+      <Suspense fallback={null}>
+        <VideoMini live={pathname !== '/video'} />
+      </Suspense>
+    );
+  }
   if (!track) return null;
   const { miniPlayer: style, miniProgress, miniVisualizer } = t.appearance;
   // Tinted: the art's colour (toned by Art tint). Solid: a plain surface. Glass: frosted blur.

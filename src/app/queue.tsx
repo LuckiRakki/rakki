@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
 import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
@@ -29,12 +29,49 @@ export default function QueueScreen() {
   const playing = usePlayer((s) => s.playing);
 
   const current = queue[index];
+  // Songs already played in this queue: one row until opened, so Now playing stays in view.
+  const played = queue.slice(0, index);
+  const [showPlayed, setShowPlayed] = useState(false);
   const rows = queueRows(queue.slice(index + 1), source ? `Next from: ${source.name}` : 'Next up');
   const onReorder = ({ from, to }: { from: number; to: number }) =>
     usePlayer.getState().setUpcoming(reorderedUpcoming(rows, from, to));
 
   const nowPlaying = current ? (
     <View>
+      {played.length ? (
+        <View>
+          <Pressable
+            onPress={() => setShowPlayed(!showPlayed)}
+            accessibilityState={{ expanded: showPlayed }}
+            style={({ pressed }) => [styles.playedToggle, pressed && { opacity: 0.7 }]}>
+            <T variant="heading" style={{ fontSize: t.size(17), flex: 1 }}>
+              Played
+            </T>
+            <T variant="caption" style={{ marginRight: t.space.xs }}>
+              {showPlayed ? 'Hide' : `Show ${played.length} ${played.length === 1 ? 'song' : 'songs'}`}
+            </T>
+            <Ionicons name={showPlayed ? 'chevron-up' : 'chevron-down'} size={18} color={t.colors.textSecondary} />
+          </Pressable>
+          {showPlayed
+            ? played.map((entry, i) => (
+                <Pressable
+                  key={entry.key}
+                  onPress={() => usePlayer.getState().skipTo(i)}
+                  style={({ pressed }) => [styles.row, { opacity: 0.6 }, pressed && { backgroundColor: t.colors.surface }]}>
+                  <Artwork item={entry.item} size={46} />
+                  <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+                    <T variant="bodyStrong" numberOfLines={1}>
+                      {entry.item.Name}
+                    </T>
+                    <T variant="caption" numberOfLines={1}>
+                      {artistLine(entry.item)}
+                    </T>
+                  </View>
+                </Pressable>
+              ))
+            : null}
+        </View>
+      ) : null}
       <T variant="heading" style={styles.sectionTitle}>
         Now playing
       </T>
@@ -149,4 +186,11 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.bg,
   },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.lg, paddingVertical: t.space.sm },
+  playedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: t.space.lg,
+    paddingTop: t.space.lg,
+    paddingBottom: t.space.xs,
+  },
 }));

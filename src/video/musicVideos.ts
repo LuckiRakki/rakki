@@ -14,6 +14,7 @@ import { matchKey } from '@/lib/lastfm';
 import { isOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
 import { showToast } from '@/ui/overlays';
+import { useVideoSession } from '@/video/session';
 
 /** Whether this build has the in-app video player. */
 export const inAppVideo = Platform.OS !== 'web' && !!requireOptionalNativeModule('ExpoVideo');
@@ -116,6 +117,7 @@ export async function playMusicVideo(video: BaseItem) {
   }
   if (usePlayer.getState().playing) usePlayer.getState().toggle();
   if (inAppVideo) {
+    useVideoSession.getState().play(video);
     router.push(`/video?id=${video.Id}` as never);
     return;
   }

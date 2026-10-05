@@ -78,13 +78,38 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
 }
 
 /**
- * The Spicy Lyrics backdrop: the cover, heavily blurred, as three slowly turning and drifting
- * layers, with a gentle brightness pulse and a dark tint for readability. Each blurred cover
- * is a static texture the GPU only moves around; one live blur on top melts the layers'
- * edges together so no shapes show, just flowing colour.
+ * The cover, heavily blurred, as three slowly turning and drifting layers. Each blurred cover
+ * is a static texture the GPU only moves around (on the UI thread, which iOS pauses in the
+ * background). `motion` scales the speed; 0 keeps it still. Put a live blur on top to melt the
+ * layers' edges together. Also the Now Playing screen's Moving background.
+ */
+export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) {
+  const clock = useSharedValue(0);
+  const still = motion <= 0;
+
+  useEffect(() => {
+    if (still) {
+      clock.set(0);
+      return;
+    }
+    // One long linear clock (1 h) drives every layer; each derives its own motion from it.
+    clock.set(withRepeat(withTiming(3600, { duration: (3600 * 1000) / motion, easing: Easing.linear }), -1, false));
+  }, [clock, still, motion]);
+
+  return uri ? (
+    <>
+      {LAYERS.map((spec, i) => (
+        <Layer key={i} uri={uri} spec={spec} clock={clock} />
+      ))}
+    </>
+  ) : null;
+}
+
+/**
+ * The Spicy Lyrics backdrop: the flowing cover, with a gentle brightness pulse and a dark tint
+ * for readability; one live blur on top melts the layers so no shapes show, just flowing colour.
  */
 export function SpicyBackdrop({ uri }: { uri?: string }) {
-  const clock = useSharedValue(0);
   const pulse = useSharedValue(0);
   // Reduced motion (or Movement at 0): the covers stay still and the glow doesn't pulse.
   const motion = useLyricsStyle((s) => s.backdropMotion);
@@ -94,27 +119,26 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
 
   useEffect(() => {
     if (still) {
-      clock.value = 0;
-      pulse.value = 0.5;
+      pulse.set(0.5);
       return;
     }
-    // One long linear clock (1 h) drives every layer; each derives its own motion from it.
-    clock.value = withRepeat(withTiming(3600, { duration: (3600 * 1000) / motion, easing: Easing.linear }), -1, false);
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
+    pulse.set(
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        false,
       ),
-      -1,
-      false,
     );
-  }, [clock, pulse, still, motion]);
+  }, [pulse, still]);
 
   const breathe = useAnimatedStyle(() => ({ opacity: 0.12 * pulse.value }));
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0b0b0b', overflow: 'hidden' }]} pointerEvents="none">
-      {uri ? LAYERS.map((spec, i) => <Layer key={i} uri={uri} spec={spec} clock={clock} />) : null}
+      <FlowingCover uri={uri} motion={still ? 0 : motion} />
       <BlurView intensity={Math.round(100 * blur)} tint="dark" style={StyleSheet.absoluteFill} />
       {/* Brightness pulse, like the web mod's backdrop glow. */}
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, breathe]} />

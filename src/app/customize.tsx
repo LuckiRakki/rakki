@@ -262,8 +262,9 @@ export default function CustomizeScreen() {
               value={a.playerBackground}
               onChange={(v) => set('playerBackground', v)}
               options={[
+                { value: 'moving', label: 'Moving' },
                 { value: 'gradient', label: 'Gradient' },
-                { value: 'blur', label: 'Blurred art' },
+                { value: 'blur', label: 'Blurred' },
                 { value: 'solid', label: 'Solid' },
               ]}
             />

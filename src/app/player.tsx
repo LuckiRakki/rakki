@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,13 +17,13 @@ import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
 import { LyricsCard } from '@/lyrics/LyricsCard';
 import { CreditsCard } from '@/player/CreditsCard';
+import { SwipeCover } from '@/player/SwipeCover';
 import { SeekBar } from '@/player/SeekBar';
 import { sleepSheet, useSleepLabel } from '@/player/sleep';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Marquee } from '@/ui/Marquee';
-import { Artwork } from '@/ui/Artwork';
 import { openAlbum } from '@/ui/nav';
 import { openAddToPlaylist, openMenu, openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
@@ -31,6 +32,7 @@ import { findVideoFor, playMusicVideo } from '@/video/musicVideos';
 import { useOnAir } from '@/radio/live';
 import { RadioCard } from '@/radio/RadioCard';
 import { stationWebsite, useStations } from '@/radio/stations';
+import { FlowingCover } from '@/spicy/Backdrop';
 import { openStationWebsite } from '@/radio/StationViews';
 
 const RoutePicker = getRoutePicker();
@@ -79,14 +81,29 @@ export default function PlayerScreen() {
 
   const tint = artColor(client?.blurhash(track));
   const playerBackground = t.appearance.playerBackground;
-  const artUri = playerBackground === 'blur' ? (localArtUri(track.AlbumId ?? track.Id) ?? client?.imageUrl(track, 600)) : undefined;
+  // Blurred anyway, so a small cover does (the moving one's even smaller: three copies move).
+  const artUri =
+    playerBackground === 'blur' || playerBackground === 'moving'
+      ? (localArtUri(track.AlbumId ?? track.Id) ?? client?.imageUrl(track, playerBackground === 'moving' ? 300 : 600))
+      : undefined;
   const art = Math.min(width - t.space.xl * 2, 420);
   const favorite = track.UserData?.IsFavorite ?? false;
   const p = usePlayer.getState;
 
   return (
     <View style={styles.root} onLayout={(e) => setPageHeight(e.nativeEvent.layout.height)}>
-      {playerBackground === 'gradient' ? (
+      {playerBackground === 'moving' ? (
+        // The cover's colours flowing slowly behind everything (still with reduced motion).
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.tint(tint), overflow: 'hidden' }]} pointerEvents="none">
+          <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : 1.6} />
+          <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.6)']}
+            locations={[0, 0.5, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+      ) : playerBackground === 'gradient' ? (
         <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
       ) : playerBackground === 'blur' ? (
         <View style={StyleSheet.absoluteFill}>
@@ -126,7 +143,7 @@ export default function PlayerScreen() {
 
           {/* Artwork */}
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Artwork item={track} size={art} rounded={t.radius.card} style={styles.artShadow} />
+            <SwipeCover track={track} size={art} live={radio} style={styles.artShadow} />
           </View>
 
           {/* Title + like */}
