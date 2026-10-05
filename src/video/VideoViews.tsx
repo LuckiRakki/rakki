@@ -5,9 +5,10 @@
 // owns. Loaded lazily, only on builds with expo-video's native side.
 import { Ionicons } from '@expo/vector-icons';
 import { useEvent } from 'expo';
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { VideoView, type VideoPlayer } from 'expo-video';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
@@ -117,33 +118,28 @@ function Stage({
                 <Ionicons name={fullscreen ? 'contract' : 'expand'} size={24} color="#fff" />
               </Pressable>
             </View>
-            <View style={[styles.center, fullscreen && { gap: 48 }]}>
-              <Pressable hitSlop={10} onPress={touched(back)} accessibilityLabel="Previous video">
-                <Ionicons name="play-skip-back" size={24} color="#fff" />
-              </Pressable>
-              <Pressable hitSlop={10} onPress={touched(() => player.seekBy(-10))} accessibilityLabel="Back 10 seconds">
-                <Ionicons name="play-back" size={28} color="#fff" />
-              </Pressable>
+            <View style={[styles.center, fullscreen && { gap: 40 }]}>
+              <GlassButton size={40} onPress={touched(back)} label="Previous video">
+                <Ionicons name="play-skip-back" size={18} color="#fff" />
+              </GlassButton>
+              <GlassButton size={48} onPress={touched(() => player.seekBy(-10))} label="Back 10 seconds">
+                <Ionicons name="play-back" size={22} color="#fff" />
+              </GlassButton>
               {loading ? (
-                <View style={styles.loading} accessibilityLabel="Loading">
+                <GlassButton size={64} label="Loading">
                   <ActivityIndicator size="large" color="#fff" />
-                </View>
+                </GlassButton>
               ) : (
-                <Pressable onPress={touched(toggle)} style={styles.play} accessibilityLabel={isPlaying ? 'Pause' : 'Play'}>
-                  <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="#000" style={{ marginLeft: isPlaying ? 0 : 4 }} />
-                </Pressable>
+                <GlassButton size={64} onPress={touched(toggle)} label={isPlaying ? 'Pause' : 'Play'}>
+                  <Ionicons name={isPlaying ? 'pause' : 'play'} size={30} color="#fff" style={{ marginLeft: isPlaying ? 0 : 4 }} />
+                </GlassButton>
               )}
-              <Pressable hitSlop={10} onPress={touched(() => player.seekBy(10))} accessibilityLabel="Forward 10 seconds">
-                <Ionicons name="play-forward" size={28} color="#fff" />
-              </Pressable>
-              <Pressable
-                hitSlop={10}
-                disabled={!hasNext}
-                onPress={touched(() => useVideoSession.getState().next())}
-                accessibilityLabel="Next video"
-                style={{ opacity: hasNext ? 1 : 0.35 }}>
-                <Ionicons name="play-skip-forward" size={24} color="#fff" />
-              </Pressable>
+              <GlassButton size={48} onPress={touched(() => player.seekBy(10))} label="Forward 10 seconds">
+                <Ionicons name="play-forward" size={22} color="#fff" />
+              </GlassButton>
+              <GlassButton size={40} disabled={!hasNext} onPress={touched(() => useVideoSession.getState().next())} label="Next video">
+                <Ionicons name="play-skip-forward" size={18} color="#fff" />
+              </GlassButton>
             </View>
             <View style={[styles.bottom, fullscreen && { paddingHorizontal: 32, paddingBottom: 16 }]}>
               <SeekBar
@@ -159,6 +155,36 @@ function Stage({
         ) : null}
       </Pressable>
     </View>
+  );
+}
+
+/** A see-through round button: frosted glass over the video, white icon. */
+function GlassButton({
+  size,
+  label,
+  onPress,
+  disabled,
+  children,
+}: {
+  size: number;
+  label: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      hitSlop={8}
+      onPress={onPress}
+      disabled={disabled || !onPress}
+      accessibilityLabel={label}
+      style={({ pressed }) => [
+        styles.glass,
+        { width: size, height: size, borderRadius: size / 2, opacity: disabled ? 0.35 : pressed ? 0.7 : 1 },
+      ]}>
+      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+      {children}
+    </Pressable>
   );
 }
 
@@ -243,9 +269,15 @@ function MiniPlayPause({ player }: { player: VideoPlayer }) {
 const styles = StyleSheet.create({
   scrim: { backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'space-between' },
   top: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 22, padding: 12 },
-  center: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
-  play: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  loading: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
+  center: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
+  glass: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
   bottom: { paddingHorizontal: 14, paddingBottom: 4 },
 });
 
