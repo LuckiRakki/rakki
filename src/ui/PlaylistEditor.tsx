@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { thud } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 import { artistLine } from '@/lib/items';
-import { movePlaylistEntry, removePlaylistEntry, savePlaylistName } from '@/library/actions';
+import { changePlaylistPicture, movePlaylistEntry, removePlaylistEntry, savePlaylistName } from '@/library/actions';
 import { Artwork } from '@/ui/Artwork';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -60,7 +60,17 @@ export function PlaylistEditor({
         contentContainerStyle={{ paddingBottom: insets.bottom + t.space.xl }}
         ListHeaderComponent={
           <View style={{ alignItems: 'center', paddingVertical: t.space.xl }}>
-            <Artwork item={playlist} size={140} />
+            <Pressable onPress={() => void changePlaylistPicture(playlist.Id)} accessibilityLabel="Change picture">
+              <Artwork item={playlist} size={140} />
+              <View style={styles.camera}>
+                <Ionicons name="camera" size={18} color="#000" />
+              </View>
+            </Pressable>
+            <Pressable hitSlop={8} onPress={() => void changePlaylistPicture(playlist.Id)}>
+              <T style={{ marginTop: t.space.sm, fontFamily: t.fonts.semibold, fontSize: t.size(13), color: t.colors.textSecondary }}>
+                Change picture
+              </T>
+            </Pressable>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -113,6 +123,19 @@ const EditRow = memo(function EditRow({ playlistId, track }: { playlistId: strin
 });
 
 const useStyles = makeStyles((t) => ({
+  camera: {
+    position: 'absolute',
+    right: -8,
+    bottom: -8,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: t.colors.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: t.colors.bg,
+  },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',

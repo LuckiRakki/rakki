@@ -149,7 +149,7 @@ async function downloadTrack(c: JellyfinClient, id: string) {
  * Keep lyrics that came from your own files (TTML sidecars via the Rakki plugin, or Jellyfin's
  * lyrics). Lyrics from the Spicy Lyrics API are never stored on the phone (its terms).
  */
-async function saveLyrics(c: JellyfinClient, id: string): Promise<boolean> {
+export async function saveLyrics(c: JellyfinClient, id: string): Promise<boolean> {
   const [ttml, lrc] = await Promise.all([fetchTtml(c, id), fetchLrc(c, id)]);
   const ownTtml = ttml && !ttml.source ? ttml : null;
   if (!ownTtml && !lrc) return false;

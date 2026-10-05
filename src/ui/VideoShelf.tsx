@@ -13,13 +13,13 @@ const WIDTH = 240;
 const HEIGHT = Math.round((WIDTH * 9) / 16);
 
 /** A row of music videos (16:9 thumbnails). Renders nothing when there are none. */
-export function VideoShelf({ title, videos }: { title: string; videos: BaseItem[] }) {
+export function VideoShelf({ title, videos, onShowAll }: { title: string; videos: BaseItem[]; onShowAll?: () => void }) {
   const t = useTheme();
   const client = useAuth((s) => s.client);
   if (!videos.length) return null;
   return (
     <View style={{ marginTop: t.space.xl }}>
-      <SectionTitle title={title} />
+      <SectionTitle title={title} onShowAll={onShowAll} />
       <FlatList
         horizontal
         data={videos}

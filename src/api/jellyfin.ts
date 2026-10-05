@@ -336,6 +336,45 @@ export class JellyfinClient {
     return this.get<JellyfinLyricsDto>(`/Audio/${itemId}/Lyrics`);
   }
 
+  /** Spicy Lyrics plugin: songs whose lyrics contain the words (Ready=false while it indexes). */
+  searchLyrics(text: string, limit = 20) {
+    return this.get<{ Ready: boolean; Items: { ItemId: string; Line: string }[] }>(`/SpicyLyrics/Search`, {
+      query: text,
+      limit,
+    });
+  }
+
+  /** Spicy Lyrics plugin: move a song's .ttml sidecar by `offsetMs` (positive = later). */
+  offsetSidecar(itemId: string, offsetMs: number) {
+    return this.send('POST', `/SpicyLyrics/${itemId}/offset`, undefined, { offsetMs: Math.round(offsetMs) });
+  }
+
+  /** Replace a song's lyrics file on the server (Jellyfin's own lyrics, e.g. an .lrc). */
+  uploadLyrics(itemId: string, fileName: string, text: string) {
+    const { serverUrl, deviceId, token } = this.session;
+    return request<void>(`${serverUrl}/Audio/${itemId}/Lyrics${query({ fileName })}`, {
+      method: 'POST',
+      deviceId,
+      token,
+      timeoutMs: 30_000,
+      headers: { 'Content-Type': 'text/plain' },
+      body: text,
+    });
+  }
+
+  /** Set an item's picture (a playlist cover): base64 image data. */
+  uploadItemImage(itemId: string, base64: string, mimeType: string) {
+    const { serverUrl, deviceId, token } = this.session;
+    return request<void>(`${serverUrl}/Items/${itemId}/Images/Primary`, {
+      method: 'POST',
+      deviceId,
+      token,
+      timeoutMs: 60_000,
+      headers: { 'Content-Type': mimeType },
+      body: base64,
+    });
+  }
+
   setFavorite(itemId: string, favorite: boolean) {
     return this.send(favorite ? 'POST' : 'DELETE', `/UserFavoriteItems/${itemId}`, undefined, {
       userId: this.session.userId,

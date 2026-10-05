@@ -58,6 +58,19 @@ export function newestVideos(videos: BaseItem[] | undefined, limit = 12): BaseIt
   return [...(videos ?? [])].sort((a, b) => (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')).slice(0, limit);
 }
 
+/**
+ * What to play after `current`: another video by the same artist you haven't watched yet,
+ * else any other one you haven't, at random. null when there's nothing new.
+ */
+export function nextVideo(current: BaseItem, videos: BaseItem[] | undefined, watched: Set<string>): BaseItem | null {
+  const fresh = (videos ?? []).filter((v) => v.Id !== current.Id && !watched.has(v.Id));
+  if (!fresh.length) return null;
+  const artists = new Set((current.Artists ?? []).map(matchKey));
+  const same = fresh.filter((v) => (v.Artists ?? []).some((a) => artists.has(matchKey(a))));
+  const pool = same.length ? same : fresh;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /** Music videos whose title or artist has every word of the search. */
 export function searchVideos(term: string, videos: BaseItem[] | undefined, limit = 10): BaseItem[] {
   const words = matchKey(term).split(' ').filter(Boolean);

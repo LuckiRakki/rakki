@@ -56,6 +56,7 @@ export default function SettingsScreen() {
   const normalize = useSettings((s) => s.normalize);
   const autoplay = useSettings((s) => s.autoplay);
   const scrollTitles = useSettings((s) => s.scrollTitles);
+  const videoAutoplay = useSettings((s) => s.videoAutoplay);
   const downloadSummary = useDownloads((s) => {
     const done = Object.values(s.tracks).filter((x) => x.state === 'done');
     return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
@@ -195,6 +196,12 @@ export default function SettingsScreen() {
             detail="Song titles too long to fit slide along now and then. Off: they're cut off"
             value={scrollTitles}
             onChange={(v) => useSettings.getState().set('scrollTitles', v)}
+          />
+          <Toggle
+            label="Autoplay music videos"
+            detail="When a music video ends, play another one by the same artist (or something else you have)"
+            value={videoAutoplay}
+            onChange={(v) => useSettings.getState().set('videoAutoplay', v)}
           />
         </View>
 

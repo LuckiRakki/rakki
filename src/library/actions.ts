@@ -9,6 +9,7 @@ import { emitLikedChanged } from '@/lib/events';
 import { downloadedTracks } from '@/downloads/offline';
 import { seededShuffle } from '@/library/view';
 import { isOffline } from '@/lib/online';
+import { MAX_IMAGE_BYTES, pickImage } from '@/lib/pickImage';
 import { usePlayer } from '@/player/store';
 import { showToast } from '@/ui/overlays';
 
@@ -147,6 +148,29 @@ export async function removePlaylistEntry(playlistId: string, entryId: string) {
 export async function savePlaylistName(playlistId: string, name: string) {
   await client().renamePlaylist(playlistId, name);
   refreshPlaylists();
+}
+
+/** Pick a picture and make it the playlist's cover. */
+export async function changePlaylistPicture(playlistId: string) {
+  if (Platform.OS === 'web') {
+    showToast('Change the picture in the iPhone app');
+    return;
+  }
+  const picked = await pickImage();
+  if (!picked) return;
+  if (picked.size > MAX_IMAGE_BYTES) {
+    Alert.alert('That picture is too big', 'Pick one under 15 MB.');
+    return;
+  }
+  showToast('Uploading the picture…');
+  try {
+    await client().uploadItemImage(playlistId, await picked.base64(), picked.mime);
+    // The new image has a new tag, so its address changes and every view loads it.
+    refreshPlaylists();
+    showToast('Playlist picture updated');
+  } catch (e) {
+    Alert.alert('Couldn’t change the picture', e instanceof Error ? e.message : 'Try again.');
+  }
 }
 
 /** Ask for a name (iOS prompt; plain prompt on web). */

@@ -6,6 +6,25 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.3.0 (2026-10-04)
+- **Playlist pictures**: Edit playlist → tap the cover (or "Change picture") to pick a photo.
+- **Search by lyrics**: type a line you remember (two words or more) and Search shows "From the
+  lyrics" with the matching line under each song. The Spicy Lyrics plugin keeps the index on
+  the server (every song's lyrics: sidecars, the Spicy Lyrics cache and Jellyfin's own), built
+  at startup and every night, so nothing is downloaded to the phone. Needs the updated plugin.
+- **Lyrics timing**: the timer button on the lyrics screen moves the song's lyrics earlier or
+  later (0.1 s and 0.5 s steps), saved on this phone. **Save to server** writes it into the
+  lyrics themselves: word-by-word .ttml sidecars move as a whole (via the plugin; the original
+  is kept as .orig), line-by-line lyrics are rewritten and uploaded through Jellyfin. Lyrics
+  from the Spicy Lyrics API can only be moved on the phone (its terms forbid keeping them).
+- **Music video player**: Rakki's own controls instead of Apple's (tap to show: play/pause,
+  10 s back/forward, scrubber, picture in picture, AirPlay, full screen).
+- **Autoplay music videos**: when one ends, another by the same artist (or anything not watched
+  yet) follows after a 5-second "Up next" (cancel or skip ahead). Settings → Playback →
+  Autoplay music videos turns it off.
+- **Library → Videos**: all your music videos, as a grid or a list, newest / A–Z / random.
+- **Show all** on Home's Recently added (opens Albums by newest) and Music videos rows.
+
 ## 1.2.0, native build (2026-10-03)
 A new app to install (SideStore). Over-the-air updates now go to this build (runtime 1.2.0);
 1.0.0 stays on update 37.

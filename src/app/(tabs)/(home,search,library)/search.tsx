@@ -27,6 +27,7 @@ import { GenreTile, useGenreColor } from '@/ui/GenreTile';
 import { Chip } from '@/ui/ItemRow';
 import { openGenre, openItem } from '@/ui/nav';
 import { openMenu } from '@/ui/overlays';
+import { useLyricsSearch } from '@/search/lyricsSearch';
 import { SectionTitle, Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -273,6 +274,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
   const t = useTheme();
   const results = useSearchResults(term, filter);
   const indexMissing = useSearchIndex((s) => !s.index && s.syncing);
+  const lyrics = useLyricsSearch(term);
   const data = results.data;
 
   if (!data) {
@@ -285,8 +287,17 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
     );
   }
 
+  // A line of lyrics often matches no titles at all: then the lyrics matches are the results.
+  const lyricsPending = filter === 'all' && lyrics.isFetching;
+  const lyricsHits = filter === 'all' && !!lyrics.data?.length;
   const empty =
-    !data.songs.length && !data.artists.length && !data.albums.length && !data.playlists.length && !data.genres.length;
+    !data.songs.length &&
+    !data.artists.length &&
+    !data.albums.length &&
+    !data.playlists.length &&
+    !data.genres.length &&
+    !lyricsHits &&
+    !lyricsPending;
   const footer = indexMissing ? (
     <T variant="caption" style={{ textAlign: 'center', padding: t.space.lg }}>
       Typo matching is still getting ready. This only happens the first time.
@@ -346,6 +357,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
 function AllResults({ data, term, footer }: { data: SearchResults; term: string; footer: ReactNode }) {
   const t = useTheme();
   const videos = searchVideos(term, useMusicVideos().data);
+  const fromLyrics = useLyricsSearch(term).data ?? [];
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -357,6 +369,28 @@ function AllResults({ data, term, footer }: { data: SearchResults; term: string;
           <SectionTitle title="Songs" />
           {data.songs.slice(0, 4).map((s) => (
             <SongRow key={s.Id} track={s} onPress={() => openResult(s, data.songs, term)} />
+          ))}
+        </View>
+      ) : null}
+      {fromLyrics.length ? (
+        <View style={{ marginTop: t.space.xl }}>
+          <SectionTitle title="From the lyrics" />
+          {fromLyrics.slice(0, 5).map((m) => (
+            <View key={m.track.Id}>
+              <SongRow
+                track={m.track}
+                onPress={() =>
+                  openResult(
+                    m.track,
+                    fromLyrics.map((x) => x.track),
+                    term,
+                  )
+                }
+              />
+              <T variant="caption" numberOfLines={1} style={{ marginTop: -6, marginBottom: 6, paddingLeft: 82, paddingRight: t.space.lg, fontStyle: 'italic' }}>
+                “{m.line}”
+              </T>
+            </View>
           ))}
         </View>
       ) : null}

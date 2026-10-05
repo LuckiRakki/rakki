@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, type ReactElement } from 'react';
+import { Image } from 'expo-image';
+import { useMemo, useState, type ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem, GenreCount } from '@/api/jellyfin';
-import { useAlbumArtists, useAlbums, useGenreCounts, useLikedSongs, usePlaylists, useTracks } from '@/api/queries';
+import { useAlbumArtists, useAlbums, useGenreCounts, useLikedSongs, useMusicVideos, usePlaylists, useTracks } from '@/api/queries';
+import { useAuth } from '@/auth/store';
+import { playMusicVideo } from '@/video/musicVideos';
 import { songCount } from '@/lib/format';
 import { kindLine } from '@/lib/items';
 import { useDownloads, type DownloadedCollection } from '@/downloads/store';
@@ -129,6 +132,7 @@ export default function LibraryScreen() {
       {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'genres' ? <Genres header={header} sort={sort} layout={layout} /> : null}
       {tab === 'radio' ? <Radio header={header} sort={sort} layout={layout} /> : null}
+      {tab === 'videos' ? <Videos header={header} sort={sort} layout={layout} /> : null}
       {tab === 'playlists' ? <Playlists header={header} sort={sort} layout={layout} /> : null}
       {tab === 'downloads' ? <Downloaded header={header} sort={sort} layout={layout} /> : null}
     </View>
@@ -216,6 +220,87 @@ function Artists({ header, sort, layout }: ListProps) {
         if (artists.hasNextPage && !artists.isFetchingNextPage) void artists.fetchNextPage();
       }}
       renderItem={({ item }) => (grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle="Artist" />)}
+    />
+  );
+}
+
+/** Your music videos: 16:9 tiles two across, or a list. Tap one to watch it. */
+function Videos({ header, sort, layout }: ListProps) {
+  const t = useTheme();
+  const client = useAuth((s) => s.client);
+  const videos = useMusicVideos();
+  const seed = useLibraryView((s) => s.shuffleSeed);
+  const { width } = useWindowDimensions();
+  const grid = layout === 'grid';
+  const gap = t.space.lg;
+  const tileW = Math.floor((width - t.space.lg * 2 - gap) / 2);
+  const list = useMemo(() => {
+    const all = videos.data ?? [];
+    if (sort.key === 'alpha') return [...all].sort((a, b) => a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base' }));
+    if (sort.key === 'random') return seededShuffle(all, seed);
+    return [...all].sort((a, b) => (b.DateCreated ?? '').localeCompare(a.DateCreated ?? ''));
+  }, [videos.data, sort.key, seed]);
+
+  const thumb = (video: BaseItem, w: number) => {
+    const uri = client?.videoThumbUrl(video, w * 2);
+    return (
+      <View style={{ width: w, height: Math.round((w * 9) / 16), borderRadius: t.radius.art, overflow: 'hidden', backgroundColor: t.colors.surface2 }}>
+        {uri ? <Image source={{ uri }} style={{ flex: 1 }} contentFit="cover" transition={150} /> : null}
+      </View>
+    );
+  };
+
+  return (
+    <FlatList
+      key={grid ? 'grid' : 'list'}
+      data={list}
+      numColumns={grid ? 2 : 1}
+      keyExtractor={(v) => v.Id}
+      columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
+      contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
+      ListHeaderComponent={header}
+      ListEmptyComponent={
+        videos.isLoading ? (
+          <ActivityIndicator color={t.colors.textSecondary} style={{ marginTop: t.space.xl }} />
+        ) : (
+          <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
+            No music videos yet. Add a Music Videos library in Jellyfin and they show up here.
+          </T>
+        )
+      }
+      renderItem={({ item }) =>
+        grid ? (
+          <Pressable onPress={() => void playMusicVideo(item)} style={({ pressed }) => ({ width: tileW, opacity: pressed ? 0.8 : 1 })}>
+            {thumb(item, tileW)}
+            <T variant="bodyStrong" numberOfLines={1} style={{ marginTop: 6, fontSize: t.size(14) }}>
+              {item.Name}
+            </T>
+            <T variant="caption" numberOfLines={1}>
+              {[item.Artists?.join(', '), item.ProductionYear].filter(Boolean).join(' · ')}
+            </T>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => void playMusicVideo(item)}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: t.space.lg,
+              paddingVertical: t.space.sm,
+              backgroundColor: pressed ? t.colors.surface : 'transparent',
+            })}>
+            {thumb(item, 112)}
+            <View style={{ flex: 1, marginLeft: t.space.md }}>
+              <T variant="bodyStrong" numberOfLines={2}>
+                {item.Name}
+              </T>
+              <T variant="caption" numberOfLines={1}>
+                {[item.Artists?.join(', '), item.ProductionYear].filter(Boolean).join(' · ')}
+              </T>
+            </View>
+          </Pressable>
+        )
+      }
     />
   );
 }

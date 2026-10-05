@@ -13,6 +13,8 @@ import { useScreenAwake } from '@/lib/keepAwake';
 import { artistLine } from '@/lib/items';
 import { createPlaybackClock } from '@/lyrics/clock';
 import { useLyrics } from '@/lyrics/fetch';
+import { useLyricsOffset } from '@/lyrics/offset';
+import { SyncPanel } from '@/lyrics/SyncPanel';
 import { LyricsStage, pickLyrics } from '@/lyrics/LyricsStage';
 import { ticksToSeconds } from '@/lib/format';
 import { usePlayer } from '@/player/store';
@@ -56,6 +58,13 @@ export default function LyricsScreen() {
   );
   // The visualizer instead of the lyrics (songs without lyrics get it on their own).
   const [visualizer, setVisualizer] = useState(false);
+  // This song's timing offset (saved on the phone; positive = lyrics later). Not for radio.
+  const [timing, setTiming] = useState(false);
+  const offset = useLyricsOffset(streamUrl ? undefined : lyricsFor?.Id);
+  const timed = useMemo(
+    () => (offset ? { nowMs: () => clock.nowMs() - offset, durationMs: clock.durationMs } : clock),
+    [clock, offset],
+  );
 
   const lyrics = pickLyrics(data, mode);
   const tint = artColor(track && client?.blurhash(track));
@@ -76,8 +85,8 @@ export default function LyricsScreen() {
         lyrics={lyrics}
         loading={isLoading || (!!streamUrl && radioSong.isLoading)}
         mode={mode}
-        nowMs={clock.nowMs}
-        durationMs={clock.durationMs}
+        nowMs={timed.nowMs}
+        durationMs={timed.durationMs}
         // A live stream can't seek.
         onSeek={streamUrl ? () => {} : (ms) => usePlayer.getState().seek(ms / 1000)}
         artUri={track?.Radio ? (track.Radio.coverUrl ?? track.Radio.imageUri) : track ? client?.imageUrl(track, 600) : undefined}
@@ -105,6 +114,15 @@ export default function LyricsScreen() {
                       />
                     </Pressable>
                   ) : null}
+                  {lyrics && !streamUrl && lyricsFor ? (
+                    <Pressable
+                      hitSlop={10}
+                      onPress={() => setTiming(!timing)}
+                      accessibilityLabel="Lyrics timing"
+                      accessibilityState={{ selected: timing }}>
+                      <Ionicons name="timer-outline" size={22} color={timing || offset ? t.colors.accent : t.colors.text} />
+                    </Pressable>
+                  ) : null}
                   <Pressable hitSlop={10} onPress={() => router.push('/lyrics-style')} accessibilityLabel="Lyrics style">
                     <Ionicons name="options-outline" size={24} color={t.colors.text} />
                   </Pressable>
@@ -119,7 +137,11 @@ export default function LyricsScreen() {
 
       {/* Footer: credit (required for Spicy Lyrics API lyrics) + transport */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
-        <UpNext />
+        {timing && lyrics && lyricsFor ? (
+          <SyncPanel itemId={lyricsFor.Id} lyrics={lyrics} onClose={() => setTiming(false)} />
+        ) : (
+          <UpNext />
+        )}
         <View style={styles.transport}>
           <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
             <Ionicons name="play-skip-back" size={26} color={t.colors.text} />

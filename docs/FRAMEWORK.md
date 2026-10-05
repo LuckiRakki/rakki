@@ -442,6 +442,16 @@ ideas (Discord Rich Presence, a desktop app).
   - Launch screen: the Neko player icon on a transparent background, not too big.
   - From 1.0.1: the player sets its audio session before every play and never holds the
     display awake (already in the code).
+- **Next native build (planned; the user's notes, 2026-10-04):**
+  - **Siri** through App Intents / App Shortcuts ("Play my liked songs in Rakki", "Shuffle my
+    library in Rakki", "Resume Rakki", pause/next). These need no Siri entitlement, so they work
+    with the free Apple ID + SideStore. Free-form "Play <any song> on Rakki" is SiriKit media
+    (INPlayMediaIntent), which needs the Siri capability: paid developer account only. App
+    Intents must live in the app target (a local Swift module or a config plugin that adds the
+    Swift files to the target); check with a `check` build.
+  - **Music videos turn with the phone**: allow landscape in the app (it's portrait-only today)
+    and lock every screen except the video player to portrait (expo-screen-orientation), so a
+    video goes full screen sideways on its own and back.
 - **Lyrics on the Home Screen / Lock Screen** (the user's idea, 2026-10-02; backlog, not
   started). Widgets can't animate or follow playback live, so real Spicy karaoke is out. What
   works: a timeline with one entry per lyric line at its timestamp (keeps time on its own;

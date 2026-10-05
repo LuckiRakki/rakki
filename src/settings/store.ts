@@ -53,6 +53,8 @@ interface Settings {
   lastfmAlbumPlays: boolean;
   /** Long song titles scroll (mini-player, player, lyrics); off: cut off with "…". */
   scrollTitles: boolean;
+  /** When a music video ends, play a similar one. */
+  videoAutoplay: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -72,6 +74,7 @@ const DEFAULTS: Settings = {
   popularSort: 'lastfm',
   lastfmAlbumPlays: true,
   scrollTitles: true,
+  videoAutoplay: true,
 };
 
 function load(): Settings {

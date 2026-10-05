@@ -26,6 +26,7 @@ import { Rise } from '@/ui/Rise';
 import { LikedArt } from '@/ui/LikedArt';
 import { tick } from '@/lib/haptics';
 import { playRandom } from '@/library/actions';
+import { useLibraryView } from '@/library/view';
 import { openLibrary } from '@/ui/nav';
 import { openOptions } from '@/ui/overlays';
 import { Shelf } from '@/ui/Shelf';
@@ -60,11 +61,23 @@ export default function HomeScreen() {
       <Shelf key="playlists" title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
     ),
     artists: <Shelf key="artists" title="Artists you play" items={topArtists.data} />,
-    recentlyAdded: <Shelf key="recentlyAdded" title="Recently added" items={added.data} />,
+    recentlyAdded: (
+      <Shelf
+        key="recentlyAdded"
+        title="Recently added"
+        items={added.data}
+        onShowAll={() => {
+          useLibraryView.getState().setSort('albums', 'recent');
+          openLibrary('albums');
+        }}
+      />
+    ),
     mostPlayed: <Shelf key="mostPlayed" title="Most played" items={mostPlayed.data} />,
     rediscover: <Shelf key="rediscover" title="Rediscover" items={rediscover.data} />,
     random: <Shelf key="random" title="Random picks" items={random.data} />,
-    musicVideos: <VideoShelf key="musicVideos" title="Music videos" videos={newestVideos(videos.data)} />,
+    musicVideos: (
+      <VideoShelf key="musicVideos" title="Music videos" videos={newestVideos(videos.data)} onShowAll={() => openLibrary('videos')} />
+    ),
     radio: <RadioShelf key="radio" />,
   };
   const refreshing = recent.isRefetching || added.isRefetching;

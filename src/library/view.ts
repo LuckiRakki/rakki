@@ -5,7 +5,7 @@ import { create } from 'zustand';
 
 import { readPref, writePref } from '@/lib/prefs';
 
-export type LibraryTab = 'playlists' | 'albums' | 'songs' | 'artists' | 'genres' | 'radio' | 'downloads';
+export type LibraryTab = 'playlists' | 'albums' | 'songs' | 'artists' | 'genres' | 'radio' | 'videos' | 'downloads';
 export type LibraryLayout = 'grid' | 'list';
 
 /** The Library's chips, in their default order. */
@@ -16,6 +16,7 @@ export const LIBRARY_TABS: { key: LibraryTab; label: string }[] = [
   { key: 'artists', label: 'Artists' },
   { key: 'genres', label: 'Genres' },
   { key: 'radio', label: 'Radio' },
+  { key: 'videos', label: 'Videos' },
   { key: 'downloads', label: 'Downloaded' },
 ];
 const DEFAULT_ORDER = LIBRARY_TABS.map((x) => x.key);
@@ -62,6 +63,12 @@ export const SORTS: Record<LibraryTab, SortOption[]> = {
     { key: 'played', label: 'Recently played', sortBy: '', sortOrder: 'Descending' },
     { key: 'alpha', label: 'Alphabetical', sortBy: '', sortOrder: 'Ascending' },
   ],
+  // Music videos (one list, sorted on the phone).
+  videos: [
+    { key: 'recent', label: 'Recently added', sortBy: '', sortOrder: 'Descending' },
+    { key: 'alpha', label: 'Alphabetical', sortBy: '', sortOrder: 'Ascending' },
+    RANDOM,
+  ],
   // Sorted on the phone (one list of every genre).
   genres: [
     { key: 'count', label: 'Most albums', sortBy: '', sortOrder: 'Descending' },
@@ -83,6 +90,7 @@ const DEFAULT_LAYOUT: Record<LibraryTab, LibraryLayout> = {
   artists: 'list',
   genres: 'grid',
   radio: 'list',
+  videos: 'grid',
   downloads: 'list',
 };
 const TAB_KEY = 'rakki.libraryTab';
@@ -102,6 +110,7 @@ function savedTab(): LibraryTab {
     v === 'songs' ||
     v === 'genres' ||
     v === 'radio' ||
+    v === 'videos' ||
     v === 'downloads'
     ? v
     : 'albums';

@@ -9,6 +9,7 @@ import { useAuth } from '@/auth/store';
 import { blurhashAverage } from '@/lib/blurhash';
 import { tileColor } from '@/lib/color';
 import { creditLine, useLyrics } from '@/lyrics/fetch';
+import { useLyricsOffset } from '@/lyrics/offset';
 import { pickLyrics } from '@/lyrics/LyricsStage';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -21,6 +22,7 @@ const CARD_HEIGHT = 340;
  * for the full lyrics screen. Renders nothing for songs without lyrics.
  */
 export function LyricsCard({ track, positionSec }: { track: BaseItem; positionSec: number }) {
+  const timing = useLyricsOffset(track.Id);
   const t = useTheme();
   const styles = useStyles();
   const client = useAuth((s) => s.client);
@@ -31,7 +33,8 @@ export function LyricsCard({ track, positionSec }: { track: BaseItem; positionSe
 
   const lines = lyrics?.lines.filter((l) => l.text.trim()) ?? [];
   const synced = !!lyrics?.isSynced;
-  const nowMs = positionSec * 1000;
+  // The song's lyrics timing offset (Lyrics → timing), so the card matches the lyrics screen.
+  const nowMs = positionSec * 1000 - timing;
   let current = -1;
   if (synced) for (let i = 0; i < lines.length && lines[i].startMs <= nowMs; i++) current = i;
 
