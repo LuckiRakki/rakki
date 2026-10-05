@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.5.3 (2026-10-04)
+- Music videos: while one is loading (or waiting for more of the video), a spinner shows where
+  the play button goes, on the video and in the mini-player, instead of a play button.
+
 ## 1.5.2 (2026-10-04)
 - The music video queue picks only 3 videos ahead now (was 15) and tops up as they play.
   Settings → Playback → Music videos queued ahead changes it (1, 2, 3, 5 or 10).

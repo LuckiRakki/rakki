@@ -65,6 +65,8 @@ function Stage({
   const view = useRef<VideoView>(null);
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
+  // Starting (or waiting for more of the video): a spinner where the play button goes.
+  const loading = status === 'loading';
   const time = useEvent(player, 'timeUpdate', { currentTime: 0, currentLiveTimestamp: null, currentOffsetFromLive: null, bufferedPosition: 0 });
   const hasPrevious = useVideoSession((s) => s.history.length > 0);
   const hasNext = useVideoSession((s) => s.upNext.length > 0);
@@ -94,7 +96,7 @@ function Stage({
     <View style={{ width, height, backgroundColor: '#000' }}>
       <VideoView ref={view} player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} allowsPictureInPicture />
       <Pressable style={StyleSheet.absoluteFill} onPress={() => setShown((s) => !s)} accessibilityLabel={shown ? 'Hide controls' : 'Show controls'}>
-        {status === 'loading' ? <ActivityIndicator color="#fff" style={StyleSheet.absoluteFill} /> : null}
+        {loading && !shown ? <ActivityIndicator size="large" color="#fff" style={StyleSheet.absoluteFill} /> : null}
         {shown ? (
           <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(250)} style={[StyleSheet.absoluteFill, styles.scrim]}>
             <View style={[styles.top, fullscreen && { padding: 20 }]}>
@@ -122,9 +124,15 @@ function Stage({
               <Pressable hitSlop={10} onPress={touched(() => player.seekBy(-10))} accessibilityLabel="Back 10 seconds">
                 <Ionicons name="play-back" size={28} color="#fff" />
               </Pressable>
-              <Pressable onPress={touched(toggle)} style={styles.play} accessibilityLabel={isPlaying ? 'Pause' : 'Play'}>
-                <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="#000" style={{ marginLeft: isPlaying ? 0 : 4 }} />
-              </Pressable>
+              {loading ? (
+                <View style={styles.loading} accessibilityLabel="Loading">
+                  <ActivityIndicator size="large" color="#fff" />
+                </View>
+              ) : (
+                <Pressable onPress={touched(toggle)} style={styles.play} accessibilityLabel={isPlaying ? 'Pause' : 'Play'}>
+                  <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="#000" style={{ marginLeft: isPlaying ? 0 : 4 }} />
+                </Pressable>
+              )}
               <Pressable hitSlop={10} onPress={touched(() => player.seekBy(10))} accessibilityLabel="Forward 10 seconds">
                 <Ionicons name="play-forward" size={28} color="#fff" />
               </Pressable>
@@ -215,6 +223,8 @@ function MiniPlayPause({ player }: { player: VideoPlayer }) {
   const t = useTheme();
   const s = useMiniStyles();
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+  if (status === 'loading') return <ActivityIndicator color={t.colors.text} style={s.btn} accessibilityLabel="Loading" />;
   return (
     <Pressable
       hitSlop={10}
@@ -235,6 +245,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 22, padding: 12 },
   center: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
   play: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  loading: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
   bottom: { paddingHorizontal: 14, paddingBottom: 4 },
 });
 
