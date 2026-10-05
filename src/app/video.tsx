@@ -87,7 +87,7 @@ export default function VideoScreen() {
   const stageW = fullscreen ? height : cardW;
   const stageH = fullscreen ? width : Math.round((cardW * 9) / 16);
   const stage = VideoStage ? (
-    <Suspense fallback={<ActivityIndicator color="#fff" style={{ flex: 1 }} />}>
+    <Suspense fallback={null}>
       <VideoStage width={stageW} height={stageH} fullscreen={fullscreen} onFullscreen={setFullscreen} />
     </Suspense>
   ) : (

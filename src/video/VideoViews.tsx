@@ -11,7 +11,17 @@ import { VideoView, type VideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { tick } from '@/lib/haptics';
 import { SeekBar } from '@/player/SeekBar';
@@ -42,8 +52,8 @@ export function VideoStage({
   const player = usePlayerOf();
   if (!player) {
     return (
-      <View style={{ width, height, backgroundColor: '#000', justifyContent: 'center' }}>
-        <ActivityIndicator color="#fff" />
+      <View style={{ width, height, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
+        <GlassButton size={64} label="Loading" loading />
       </View>
     );
   }
@@ -97,8 +107,8 @@ function Stage({
     <View style={{ width, height, backgroundColor: '#000' }}>
       <VideoView ref={view} player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} allowsPictureInPicture />
       <Pressable style={StyleSheet.absoluteFill} onPress={() => setShown((s) => !s)} accessibilityLabel={shown ? 'Hide controls' : 'Show controls'}>
-        {loading && !shown ? <ActivityIndicator size="large" color="#fff" style={StyleSheet.absoluteFill} /> : null}
-        {shown ? (
+        {/* While it loads the controls stay up: the play button is the spinner. */}
+        {shown || loading ? (
           <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(250)} style={[StyleSheet.absoluteFill, styles.scrim]}>
             <View style={[styles.top, fullscreen && { padding: 20 }]}>
               {RoutePicker ? <RoutePicker style={{ width: 28, height: 28 }} tintColor="#fff" activeTintColor="#fff" /> : null}
@@ -126,9 +136,7 @@ function Stage({
                 <Ionicons name="play-back" size={22} color="#fff" />
               </GlassButton>
               {loading ? (
-                <GlassButton size={64} label="Loading">
-                  <ActivityIndicator size="large" color="#fff" />
-                </GlassButton>
+                <GlassButton size={64} label="Loading" loading />
               ) : (
                 <GlassButton size={64} onPress={touched(toggle)} label={isPlaying ? 'Pause' : 'Play'}>
                   <Ionicons name={isPlaying ? 'pause' : 'play'} size={30} color="#fff" style={{ marginLeft: isPlaying ? 0 : 4 }} />
@@ -158,19 +166,24 @@ function Stage({
   );
 }
 
-/** A see-through round button: frosted glass over the video, white icon. */
+/**
+ * A see-through round button: frosted glass over the video, white icon. `loading` turns it
+ * into the spinner: an arc running round its edge.
+ */
 function GlassButton({
   size,
   label,
   onPress,
   disabled,
+  loading,
   children,
 }: {
   size: number;
   label: string;
   onPress?: () => void;
   disabled?: boolean;
-  children: ReactNode;
+  loading?: boolean;
+  children?: ReactNode;
 }) {
   return (
     <Pressable
@@ -182,10 +195,20 @@ function GlassButton({
         styles.glass,
         { width: size, height: size, borderRadius: size / 2, opacity: disabled ? 0.35 : pressed ? 0.7 : 1 },
       ]}>
-      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-      {children}
+      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+      {loading ? <SpinnerRing size={size} /> : children}
     </Pressable>
   );
+}
+
+function SpinnerRing({ size }: { size: number }) {
+  const turn = useSharedValue(0);
+  useEffect(() => {
+    turn.set(withRepeat(withTiming(360, { duration: 800, easing: Easing.linear }), -1, false));
+    return () => cancelAnimation(turn);
+  }, [turn]);
+  const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value}deg` }] }));
+  return <Animated.View style={[StyleSheet.absoluteFill, styles.ring, { borderRadius: size / 2 }, spin]} />;
 }
 
 /**
@@ -274,10 +297,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
+  ring: { borderWidth: 3, borderColor: 'rgba(255,255,255,0.15)', borderTopColor: '#fff' },
   bottom: { paddingHorizontal: 14, paddingBottom: 4 },
 });
 

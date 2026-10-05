@@ -6,6 +6,16 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.5.5 (2026-10-04)
+- **Music videos play in the background**: the sound keeps going when you leave Rakki or lock
+  your phone (the picture picks up again when you're back). Settings → Playback → Play music
+  videos in the background turns it off. In the background, the next video starts straight
+  away (no countdown). The lock screen still shows (and controls) your song for now; the video
+  on the lock screen needs the next native build.
+- The glass buttons lost their thin white outline (a touch more frosted instead).
+- Loading is the play button itself now: an arc running round its edge, in the same place as
+  the play button, also before the video has started (it used to be a separate spinner).
+
 ## 1.5.4 (2026-10-04)
 - Music video controls are see-through: frosted-glass circles with white icons (the play button
   was solid white), the loading spinner included.

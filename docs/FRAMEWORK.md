@@ -446,6 +446,12 @@ ideas (Discord Rich Presence, a desktop app).
   - **Music videos turn with the phone**: allow landscape in the app (it's portrait-only today)
     and lock every screen except the video player to portrait (expo-screen-orientation), so a
     video goes full screen sideways on its own and back.
+  - **Music videos on the lock screen** (1.5.5 plays their sound in the background, but the
+    lock screen and headphone buttons still belong to RakkiPlayer, which answers them natively:
+    play there resumes the song, which stops the video). Give RakkiPlayer a JS-callable switch
+    to step aside (drop its remote command targets and Now Playing info) while a video plays,
+    then turn on expo-video's showNowPlayingNotification with the video's title, artist and
+    thumbnail (VideoSource metadata); take them back when the video stops.
 - **Siri** (the user's request, 2026-10-04; backlog, not started). Wants it smart: "Play All I
   Wanted by Paramore", "Play Brand New Eyes by Paramore", "Play Brand New Eyes", best match,
   fast. Constraints and design:

@@ -59,6 +59,7 @@ export default function SettingsScreen() {
   const scrollTitles = useSettings((s) => s.scrollTitles);
   const videoAutoplay = useSettings((s) => s.videoAutoplay);
   const videoQueueSize = useSettings((s) => s.videoQueueSize);
+  const videoBackgroundAudio = useSettings((s) => s.videoBackgroundAudio);
   const downloadSummary = useDownloads((s) => {
     const done = Object.values(s.tracks).filter((x) => x.state === 'done');
     return done.length ? `${songCount(done.length)}, ${formatBytes(done.reduce((n, x) => n + (x.bytes ?? 0), 0))}` : 'none yet';
@@ -204,6 +205,12 @@ export default function SettingsScreen() {
             detail="When a music video ends, play another one by the same artist (or something else you have)"
             value={videoAutoplay}
             onChange={(v) => useSettings.getState().set('videoAutoplay', v)}
+          />
+          <Toggle
+            label="Play music videos in the background"
+            detail="The sound keeps going when you leave Rakki or lock your phone"
+            value={videoBackgroundAudio}
+            onChange={(v) => useSettings.getState().set('videoBackgroundAudio', v)}
           />
           <Field label="Music videos queued ahead" hint="How many the video queue picks in advance. It tops up as they play.">
             <Segmented

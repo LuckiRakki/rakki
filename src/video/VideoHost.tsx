@@ -4,8 +4,9 @@
 // the next video otherwise. Starting a song stops the video. Loaded lazily, only on builds with
 // expo-video's native side.
 import { usePathname } from 'expo-router';
-import { useVideoPlayer } from 'expo-video';
+import { useVideoPlayer, type VideoPlayer } from 'expo-video';
 import { useEffect, useMemo } from 'react';
+import { AppState } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useMusicVideos } from '@/api/queries';
@@ -30,6 +31,16 @@ export default function VideoHost() {
     [],
   );
 
+  // Settings → Playback → Play music videos in the background, switched while one plays.
+  useEffect(
+    () =>
+      useSettings.subscribe((s, prev) => {
+        const player = useVideoSession.getState().player as VideoPlayer | null;
+        if (player && s.videoBackgroundAudio !== prev.videoBackgroundAudio) player.staysActiveInBackground = s.videoBackgroundAudio;
+      }),
+    [],
+  );
+
   return video ? <Host key={video.Id} video={video} /> : null;
 }
 
@@ -41,6 +52,9 @@ function Host({ video }: { video: BaseItem }) {
   const uri = useMemo(() => client?.videoStreamUrl(video, session) ?? null, [client, video, session]);
   const player = useVideoPlayer(uri ? { uri } : null, (p) => {
     p.timeUpdateEventInterval = 0.5;
+    // The sound carries on with the app in the background or the phone locked (the picture
+    // stops); the video picks up again when Rakki's back.
+    p.staysActiveInBackground = useSettings.getState().videoBackgroundAudio;
     p.play();
   });
   const countdown = useVideoSession((s) => s.countdown);
@@ -62,11 +76,12 @@ function Host({ video }: { video: BaseItem }) {
     useVideoSession.getState().fill(videos, queueSize);
   }, [video, videos, queueSize]);
 
-  // The end: count down on the open video screen, or go straight on while minimized.
+  // The end: count down on the open video screen, or go straight on while minimized (or in the
+  // background, where a countdown would stall once the sound stops).
   useEffect(() => {
     const sub = player.addListener('playToEnd', () => {
       if (!useSettings.getState().videoAutoplay || !useVideoSession.getState().upNext.length) return;
-      if (pathname === '/video') useVideoSession.setState({ countdown: COUNTDOWN_S });
+      if (pathname === '/video' && AppState.currentState === 'active') useVideoSession.setState({ countdown: COUNTDOWN_S });
       else useVideoSession.getState().next();
     });
     return () => sub.remove();

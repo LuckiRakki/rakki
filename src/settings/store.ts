@@ -57,6 +57,8 @@ interface Settings {
   videoAutoplay: boolean;
   /** How many music videos the queue picks ahead (it tops up as they play). */
   videoQueueSize: number;
+  /** Music videos keep playing (the sound) when Rakki goes to the background or the phone locks. */
+  videoBackgroundAudio: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -78,6 +80,7 @@ const DEFAULTS: Settings = {
   scrollTitles: true,
   videoAutoplay: true,
   videoQueueSize: 3,
+  videoBackgroundAudio: true,
 };
 
 function load(): Settings {
