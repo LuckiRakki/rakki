@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { PixelRatio, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { useArtistPictures } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { localArtUri, useDownloads } from '@/downloads/store';
 import { useTheme } from '@/ui/theme';
@@ -28,6 +29,9 @@ export function Artwork({
   const t = useTheme();
   const r = rounded ?? t.radius.art;
   const client = useAuth((s) => s.client);
+  // An artist without a picture: the other copy's, if Jellyfin has the artist twice.
+  const other = useArtistPictures(item?.Type === 'MusicArtist' && !item.ImageTags?.Primary ? item : undefined);
+  const shown = other?.ImageTags?.Primary ? other : item;
   const box = { width: size, height: size, borderRadius: r };
   // Saved cover art (downloaded albums/playlists) works offline and loads instantly.
   const artId = item ? (item.Type === 'Audio' ? item.AlbumId : item.Id) : undefined;
@@ -35,8 +39,8 @@ export function Artwork({
   // A radio station shows the cover of the song on air (from the station), else your picture.
   const uri = item?.Radio
     ? (item.Radio.coverUrl ?? item.Radio.imageUri)
-    : ((hasLocal ? localArtUri(artId) : null) ?? (item && client?.imageUrl(item, bucket(size * PixelRatio.get()))));
-  const blurhash = item && client?.blurhash(item);
+    : ((hasLocal ? localArtUri(artId) : null) ?? (shown && client?.imageUrl(shown, bucket(size * PixelRatio.get()))));
+  const blurhash = shown && client?.blurhash(shown);
 
   if (!uri) {
     return (

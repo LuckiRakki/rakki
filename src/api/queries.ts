@@ -159,6 +159,20 @@ export const useItem = (id: string | undefined) =>
     offline: () => offlineItem(id!),
   });
 
+/**
+ * Pictures for an artist that has none (or no backdrop): Jellyfin can have the same artist
+ * twice, and songs link to the copy without the pictures. The other copy, if it has them.
+ */
+export function useArtistPictures(artist: BaseItem | null | undefined): BaseItem | undefined {
+  const missing = !!artist && artist.Type === 'MusicArtist' && (!artist.ImageTags?.Primary || !artist.BackdropImageTags?.length);
+  const other = useUserQuery(['artistByName', artist?.Name], (c) => c.getArtistByName(artist!.Name), {
+    enabled: missing && !!artist?.Name,
+    staleTime: 6 * 60 * 60_000,
+  }).data;
+  if (!missing || !other || other.Id === artist!.Id) return undefined;
+  return other.ImageTags?.Primary || other.BackdropImageTags?.length ? other : undefined;
+}
+
 export const useAlbumTracks = (albumId: string | undefined) =>
   useUserQuery(['albumTracks', albumId], async (c) => (await c.getAlbumTracks(albumId!)).Items, {
     enabled: !!albumId,

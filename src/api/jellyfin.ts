@@ -446,6 +446,15 @@ export class JellyfinClient {
     return this.get<BaseItem>(`/Items/${id}`, { userId: this.session.userId });
   }
 
+  /**
+   * An artist by name, the way Jellyfin picks it for album artists: when the library has the
+   * same artist twice (their music folder, and an entry Jellyfin made from the songs' tags),
+   * the folder one, which is where pictures put in that folder end up.
+   */
+  getArtistByName(name: string) {
+    return this.get<BaseItem>(`/Artists/${encodeURIComponent(name)}`, { userId: this.session.userId });
+  }
+
   /** /Items with the defaults every list needs (this user, recursive, one primary image). */
   items(params: Record<string, string | number | boolean | undefined>) {
     return this.get<ItemsResult>('/Items', {

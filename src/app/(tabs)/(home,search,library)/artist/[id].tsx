@@ -8,7 +8,16 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
-import { useAppearsOn, useArtistAlbums, useArtistPopular, useItem, useMusicVideos, useSimilar, useTopTracks } from '@/api/queries';
+import {
+  useAppearsOn,
+  useArtistAlbums,
+  useArtistPictures,
+  useArtistPopular,
+  useItem,
+  useMusicVideos,
+  useSimilar,
+  useTopTracks,
+} from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { setLiked, startRadio } from '@/library/actions';
@@ -60,8 +69,13 @@ export default function ArtistScreen() {
   }));
 
   const a = artist.data;
-  const cover = a && client ? (client.backdropUrl(a, 1200) ?? client.imageUrl(a, 800)) : undefined;
-  const blurhash = a && client ? client.blurhash(a) : undefined;
+  // Its pictures, or the other copy's when Jellyfin has this artist twice (useArtistPictures).
+  const other = useArtistPictures(a);
+  const backdropFrom = a?.BackdropImageTags?.length ? a : (other ?? a);
+  const photoFrom = a?.ImageTags?.Primary ? a : (other ?? a);
+  const cover =
+    a && client ? ((backdropFrom && client.backdropUrl(backdropFrom, 1200)) ?? (photoFrom && client.imageUrl(photoFrom, 800))) : undefined;
+  const blurhash = photoFrom && client ? client.blurhash(photoFrom) : undefined;
   const tint = artColor(blurhash);
   const liked = a?.UserData?.IsFavorite ?? false;
   const source = { type: 'artist' as const, id, name: a?.Name ?? 'Artist' };
