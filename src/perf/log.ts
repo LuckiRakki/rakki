@@ -217,6 +217,19 @@ export function startPerfLog() {
   void sample();
 }
 
+/**
+ * An error that would have closed the app, caught on screen (the root error boundary): written
+ * down at once and sent to the server straight away, so it can be looked at.
+ */
+export async function logErrorNow(message: string, stack?: string) {
+  try {
+    await write([{ k: 'e', t: Date.now(), kind: 'error', message: message.slice(0, 500), stack: stack?.slice(0, 2500), fatal: true, caught: true }]);
+    await sendPerfLog();
+  } catch {
+    // Not signed in or no connection: it waits in the log for the next send.
+  }
+}
+
 /** Rows waiting to be sent, and when it was last sent. */
 export async function perfLogStatus(): Promise<{ rows: number; sentAt: number | null }> {
   const row = await database()

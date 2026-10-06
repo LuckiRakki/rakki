@@ -54,4 +54,12 @@ Docs: https://docs.expo.dev/eas/index.md
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- **React Compiler and closures:** never write `x!.prop` (or `x.prop` on something that can be
+  undefined) inside a function created in a component or hook, such as a `queryFn` or callback.
+  The compiler reads a closure's dependencies while rendering, so `artist!.Name` with no artist
+  throws during render. 1.6.2 crashed the app at launch this way. Read the value outside first
+  (`const name = artist?.Name ?? ''`) and close over that.
+- The app is wrapped in an error boundary (src/app/_layout.tsx): a render error shows its message
+  and goes to the performance log instead of closing the app. Errors outside rendering (timers,
+  native events) still close it.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md

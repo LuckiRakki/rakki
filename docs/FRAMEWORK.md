@@ -442,16 +442,20 @@ ideas (Discord Rich Presence, a desktop app).
   - Launch screen: the Neko player icon on a transparent background, not too big.
   - From 1.0.1: the player sets its audio session before every play and never holds the
     display awake (already in the code).
+- **Native build 1.6.3** (2026-10-06, early, to recover from the 1.6.2 update crashing at
+  launch: an update can't reach an app that closes before it checks for one). Brings the
+  performance log's hardware readings (RakkiDeviceStats.swift, MetricKit) and the root error
+  boundary. Updates now go to runtime 1.6.3; 1.2.0 stays on update 1.6.2, which crashes, so
+  every phone needs this build.
 - **Next native build (planned; the user's notes, 2026-10-04):**
   - **Music videos turn with the phone**: allow landscape in the app (it's portrait-only today)
     and lock every screen except the video player to portrait (expo-screen-orientation), so a
     video goes full screen sideways on its own and back.
-  - **Performance log hardware readings** (1.6.0's JS already asks for them; builds without
-    them log the rest): modules/rakki-audio/ios/RakkiDeviceStats.swift adds `deviceStats()`
-    (CPU seconds via getrusage, phys_footprint memory, thermal state, battery level/state,
-    Low Power Mode, brightness) and `takeMetricReports()` (MetricKit daily metric and
-    diagnostic payloads: GPU time, background audio time, background exits such as CPU-limit
-    kills, hangs). Written but not compiled yet: check the CI build log for it first.
+  - ~~**Performance log hardware readings**~~: in the 1.6.3 build. RakkiDeviceStats.swift
+    adds `deviceStats()` (CPU seconds via getrusage, phys_footprint memory, thermal state,
+    battery level/state, Low Power Mode, brightness) and `takeMetricReports()` (MetricKit daily
+    metric and diagnostic payloads: GPU time, background audio time, background exits such as
+    CPU-limit kills, hangs).
   - **Music videos on the lock screen** (1.5.5 plays their sound in the background, but the
     lock screen and headphone buttons still belong to RakkiPlayer, which answers them natively:
     play there resumes the song, which stops the video). Give RakkiPlayer a JS-callable switch

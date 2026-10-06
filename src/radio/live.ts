@@ -92,10 +92,11 @@ export function useStationOnAir(station: Station): OnAir | undefined {
 
 /** The songs a SUB/WAVE station played before this one. */
 export function useRecentlyAired(station: Station | undefined) {
+  const apiBase = station?.apiBase ?? '';
   return useQuery({
     queryKey: ['radioAired', station?.id],
-    enabled: !!station?.apiBase,
+    enabled: !!apiBase,
     refetchInterval: 30_000,
-    queryFn: () => fetchRecentlyAired(station!.apiBase!),
+    queryFn: () => fetchRecentlyAired(apiBase),
   });
 }

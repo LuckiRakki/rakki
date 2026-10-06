@@ -6,6 +6,18 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.6.3, native build (2026-10-06)
+A new app to install (SideStore), needed because 1.6.2 closed the app right after the launch
+screen, and an update can't reach an app that closes before it checks for one. Over-the-air
+updates now go to this build (runtime 1.6.3).
+- **Fixed: Rakki closing at launch (1.6.2).** The artist-picture fix read an artist's name in a
+  way the React Compiler evaluates while drawing, so every album cover without an artist threw.
+  The same pattern is gone from the music video and radio code too.
+- **No more closing on a drawing error.** If a screen ever throws, Rakki shows the error with
+  a Try again button instead of closing, and sends it to your server's log.
+- **Performance log hardware readings:** CPU load, memory, heat, battery, Low Power Mode and
+  brightness in every sample, plus iOS's daily MetricKit reports.
+
 ## 1.6.2 (2026-10-06)
 - Artist pictures and backdrops show even when Jellyfin has the artist twice (their music
   folder, plus an entry it made from the songs' tags). Songs link to the copy without the

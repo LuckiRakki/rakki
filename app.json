@@ -2,7 +2,7 @@
   "expo": {
     "name": "Rakki",
     "slug": "rakki",
-    "version": "1.6.2",
+    "version": "1.6.3",
     "orientation": "portrait",
     "icon": "./assets/icons/rakki.png",
     "scheme": "rakki",
@@ -285,7 +285,7 @@
         "projectId": "6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc"
       }
     },
-    "runtimeVersion": "1.2.0",
+    "runtimeVersion": "1.6.3",
     "updates": {
       "url": "https://u.expo.dev/6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc",
       "requestHeaders": {

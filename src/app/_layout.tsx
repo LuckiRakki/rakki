@@ -1,9 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { lazy, Suspense, useEffect } from 'react';
+import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { queryClient } from '@/api/queries';
@@ -26,13 +27,77 @@ import { resetScreenAwake } from '@/lib/keepAwake';
 import { OpeningFade } from '@/ui/Rise';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
-import { startPerfLog } from '@/perf/log';
+import { logErrorNow, startPerfLog } from '@/perf/log';
 
 SplashScreen.preventAutoHideAsync();
 
 // The music video player lives here, above the screens, so it keeps playing when the video
 // screen is swiped down (expo-video builds only).
 const VideoHost = inAppVideo ? lazy(() => import('@/video/VideoHost')) : null;
+
+/**
+ * Something threw while drawing: say so (with the error, and a way to try again) instead of
+ * closing the app, and send the error to the server's log (Settings → Performance log). Plain
+ * styles: the theme may be what broke.
+ */
+function CrashScreen({ error, retry }: { error: Error; retry: () => void }) {
+  useEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {});
+  }, []);
+  return (
+    <View style={{ flex: 1, backgroundColor: '#0b0b0b', paddingHorizontal: 24, paddingTop: 96 }}>
+      <Text style={{ color: '#fff', fontSize: 24, fontWeight: '800' }}>Something went wrong</Text>
+      <Text style={{ color: '#aaa', fontSize: 15, marginTop: 8 }}>
+        Rakki hit an error drawing this screen. It has been sent to your server&apos;s log.
+      </Text>
+      <ScrollView style={{ marginTop: 20, maxHeight: 240, backgroundColor: '#181818', borderRadius: 12, padding: 14 }}>
+        <Text selectable style={{ color: '#ddd', fontSize: 13, fontFamily: 'Menlo' }}>
+          {error.message}
+        </Text>
+      </ScrollView>
+      <Pressable
+        onPress={retry}
+        style={({ pressed }) => ({
+          marginTop: 24,
+          height: 48,
+          borderRadius: 24,
+          backgroundColor: '#fff',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: pressed ? 0.8 : 1,
+        })}>
+        <Text style={{ color: '#000', fontSize: 16, fontWeight: '700' }}>Try again</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Around the whole app: any screen, the tab bar, the mini-player. */
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    void logErrorNow(error.message, error.stack);
+  }
+
+  render() {
+    const { error } = this.state;
+    if (error) return <CrashScreen error={error} retry={() => this.setState({ error: null })} />;
+    return this.props.children;
+  }
+}
+
+/** expo-router's own boundary for routes (errors inside a screen). */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    void logErrorNow(error.message, error.stack);
+  }, [error]);
+  return <CrashScreen error={error} retry={() => void retry()} />;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(FONT_FILES);
@@ -52,9 +117,11 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <RakkiThemeProvider>
-      <AppShell signedIn={signedIn} />
-    </RakkiThemeProvider>
+    <AppErrorBoundary>
+      <RakkiThemeProvider>
+        <AppShell signedIn={signedIn} />
+      </RakkiThemeProvider>
+    </AppErrorBoundary>
   );
 }
 

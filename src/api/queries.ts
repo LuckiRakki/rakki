@@ -165,11 +165,15 @@ export const useItem = (id: string | undefined) =>
  */
 export function useArtistPictures(artist: BaseItem | null | undefined): BaseItem | undefined {
   const missing = !!artist && artist.Type === 'MusicArtist' && (!artist.ImageTags?.Primary || !artist.BackdropImageTags?.length);
-  const other = useUserQuery(['artistByName', artist?.Name], (c) => c.getArtistByName(artist!.Name), {
-    enabled: missing && !!artist?.Name,
+  // Plain values, not `artist!.Name` inside the request: the React Compiler reads a closure's
+  // dependencies while drawing, and `artist.Name` with no artist crashed every screen (1.6.2).
+  const name = artist?.Name ?? '';
+  const id = artist?.Id;
+  const other = useUserQuery(['artistByName', name], (c) => c.getArtistByName(name), {
+    enabled: missing && !!name,
     staleTime: 6 * 60 * 60_000,
   }).data;
-  if (!missing || !other || other.Id === artist!.Id) return undefined;
+  if (!missing || !other || other.Id === id) return undefined;
   return other.ImageTags?.Primary || other.BackdropImageTags?.length ? other : undefined;
 }
 
