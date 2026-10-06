@@ -25,6 +25,11 @@ const MODALS = [
 let overModal = false;
 let currentPath = '/';
 
+/** The screen showing now (the performance log notes it). */
+export function currentPathname(): string {
+  return currentPath;
+}
+
 /** Mounted once in the root layout: keeps track of whether a modal screen is showing. */
 export function useModalTracker() {
   const pathname = usePathname();

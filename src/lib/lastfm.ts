@@ -1,6 +1,7 @@
-// Worldwide play counts from Last.fm, for an artist's Popular songs. Uses the user's own free
-// API key (Settings → Last.fm), which stays on the phone. Answers are kept for a week, since
-// the counts change slowly.
+// Worldwide play counts from Last.fm, for an artist's Popular songs, and what other listeners
+// play alongside a song or artist, for the smart queue (src/player/smartQueue.ts). Uses the
+// user's own free API key (Settings → Last.fm), which stays on the phone. Answers are kept for
+// a week, since they change slowly.
 import type { BaseItem } from '@/api/jellyfin';
 import { readPref, writePref } from '@/lib/prefs';
 import { useSettings } from '@/settings/store';
@@ -31,10 +32,10 @@ export class LastfmError extends Error {
   }
 }
 
-async function call(params: Record<string, string>, key: string): Promise<unknown> {
+async function call(params: Record<string, string>, key: string, timeoutMs = TIMEOUT_MS): Promise<unknown> {
   const query = new URLSearchParams({ ...params, api_key: key, format: 'json' }).toString();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`${API}?${query}`, { signal: controller.signal });
     const json = (await res.json()) as { error?: number; message?: string };
@@ -74,6 +75,72 @@ export async function artistTopTracks(artist: string): Promise<LastfmTrack[]> {
   }));
   writePref(cacheKey, JSON.stringify({ at: Date.now(), tracks }));
   return tracks;
+}
+
+/** Something Last.fm listeners play alongside a song: how closely (0–1) and how much overall. */
+export interface SimilarTrack {
+  name: string;
+  artist: string;
+  /** 0–1, Last.fm's similarity. */
+  match: number;
+  playcount: number;
+}
+
+export interface SimilarArtist {
+  name: string;
+  match: number;
+}
+
+/** Read a kept answer (a week), or null. */
+function kept<T>(cacheKey: string): T | null {
+  try {
+    const k = JSON.parse(readPref(cacheKey) ?? 'null') as { at: number; v: T } | null;
+    return k && Date.now() - k.at < KEEP_MS ? k.v : null;
+  } catch {
+    return null;
+  }
+}
+
+function keep<T>(cacheKey: string, v: T) {
+  writePref(cacheKey, JSON.stringify({ at: Date.now(), v }));
+}
+
+function apiKey(): string {
+  const key = useSettings.getState().lastfmApiKey.trim();
+  if (!key) throw new LastfmError('No Last.fm API key.');
+  return key;
+}
+
+/** Songs Last.fm listeners play alongside this one, closest first (kept a week). */
+export async function similarTracks(artist: string, title: string, limit = 80, timeoutMs = 6000): Promise<SimilarTrack[]> {
+  const key = apiKey();
+  const cacheKey = `rakki.lastfm.simtracks.${artist.toLowerCase()}|${title.toLowerCase()}`;
+  const hit = kept<[string, string, number, number][]>(cacheKey);
+  if (hit) return hit.map(([name, by, match, playcount]) => ({ name, artist: by, match, playcount }));
+  const json = (await call(
+    { method: 'track.getsimilar', artist, track: title, autocorrect: '1', limit: String(limit) },
+    key,
+    timeoutMs,
+  )) as { similartracks?: { track?: { name: string; match?: string | number; playcount?: string | number; artist?: { name?: string } }[] } };
+  const rows = (json.similartracks?.track ?? [])
+    .filter((t) => t.name && t.artist?.name)
+    .map((t) => [t.name, t.artist!.name!, Number(t.match) || 0, Number(t.playcount) || 0] as [string, string, number, number]);
+  keep(cacheKey, rows);
+  return rows.map(([name, by, match, playcount]) => ({ name, artist: by, match, playcount }));
+}
+
+/** Artists Last.fm listeners like alongside this one, closest first (kept a week). */
+export async function similarArtists(artist: string, limit = 30, timeoutMs = 6000): Promise<SimilarArtist[]> {
+  const key = apiKey();
+  const cacheKey = `rakki.lastfm.simartists.${artist.toLowerCase()}`;
+  const hit = kept<[string, number][]>(cacheKey);
+  if (hit) return hit.map(([name, match]) => ({ name, match }));
+  const json = (await call({ method: 'artist.getsimilar', artist, autocorrect: '1', limit: String(limit) }, key, timeoutMs)) as {
+    similarartists?: { artist?: { name: string; match?: string | number }[] };
+  };
+  const rows = (json.similarartists?.artist ?? []).filter((a) => a.name).map((a) => [a.name, Number(a.match) || 0] as [string, number]);
+  keep(cacheKey, rows);
+  return rows.map(([name, match]) => ({ name, match }));
 }
 
 /**

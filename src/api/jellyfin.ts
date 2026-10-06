@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 
 import { isOffline, reportConnectionFailure, reportConnectionSuccess } from '@/lib/online';
 import { appVersion } from '@/lib/updates';
+import { countApiBytes } from '@/perf/events';
 import type { JellyfinLyricsDto, TtmlDto } from '@/lyrics/types';
 
 export const CLIENT_NAME = 'Rakki';
@@ -186,6 +187,7 @@ async function request<T>(
     throw new JellyfinError(`Server error ${res.status}`, res.status);
   }
   const text = await res.text();
+  countApiBytes(text.length);
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
@@ -357,6 +359,22 @@ export class JellyfinClient {
       deviceId,
       token,
       timeoutMs: 30_000,
+      headers: { 'Content-Type': 'text/plain' },
+      body: text,
+    });
+  }
+
+  /**
+   * Hand the performance log (src/perf) to the server: Jellyfin keeps it in its log folder as
+   * upload_Rakki_<version>_<time>.log (Dashboard → Logs). Up to 1 MB per upload.
+   */
+  uploadClientLog(text: string) {
+    const { serverUrl, deviceId, token } = this.session;
+    return request<{ FileName?: string }>(`${serverUrl}/ClientLog/Document`, {
+      method: 'POST',
+      deviceId,
+      token,
+      timeoutMs: 60_000,
       headers: { 'Content-Type': 'text/plain' },
       body: text,
     });

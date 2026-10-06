@@ -7,6 +7,7 @@ import { create } from 'zustand';
 
 import type { BaseItem, JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { matchKey } from '@/lib/lastfm';
 import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 import { prepare, type Entry, type FuzzyIndex, type Kind } from '@/search/fuzzy';
@@ -75,6 +76,50 @@ async function addAll(client: JellyfinClient, kind: 'Audio' | 'MusicAlbum' | 'Pl
     start += page.Items.length;
     if (page.Items.length < PAGE || start >= page.TotalRecordCount) return;
   }
+}
+
+/** Find library songs and artists by name (the smart queue matching Last.fm's suggestions). */
+export interface LibraryLookup {
+  /** Song ids for an artist + title (any of the song's artists). */
+  song(artist: string, title: string): string[];
+  /** The library's artist id for a name. */
+  artist(name: string): string | undefined;
+}
+
+let lookup: { rows: Row[]; value: LibraryLookup } | null = null;
+
+/**
+ * The library by name, from the stored index (loaded from the phone if search hasn't yet).
+ * null until the index has been built once.
+ */
+export function libraryLookup(): LibraryLookup | null {
+  if (!stored) {
+    const client = useAuth.getState().client;
+    const s = client ? load(client) : null;
+    if (!s) return null;
+    publish(s);
+  }
+  const rows = stored!.rows;
+  if (lookup?.rows === rows) return lookup.value;
+  const songs = new Map<string, string[]>();
+  const artists = new Map<string, string>();
+  for (const r of rows) {
+    if (r[1] === 2) artists.set(matchKey(r[2]), r[0]);
+    if (r[1] !== 0 || !r[3]) continue;
+    const title = matchKey(r[2]);
+    for (const by of r[3].split(', ')) {
+      const k = `${matchKey(by)}|${title}`;
+      const ids = songs.get(k);
+      if (ids) ids.push(r[0]);
+      else songs.set(k, [r[0]]);
+    }
+  }
+  const value: LibraryLookup = {
+    song: (artist, title) => songs.get(`${matchKey(artist)}|${matchKey(title)}`) ?? [],
+    artist: (name) => artists.get(matchKey(name)),
+  };
+  lookup = { rows, value };
+  return value;
 }
 
 /**

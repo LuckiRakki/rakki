@@ -6,6 +6,28 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.6.0 (2026-10-06)
+- **Smart queue.** Autoplay (when the queue runs out) and song/artist radio now pick songs the
+  way Spotify does: what Last.fm listeners play alongside the songs you're hearing, popular
+  songs by the artists they like next, your own likes and most played by those artists, and
+  Jellyfin's instant mix. Each song is scored on how alike it is, how much the world plays it
+  and how much you do; songs you heard in the last few hours wait their turn, the same song
+  from two albums only comes once, an artist never plays twice in a row, and songs you know
+  take turns with ones you don't. It gives itself 6.5 seconds for answers (about half a
+  second with them saved), so it's always done well inside 11. Without a Last.fm key it uses
+  your plays and Jellyfin's mix.
+- **Radio starts at once.** Song radio plays the song straight away and an artist's radio their
+  top song; the queue fills in behind it (it used to wait for the whole mix first).
+- **The screen stays on while a music video plays**, wherever it's showing (the mini-player
+  too), not only on the video screen.
+- **Performance log** (Settings → Performance log, on): about once a minute (every 5 minutes in
+  the background) what the app is doing, how busy and big JavaScript is, and how much it
+  downloads; with the next native build also CPU load, memory, heat, battery level, Low Power
+  Mode, brightness and iOS's daily MetricKit reports (GPU time, background audio time, why
+  iOS closed the app). Sent to your Jellyfin server every 12 hours (Dashboard → Logs,
+  upload_Rakki_….log) with a summary of battery use by activity at the top. Send it now
+  sends it straight away.
+
 ## 1.5.5 (2026-10-04)
 - **Music videos play in the background**: the sound keeps going when you leave Rakki or lock
   your phone (the picture picks up again when you're back). Settings → Playback → Play music

@@ -59,6 +59,8 @@ interface Settings {
   videoQueueSize: number;
   /** Music videos keep playing (the sound) when Rakki goes to the background or the phone locks. */
   videoBackgroundAudio: boolean;
+  /** Keep the performance log (src/perf/log.ts) and send it to the server now and then. */
+  perfLog: boolean;
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -81,6 +83,7 @@ const DEFAULTS: Settings = {
   videoAutoplay: true,
   videoQueueSize: 3,
   videoBackgroundAudio: true,
+  perfLog: true,
 };
 
 function load(): Settings {

@@ -3,6 +3,7 @@
 // autoplay on, a 5-second "Up next" countdown while the video screen is open, or straight on to
 // the next video otherwise. Starting a song stops the video. Loaded lazily, only on builds with
 // expo-video's native side.
+import { useEvent } from 'expo';
 import { usePathname } from 'expo-router';
 import { useVideoPlayer, type VideoPlayer } from 'expo-video';
 import { useEffect, useMemo } from 'react';
@@ -11,6 +12,7 @@ import { AppState } from 'react-native';
 import type { BaseItem } from '@/api/jellyfin';
 import { useMusicVideos } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { useScreenAwake } from '@/lib/keepAwake';
 import { reclaimAudioSession } from '@/player/engine';
 import { usePlayer } from '@/player/store';
 import { useSettings } from '@/settings/store';
@@ -52,12 +54,16 @@ function Host({ video }: { video: BaseItem }) {
   const uri = useMemo(() => client?.videoStreamUrl(video, session) ?? null, [client, video, session]);
   const player = useVideoPlayer(uri ? { uri } : null, (p) => {
     p.timeUpdateEventInterval = 0.5;
+    p.keepScreenOnWhilePlaying = true;
     // The sound carries on with the app in the background or the phone locked (the picture
     // stops); the video picks up again when Rakki's back.
     p.staysActiveInBackground = useSettings.getState().videoBackgroundAudio;
     p.play();
   });
   const countdown = useVideoSession((s) => s.countdown);
+  // The screen stays on while the video plays, wherever it's showing.
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  useScreenAwake('videoPlaying', isPlaying);
   const queueSize = useSettings((s) => s.videoQueueSize);
 
   // Share the player; when this video ends (or is replaced), give the audio session back and

@@ -86,6 +86,25 @@ declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
    * song can't be tapped (HLS, AirPlay). Synchronous. Missing in builds from before 1.0.0.
    */
   getLevels?(count: number): number[] | null;
+  /** The performance log's hardware readings. Missing in builds from before 1.6.0. */
+  deviceStats?(): Promise<DeviceStats>;
+  /** iOS's daily MetricKit reports (JSON text) since the last call. Missing before 1.6.0. */
+  takeMetricReports?(): string[];
+}
+
+export interface DeviceStats {
+  /** CPU seconds the app has used since launch (all threads). */
+  cpuSeconds?: number;
+  memoryMB?: number;
+  /** 0 nominal, 1 fair, 2 serious, 3 critical. */
+  thermal?: number;
+  lowPower?: boolean;
+  /** 0–1; -1 unknown. */
+  battery?: number;
+  /** 0 unknown, 1 on battery, 2 charging, 3 full. */
+  batteryState?: number;
+  /** 0–1. */
+  brightness?: number;
 }
 
 /** null where the native engine isn't built in (web, Android, Expo Go). */

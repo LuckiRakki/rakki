@@ -26,6 +26,7 @@ import { resetScreenAwake } from '@/lib/keepAwake';
 import { OpeningFade } from '@/ui/Rise';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
+import { startPerfLog } from '@/perf/log';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -88,6 +89,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
   useEffect(() => {
     startWidgets();
     watchRadio();
+    // How the app uses the phone, for battery drain (Settings → Performance log).
+    startPerfLog();
     // The screen sleeps as usual except on lyrics and music videos (lib/keepAwake.ts).
     resetScreenAwake();
   }, []);

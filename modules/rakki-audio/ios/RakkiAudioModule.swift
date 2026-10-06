@@ -49,6 +49,11 @@ public class RakkiAudioModule: Module {
 
     Events("onState", "onTrackChange", "onError")
 
+    // iOS's daily reports (MetricKit) start collecting as soon as the app runs.
+    OnCreate {
+      RakkiMetrics.shared.start()
+    }
+
     OnDestroy {
       let existing = self.currentPlayer()
       DispatchQueue.main.async {
@@ -118,6 +123,17 @@ public class RakkiAudioModule: Module {
     /// what's playing, or null when it can't be tapped (HLS, AirPlay): then it simulates.
     Function("getLevels") { (count: Int) -> [Double]? in
       self.currentPlayer()?.levels(count: count)
+    }
+
+    /// The performance log's hardware readings: CPU seconds used, memory, thermal state,
+    /// battery, Low Power Mode and screen brightness (src/perf).
+    AsyncFunction("deviceStats") { () -> [String: Any] in
+      RakkiDeviceStats.snapshot()
+    }.runOnQueue(.main)
+
+    /// iOS's daily MetricKit reports kept since the last call (JSON text each), then forgotten.
+    Function("takeMetricReports") { () -> [String] in
+      RakkiMetrics.shared.take()
     }
 
     /// Keeps a folder (and everything in it) out of iCloud and computer backups: downloads can

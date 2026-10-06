@@ -344,7 +344,7 @@ The user wants to choose colours, sizes and similar details themselves. So every
 | Downloads: album/playlist/artist, transcoded downloads, storage manager | F | 4 | ✅ albums, playlists, Liked Songs, songs (no whole-artist download) |
 | Offline mode | F | 4 | ✅ |
 | Queue restore on launch | F | 5 | ✅ |
-| Instant mix / artist radio / auto-continue when the queue ends | F, Fs | 5 | ✅ |
+| Instant mix / artist radio / auto-continue when the queue ends (smart queue since 1.6.0: src/player/smartQueue.ts) | F, Fs | 5 | ✅ |
 | Normalization (NormalizationGain / ReplayGain) | F | 5 | ✅ |
 | Sleep timer | F | 5 | ✅ |
 | Credits / "Written by" / about the artist | Fs | 5 | ✅ |
@@ -446,6 +446,12 @@ ideas (Discord Rich Presence, a desktop app).
   - **Music videos turn with the phone**: allow landscape in the app (it's portrait-only today)
     and lock every screen except the video player to portrait (expo-screen-orientation), so a
     video goes full screen sideways on its own and back.
+  - **Performance log hardware readings** (1.6.0's JS already asks for them; builds without
+    them log the rest): modules/rakki-audio/ios/RakkiDeviceStats.swift adds `deviceStats()`
+    (CPU seconds via getrusage, phys_footprint memory, thermal state, battery level/state,
+    Low Power Mode, brightness) and `takeMetricReports()` (MetricKit daily metric and
+    diagnostic payloads: GPU time, background audio time, background exits such as CPU-limit
+    kills, hangs). Written but not compiled yet: check the CI build log for it first.
   - **Music videos on the lock screen** (1.5.5 plays their sound in the background, but the
     lock screen and headphone buttons still belong to RakkiPlayer, which answers them natively:
     play there resumes the song, which stops the video). Give RakkiPlayer a JS-callable switch

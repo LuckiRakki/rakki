@@ -70,8 +70,18 @@ export async function playRandom() {
   usePlayer.getState().playQueue(songs, { source: { type: 'tracks', name: 'Shuffled library' } });
 }
 
-/** Jellyfin's instant mix from any item: songs like it, starting now. */
-export async function startRadio(item: BaseItem) {
+/**
+ * Radio. A song's starts with that song and an artist's with `seed` (or their most played),
+ * at once; the smart queue fills in behind it (src/player/smartQueue.ts). Anything else is
+ * Jellyfin's instant mix.
+ */
+export async function startRadio(item: BaseItem, seed?: BaseItem) {
+  const source = { type: 'tracks' as const, name: `${item.Name} Radio` };
+  if (item.Type === 'Audio') return usePlayer.getState().playQueue([item], { source, radio: {} });
+  if (item.Type === 'MusicArtist') {
+    const first = seed ?? (await client().getTopTracks(item.Id, 1).catch(() => []))[0];
+    if (first) return usePlayer.getState().playQueue([first], { source, radio: { artist: true } });
+  }
   const tracks = await client().getInstantMix(item.Id, 100);
   if (!tracks.length) {
     showToast('No radio for this one yet');

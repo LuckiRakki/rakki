@@ -136,7 +136,7 @@ export default function ArtistScreen() {
           <Pressable hitSlop={8} onPress={shuffle}>
             <Ionicons name="shuffle" size={26} color={t.colors.textSecondary} />
           </Pressable>
-          <Pressable hitSlop={8} onPress={() => a && startRadio(a)}>
+          <Pressable hitSlop={8} onPress={() => a && startRadio(a, popular[0])}>
             <Ionicons name="radio-outline" size={24} color={t.colors.textSecondary} />
           </Pressable>
           <View style={{ flex: 1 }} />

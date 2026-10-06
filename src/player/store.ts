@@ -18,6 +18,8 @@ import { useStations, type Station } from '@/radio/stations';
 import { stationImageUri } from '@/radio/stationImage';
 import { measureBurst, noteRadioConnect } from '@/radio/sync';
 import { reporter } from '@/player/reporting';
+import { buildSmartQueue } from '@/player/smartQueue';
+import { notePerf } from '@/perf/events';
 import { useSettings } from '@/settings/store';
 import { showToast } from '@/ui/overlays';
 
@@ -26,7 +28,7 @@ export interface QueueEntry {
   item: BaseItem;
   /**
    * 'queued' = added with Play next / Add to queue (Spotify's "Next in queue"); 'autoplay' =
-   * similar songs added when the queue was running out.
+   * the smart queue's picks, added when the queue was running out.
    */
   origin: 'context' | 'queued' | 'autoplay';
 }
@@ -46,7 +48,14 @@ interface PlayerState {
   shuffle: boolean;
   source: QueueSource | null;
   error: string | null;
-  playQueue(items: BaseItem[], opts?: { startIndex?: number; shuffle?: boolean; source?: QueueSource }): void;
+  /**
+   * `radio`: the songs are seeds (one song, usually): it starts at once and the smart queue
+   * fills in behind it (`artist`: an artist's radio, so more of them is fine).
+   */
+  playQueue(
+    items: BaseItem[],
+    opts?: { startIndex?: number; shuffle?: boolean; source?: QueueSource; radio?: { artist?: boolean } },
+  ): void;
   /** Tune in to a radio station (replaces the queue). */
   playStation(station: Station): void;
   playNext(items: BaseItem[]): void;
@@ -70,6 +79,8 @@ let keyCounter = 0;
 const newKey = () => `q${Date.now().toString(36)}${(keyCounter++).toString(36)}`;
 /** Queue order before shuffle was turned on, to restore it when turned off. */
 let unshuffledKeys: string[] | null = null;
+/** Bumped by every new queue, so picks built for an old one are thrown away. */
+let generation = 0;
 let onCellular = false;
 
 function shuffled<T>(arr: T[]): T[] {
@@ -190,11 +201,14 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       }
       index = 0;
     }
+    generation++;
     set({ queue, index, shuffle, source: opts.source ?? null, error: null, buffering: true });
     // Radio plays with the engine on repeat-one (so a dropped stream reconnects): put the
     // listener's own repeat back.
     void engine.setRepeatMode(get().repeat);
     void engine.setQueue(toTracks(queue), index, 0, true);
+    // A song's (or artist's) radio: the first song is playing; now the rest, quietly.
+    if (opts.radio) void extendQueue({ count: 50, origin: 'context', artistRadio: !!opts.radio.artist, always: true });
   },
 
   playStation(station) {
@@ -215,6 +229,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     // SUB/WAVE: how far behind the station you'll hear it, for the lyrics.
     if (station.apiBase) measureBurst(station.streamUrl);
     unshuffledKeys = null;
+    generation++;
     set({ queue, index: 0, source: { type: 'radio', id: station.id, name: station.name }, error: null, buffering: true });
     void engine.setRepeatMode('one');
     void engine.setQueue(toTracks(queue), 0, 0, true);
@@ -532,7 +547,8 @@ usePlayer.subscribe((s, prev) => {
   if (s.queue !== prev.queue || s.index !== prev.index || s.shuffle !== prev.shuffle || s.repeat !== prev.repeat) {
     saveQueueSoon();
   }
-  if (s.index !== prev.index || s.queue !== prev.queue) void maybeAutoplay();
+  // After the change has settled, so a radio that's just started builds its own queue first.
+  if (s.index !== prev.index || s.queue !== prev.queue) setTimeout(() => void maybeAutoplay(), 0);
 });
 setInterval(() => {
   if (usePlayer.getState().playing) savePosition();
@@ -544,31 +560,54 @@ AppState.addEventListener('change', (state) => {
   }
 });
 
-// ---- Autoplay ------------------------------------------------------------------------
-// When the last song in the queue starts, add up to 25 similar songs (Jellyfin's instant mix
-// of that song) so the music carries on without a gap. Off with repeat, offline, or in Settings.
+// ---- Autoplay and radio ---------------------------------------------------------------
+// When the last song in the queue starts, add 25 picks from the smart queue
+// (src/player/smartQueue.ts) so the music carries on without a gap. Off with repeat, offline,
+// or in Settings. A song's or artist's radio uses the same picks, 50 of them, straight away.
 
-let autoplayBusy = false;
+let building = false;
 
 async function maybeAutoplay() {
   const s = usePlayer.getState();
+  if (!s.queue.length || s.index < s.queue.length - 1 || radioPlaying(s)) return;
+  if (!useSettings.getState().autoplay || s.repeat !== 'off') return;
+  await extendQueue({ count: 25, origin: 'autoplay' });
+}
+
+/** Add smart-queue picks after the last song (`always`: even if the listener has moved on). */
+async function extendQueue(opts: { count: number; origin: QueueEntry['origin']; artistRadio?: boolean; always?: boolean }) {
   const client = useAuth.getState().client;
-  if (!client || autoplayBusy || !s.queue.length || s.index < s.queue.length - 1 || radioPlaying(s)) return;
-  if (!useSettings.getState().autoplay || s.repeat !== 'off' || isOffline()) return;
-  autoplayBusy = true;
+  const s = usePlayer.getState();
+  if (!client || building || !s.queue.length || radioPlaying(s) || isOffline()) return;
+  building = true;
+  const startedWith = generation;
   try {
-    const last = s.queue[s.queue.length - 1].item;
-    const mix = await client.getInstantMix(last.Id, 40);
-    const have = new Set(usePlayer.getState().queue.map((e) => e.item.Id));
-    const fresh = mix.filter((m) => !have.has(m.Id)).slice(0, 25);
-    const now = usePlayer.getState();
-    if (fresh.length && now.queue.length && now.index >= now.queue.length - 1) {
-      syncQueue([...now.queue, ...entries(fresh, 'autoplay')]);
+    // The last two songs lead (the last one most).
+    const seeds = s.queue.slice(-2).map((e) => e.item);
+    const exclude = new Set(s.queue.map((e) => e.item.Id));
+    let picks: BaseItem[];
+    try {
+      const result = await buildSmartQueue(client, seeds, { exclude, count: opts.count, artistRadio: opts.artistRadio });
+      picks = result.items;
+      notePerf('queue', { ms: result.ms, picks: picks.length, offered: result.offered, radio: !!opts.always });
+    } catch {
+      picks = [];
     }
+    // Nothing came back: Jellyfin's instant mix on its own.
+    if (!picks.length) {
+      const mix = await client.getInstantMix(seeds[seeds.length - 1].Id, 60);
+      picks = mix.filter((m) => !exclude.has(m.Id)).slice(0, opts.count);
+    }
+    const now = usePlayer.getState();
+    // A different queue started meanwhile: these were for the old one.
+    if (!picks.length || !now.queue.length || generation !== startedWith) return;
+    if (!opts.always && now.index < now.queue.length - 1) return;
+    const have = new Set(now.queue.map((e) => e.item.Id));
+    syncQueue([...now.queue, ...entries(picks.filter((p) => !have.has(p.Id)), opts.origin)]);
   } catch {
-    // No mix this time; the queue just ends.
+    // No picks this time; the queue just ends.
   } finally {
-    autoplayBusy = false;
+    building = false;
   }
 }
 

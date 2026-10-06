@@ -61,7 +61,13 @@ Apple account.
 - Its own **gapless** engine (an AVQueuePlayer that always has the next song ready), with the
   lock screen, Control Center, AirPlay and headphone controls.
 - A queue with drag to reorder, Next in queue, shuffle and repeat, restored on launch.
-- Autoplay when the queue ends, a sleep timer, volume normalization and song credits.
+- A **smart queue** for autoplay and song/artist radio: songs like the ones playing, from what
+  Last.fm listeners play alongside them, the artists they like next, your own likes and most
+  played, and Jellyfin's instant mix, mixing songs you know with new ones. The first song
+  starts at once; the rest fills in behind it within seconds.
+- A sleep timer, volume normalization and song credits.
+- A **performance log** (Settings): what the app does to the phone (CPU, memory, heat,
+  battery), sent to your Jellyfin server to look into battery drain.
 - A **visualizer** that follows the actual sound, in the mini-player and the lyrics screen.
 - **Music videos** from your Jellyfin library, matched to your songs and played in the app
   (picture in picture, AirPlay).
