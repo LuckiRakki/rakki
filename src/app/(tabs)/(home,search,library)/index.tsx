@@ -35,6 +35,7 @@ import { makeStyles, useTheme } from '@/ui/theme';
 import { UserAvatar } from '@/ui/UserAvatar';
 import { VideoShelf } from '@/ui/VideoShelf';
 import { RadioShelf } from '@/radio/RadioShelf';
+import { useStations } from '@/radio/stations';
 import { newestVideos } from '@/video/musicVideos';
 
 export default function HomeScreen() {
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const playlists = usePlaylists();
   const topArtists = useTopArtists();
   const videos = useMusicVideos();
+  const hasStations = useStations((s) => s.stations.length > 0);
 
   const { homeOrder, homeHidden, quickPicks, greeting: showGreeting } = t.appearance;
 
@@ -79,6 +81,18 @@ export default function HomeScreen() {
       <VideoShelf key="musicVideos" title="Music videos" videos={newestVideos(videos.data)} onShowAll={() => openLibrary('videos')} />
     ),
     radio: <RadioShelf key="radio" />,
+  };
+  // Which shelves have something to show yet (the rest rise in when their items arrive).
+  const ready: Record<ShelfId, boolean> = {
+    jumpBackIn: jumpBackIn.length > 0,
+    playlists: !!playlists.data?.length,
+    artists: !!topArtists.data?.length,
+    recentlyAdded: !!added.data?.length,
+    mostPlayed: !!mostPlayed.data?.length,
+    rediscover: !!rediscover.data?.length,
+    random: !!random.data?.length,
+    musicVideos: !!videos.data?.length,
+    radio: hasStations,
   };
   const refreshing = recent.isRefetching || added.isRefetching;
 
@@ -153,7 +167,7 @@ export default function HomeScreen() {
       {homeOrder
         .filter((id) => !homeHidden.includes(id))
         .map((id, i) => (
-          <Rise key={id} order={i + 2}>
+          <Rise key={id} order={i + 2} ready={ready[id]}>
             {shelves[id]}
           </Rise>
         ))}

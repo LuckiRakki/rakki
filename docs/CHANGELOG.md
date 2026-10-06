@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.6.1 (2026-10-06)
+- Opening Home: shelves still loading from the server rise into place when they arrive, like
+  the top two, instead of popping in, and the shelves below glide down to make room.
+
 ## 1.6.0 (2026-10-06)
 - **Smart queue.** Autoplay (when the queue runs out) and song/artist radio now pick songs the
   way Spotify does: what Last.fm listeners play alongside the songs you're hearing, popular
