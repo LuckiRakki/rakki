@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 
 import { isOffline, reportConnectionFailure, reportConnectionSuccess } from '@/lib/online';
 import { appVersion } from '@/lib/updates';
+import { emitPlaylistsChanged } from '@/lib/events';
 import { countApiBytes } from '@/perf/events';
 import type { JellyfinLyricsDto, TtmlDto } from '@/lyrics/types';
 
@@ -64,6 +65,8 @@ export interface BaseItem {
   Container?: string;
   /** dB to reach Jellyfin's loudness reference (-18 LUFS); negative = the song is louder. */
   NormalizationGain?: number;
+  /** Changes whenever the item is saved (asked for with Fields=Etag; the playlist cache). */
+  Etag?: string;
   /** Credits (composers etc.), when the file has them and the request asked for People. */
   People?: { Name: string; Id: string; Type?: string; Role?: string }[];
   /** A radio station playing in the queue (not a Jellyfin item; see src/radio). */
@@ -811,7 +814,7 @@ export class JellyfinClient {
     return this.items({
       IncludeItemTypes: 'Playlist',
       SortBy: 'SortName',
-      Fields: 'ChildCount,DateCreated',
+      Fields: 'ChildCount,DateCreated,Etag',
     });
   }
 
@@ -850,31 +853,38 @@ export class JellyfinClient {
       UserId: this.session.userId,
       MediaType: 'Audio',
     });
+    emitPlaylistsChanged([r.Id]);
     return r.Id;
   }
 
-  addToPlaylist(playlistId: string, itemIds: string[]) {
-    return this.send('POST', `/Playlists/${playlistId}/Items`, undefined, {
+  // Every change to a playlist's songs is announced, so the playlist cache can't miss one.
+
+  async addToPlaylist(playlistId: string, itemIds: string[]) {
+    await this.send('POST', `/Playlists/${playlistId}/Items`, undefined, {
       ids: itemIds.join(','),
       userId: this.session.userId,
     });
+    emitPlaylistsChanged([playlistId]);
   }
 
   /** @param entryIds the songs' PlaylistItemId values, not their item ids */
-  removeFromPlaylist(playlistId: string, entryIds: string[]) {
-    return this.send('DELETE', `/Playlists/${playlistId}/Items`, undefined, { entryIds: entryIds.join(',') });
+  async removeFromPlaylist(playlistId: string, entryIds: string[]) {
+    await this.send('DELETE', `/Playlists/${playlistId}/Items`, undefined, { entryIds: entryIds.join(',') });
+    emitPlaylistsChanged([playlistId]);
   }
 
-  movePlaylistItem(playlistId: string, entryId: string, newIndex: number) {
-    return this.send('POST', `/Playlists/${playlistId}/Items/${entryId}/Move/${newIndex}`);
+  async movePlaylistItem(playlistId: string, entryId: string, newIndex: number) {
+    await this.send('POST', `/Playlists/${playlistId}/Items/${entryId}/Move/${newIndex}`);
+    emitPlaylistsChanged([playlistId]);
   }
 
   renamePlaylist(playlistId: string, name: string) {
     return this.send('POST', `/Playlists/${playlistId}`, { Name: name });
   }
 
-  deletePlaylist(playlistId: string) {
-    return this.send('DELETE', `/Items/${playlistId}`);
+  async deletePlaylist(playlistId: string) {
+    await this.send('DELETE', `/Items/${playlistId}`);
+    emitPlaylistsChanged([playlistId]);
   }
 
   getAlbumTracks(albumId: string) {

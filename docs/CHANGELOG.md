@@ -6,6 +6,16 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.7.1 (2026-10-07)
+- **Add to playlist opens instantly.** Which songs each playlist has is now kept on the phone,
+  so the ticks are there straight away. It stays in step with the server: one cheap request
+  (every playlist's song count and Jellyfin's change stamp) finds the playlists that changed,
+  and only those are fetched again, at launch, when Rakki comes back to the front, every 15
+  minutes while it's open, and each time Add to playlist opens. Every change Rakki makes to a
+  playlist (from anywhere) updates it right away, a playlist page you open refreshes it too,
+  and every playlist is fetched in full every 6 hours regardless. Saving never relies on it:
+  Done reads the playlists it changes from the server first.
+
 ## 1.7.0 (2026-10-07)
 From the performance log's first full day on the 1.6.3 build (iOS's own reports included):
 - **Fixed: the two crashes and iOS closing Rakki in the background.** Both crashes died in the

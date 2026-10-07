@@ -29,6 +29,7 @@ import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 import { logErrorNow, startPerfLog } from '@/perf/log';
 import { startMemoryCare } from '@/lib/memory';
+import { startPlaylistCache } from '@/library/playlistCache';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -148,6 +149,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     // Listens from the last time Rakki was offline.
     void sendKeptListens();
     prefetchMusicVideos();
+    // Which songs each playlist has, on the phone (Add to playlist's ticks), kept in step.
+    startPlaylistCache();
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);

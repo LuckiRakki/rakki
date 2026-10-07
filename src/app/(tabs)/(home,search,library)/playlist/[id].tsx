@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
 import { useOffline } from '@/lib/online';
+import { noteLoadedPlaylist } from '@/library/playlistCache';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
@@ -34,6 +35,11 @@ export default function PlaylistScreen() {
   const [find, setFind] = useState('');
   const offline = useOffline();
   const { y, onScroll } = useScrollY();
+  // A fresh full list from the server also refreshes the playlist cache (not offline: then it's
+  // only the downloaded songs).
+  useEffect(() => {
+    if (!offline && items.data && id) noteLoadedPlaylist(id, items.data, items.dataUpdatedAt);
+  }, [offline, id, items.data, items.dataUpdatedAt]);
 
   const p = playlist.data ?? undefined;
   const list = items.data ?? [];

@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQueries } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { success } from '@/lib/haptics';
-import type { JellyfinClient, PlaylistEntry } from '@/api/jellyfin';
+import type { PlaylistEntry } from '@/api/jellyfin';
 import { queryClient, usePlaylists } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { songCount } from '@/lib/format';
 import { setLiked } from '@/library/actions';
+import { checkPlaylistsNow, refreshPlaylist, usePlaylistCache } from '@/library/playlistCache';
 import { Artwork } from '@/ui/Artwork';
 import { showToast, useOverlays } from '@/ui/overlays';
 import { SheetPanel } from '@/ui/Sheet';
@@ -16,15 +16,6 @@ import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const LIKED = '__liked__';
-
-/** A playlist's songs, as ids only (see getPlaylistMembership), kept 10 minutes. */
-function membership(client: JellyfinClient, playlistId: string) {
-  return {
-    queryKey: ['playlistMembership', client.session.userId, playlistId],
-    queryFn: () => client.getPlaylistMembership(playlistId),
-    staleTime: 10 * 60_000,
-  };
-}
 
 /** Ask for a name (iOS prompt; plain prompt on web). */
 function askName(): Promise<string | null> {
@@ -42,8 +33,9 @@ function askName(): Promise<string | null> {
 /**
  * Spotify-style "Add to playlist": every playlist with a clear mark when it already has the
  * song (or how many of an album's songs it has), Liked Songs on top, New playlist, search.
- * Ticks are staged locally and saved on Done. Each playlist's mark shows as soon as that
- * playlist has answered (a spinner until then), and every row can be ticked straight away.
+ * Ticks are staged locally and saved on Done. The marks come from the playlist cache on the
+ * phone (library/playlistCache.ts), so they're there at once; opening also checks the server
+ * for changes. A playlist never fetched yet shows a spinner, and can still be ticked.
  */
 export function AddToPlaylistPanel() {
   const t = useTheme();
@@ -60,19 +52,22 @@ export function AddToPlaylistPanel() {
 
   const playlists = usePlaylists();
   const lists = useMemo(() => (request ? (playlists.data ?? []) : []), [request, playlists.data]);
-  const contents = useQueries({
-    queries: client && request ? lists.map((p) => membership(client, p.Id)) : [],
-  });
+  const cached = usePlaylistCache((s) => s.lists);
 
-  // Which of the songs each playlist already has (only playlists that have answered).
+  // Opening: make sure the cache is current (only changed playlists are fetched).
+  useEffect(() => {
+    if (request) checkPlaylistsNow();
+  }, [request]);
+
+  // Which of the songs each playlist already has (playlists in the cache).
   const have = useMemo(() => {
     const m = new Map<string, PlaylistEntry[]>();
-    lists.forEach((p, i) => {
-      const data = contents[i]?.data;
-      if (data) m.set(p.Id, data.filter((x) => ids.has(x.Id)));
-    });
+    for (const p of lists) {
+      const c = cached[p.Id];
+      if (c) m.set(p.Id, c.pairs.filter(([id]) => ids.has(id)).map(([Id, entry]) => ({ Id, PlaylistItemId: entry || undefined })));
+    }
     return m;
-  }, [lists, contents, ids]);
+  }, [lists, cached, ids]);
 
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
@@ -103,8 +98,8 @@ export function AddToPlaylistPanel() {
       for (const p of lists) {
         const on = changes.get(p.Id);
         if (on === undefined) continue;
-        // What it really has now (asked again if this playlist hadn't answered yet).
-        const entries = await queryClient.ensureQueryData(membership(client, p.Id));
+        // What it really has right now, from the server: saving never trusts the cache.
+        const entries = await refreshPlaylist(p.Id);
         const already = entries.filter((x) => ids.has(x.Id));
         const present = new Set(already.map((x) => x.Id));
         if (on && present.size < ids.size) {
@@ -117,7 +112,7 @@ export function AddToPlaylistPanel() {
       const liked = changes.get(LIKED);
       if (single && liked !== undefined && liked !== wasIn(LIKED)) await setLiked(single, liked);
       void queryClient.invalidateQueries({
-        predicate: (q) => ['playlistItems', 'playlists', 'playlistMembership'].includes(q.queryKey[0] as string),
+        predicate: (q) => ['playlistItems', 'playlists'].includes(q.queryKey[0] as string),
       });
       if (added.length) {
         success();

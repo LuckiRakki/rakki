@@ -12,3 +12,16 @@ export function onLikedChanged(fn: Listener): () => void {
   likedListeners.add(fn);
   return () => likedListeners.delete(fn);
 }
+
+type PlaylistsListener = (playlistIds: string[] | null) => void;
+const playlistListeners = new Set<PlaylistsListener>();
+
+/** Rakki changed these playlists' songs (the playlist cache fetches them again). */
+export function emitPlaylistsChanged(playlistIds: string[] | null) {
+  for (const fn of playlistListeners) fn(playlistIds);
+}
+
+export function onPlaylistsChanged(fn: PlaylistsListener): () => void {
+  playlistListeners.add(fn);
+  return () => playlistListeners.delete(fn);
+}
