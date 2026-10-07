@@ -2,7 +2,7 @@
   "expo": {
     "name": "Rakki",
     "slug": "rakki",
-    "version": "1.6.3",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icons/rakki.png",
     "scheme": "rakki",

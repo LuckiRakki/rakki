@@ -3,21 +3,30 @@
 // server requests fail at once instead of waiting for a timeout.
 //
 // The server is pinged at sign-in, when the connection changes, when the app comes back to
-// the front, after a request fails to connect, and every 30 s while it's unreachable.
+// the front, after a request fails to connect, and while it's unreachable (after 5, 10, 20 s,
+// then every 30 s). One missed ping doesn't count: phones drop a request or two when they
+// move between Wi-Fi and cellular or Tailscale reconnects, so it asks again before going
+// offline.
 import { AppState } from 'react-native';
 import { create } from 'zustand';
 
 import { useNetwork } from '@/lib/network';
 import { useSettings } from '@/settings/store';
 
-const RETRY_MS = 30_000;
-const PING_TIMEOUT_MS = 5_000;
+const PING_TIMEOUT_MS = 6_000;
+/** After a missed ping, the second try. */
+const CONFIRM_MS = 2_000;
+/** While unreachable: how long until the next try (the last step repeats). */
+const RETRY_STEPS_MS = [5_000, 10_000, 20_000, 30_000];
+/** A new network (Wi-Fi ↔ cellular) gets a moment to settle before the ping. */
+const NETWORK_SETTLE_MS = 1_500;
 
 export const useServerReachable = create<{ reachable: boolean }>(() => ({ reachable: true }));
 
 let serverUrl: string | null = null;
 let probing = false;
 let retry: ReturnType<typeof setTimeout> | null = null;
+let failures = 0;
 
 /** Rakki should act offline right now (for non-React code). */
 export function isOffline(): boolean {
@@ -34,30 +43,48 @@ export function useOffline(): boolean {
   return manual || !connected || !reachable;
 }
 
+async function ping(url: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
+  try {
+    return (await fetch(`${url}/System/Ping`, { signal: controller.signal })).ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Ask the server if it's there. */
 export async function probe(): Promise<void> {
-  if (!serverUrl || probing) return;
+  const url = serverUrl;
+  if (!url || probing) return;
   probing = true;
   if (retry) clearTimeout(retry);
   retry = null;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
-  let ok = false;
-  try {
-    ok = (await fetch(`${serverUrl}/System/Ping`, { signal: controller.signal })).ok;
-  } catch {
-    ok = false;
-  } finally {
-    clearTimeout(timer);
-    probing = false;
+  let ok = await ping(url);
+  // Online until now: one miss isn't enough to go offline.
+  if (!ok && useServerReachable.getState().reachable) {
+    await new Promise((resolve) => setTimeout(resolve, CONFIRM_MS));
+    ok = await ping(url);
   }
-  useServerReachable.setState({ reachable: ok });
-  if (!ok) retry = setTimeout(() => void probe(), RETRY_MS);
+  probing = false;
+  // Signed out or switched servers meanwhile.
+  if (url !== serverUrl) return;
+  if (ok) {
+    failures = 0;
+    if (!useServerReachable.getState().reachable) useServerReachable.setState({ reachable: true });
+    return;
+  }
+  failures++;
+  useServerReachable.setState({ reachable: false });
+  retry = setTimeout(() => void probe(), RETRY_STEPS_MS[Math.min(failures, RETRY_STEPS_MS.length) - 1]);
 }
 
 /** Start watching this server (null on sign-out). */
 export function watchServer(url: string | null) {
   serverUrl = url;
+  failures = 0;
   useServerReachable.setState({ reachable: true });
   if (url) void probe();
 }
@@ -78,8 +105,14 @@ export function reportConnectionSuccess() {
   if (!useServerReachable.getState().reachable) useServerReachable.setState({ reachable: true });
 }
 
+let settle: ReturnType<typeof setTimeout> | null = null;
 useNetwork.subscribe((s, prev) => {
-  if (s.connected !== prev.connected || s.cellular !== prev.cellular) void probe();
+  if (s.connected === prev.connected && s.cellular === prev.cellular) return;
+  if (settle) clearTimeout(settle);
+  settle = setTimeout(() => {
+    settle = null;
+    void probe();
+  }, NETWORK_SETTLE_MS);
 });
 
 AppState.addEventListener('change', (state) => {

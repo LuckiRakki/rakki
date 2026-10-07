@@ -25,6 +25,11 @@ function emptyPicture(): SkPicture {
  * Spicy mode: the full word-by-word engine drawn with Skia. Each animation frame advances
  * the scene to the current playback time and records a fresh Skia picture of it.
  */
+/** How long everything must be still (paused, nothing moving) before drawing rests. */
+const SETTLE_MS = 1500;
+/** While resting, how often to look for play, a touch or a seek. */
+const REST_CHECK_MS = 50;
+
 /** Credits' profile pictures, kept for the session. */
 const avatarCache = new Map<string, SkImage>();
 
@@ -76,19 +81,39 @@ export function SpicyLyricsView({
   useEffect(() => {
     if (!scene || !active) return;
     let raf = 0;
+    let rest: ReturnType<typeof setTimeout> | null = null;
     let last = 0;
+    let lastMs = -1;
+    let movedAt = 0;
     const bounds = Skia.XYWHRect(0, 0, size.w, size.h);
+    // One recorder for the whole screen (a new one each frame was garbage 60 times a second).
+    const rec = Skia.PictureRecorder();
     const frame = (t: number) => {
-      const dt = last ? (t - last) / 1000 : 0;
+      const dt = last ? Math.min(t - last, 100) / 1000 : 0;
       last = t;
-      scene.tick(nowMs(), dt, durationMs());
-      const rec = Skia.PictureRecorder();
+      const ms = nowMs();
+      scene.tick(ms, dt, durationMs());
+      // Paused and everything settled: the last picture stays up, and the screen just checks
+      // now and then for play, a touch or a seek (each frame was ~50% CPU for nothing).
+      if (ms !== lastMs || !scene.settled) movedAt = t;
+      lastMs = ms;
+      if (t - movedAt > SETTLE_MS) {
+        rest = setTimeout(() => {
+          rest = null;
+          last = 0;
+          raf = requestAnimationFrame(frame);
+        }, REST_CHECK_MS);
+        return;
+      }
       scene.draw(rec.beginRecording(bounds));
       picture.value = rec.finishRecordingAsPicture();
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (rest) clearTimeout(rest);
+    };
   }, [scene, active, size.w, size.h, nowMs, durationMs, picture]);
 
   // Credits' profile pictures: loaded once per URL, handed to each new scene.

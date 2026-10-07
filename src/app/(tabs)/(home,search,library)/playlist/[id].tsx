@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { useItem, usePlaylistItems } from '@/api/queries';
+import { matchesSearch, useItem, usePlaylistItems } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
-import { songCount, ticksToSeconds } from '@/lib/format';
+import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
 import { useOffline } from '@/lib/online';
 import { usePlayer } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
@@ -14,6 +14,7 @@ import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { DownloadButton } from '@/ui/DownloadButton';
+import { FindBar } from '@/ui/FindBar';
 import { openMenu } from '@/ui/overlays';
 import { PlaylistEditor } from '@/ui/PlaylistEditor';
 import { T } from '@/ui/T';
@@ -30,13 +31,16 @@ export default function PlaylistScreen() {
   const playing = usePlayer((s) => s.playing);
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === id);
   const [editing, setEditing] = useState(false);
+  const [find, setFind] = useState('');
   const offline = useOffline();
   const { y, onScroll } = useScrollY();
 
   const p = playlist.data ?? undefined;
   const list = items.data ?? [];
-  const minutes = Math.round(list.reduce((sum, x) => sum + ticksToSeconds(x.RunTimeTicks), 0) / 60);
+  const seconds = list.reduce((sum, x) => sum + ticksToSeconds(x.RunTimeTicks), 0);
   const source = { type: 'playlist' as const, id, name: p?.Name ?? 'Playlist' };
+  // Find in playlist: the songs shown; playing one still plays the whole playlist from there.
+  const shown = find.trim() ? list.filter((x) => matchesSearch(x, find.trim())) : list;
 
   // Offline and not downloaded.
   if (playlist.data === null) return <OfflineUnavailable />;
@@ -60,7 +64,7 @@ export default function PlaylistScreen() {
         title={p?.Name ?? ' '}
         lines={[
           'Playlist',
-          list.length ? `${songCount(list.length)}, ${minutes} min` : '',
+          list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : '',
         ]}
         playing={isThis && playing}
         onPlay={() => {
@@ -73,7 +77,13 @@ export default function PlaylistScreen() {
         scrollY={y}
         download={p && list.length ? <DownloadButton kind="playlist" item={p} /> : undefined}
       />
+      {list.length > 1 ? <FindBar value={find} onChange={setFind} placeholder="Find in playlist" /> : null}
       {items.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
+      {find.trim() && !shown.length ? (
+        <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
+          {`Nothing in this playlist matches “${find.trim()}”`}
+        </T>
+      ) : null}
       {!items.isLoading && list.length === 0 ? (
         <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
           This playlist is empty. Long-press any song and choose Add to playlist.
@@ -87,8 +97,10 @@ export default function PlaylistScreen() {
       <Animated.FlatList
         onScroll={onScroll}
         scrollEventThrottle={16}
-        data={list}
+        data={shown}
         keyExtractor={(x, i) => x.PlaylistItemId ?? `${x.Id}-${i}`}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: t.space.xl }}
         renderItem={({ item, index }) => (
@@ -97,7 +109,7 @@ export default function PlaylistScreen() {
             art
             active={item.Id === currentId}
             playing={playing}
-            onPress={() => usePlayer.getState().playQueue(list, { startIndex: index, source })}
+            onPress={() => usePlayer.getState().playQueue(list, { startIndex: shown === list ? index : list.indexOf(item), source })}
             onLongPress={() => openMenu(item, { playlistId: id, entryId: item.PlaylistItemId })}
           />
         )}

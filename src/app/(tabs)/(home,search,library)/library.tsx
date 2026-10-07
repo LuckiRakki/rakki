@@ -1,12 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { useMemo, useState, type ReactElement } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem, GenreCount } from '@/api/jellyfin';
-import { useAlbumArtists, useAlbums, useGenreCounts, useLikedSongs, useMusicVideos, usePlaylists, useTracks } from '@/api/queries';
+import {
+  matchesSearch,
+  useAlbumArtists,
+  useAlbums,
+  useGenreCounts,
+  useLikedSongs,
+  useMusicVideos,
+  usePlaylists,
+  useTracks,
+} from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { playMusicVideo } from '@/video/musicVideos';
 import { songCount } from '@/lib/format';
@@ -58,6 +67,19 @@ export default function LibraryScreen() {
   const sort = useLibraryView((s) => sortFor(s, s.tab));
   const layout = useLibraryView((s) => layoutFor(s, s.tab));
   const offline = useOffline();
+  // Search this tab: what's typed, and (a moment later) what's searched for.
+  // The text belongs to the tab it was typed on: another tab (however it's reached) starts empty.
+  const [searching, setSearching] = useState(false);
+  const [typed, setTyped] = useState({ tab, text: '' });
+  const text = typed.tab === tab ? typed.text : '';
+  const setText = (value: string) => setTyped({ tab, text: value });
+  const settled = useSettled(text.trim(), 250);
+  // Cleared (or a fresh tab): everything at once, without waiting for the pause.
+  const filter = text.trim() ? settled : '';
+  const closeSearch = () => {
+    setSearching(false);
+    setText('');
+  };
 
   const chooseSort = () =>
     openOptions({
@@ -105,15 +127,55 @@ export default function LibraryScreen() {
           paddingHorizontal: t.space.lg,
           marginTop: t.space.lg,
         }}>
-        <Pressable
-          hitSlop={8}
-          onPress={chooseSort}
-          accessibilityLabel={`Sort by ${sort.label}`}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.xs }}>
-          <Ionicons name="swap-vertical" size={16} color={t.colors.text} />
-          <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13) }}>{sort.label}</T>
-        </Pressable>
-        {tab === 'songs' || tab === 'radio' ? null : (
+        {searching ? (
+          <View
+            style={{
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.space.sm,
+              height: 36,
+              paddingHorizontal: t.space.md,
+              borderRadius: t.radius.card,
+              backgroundColor: t.colors.surface3,
+            }}>
+            <Ionicons name="search" size={16} color={t.colors.textMuted} />
+            <TextInput
+              autoFocus
+              value={text}
+              onChangeText={setText}
+              placeholder={`Search ${(LIBRARY_TABS.find((x) => x.key === tab)?.label ?? '').toLowerCase()}`}
+              placeholderTextColor={t.colors.textMuted}
+              autoCorrect={false}
+              returnKeyType="search"
+              style={{ flex: 1, color: t.colors.text, fontFamily: t.fonts.medium, fontSize: t.size(14) }}
+            />
+            {text ? (
+              <Pressable hitSlop={8} onPress={() => setText('')} accessibilityLabel="Clear">
+                <Ionicons name="close-circle" size={18} color={t.colors.textMuted} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
+            <Pressable hitSlop={10} onPress={() => setSearching(true)} accessibilityLabel="Search this list">
+              <Ionicons name="search" size={18} color={t.colors.text} />
+            </Pressable>
+            <Pressable
+              hitSlop={8}
+              onPress={chooseSort}
+              accessibilityLabel={`Sort by ${sort.label}`}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.xs }}>
+              <Ionicons name="swap-vertical" size={16} color={t.colors.text} />
+              <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13) }}>{sort.label}</T>
+            </Pressable>
+          </View>
+        )}
+        {searching ? (
+          <Pressable hitSlop={10} onPress={closeSearch} style={{ marginLeft: t.space.md }} accessibilityLabel="Close search">
+            <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(14) }}>Cancel</T>
+          </Pressable>
+        ) : tab === 'songs' || tab === 'radio' ? null : (
           <Pressable
             hitSlop={10}
             onPress={() => useLibraryView.getState().toggleLayout(tab)}
@@ -127,22 +189,44 @@ export default function LibraryScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      {tab === 'albums' ? <Albums header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'songs' ? <Songs header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'genres' ? <Genres header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'radio' ? <Radio header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'videos' ? <Videos header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'playlists' ? <Playlists header={header} sort={sort} layout={layout} /> : null}
-      {tab === 'downloads' ? <Downloaded header={header} sort={sort} layout={layout} /> : null}
+      {tab === 'albums' ? <Albums header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'songs' ? <Songs header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'genres' ? <Genres header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'radio' ? <Radio header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'videos' ? <Videos header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'playlists' ? <Playlists header={header} sort={sort} layout={layout} filter={filter} /> : null}
+      {tab === 'downloads' ? <Downloaded header={header} sort={sort} layout={layout} filter={filter} /> : null}
     </View>
   );
+}
+
+/** `value`, once it has stopped changing for `ms` (so a search runs when typing pauses). */
+function useSettled<V>(value: V, ms: number): V {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return settled;
 }
 
 interface ListProps {
   header: ReactElement;
   sort: SortOption;
   layout: LibraryLayout;
+  /** The search typed above the list ('' for everything). */
+  filter: string;
+}
+
+/** Shown when a search finds nothing. */
+function NoMatches({ filter }: { filter: string }) {
+  const t = useTheme();
+  return (
+    <T variant="caption" style={{ textAlign: 'center', padding: t.space.xl }}>
+      {`Nothing matches “${filter}”`}
+    </T>
+  );
 }
 
 /**
@@ -164,10 +248,10 @@ function usePullToRefresh(sort: SortOption, refetch?: () => Promise<unknown>, lo
   return <RefreshControl refreshing={pulling || loadingNew} onRefresh={() => void onRefresh()} tintColor={t.colors.text} />;
 }
 
-function Albums({ header, sort, layout }: ListProps) {
+function Albums({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
-  const albums = useAlbums(sort.sortBy, sort.sortOrder, seed);
+  const albums = useAlbums(sort.sortBy, sort.sortOrder, seed, filter);
   const refresh = usePullToRefresh(sort, albums.refetch, albums.isPlaceholderData);
   const items = albums.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
@@ -184,7 +268,7 @@ function Albums({ header, sort, layout }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
-      ListEmptyComponent={albums.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
+      ListEmptyComponent={albums.isLoading ? <ActivityIndicator color={t.colors.text} /> : filter ? <NoMatches filter={filter} /> : null}
       ListFooterComponent={albums.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
       onEndReachedThreshold={1.5}
       onEndReached={() => {
@@ -195,10 +279,10 @@ function Albums({ header, sort, layout }: ListProps) {
   );
 }
 
-function Artists({ header, sort, layout }: ListProps) {
+function Artists({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
-  const artists = useAlbumArtists(sort.sortBy, sort.sortOrder, seed);
+  const artists = useAlbumArtists(sort.sortBy, sort.sortOrder, seed, filter);
   const refresh = usePullToRefresh(sort, artists.refetch, artists.isPlaceholderData);
   const items = artists.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
@@ -213,7 +297,7 @@ function Artists({ header, sort, layout }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
-      ListEmptyComponent={artists.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
+      ListEmptyComponent={artists.isLoading ? <ActivityIndicator color={t.colors.text} /> : filter ? <NoMatches filter={filter} /> : null}
       ListFooterComponent={artists.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
       onEndReachedThreshold={1.5}
       onEndReached={() => {
@@ -225,7 +309,7 @@ function Artists({ header, sort, layout }: ListProps) {
 }
 
 /** Your music videos: 16:9 tiles two across, or a list. Tap one to watch it. */
-function Videos({ header, sort, layout }: ListProps) {
+function Videos({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
   const client = useAuth((s) => s.client);
   const videos = useMusicVideos();
@@ -235,11 +319,11 @@ function Videos({ header, sort, layout }: ListProps) {
   const gap = t.space.lg;
   const tileW = Math.floor((width - t.space.lg * 2 - gap) / 2);
   const list = useMemo(() => {
-    const all = videos.data ?? [];
+    const all = (videos.data ?? []).filter((v) => matchesSearch(v, filter));
     if (sort.key === 'alpha') return [...all].sort((a, b) => a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base' }));
     if (sort.key === 'random') return seededShuffle(all, seed);
     return [...all].sort((a, b) => (b.DateCreated ?? '').localeCompare(a.DateCreated ?? ''));
-  }, [videos.data, sort.key, seed]);
+  }, [videos.data, sort.key, seed, filter]);
 
   const thumb = (video: BaseItem, w: number) => {
     const uri = client?.videoThumbUrl(video, w * 2);
@@ -306,9 +390,9 @@ function Videos({ header, sort, layout }: ListProps) {
 }
 
 /** Your radio stations, with Add a station at the top. */
-function Radio({ header, sort }: ListProps) {
+function Radio({ header, sort, filter }: ListProps) {
   const t = useTheme();
-  const stations = useStations((s) => s.stations);
+  const stations = useStations((s) => s.stations).filter((st) => matchesSearch({ Name: st.name }, filter));
   const list =
     sort.key === 'alpha'
       ? [...stations].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
@@ -356,13 +440,13 @@ function Radio({ header, sort }: ListProps) {
 }
 
 /** Every genre in the library (offline: the downloaded albums' genres). */
-function Genres({ header, sort, layout }: ListProps) {
+function Genres({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const genres = useGenreCounts();
   const refresh = usePullToRefresh(sort, genres.refetch);
   const { width } = useWindowDimensions();
-  const all = genres.data ?? [];
+  const all = (genres.data ?? []).filter((g) => matchesSearch({ Name: g.name }, filter));
   const items =
     sort.key === 'random'
       ? seededShuffle(all, seed)
@@ -419,7 +503,7 @@ function GenreRow({ genre }: { genre: GenreCount }) {
 
 const LIKED: BaseItem = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
 
-function Playlists({ header, sort, layout }: ListProps) {
+function Playlists({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
   const offline = useOffline();
   const playlists = usePlaylists();
@@ -430,16 +514,17 @@ function Playlists({ header, sort, layout }: ListProps) {
   const likedLine = `Playlist${liked.data ? ` · ${songCount(liked.data.length)}` : ''}`;
 
   const seed = useLibraryView((s) => s.shuffleSeed);
+  const found = (playlists.data ?? []).filter((x) => matchesSearch(x, filter));
   const sorted =
     sort.key === 'random'
-      ? seededShuffle(playlists.data ?? [], seed)
-      : [...(playlists.data ?? [])].sort((a, b) =>
+      ? seededShuffle(found, seed)
+      : [...found].sort((a, b) =>
           sort.key === 'recent'
             ? (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')
             : a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base' }),
         );
-  // Liked Songs is always first, like Spotify's pinned playlist.
-  const data: BaseItem[] = [LIKED, ...sorted];
+  // Liked Songs is always first, like Spotify's pinned playlist (and found by a search too).
+  const data: BaseItem[] = [...(matchesSearch(LIKED, filter) ? [LIKED] : []), ...sorted];
 
   if (grid) {
     return (
@@ -557,7 +642,7 @@ function DownloadedTile({ c, size, onPress }: { c: DownloadedCollection; size: n
 }
 
 /** Everything on the phone: albums, playlists, Liked Songs, then single songs. */
-function Downloaded({ header, sort, layout }: ListProps) {
+function Downloaded({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
   const collections = useDownloads((s) => s.collections);
   const refresh = usePullToRefresh(sort);
@@ -568,7 +653,7 @@ function Downloaded({ header, sort, layout }: ListProps) {
     a.item.Name.localeCompare(b.item.Name, undefined, { sensitivity: 'base' });
   const order = sort.key === 'alpha' ? byName : (a: DownloadedCollection, b: DownloadedCollection) => b.addedAt - a.addedAt;
   const seed = useLibraryView((s) => s.shuffleSeed);
-  const all = Object.values(collections);
+  const all = Object.values(collections).filter((c) => matchesSearch(c.item, filter));
   const arrange = (list: DownloadedCollection[]) => (sort.key === 'random' ? seededShuffle(list, seed) : list.sort(order));
   const songs = arrange(all.filter((c) => c.kind === 'song'));
   const data = [...arrange(all.filter((c) => c.kind !== 'song')), ...songs];
@@ -617,10 +702,10 @@ function Downloaded({ header, sort, layout }: ListProps) {
 }
 
 /** Every song in the library, as a list. Tapping one plays the list from there. */
-function Songs({ header, sort }: ListProps) {
+function Songs({ header, sort, filter }: ListProps) {
   const t = useTheme();
   const seed = useLibraryView((s) => s.shuffleSeed);
-  const tracks = useTracks(sort.sortBy, sort.sortOrder, seed);
+  const tracks = useTracks(sort.sortBy, sort.sortOrder, seed, filter);
   const refresh = usePullToRefresh(sort, tracks.refetch, tracks.isPlaceholderData);
   const items = tracks.data?.pages.flatMap((p) => p.Items) ?? [];
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
@@ -655,7 +740,7 @@ function Songs({ header, sort }: ListProps) {
           </Pressable>
         </View>
       }
-      ListEmptyComponent={tracks.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
+      ListEmptyComponent={tracks.isLoading ? <ActivityIndicator color={t.colors.text} /> : filter ? <NoMatches filter={filter} /> : null}
       ListFooterComponent={tracks.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
       onEndReachedThreshold={1.5}
       onEndReached={() => {

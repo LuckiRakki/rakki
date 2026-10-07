@@ -28,6 +28,7 @@ import { OpeningFade } from '@/ui/Rise';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 import { logErrorNow, startPerfLog } from '@/perf/log';
+import { startMemoryCare } from '@/lib/memory';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -158,6 +159,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     watchRadio();
     // How the app uses the phone, for battery drain (Settings → Performance log).
     startPerfLog();
+    // Memory back to iOS in the background, so it doesn't close Rakki to get it.
+    startMemoryCare();
     // The screen sleeps as usual except on lyrics and music videos (lib/keepAwake.ts).
     resetScreenAwake();
   }, []);

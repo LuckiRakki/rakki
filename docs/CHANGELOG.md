@@ -6,6 +6,36 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.7.0 (2026-10-07)
+From the performance log's first full day on the 1.6.3 build (iOS's own reports included):
+- **Fixed: the two crashes and iOS closing Rakki in the background.** Both crashes died in the
+  memory allocator, and iOS closed Rakki 14 times in a day for "memory pressure". Memory
+  jumped by 140 MB whenever Add to playlist opened: it downloaded every playlist in full
+  (about 3,400 songs with all their details) just to place the ticks. It now asks each
+  playlist only which songs it has. Rakki also gives memory back when it goes to the
+  background (decoded pictures, cached answers no screen is showing) and when iOS warns.
+- **Fixed: Add to playlist missing playlists a song is in, and not reacting to taps.** Big
+  playlists (like UpbeatRingers, 595 songs) could time out, so they looked like they didn't
+  have the song; and nothing could be ticked until every playlist had answered. Each playlist
+  now shows its tick as soon as it answers (a spinner until then), rows can be ticked straight
+  away, and Done checks what each changed playlist really has before saving.
+- **Battery: the moving backgrounds.** iOS counted 10,400 seconds of GPU time in a day against
+  45 minutes on screen. The flowing covers moved 60 times a second, and every move made the
+  live blur over them redraw; they move 12 times a second now (it looks the same, the motion is
+  slow), and stop while another screen covers them (the player under the lyrics, say).
+- **Battery: the lyrics screen** stops drawing while paused once everything has settled (it was
+  ~50% CPU drawing the same frame), and no longer makes a new recorder every frame.
+- **Offline mode less jumpy.** One missed check (moving between Wi-Fi and cellular, Tailscale
+  reconnecting) no longer switches Rakki offline: it asks again first, gives a new network a
+  moment to settle, and checks back sooner when the server really was gone (5, 10, 20 s, then
+  every 30 s).
+- **Search in Library:** the magnifier next to Sort searches the tab you're on: Playlists,
+  Albums, Songs, Artists, Genres, Videos, Radio and Downloaded (Albums, Songs and Artists ask
+  the server, so it finds everything, not just what's loaded).
+- **Find in playlist** (and in Liked Songs): narrow the songs down; tapping one still plays the
+  whole playlist from there.
+- **Playlist and album length in hours and minutes:** "595 songs, 35 hr 34 min".
+
 ## 1.6.3, native build (2026-10-06)
 A new app to install (SideStore), needed because 1.6.2 closed the app right after the launch
 screen, and an update can't reach an app that closes before it checks for one. Over-the-air

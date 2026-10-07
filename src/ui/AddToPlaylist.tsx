@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQueries } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { success } from '@/lib/haptics';
-import type { BaseItem } from '@/api/jellyfin';
+import type { JellyfinClient, PlaylistEntry } from '@/api/jellyfin';
 import { queryClient, usePlaylists } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { songCount } from '@/lib/format';
@@ -16,6 +16,15 @@ import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const LIKED = '__liked__';
+
+/** A playlist's songs, as ids only (see getPlaylistMembership), kept 10 minutes. */
+function membership(client: JellyfinClient, playlistId: string) {
+  return {
+    queryKey: ['playlistMembership', client.session.userId, playlistId],
+    queryFn: () => client.getPlaylistMembership(playlistId),
+    staleTime: 10 * 60_000,
+  };
+}
 
 /** Ask for a name (iOS prompt; plain prompt on web). */
 function askName(): Promise<string | null> {
@@ -33,7 +42,8 @@ function askName(): Promise<string | null> {
 /**
  * Spotify-style "Add to playlist": every playlist with a clear mark when it already has the
  * song (or how many of an album's songs it has), Liked Songs on top, New playlist, search.
- * Ticks are staged locally and saved on Done.
+ * Ticks are staged locally and saved on Done. Each playlist's mark shows as soon as that
+ * playlist has answered (a spinner until then), and every row can be ticked straight away.
  */
 export function AddToPlaylistPanel() {
   const t = useTheme();
@@ -51,20 +61,18 @@ export function AddToPlaylistPanel() {
   const playlists = usePlaylists();
   const lists = useMemo(() => (request ? (playlists.data ?? []) : []), [request, playlists.data]);
   const contents = useQueries({
-    queries: lists.map((p) => ({
-      queryKey: ['playlistItems', client?.session.userId, p.Id],
-      queryFn: async () => (await client!.getPlaylistItems(p.Id)).Items,
-      enabled: !!client && !!request,
-    })),
+    queries: client && request ? lists.map((p) => membership(client, p.Id)) : [],
   });
 
-  // How many of the songs each playlist already has.
+  // Which of the songs each playlist already has (only playlists that have answered).
   const have = useMemo(() => {
-    const m = new Map<string, BaseItem[]>();
-    lists.forEach((p, i) => m.set(p.Id, (contents[i]?.data ?? []).filter((x) => ids.has(x.Id))));
+    const m = new Map<string, PlaylistEntry[]>();
+    lists.forEach((p, i) => {
+      const data = contents[i]?.data;
+      if (data) m.set(p.Id, data.filter((x) => ids.has(x.Id)));
+    });
     return m;
   }, [lists, contents, ids]);
-  const loaded = contents.every((c) => !c.isLoading) && !playlists.isLoading;
 
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
@@ -75,6 +83,8 @@ export function AddToPlaylistPanel() {
   });
   const changes = edits.request === request ? edits.changes : new Map<string, boolean>();
 
+  /** The playlist has answered (Liked Songs is always known). */
+  const known = (id: string) => id === LIKED || have.has(id);
   /** Already true on the server: a playlist counts when it has every song. */
   const wasIn = (id: string) =>
     id === LIKED ? !!single?.UserData?.IsFavorite : items.length > 0 && (have.get(id)?.length ?? 0) === items.length;
@@ -84,26 +94,31 @@ export function AddToPlaylistPanel() {
     next.set(id, !isOn(id));
     setEdits({ request, changes: next });
   };
-  const selected = loaded ? new Set([LIKED, ...lists.map((p) => p.Id)].filter(isOn)) : null;
 
   async function done() {
-    if (!client || !selected) return close();
+    if (!client || changes.size === 0) return close();
     setSaving(true);
     const added: string[] = [];
     try {
       for (const p of lists) {
-        const on = selected.has(p.Id);
-        const already = have.get(p.Id) ?? [];
-        if (on && !wasIn(p.Id)) {
-          const present = new Set(already.map((x) => x.Id));
+        const on = changes.get(p.Id);
+        if (on === undefined) continue;
+        // What it really has now (asked again if this playlist hadn't answered yet).
+        const entries = await queryClient.ensureQueryData(membership(client, p.Id));
+        const already = entries.filter((x) => ids.has(x.Id));
+        const present = new Set(already.map((x) => x.Id));
+        if (on && present.size < ids.size) {
           await client.addToPlaylist(p.Id, items.filter((i) => !present.has(i.Id)).map((i) => i.Id));
           added.push(p.Name);
-        } else if (!on && wasIn(p.Id)) {
+        } else if (!on && already.length) {
           await client.removeFromPlaylist(p.Id, already.map((x) => x.PlaylistItemId!).filter(Boolean));
         }
       }
-      if (single && selected.has(LIKED) !== wasIn(LIKED)) await setLiked(single, selected.has(LIKED));
-      void queryClient.invalidateQueries({ predicate: (q) => ['playlistItems', 'playlists'].includes(q.queryKey[0] as string) });
+      const liked = changes.get(LIKED);
+      if (single && liked !== undefined && liked !== wasIn(LIKED)) await setLiked(single, liked);
+      void queryClient.invalidateQueries({
+        predicate: (q) => ['playlistItems', 'playlists', 'playlistMembership'].includes(q.queryKey[0] as string),
+      });
       if (added.length) {
         success();
         showToast(added.length === 1 ? `Added to ${added[0]}` : `Added to ${added.length} playlists`);
@@ -134,7 +149,8 @@ export function AddToPlaylistPanel() {
   const filtered = lists.filter((p) => p.Name.toLowerCase().includes(query.trim().toLowerCase()));
 
   const row = (id: string, name: string, art: React.ReactNode, sub: string, subAccent: boolean) => {
-    const on = selected?.has(id) ?? false;
+    const on = isOn(id);
+    const waiting = !known(id) && !changes.has(id);
     return (
       <Pressable key={id} onPress={() => toggle(id)} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
         {art}
@@ -146,7 +162,11 @@ export function AddToPlaylistPanel() {
             {sub}
           </T>
         </View>
-        <Ionicons name={on ? 'checkmark-circle' : 'ellipse-outline'} size={26} color={on ? t.colors.accent : t.colors.textMuted} />
+        {waiting ? (
+          <ActivityIndicator color={t.colors.textMuted} style={{ width: 26 }} />
+        ) : (
+          <Ionicons name={on ? 'checkmark-circle' : 'ellipse-outline'} size={26} color={on ? t.colors.accent : t.colors.textMuted} />
+        )}
       </Pressable>
     );
   };

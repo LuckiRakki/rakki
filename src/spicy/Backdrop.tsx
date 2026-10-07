@@ -3,9 +3,11 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useIsFocused } from 'expo-router';
 import Animated, {
   Easing,
   useAnimatedStyle,
+  useFrameCallback,
   useSharedValue,
   withRepeat,
   withSequence,
@@ -77,24 +79,39 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
   );
 }
 
+/** How often the layers move: the motion is slow (a turn takes a minute), so 12 a second looks
+ * the same as 60, and each move makes the live blur on top redraw (the GPU's biggest job). */
+const MOVES_PER_SECOND = 12;
+
 /**
  * The cover, heavily blurred, as three slowly turning and drifting layers. Each blurred cover
  * is a static texture the GPU only moves around (on the UI thread, which iOS pauses in the
- * background). `motion` scales the speed; 0 keeps it still. Put a live blur on top to melt the
- * layers' edges together. Also the Now Playing screen's Moving background.
+ * background), 12 times a second, and not at all while another screen covers this one.
+ * `motion` scales the speed; 0 keeps it still. Put a live blur on top to melt the layers'
+ * edges together. Also the Now Playing and music video screens' Moving background.
  */
 export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) {
   const clock = useSharedValue(0);
-  const still = motion <= 0;
+  const lastMove = useSharedValue(0);
+  const focused = useIsFocused();
+  const running = motion > 0 && focused && !!uri;
 
-  useEffect(() => {
-    if (still) {
-      clock.set(0);
+  // Seconds of motion so far (scaled by `motion`), advanced in steps.
+  useFrameCallback((frame) => {
+    'worklet';
+    const dt = frame.timeSincePreviousFrame ?? 0;
+    const since = lastMove.get() + dt;
+    if (since < 1000 / MOVES_PER_SECOND) {
+      lastMove.set(since);
       return;
     }
-    // One long linear clock (1 h) drives every layer; each derives its own motion from it.
-    clock.set(withRepeat(withTiming(3600, { duration: (3600 * 1000) / motion, easing: Easing.linear }), -1, false));
-  }, [clock, still, motion]);
+    lastMove.set(0);
+    clock.set((clock.get() + (since / 1000) * motion) % 36000);
+  }, running);
+
+  useEffect(() => {
+    if (motion <= 0) clock.set(0);
+  }, [clock, motion]);
 
   return uri ? (
     <>

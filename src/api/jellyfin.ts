@@ -79,6 +79,12 @@ export interface BaseItem {
 
 export type SearchKind = 'songs' | 'albums' | 'artists' | 'playlists';
 
+/** A song in a playlist: its id, and the entry (the same song can be in a playlist twice). */
+export interface PlaylistEntry {
+  Id: string;
+  PlaylistItemId?: string;
+}
+
 export interface GenreCount {
   name: string;
   count: number;
@@ -400,11 +406,12 @@ export class JellyfinClient {
   }
 
   /** Songs in the library (Library → Songs), paged. */
-  getTracks(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string }) {
+  getTracks(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string; searchTerm?: string }) {
     return this.items({
       IncludeItemTypes: 'Audio',
       SortBy: opts.sortBy ?? 'SortName',
       SortOrder: opts.sortOrder ?? 'Ascending',
+      searchTerm: opts.searchTerm,
       StartIndex: opts.startIndex ?? 0,
       Limit: opts.limit ?? 100,
     });
@@ -415,13 +422,14 @@ export class JellyfinClient {
     return (await this.items({ IncludeItemTypes: 'Audio', SortBy: 'Random', Limit: limit })).Items;
   }
 
-  getAlbums(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string }) {
+  getAlbums(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string; searchTerm?: string }) {
     return this.get<ItemsResult>('/Items', {
       userId: this.session.userId,
       IncludeItemTypes: 'MusicAlbum',
       Recursive: true,
       SortBy: opts.sortBy ?? 'SortName',
       SortOrder: opts.sortOrder ?? 'Ascending',
+      searchTerm: opts.searchTerm,
       StartIndex: opts.startIndex ?? 0,
       Limit: opts.limit ?? 60,
       Fields: ALBUM_FIELDS,
@@ -469,11 +477,12 @@ export class JellyfinClient {
   // ---- Artists ----
 
   /** Album artists (the Library's Artists tab), sorted by name. */
-  getAlbumArtists(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string } = {}) {
+  getAlbumArtists(opts: { startIndex?: number; limit?: number; sortBy?: string; sortOrder?: string; searchTerm?: string } = {}) {
     return this.get<ItemsResult>('/Artists/AlbumArtists', {
       userId: this.session.userId,
       SortBy: opts.sortBy ?? 'SortName',
       SortOrder: opts.sortOrder ?? 'Ascending',
+      searchTerm: opts.searchTerm,
       StartIndex: opts.startIndex ?? 0,
       Limit: opts.limit ?? 100,
       Fields: 'ChildCount',
@@ -812,6 +821,26 @@ export class JellyfinClient {
       EnableImageTypes: 'Primary',
       ImageTypeLimit: 1,
     });
+  }
+
+  /**
+   * Which songs a playlist has, and their entries (to remove them): ids only, no pictures or
+   * details, so even a 600-song playlist is a small, quick answer (Add to playlist asks every
+   * playlist at once).
+   */
+  async getPlaylistMembership(playlistId: string): Promise<PlaylistEntry[]> {
+    const { serverUrl, deviceId, token } = this.session;
+    const r = await request<ItemsResult>(
+      `${serverUrl}/Playlists/${playlistId}/Items${query({
+        userId: this.session.userId,
+        EnableImages: false,
+        EnableUserData: false,
+        EnableTotalRecordCount: false,
+        Fields: '',
+      })}`,
+      { deviceId, token, timeoutMs: 30_000 },
+    );
+    return r.Items.map((i) => ({ Id: i.Id, PlaylistItemId: i.PlaylistItemId }));
   }
 
   async createPlaylist(name: string, itemIds: string[] = []): Promise<string> {

@@ -616,6 +616,14 @@ export class SpicyScene {
    * Advance to playback time `ms`. `dt` is the wall-clock frame time in seconds — springs
    * move in real time, independent of the (seek-jumpy) playback clock.
    */
+  /**
+   * Nothing is moving: no line animating, no scroll or fling, no finger on it. With the time
+   * standing still too (paused), another frame would look the same, so drawing can rest.
+   */
+  get settled(): boolean {
+    return this.live.size === 0 && this.flingV === 0 && !this.manual && this.scrollT >= 1;
+  }
+
   tick(ms: number, dt: number, durationMs = 0) {
     dt = Math.min(MAX_FRAME_S, Math.max(0, dt));
     const now = Date.now();

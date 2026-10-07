@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlbumLastfmPlays, useAlbumTracks, useItem } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
-import { songCount, ticksToSeconds } from '@/lib/format';
+import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { formatCompact } from '@/lib/lastfm';
 import { openMenu } from '@/ui/overlays';
@@ -45,7 +45,7 @@ export default function AlbumScreen() {
   const list = tracks.data ?? [];
   const plays = useAlbumLastfmPlays(id, tracks.data).data;
   const multiDisc = new Set(list.map((t) => t.ParentIndexNumber ?? 1)).size > 1;
-  const minutes = Math.round(list.reduce((sum, t) => sum + ticksToSeconds(t.RunTimeTicks), 0) / 60);
+  const seconds = list.reduce((sum, t) => sum + ticksToSeconds(t.RunTimeTicks), 0);
   const tint = artColor(album.data && client?.blurhash(album.data));
   const source = { type: 'album' as const, id, name: album.data?.Name ?? 'Album' };
 
@@ -81,7 +81,7 @@ export default function AlbumScreen() {
           <ArtistLinks artists={artists} fallback={album.data?.AlbumArtist} style={{ flex: 1 }} />
         </View>
         <T variant="caption" style={{ marginTop: t.space.xs }}>
-          {['Album', album.data?.ProductionYear, list.length ? `${songCount(list.length)}, ${minutes} min` : null]
+          {['Album', album.data?.ProductionYear, list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : null]
             .filter(Boolean)
             .join(' · ')}
         </T>

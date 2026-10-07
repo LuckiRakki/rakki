@@ -22,6 +22,15 @@ export function greeting(date = new Date()): string {
   return 'Good evening';
 }
 
+/** A total length, like Spotify: "42 min", "1 hr 5 min", "35 hr 34 min". */
+export function formatLength(seconds: number): string {
+  const total = Math.round(Math.max(0, seconds) / 60);
+  if (total < 60) return `${Math.max(1, total)} min`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m ? `${h} hr ${m} min` : `${h} hr`;
+}
+
 /** "1 song", "12 songs". */
 export function songCount(n: number): string {
   return `${n} song${n === 1 ? '' : 's'}`;

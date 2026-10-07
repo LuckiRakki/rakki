@@ -18,7 +18,7 @@ import {
 } from '@/downloads/offline';
 import { useDownloads } from '@/downloads/store';
 import { seededShuffle } from '@/library/view';
-import { artistTopTracks, LastfmError, matchPopular, trackPlaycount } from '@/lib/lastfm';
+import { artistTopTracks, LastfmError, matchKey, matchPopular, trackPlaycount } from '@/lib/lastfm';
 import { useOffline } from '@/lib/online';
 import { useSettings } from '@/settings/store';
 
@@ -114,36 +114,64 @@ function sortItems(items: BaseItem[], sortBy: string): BaseItem[] {
 const isRandom = (sortBy: string) => sortBy === 'Random';
 
 /** `seed` only matters for Random: a new seed is a new shuffle. */
-export const useAlbums = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0) =>
+/** The ones whose name or artist has the search (offline lists, and the Library's own). */
+export function matchesSearch(item: { Name: string; AlbumArtist?: string; Artists?: string[] }, search: string): boolean {
+  const q = matchKey(search);
+  if (!q) return true;
+  return [item.Name, item.AlbumArtist, ...(item.Artists ?? [])].some((x) => !!x && matchKey(x).includes(q));
+}
+
+/**
+ * The Library's paged lists. `search` asks the server for matches instead (in name order: a
+ * shuffle of search results isn't useful); offline it narrows down the downloads.
+ */
+export const useAlbums = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0, search = '') =>
   usePagedQuery(
-    ['albums', sortBy, sortOrder, isRandom(sortBy) ? seed : 0],
+    ['albums', sortBy, sortOrder, isRandom(sortBy) ? seed : 0, search],
     (c, start) =>
-      isRandom(sortBy)
-        ? randomBatch(c.getAlbums({ limit: RANDOM_BATCH, sortBy }))
-        : c.getAlbums({ startIndex: start, limit: PAGE, sortBy, sortOrder }),
-    () => (isRandom(sortBy) ? seededShuffle(downloadedAlbums(), seed) : sortItems(downloadedAlbums(), sortBy)),
+      search
+        ? c.getAlbums({ startIndex: start, limit: PAGE, ...searchSort(sortBy, sortOrder), searchTerm: search })
+        : isRandom(sortBy)
+          ? randomBatch(c.getAlbums({ limit: RANDOM_BATCH, sortBy }))
+          : c.getAlbums({ startIndex: start, limit: PAGE, sortBy, sortOrder }),
+    () =>
+      (isRandom(sortBy) ? seededShuffle(downloadedAlbums(), seed) : sortItems(downloadedAlbums(), sortBy)).filter((x) =>
+        matchesSearch(x, search),
+      ),
   );
 
-export const useAlbumArtists = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0) =>
+export const useAlbumArtists = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0, search = '') =>
   usePagedQuery(
-    ['albumArtists', sortBy, sortOrder, isRandom(sortBy) ? seed : 0],
+    ['albumArtists', sortBy, sortOrder, isRandom(sortBy) ? seed : 0, search],
     (c, start) =>
-      isRandom(sortBy)
-        ? randomBatch(c.getAlbumArtists({ limit: RANDOM_BATCH, sortBy }))
-        : c.getAlbumArtists({ startIndex: start, limit: 100, sortBy, sortOrder }),
-    () => (isRandom(sortBy) ? seededShuffle(downloadedArtists(), seed) : downloadedArtists()),
+      search
+        ? c.getAlbumArtists({ startIndex: start, limit: 100, ...searchSort(sortBy, sortOrder), searchTerm: search })
+        : isRandom(sortBy)
+          ? randomBatch(c.getAlbumArtists({ limit: RANDOM_BATCH, sortBy }))
+          : c.getAlbumArtists({ startIndex: start, limit: 100, sortBy, sortOrder }),
+    () => (isRandom(sortBy) ? seededShuffle(downloadedArtists(), seed) : downloadedArtists()).filter((x) => matchesSearch(x, search)),
   );
 
 /** Library → Songs. Offline: the songs on the phone. */
-export const useTracks = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0) =>
+export const useTracks = (sortBy = 'SortName', sortOrder = 'Ascending', seed = 0, search = '') =>
   usePagedQuery(
-    ['tracks', sortBy, sortOrder, isRandom(sortBy) ? seed : 0],
+    ['tracks', sortBy, sortOrder, isRandom(sortBy) ? seed : 0, search],
     (c, start) =>
-      isRandom(sortBy)
-        ? randomBatch(c.getTracks({ limit: RANDOM_BATCH, sortBy }))
-        : c.getTracks({ startIndex: start, limit: 100, sortBy, sortOrder }),
-    () => (isRandom(sortBy) ? seededShuffle(downloadedTracks(), seed) : sortItems(downloadedTracks(), sortBy)),
+      search
+        ? c.getTracks({ startIndex: start, limit: 100, ...searchSort(sortBy, sortOrder), searchTerm: search })
+        : isRandom(sortBy)
+          ? randomBatch(c.getTracks({ limit: RANDOM_BATCH, sortBy }))
+          : c.getTracks({ startIndex: start, limit: 100, sortBy, sortOrder }),
+    () =>
+      (isRandom(sortBy) ? seededShuffle(downloadedTracks(), seed) : sortItems(downloadedTracks(), sortBy)).filter((x) =>
+        matchesSearch(x, search),
+      ),
   );
+
+/** Search results keep the chosen order, except Random (name order instead). */
+function searchSort(sortBy: string, sortOrder: string) {
+  return isRandom(sortBy) ? { sortBy: 'SortName', sortOrder: 'Ascending' } : { sortBy, sortOrder };
+}
 
 export const useRecentlyAdded = () =>
   useUserQuery(['recentlyAdded'], async (c) => (await c.getAlbums({ sortBy: 'DateCreated', sortOrder: 'Descending', limit: 16 })).Items);
