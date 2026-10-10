@@ -5,6 +5,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { formatDuration, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { useTrackDownload } from '@/downloads/store';
+import { useInAnyPlaylist } from '@/library/playlistCache';
 import { Artwork } from '@/ui/Artwork';
 import { useOffline } from '@/lib/online';
 import { openMenu, showToast } from '@/ui/overlays';
@@ -36,6 +37,7 @@ export function TrackRow({
   subtitle?: string;
 }) {
   const t = useTheme();
+  const inPlaylist = useInAnyPlaylist(track.Id);
   const downloaded = useTrackDownload(track.Id);
   // Offline, songs that aren't on the phone are greyed out and can't be played.
   const unavailable = useOffline() && downloaded !== 'done';
@@ -92,7 +94,8 @@ export function TrackRow({
           </T>
         </View>
       </View>
-      {track.UserData?.IsFavorite ? (
+      {/* Saved: liked, or in any of your playlists. */}
+      {track.UserData?.IsFavorite || inPlaylist ? (
         <Ionicons name="heart" size={14} color={t.colors.accent} style={{ marginRight: t.space.sm }} />
       ) : null}
       <T variant="caption" color={t.colors.textMuted}>

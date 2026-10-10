@@ -70,7 +70,6 @@ export function AddToPlaylistPanel() {
   }, [lists, cached, ids]);
 
   const [query, setQuery] = useState('');
-  const [saving, setSaving] = useState(false);
   // Only the user's changes are stored (per sheet opening); ticks are what's true plus changes.
   const [edits, setEdits] = useState<{ request: object | null; changes: Map<string, boolean> }>({
     request: null,
@@ -90,40 +89,44 @@ export function AddToPlaylistPanel() {
     setEdits({ request, changes: next });
   };
 
-  async function done() {
+  /** Done: the sheet closes at once and saving carries on in the background (toast at the end). */
+  function done() {
     if (!client || changes.size === 0) return close();
-    setSaving(true);
-    const added: string[] = [];
-    try {
-      for (const p of lists) {
-        const on = changes.get(p.Id);
-        if (on === undefined) continue;
-        // What it really has right now, from the server: saving never trusts the cache.
-        const entries = await refreshPlaylist(p.Id);
-        const already = entries.filter((x) => ids.has(x.Id));
-        const present = new Set(already.map((x) => x.Id));
-        if (on && present.size < ids.size) {
-          await client.addToPlaylist(p.Id, items.filter((i) => !present.has(i.Id)).map((i) => i.Id));
-          added.push(p.Name);
-        } else if (!on && already.length) {
-          await client.removeFromPlaylist(p.Id, already.map((x) => x.PlaylistItemId!).filter(Boolean));
+    // What to save, taken now: the sheet (and its state) is about to go.
+    const plan = lists.filter((p) => changes.has(p.Id)).map((p) => ({ id: p.Id, name: p.Name, on: changes.get(p.Id)! }));
+    const liked = changes.get(LIKED);
+    const likeChange = single && liked !== undefined && liked !== wasIn(LIKED) ? { item: single, liked } : null;
+    const songs = items;
+    close();
+    void (async () => {
+      const added: string[] = [];
+      try {
+        for (const p of plan) {
+          // What it really has right now, from the server: saving never trusts the cache.
+          const entries = await refreshPlaylist(p.id);
+          const already = entries.filter((x) => ids.has(x.Id));
+          const present = new Set(already.map((x) => x.Id));
+          if (p.on && present.size < ids.size) {
+            await client.addToPlaylist(p.id, songs.filter((i) => !present.has(i.Id)).map((i) => i.Id));
+            added.push(p.name);
+          } else if (!p.on && already.length) {
+            await client.removeFromPlaylist(p.id, already.map((x) => x.PlaylistItemId!).filter(Boolean));
+          }
         }
+        if (likeChange) await setLiked(likeChange.item, likeChange.liked);
+        void queryClient.invalidateQueries({
+          predicate: (q) => ['playlistItems', 'playlists'].includes(q.queryKey[0] as string),
+        });
+        if (added.length) {
+          success();
+          showToast(added.length === 1 ? `Added to ${added[0]}` : `Added to ${added.length} playlists`);
+        } else if (plan.some((p) => !p.on)) {
+          showToast('Playlists updated');
+        }
+      } catch (e) {
+        Alert.alert('Couldn’t save to your playlists', e instanceof Error ? e.message : String(e));
       }
-      const liked = changes.get(LIKED);
-      if (single && liked !== undefined && liked !== wasIn(LIKED)) await setLiked(single, liked);
-      void queryClient.invalidateQueries({
-        predicate: (q) => ['playlistItems', 'playlists'].includes(q.queryKey[0] as string),
-      });
-      if (added.length) {
-        success();
-        showToast(added.length === 1 ? `Added to ${added[0]}` : `Added to ${added.length} playlists`);
-      }
-      close();
-    } catch (e) {
-      Alert.alert('Couldn’t save', e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
+    })();
   }
 
   async function newPlaylist() {
@@ -218,8 +221,8 @@ export function AddToPlaylistPanel() {
           </T>
         ) : null}
       </ScrollView>
-      <Pressable disabled={saving} onPress={done} style={({ pressed }) => [styles.done, (pressed || saving) && { opacity: 0.8 }]}>
-        <T style={styles.doneText}>{saving ? 'Saving…' : 'Done'}</T>
+      <Pressable onPress={done} style={({ pressed }) => [styles.done, pressed && { opacity: 0.8 }]}>
+        <T style={styles.doneText}>Done</T>
       </Pressable>
     </SheetPanel>
   );

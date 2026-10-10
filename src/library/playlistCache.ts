@@ -212,3 +212,20 @@ export function startPlaylistCache() {
     if (AppState.currentState === 'active') void syncPlaylists();
   }, CHECK_EVERY_MS);
 }
+
+let anyFor: Record<string, CachedPlaylist> | null = null;
+let anySet = new Set<string>();
+
+/** Every song in any of your playlists (worked out once per cache change). */
+function songsInPlaylists(lists: Record<string, CachedPlaylist>): Set<string> {
+  if (lists !== anyFor) {
+    anyFor = lists;
+    anySet = new Set(Object.values(lists).flatMap((c) => c.pairs.map(([id]) => id)));
+  }
+  return anySet;
+}
+
+/** The song is in at least one of your playlists (song rows show the heart for it). */
+export function useInAnyPlaylist(songId: string | undefined): boolean {
+  return usePlaylistCache((s) => !!songId && songsInPlaylists(s.lists).has(songId));
+}

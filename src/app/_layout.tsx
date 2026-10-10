@@ -197,7 +197,11 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="player" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="queue" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="lyrics" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+                <Stack.Screen
+                  name="lyrics"
+                  // Over the app (not instead of it), so swiping the lyrics down shows the app behind.
+                  options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
+                />
                 <Stack.Screen
                   name="video"
                   // Over the app (not instead of it), so swiping the video down shows the app behind.

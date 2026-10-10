@@ -21,6 +21,7 @@ export function CollectionHeader({
   playing,
   onPlay,
   onShuffle,
+  shuffleOn,
   onMore,
   onEdit,
   download,
@@ -32,7 +33,9 @@ export function CollectionHeader({
   lines: string[];
   playing: boolean;
   onPlay: () => void;
+  /** The shuffle toggle (a dot under it while on); Play follows it. */
   onShuffle: () => void;
+  shuffleOn?: boolean;
   onMore?: () => void;
   onEdit?: () => void;
   /** The download toggle (DownloadButton), next to Shuffle. */
@@ -60,8 +63,15 @@ export function CollectionHeader({
           </T>
         ))}
         <View style={styles.actions}>
-          <Pressable hitSlop={8} onPress={onShuffle}>
-            <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
+          <Pressable
+            hitSlop={8}
+            onPress={onShuffle}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: !!shuffleOn }}
+            accessibilityLabel="Shuffle"
+            style={{ alignItems: 'center' }}>
+            <Ionicons name="shuffle" size={28} color={shuffleOn ? t.colors.accent : t.colors.textSecondary} />
+            {shuffleOn ? <View style={styles.shuffleDot} /> : null}
           </Pressable>
           {download ? <View style={{ marginLeft: t.space.lg }}>{download}</View> : null}
           {onEdit ? (
@@ -85,6 +95,7 @@ export function CollectionHeader({
 }
 
 const useStyles = makeStyles((t) => ({
+  shuffleDot: { position: 'absolute', bottom: -6, width: 4, height: 4, borderRadius: 2, backgroundColor: t.colors.accent },
   artShadow: {
     shadowColor: '#000',
     shadowOpacity: 0.5,

@@ -26,6 +26,7 @@ export default function ReleasesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <FlatList
+        windowSize={7}
         key={`releases-${columns}`}
         data={items}
         keyExtractor={(a) => a.Id}

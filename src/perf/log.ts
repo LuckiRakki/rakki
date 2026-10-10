@@ -16,7 +16,7 @@ import { useAuth } from '@/auth/store';
 import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 import { appVersion, buildStamp } from '@/lib/updates';
-import { notePerf, takeApiBytes, takePerfEvents } from '@/perf/events';
+import { notePerf, takeApiBytes, takeDownloadBytes, takePerfEvents } from '@/perf/events';
 import { summarize, type Sample } from '@/perf/summary';
 import { radioPlaying, usePlayer } from '@/player/store';
 import { useSettings } from '@/settings/store';
@@ -123,6 +123,7 @@ async function sample() {
       lag,
       late,
       apiKB: Math.round(takeApiBytes() / 102.4) / 10,
+      dlKB: Math.round(takeDownloadBytes() / 1024),
       ...hermes(),
       ...hw,
     };

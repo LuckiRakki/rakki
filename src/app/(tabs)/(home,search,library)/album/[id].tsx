@@ -12,7 +12,7 @@ import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { formatCompact } from '@/lib/lastfm';
 import { openMenu } from '@/ui/overlays';
-import { usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { GenreChips } from '@/ui/GenreChips';
@@ -49,13 +49,16 @@ export default function AlbumScreen() {
   const tint = artColor(album.data && client?.blurhash(album.data));
   const source = { type: 'album' as const, id, name: album.data?.Name ?? 'Album' };
 
-  function play(shuffle = false) {
+  const shuffleOn = usePlayer((s) => s.shuffleMode);
+
+  /** Play (in shuffled order while the shuffle toggle is on). */
+  function play() {
     if (list.length === 0) return;
-    if (!shuffle && isThisAlbum) {
+    if (isThisAlbum) {
       usePlayer.getState().toggle();
       return;
     }
-    usePlayer.getState().playQueue(list, { source, shuffle });
+    usePlayer.getState().playQueue(list, { source });
   }
 
   // Offline with nothing of this album on the phone.
@@ -88,8 +91,17 @@ export default function AlbumScreen() {
         <GenreChips genres={album.data?.Genres ?? []} />
         <View style={styles.actions}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
-            <Pressable hitSlop={8} onPress={() => play(true)}>
-              <Ionicons name="shuffle" size={28} color={t.colors.textSecondary} />
+            <Pressable
+              hitSlop={8}
+              onPress={() => toggleShuffleFor(isThisAlbum)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: shuffleOn }}
+              accessibilityLabel="Shuffle"
+              style={{ alignItems: 'center' }}>
+              <Ionicons name="shuffle" size={28} color={shuffleOn ? t.colors.accent : t.colors.textSecondary} />
+              {shuffleOn ? (
+                <View style={{ position: 'absolute', bottom: -6, width: 4, height: 4, borderRadius: 2, backgroundColor: t.colors.accent }} />
+              ) : null}
             </Pressable>
             {album.data && list.length ? <DownloadButton kind="album" item={album.data} /> : null}
           </View>
@@ -117,6 +129,7 @@ export default function AlbumScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <Animated.FlatList
+        windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
         data={list}

@@ -15,6 +15,7 @@ import { tracksOf } from '@/library/actions';
 import { fetchLrc, fetchTtml } from '@/lyrics/fetch';
 import { useSettings } from '@/settings/store';
 import { showToast } from '@/ui/overlays';
+import { countDownloadBytes } from '@/perf/events';
 import {
   artFile,
   audioFile,
@@ -130,6 +131,7 @@ async function downloadTrack(c: JellyfinClient, id: string) {
       return;
     }
     setTrack(id, { state: 'done', file: path, bytes: file.size ?? 0, kbps: src.kbps });
+    countDownloadBytes(file.size ?? 0);
     const lyrics = await saveLyrics(c, id);
     if (lyrics) setTrack(id, { lyrics: true });
   } catch (e) {

@@ -34,3 +34,17 @@ export function takeApiBytes(): number {
   apiBytes = 0;
   return n;
 }
+
+let downloadBytes = 0;
+
+/** A song finished downloading (its size). */
+export function countDownloadBytes(n: number) {
+  downloadBytes += n;
+}
+
+/** Downloaded bytes since the last call. */
+export function takeDownloadBytes(): number {
+  const n = downloadBytes;
+  downloadBytes = 0;
+  return n;
+}

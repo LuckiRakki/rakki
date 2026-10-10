@@ -87,6 +87,7 @@ export default function DownloadsScreen() {
         <View style={{ width: 28 }} />
       </View>
       <FlatList
+        windowSize={7}
         data={list}
         keyExtractor={(c) => c.id}
         contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}

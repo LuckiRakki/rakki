@@ -45,7 +45,13 @@ interface PlayerState {
   playing: boolean;
   buffering: boolean;
   repeat: RepeatMode;
+  /** This queue is in shuffled order. */
   shuffle: boolean;
+  /**
+   * The shuffle toggle (player, album and playlist pages): new queues start shuffled only
+   * while it's on. One-off "shuffle play" buttons shuffle just their queue.
+   */
+  shuffleMode: boolean;
   source: QueueSource | null;
   error: string | null;
   /**
@@ -73,6 +79,24 @@ interface PlayerState {
   toggleShuffle(): void;
   setFavorite(itemId: string, favorite: boolean): void;
   stop(): void;
+}
+
+const SHUFFLE_KEY = 'rakki.shuffleMode';
+
+/** Turn the shuffle toggle on or off (remembered; the current queue isn't touched). */
+export function setShuffleMode(on: boolean) {
+  writePref(SHUFFLE_KEY, on ? '1' : '0');
+  usePlayer.setState({ shuffleMode: on });
+}
+
+/**
+ * A page's shuffle toggle: on the page whose music is playing it shuffles (or un-shuffles)
+ * the queue too; anywhere else it just sets what the next Play does.
+ */
+export function toggleShuffleFor(playingHere: boolean) {
+  const p = usePlayer.getState();
+  if (playingHere && p.queue.length) p.toggleShuffle();
+  else setShuffleMode(!p.shuffleMode);
 }
 
 let keyCounter = 0;
@@ -175,6 +199,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   buffering: false,
   repeat: 'off',
   shuffle: false,
+  shuffleMode: readPref(SHUFFLE_KEY) === '1',
   source: null,
   error: null,
 
@@ -187,7 +212,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       if (opts.startIndex !== undefined) opts = { ...opts, startIndex: Math.max(0, items.findIndex((x) => x.Id === chosen?.Id)) };
     }
     if (items.length === 0) return;
-    const shuffle = opts.shuffle ?? get().shuffle;
+    const shuffle = opts.shuffle ?? get().shuffleMode;
     let queue = entries(items, 'context');
     let index = Math.min(Math.max(opts.startIndex ?? 0, 0), queue.length - 1);
     unshuffledKeys = null;
@@ -318,6 +343,8 @@ export const usePlayer = create<PlayerState>((set, get) => ({
 
   toggleShuffle() {
     const { queue, index, shuffle } = get();
+    // The toggle follows: what this queue does is what new ones will do.
+    setShuffleMode(!shuffle);
     if (queue.length === 0) {
       set({ shuffle: !shuffle });
       return;

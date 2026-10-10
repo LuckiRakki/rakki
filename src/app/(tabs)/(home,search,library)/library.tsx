@@ -260,6 +260,7 @@ function Albums({ header, sort, layout, filter }: ListProps) {
     sort.key === 'year' && a.ProductionYear ? `${kindLine(a)} · ${a.ProductionYear}` : kindLine(a);
   return (
     <FlatList
+      windowSize={7}
       key={`albums-${layout}-${columns}`}
       data={items}
       keyExtractor={(a) => a.Id}
@@ -289,6 +290,7 @@ function Artists({ header, sort, layout, filter }: ListProps) {
   const { gap, tile, columns } = useTileSize(1);
   return (
     <FlatList
+      windowSize={7}
       key={`artists-${layout}-${columns}`}
       data={items}
       keyExtractor={(a) => a.Id}
@@ -336,6 +338,7 @@ function Videos({ header, sort, layout, filter }: ListProps) {
 
   return (
     <FlatList
+      windowSize={7}
       key={grid ? 'grid' : 'list'}
       data={list}
       numColumns={grid ? 2 : 1}
@@ -401,6 +404,7 @@ function Radio({ header, sort, filter }: ListProps) {
         : [...stations].sort((a, b) => b.addedAt - a.addedAt);
   return (
     <FlatList
+      windowSize={7}
       data={list}
       keyExtractor={(s) => s.id}
       contentContainerStyle={{ paddingBottom: t.space.xl }}
@@ -458,6 +462,7 @@ function Genres({ header, sort, layout, filter }: ListProps) {
   const tile = Math.floor((width - t.space.lg * 2 - gap) / 2);
   return (
     <FlatList
+      windowSize={7}
       key={`genres-${layout}`}
       data={items}
       keyExtractor={(g) => g.name}
@@ -529,6 +534,7 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
   if (grid) {
     return (
       <FlatList
+        windowSize={7}
         key={`playlists-grid-${columns}`}
         data={data}
         keyExtractor={(p) => p.Id}
@@ -558,6 +564,7 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
 
   return (
     <FlatList
+      windowSize={7}
       key="playlists-list"
       data={data}
       keyExtractor={(p) => p.Id}
@@ -685,6 +692,7 @@ function Downloaded({ header, sort, layout, filter }: ListProps) {
 
   return (
     <FlatList
+      windowSize={7}
       key={`downloads-${layout}-${columns}`}
       data={data}
       keyExtractor={(c) => c.id}
@@ -712,6 +720,7 @@ function Songs({ header, sort, filter }: ListProps) {
   const playing = usePlayer((s) => s.playing);
   return (
     <FlatList
+      windowSize={7}
       key="songs"
       data={items}
       keyExtractor={(x) => x.Id}

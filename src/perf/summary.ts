@@ -47,18 +47,38 @@ export function summarize(lines: string[], expectGapMs: number): string {
   let heapMax = 0;
   const lags: number[] = [];
   let apiKB = 0;
+  let dlKB = 0;
   let metricKit = 0;
+  const data: string[] = [];
+  const mb = (s: string | undefined) => (s ? Math.round(parseFloat(s) / 1024) : 0);
   for (const line of lines) {
     try {
-      const row = JSON.parse(line) as { k: string; kind?: string; ms?: number; message?: string } & Partial<Sample>;
+      const row = JSON.parse(line) as {
+        k: string;
+        kind?: string;
+        ms?: number;
+        message?: string;
+        dlKB?: number;
+        report?: { timeStampBegin?: string; networkTransferMetrics?: Record<string, string> };
+      } & Partial<Sample>;
       if (row.k === 's') {
         samples.push(row as Sample);
         heapMax = Math.max(heapMax, row.heapMB ?? 0);
         if (row.lag !== undefined) lags.push(row.lag);
         apiKB += row.apiKB ?? 0;
+        dlKB += row.dlKB ?? 0;
       } else if (row.k === 'e' && row.kind === 'queue' && row.ms !== undefined) queueMs.push(row.ms);
       else if (row.k === 'e' && row.kind === 'error' && row.message) errors.push(row.message);
-      else if (row.k === 'metrickit') metricKit++;
+      else if (row.k === 'metrickit') {
+        metricKit++;
+        // iOS's own count of the app's data use, per day (kB in, as text: "364933 kB").
+        const n = row.report?.networkTransferMetrics;
+        if (n) {
+          data.push(
+            `${row.report?.timeStampBegin?.slice(0, 10) ?? '?'}: Wi-Fi ${mb(n.cumulativeWifiDownload)} MB down, ${mb(n.cumulativeWifiUpload)} MB up; cellular ${mb(n.cumulativeCellularDownload)} MB down, ${mb(n.cumulativeCellularUpload)} MB up`,
+          );
+        }
+      }
     } catch {
       // Skip a damaged line.
     }
@@ -105,7 +125,9 @@ export function summarize(lines: string[], expectGapMs: number): string {
   out.push(`Hottest: ${THERMAL[thermalMax] ?? thermalMax}.`);
   const sorted = [...lags].sort((a, b) => a - b);
   const p95 = sorted.length ? sorted[Math.floor(sorted.length * 0.95)] : undefined;
-  out.push(`JS heap max ${heapMax.toFixed(0)} MB; JS delay p95 ${p95 ?? 'n/a'} ms; from the server ${(apiKB / 1024).toFixed(1)} MB (API only).`);
+  out.push(`JS heap max ${heapMax.toFixed(0)} MB; JS delay p95 ${p95 ?? 'n/a'} ms.`);
+  out.push(`Data: server API ${(apiKB / 1024).toFixed(1)} MB, downloads ${(dlKB / 1024).toFixed(1)} MB (streaming is in iOS's daily totals below).`);
+  if (data.length) out.push(`Data per day (iOS): ${data.join(' | ')}`);
   if (queueMs.length) {
     const q = [...queueMs].sort((a, b) => a - b);
     out.push(`Smart queue: ${q.length} built, median ${(q[Math.floor(q.length / 2)] / 1000).toFixed(1)} s, slowest ${(q[q.length - 1] / 1000).toFixed(1)} s.`);

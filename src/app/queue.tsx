@@ -102,6 +102,7 @@ export default function QueueScreen() {
         <View style={{ width: 28 }} />
       </View>
       <ReorderableList
+        windowSize={7}
         data={rows}
         keyExtractor={(r) => r.key}
         onDragStart={() => {

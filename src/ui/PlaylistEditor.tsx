@@ -49,6 +49,7 @@ export function PlaylistEditor({
         </Pressable>
       </View>
       <ReorderableList
+        windowSize={7}
         data={items}
         keyExtractor={(x, i) => x.PlaylistItemId ?? `${x.Id}-${i}`}
         onDragStart={() => {

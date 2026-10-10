@@ -448,9 +448,13 @@ ideas (Discord Rich Presence, a desktop app).
   boundary. Updates now go to runtime 1.6.3; 1.2.0 stays on update 1.6.2, which crashes, so
   every phone needs this build.
 - **Next native build (planned; the user's notes, 2026-10-04):**
-  - **Music videos turn with the phone**: allow landscape in the app (it's portrait-only today)
-    and lock every screen except the video player to portrait (expo-screen-orientation), so a
-    video goes full screen sideways on its own and back.
+  - **Music videos turn with the phone** (the user's notes, again 2026-10-10): allow landscape
+    in the app (portrait-only today) and lock every screen except the video screen to portrait
+    (expo-screen-orientation). Turning the phone on the video screen lays it out landscape
+    *without* entering full screen; leaving the screen goes back to portrait.
+  - **Streaming data per song** for the performance log: AVPlayerItem access logs
+    (numberOfBytesTransferred) in RakkiPlayer; until then the log has API + download bytes and
+    iOS's daily Wi-Fi/cellular totals (MetricKit).
   - ~~**Performance log hardware readings**~~: in the 1.6.3 build. RakkiDeviceStats.swift
     adds `deviceStats()` (CPU seconds via getrusage, phys_footprint memory, thermal state,
     battery level/state, Low Power Mode, brightness) and `takeMetricReports()` (MetricKit daily

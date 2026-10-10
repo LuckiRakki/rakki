@@ -6,6 +6,25 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.8.0 (2026-10-10)
+- **Add to playlist saves in the background.** Done closes the sheet at once; the saving
+  carries on while you use the app, and "Added to …" shows when it's finished (or an error).
+- **The shuffle button is a toggle** on albums, playlists, Liked Songs and genres (and it's the
+  same switch as the player's): while it's on, Play plays shuffled. **New queues no longer
+  start shuffled** just because an earlier one was: only the toggle decides (one-off buttons
+  like an artist's Shuffle or Shuffle all songs shuffle just that queue).
+- **Sort a playlist:** Custom order, Recently added, Title, Artist, Album, Length or Random
+  (Play follows it; remembered).
+- **The heart shows for songs in any of your playlists**, not only liked ones.
+- **Swipe down to close the lyrics** from the header or the controls: the screen follows your
+  finger like the player, with the app showing behind it.
+- **Less memory in the background:** long lists keep fewer rows (and their pictures) ready off
+  screen (iOS was still closing Rakki 8 to 20 times a day in the background, most often when
+  it was left on an artist page, a playlist or a video).
+- **Performance log: data use.** Each upload now shows what Rakki downloaded from the server
+  (API answers and downloaded songs) and iOS's own Wi-Fi and cellular totals per day (which
+  include streaming).
+
 ## 1.7.1 (2026-10-07)
 - **Add to playlist opens instantly.** Which songs each playlist has is now kept on the phone,
   so the ticks are there straight away. It stays in step with the server: one cheap request

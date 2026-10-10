@@ -6,7 +6,7 @@ import Animated from 'react-native-reanimated';
 import { matchesSearch, useLikedSongs } from '@/api/queries';
 import { withAlpha } from '@/lib/color';
 import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
-import { usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer } from '@/player/store';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { DownloadButton } from '@/ui/DownloadButton';
@@ -25,6 +25,7 @@ export default function LikedSongsScreen() {
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === 'liked');
+  const shuffleOn = usePlayer((s) => s.shuffleMode);
   const list = liked.data ?? [];
   const source = { type: 'playlist' as const, id: 'liked', name: 'Liked Songs' };
   const [find, setFind] = useState('');
@@ -45,7 +46,8 @@ export default function LikedSongsScreen() {
           if (isThis) return usePlayer.getState().toggle();
           if (list.length) usePlayer.getState().playQueue(list, { source });
         }}
-        onShuffle={() => list.length && usePlayer.getState().playQueue(list, { source, shuffle: true })}
+        onShuffle={() => toggleShuffleFor(isThis)}
+        shuffleOn={shuffleOn}
         download={list.length ? <DownloadButton kind="liked" item={LIKED} /> : undefined}
       />
       {list.length > 1 ? <FindBar value={find} onChange={setFind} placeholder="Find in Liked Songs" /> : null}
@@ -66,6 +68,7 @@ export default function LikedSongsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <Animated.FlatList
+        windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
         data={shown}

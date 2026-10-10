@@ -7,7 +7,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { useGenreAlbums, useGenreArtists, useGenreCounts, useGenreTopTracks } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
-import { usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer } from '@/player/store';
 import { ItemTile } from '@/ui/AlbumTile';
 import { Artwork } from '@/ui/Artwork';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
@@ -64,14 +64,17 @@ export default function GenreScreen() {
   for (const a of albumList) for (const x of a.AlbumArtists ?? []) albumCount.set(x.Id, (albumCount.get(x.Id) ?? 0) + 1);
   const artistList = [...(artists.data ?? [])].sort((a, b) => (albumCount.get(b.Id) ?? 0) - (albumCount.get(a.Id) ?? 0));
 
-  async function play(shuffle: boolean) {
+  const shuffleOn = usePlayer((s) => s.shuffleMode);
+
+  /** Play the genre (shuffled while the shuffle toggle is on). */
+  async function play() {
     const client = useAuth.getState().client;
     if (!client || busy) return;
-    if (!shuffle && isThis) return usePlayer.getState().toggle();
+    if (isThis) return usePlayer.getState().toggle();
     setBusy(true);
     try {
       const tracks = (await client.getGenreTracks(name)).Items;
-      if (tracks.length) usePlayer.getState().playQueue(tracks, { source, shuffle });
+      if (tracks.length) usePlayer.getState().playQueue(tracks, { source });
     } finally {
       setBusy(false);
     }
@@ -98,8 +101,9 @@ export default function GenreScreen() {
             .join(' · '),
         ]}
         playing={isThis && playing}
-        onPlay={() => void play(false)}
-        onShuffle={() => void play(true)}
+        onPlay={() => void play()}
+        onShuffle={() => toggleShuffleFor(isThis)}
+        shuffleOn={shuffleOn}
       />
       {topList.length ? (
         <View style={{ marginTop: t.space.lg }}>
@@ -135,6 +139,7 @@ export default function GenreScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <Animated.FlatList
+        windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
         data={albumList}

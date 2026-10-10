@@ -3,13 +3,14 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { useScreenAwake } from '@/lib/keepAwake';
+import { useSwipeDown } from '@/ui/useSwipeDown';
 import { artistLine } from '@/lib/items';
 import { createPlaybackClock } from '@/lyrics/clock';
 import { useLyrics } from '@/lyrics/fetch';
@@ -70,17 +71,12 @@ export default function LyricsScreen() {
   const tint = artColor(track && client?.blurhash(track));
   const footerSpace = FOOTER_H + insets.bottom;
 
-  // The screen is full-screen (no sheet), so swiping down on the header closes it.
-  const swipeDown = Gesture.Pan()
-    .runOnJS(true)
-    .activeOffsetY(24)
-    .failOffsetX([-24, 24])
-    .onEnd((e) => {
-      if (e.translationY > 70 || e.velocityY > 800) router.back();
-    });
+  // The screen covers the app (no sheet): swiping down on the header or the controls closes it,
+  // the screen following the finger like the player's sheet (the lyrics themselves scroll).
+  const swipe = useSwipeDown();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <Animated.View style={[{ flex: 1, backgroundColor: '#000' }, swipe.style]}>
       <LyricsStage
         lyrics={lyrics}
         loading={isLoading || (!!streamUrl && radioSong.isLoading)}
@@ -94,7 +90,7 @@ export default function LyricsScreen() {
         footerSpace={footerSpace}
         visualizer={visualizer}
         header={
-          <GestureDetector gesture={swipeDown}>
+          <GestureDetector gesture={swipe.pan()}>
             <View style={{ paddingTop: insets.top + t.space.xs }}>
               <View style={styles.topBar}>
                 <Pressable hitSlop={12} onPress={() => router.back()}>
@@ -136,25 +132,27 @@ export default function LyricsScreen() {
       />
 
       {/* Footer: credit (required for Spicy Lyrics API lyrics) + transport */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
-        {timing && lyrics && lyricsFor ? (
-          <SyncPanel itemId={lyricsFor.Id} lyrics={lyrics} onClose={() => setTiming(false)} />
-        ) : (
-          <UpNext />
-        )}
-        <View style={styles.transport}>
-          <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
-            <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
-          </Pressable>
-          <Pressable onPress={() => usePlayer.getState().toggle()} style={styles.play}>
-            <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
-          </Pressable>
-          <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()}>
-            <Ionicons name="play-skip-forward" size={26} color={t.colors.text} />
-          </Pressable>
+      <GestureDetector gesture={swipe.pan()}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
+          {timing && lyrics && lyricsFor ? (
+            <SyncPanel itemId={lyricsFor.Id} lyrics={lyrics} onClose={() => setTiming(false)} />
+          ) : (
+            <UpNext />
+          )}
+          <View style={styles.transport}>
+            <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
+              <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
+            </Pressable>
+            <Pressable onPress={() => usePlayer.getState().toggle()} style={styles.play}>
+              <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
+            </Pressable>
+            <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()}>
+              <Ionicons name="play-skip-forward" size={26} color={t.colors.text} />
+            </Pressable>
+          </View>
         </View>
-      </View>
-    </View>
+      </GestureDetector>
+    </Animated.View>
   );
 }
 
