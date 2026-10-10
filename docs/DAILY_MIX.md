@@ -10,19 +10,33 @@ the bottom left, the number at the bottom right.
 
 Status: framework only. Nothing is built yet.
 
-## Where it runs: on the server, in the Spicy Lyrics plugin
+**Decided (2026-10-10):** built at **12 AM** every night; **100 songs** per mix; the user's
+Last.fm key may be stored in the plugin's settings on the server. It lives in the planned
+**Rakki companion plugin** (below), not in an existing plugin.
+
+## Where it runs: on the server, in the Rakki companion plugin
 
 Building six mixes means reading every song's play history, genres and artists, asking
 Last.fm about a few hundred artists and songs, and rewriting six playlists. On the phone that
 would cost battery and data every day and only happen when the app is open. On the server it
 runs once a night whether or not the phone is on, and Rakki only reads the result.
 
-The Spicy Lyrics plugin (C#, already deployed on the user's Jellyfin 10.11) gets a scheduled
-task, **Rakki Daily Mixes** (daily 5 AM, plus "Run now" in Dashboard → Scheduled tasks), with
+The Rakki companion plugin (C#, Jellyfin 10.11; see FRAMEWORK.md's backlog) gets a scheduled
+task, **Rakki Daily Mixes** (daily 12 AM, plus "Run now" in Dashboard → Scheduled tasks), with
 direct access to the library (`ILibraryManager`), play data (`IUserDataManager`), playlists
 (`IPlaylistManager`) and images (`IProviderManager`; SkiaSharp ships with Jellyfin).
 Plugin settings: the Last.fm API key (today it's only on the phone), which Jellyfin user to
-build for, mix count (6), size (default 60, 50–100).
+build for, mix count (6), size (100).
+
+What's stored where on the server:
+- **Settings** (the Last.fm key, user, mix count/size): the plugin's configuration file,
+  `/config/data/plugins/configurations/Jellyfin.Plugin.Rakki.xml`, edited on the plugin's page
+  in the Dashboard. Readable by Jellyfin admins and anyone with access to the server's files;
+  never sent to the phone.
+- **Last.fm answers** (popularity, similar artists, tags): a cache file in the plugin's data
+  folder (`/config/data/plugins/Rakki/lastfm-cache.json`), kept 30 days.
+- **The mixes themselves:** ordinary Jellyfin playlists (`[Rakki] Daily Mix 1` to `6`), stored
+  where Jellyfin keeps every playlist, with their covers as normal playlist pictures.
 
 ## The data
 
@@ -48,7 +62,7 @@ build for, mix count (6), size (default 60, 50–100).
    - *Popular:* highest worldwide playcount;
    - *Yours:* highest plays lately (and liked);
    - *New:* recently added or never played, ranked by likeness to the seed.
-4. **Fill 2:2:1** to the target size, dealt in a repeating P, Y, P, Y, N pattern.
+4. **Fill 2:2:1** to 100 songs (40 popular, 40 yours, 20 new), dealt in a repeating P, Y, P, Y, N pattern.
 5. **Order.** First song: a seed-artist song you play a lot. After that, no artist twice within
    3 songs, and no artist above ~15% of the mix (the seed artist can go to ~25%).
 6. **Day to day.** At most ~30% of yesterday's songs come back; seeds rotate among your top
@@ -90,7 +104,6 @@ it's finalised.
 
 ## Questions for the user before building
 
-- Refresh time (5 AM?) and size (60 songs?).
-- Is the Last.fm key OK to store in the plugin's settings on the server?
+- (Answered: 12 AM, 100 songs, the key may live in the plugin's settings.)
 - Should mixes avoid songs you skipped a lot? (Needs skip tracking, which Rakki doesn't send
   yet.)

@@ -34,6 +34,7 @@ import { RadioCard } from '@/radio/RadioCard';
 import { stationWebsite, useStations } from '@/radio/stations';
 import { FlowingCover } from '@/spicy/Backdrop';
 import { openStationWebsite } from '@/radio/StationViews';
+import { useInBackground } from '@/lib/appActive';
 
 const RoutePicker = getRoutePicker();
 
@@ -48,6 +49,7 @@ export default function PlayerScreen() {
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const away = useInBackground();
   const { width, height } = useWindowDimensions();
   // The player fills the sheet; the lyrics card waits below it, like Spotify.
   const [pageHeight, setPageHeight] = useState(height);
@@ -105,7 +107,7 @@ export default function PlayerScreen() {
         </View>
       ) : playerBackground === 'gradient' ? (
         <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
-      ) : playerBackground === 'blur' ? (
+      ) : playerBackground === 'blur' && !away ? (
         <View style={StyleSheet.absoluteFill}>
           <Image
             source={artUri ? { uri: artUri } : undefined}

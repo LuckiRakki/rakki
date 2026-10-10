@@ -16,3 +16,15 @@ const isActive = () => AppState.currentState === 'active';
 export function useAppActive(): boolean {
   return useSyncExternalStore(subscribe, isActive, () => true);
 }
+
+const isBackground = () => AppState.currentState === 'background';
+
+/**
+ * True while Rakki is in the background (not just covered by Control Center or the app
+ * switcher for a moment). Heavy parts (pictures, the moving backgrounds, the lyrics drawing)
+ * let go of their memory then and come back when it returns, so iOS has less reason to close
+ * Rakki; the screens themselves (and where you were on them) stay.
+ */
+export function useInBackground(): boolean {
+  return useSyncExternalStore(subscribe, isBackground, () => false);
+}

@@ -14,9 +14,9 @@ import { useMusicVideos } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { useScreenAwake } from '@/lib/keepAwake';
 import { reclaimAudioSession } from '@/player/engine';
-import { usePlayer } from '@/player/store';
+import { afterVideo, holdForVideo, usePlayer } from '@/player/store';
 import { useSettings } from '@/settings/store';
-import { newPlaySessionId } from '@/video/musicVideos';
+import { newPlaySessionId, videoTitle } from '@/video/musicVideos';
 import { useVideoSession } from '@/video/session';
 
 export const COUNTDOWN_S = 5;
@@ -43,6 +43,14 @@ export default function VideoHost() {
     [],
   );
 
+  // While videos play, the music player lets go entirely (its queue comes back after), so the
+  // lock screen and headphone buttons only have the video to talk to.
+  const on = !!video;
+  useEffect(() => {
+    if (on) void holdForVideo();
+    else void afterVideo();
+  }, [on]);
+
   return video ? <Host key={video.Id} video={video} /> : null;
 }
 
@@ -51,9 +59,20 @@ function Host({ video }: { video: BaseItem }) {
   const videos = useMusicVideos().data;
   const pathname = usePathname();
   const session = useMemo(() => newPlaySessionId(), []);
-  const uri = useMemo(() => client?.videoStreamUrl(video, session) ?? null, [client, video, session]);
-  const player = useVideoPlayer(uri ? { uri } : null, (p) => {
+  const source = useMemo(() => {
+    const uri = client?.videoStreamUrl(video, session);
+    if (!uri) return null;
+    // What the lock screen and Control Center show for it.
+    const artwork = client?.videoThumbUrl(video, 600);
+    return {
+      uri,
+      metadata: { title: videoTitle(video.Name, video.Artists ?? []) || video.Name, artist: video.Artists?.join(', ') ?? '', ...(artwork ? { artwork } : {}) },
+    };
+  }, [client, video, session]);
+  const player = useVideoPlayer(source, (p) => {
     p.timeUpdateEventInterval = 0.5;
+    // The lock screen, Control Center and headphone buttons control the video.
+    p.showNowPlayingNotification = true;
     p.keepScreenOnWhilePlaying = true;
     // The sound carries on with the app in the background or the phone locked (the picture
     // stops); the video picks up again when Rakki's back.

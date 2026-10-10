@@ -6,6 +6,20 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.9.0 (2026-10-10)
+- **Music videos own the lock screen.** (The user's idea: the music player stayed loaded under
+  the video, and both answered the lock screen's buttons.) While a video plays, the music
+  player now lets go completely: your queue stays in the app, the player itself is emptied,
+  and the lock screen, Control Center and headphone buttons show and control the video (title,
+  artist, thumbnail). When the video ends, the music comes back paused where it was; pressing
+  play, next or a song brings it back at once. Needs testing on the phone: if iOS still shows
+  the song, the full fix comes with the next native build.
+- **Lighter in the background, same place when you're back.** While Rakki is in the
+  background, the heavy parts let go of their memory: album pictures (a flat colour from each
+  picture holds its place), the moving backgrounds, the blurred player background, the artist
+  photo and the lyrics' drawing surface. Every screen, list and scroll position stays, and the
+  pictures come back from the phone's cache when you return.
+
 ## 1.8.0 (2026-10-10)
 - **Add to playlist saves in the background.** Done closes the sheet at once; the saving
   carries on while you use the app, and "Added to …" shows when it's finished (or an error).

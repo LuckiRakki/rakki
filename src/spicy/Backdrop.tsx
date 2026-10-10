@@ -17,6 +17,7 @@ import Animated, {
 
 import { useLyricsStyle } from '@/lyrics/style';
 import { useTheme } from '@/ui/theme';
+import { useInBackground } from '@/lib/appActive';
 
 /**
  * A layer of the backdrop: one blurred copy of the cover, turning at its own speed and
@@ -94,7 +95,8 @@ export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) 
   const clock = useSharedValue(0);
   const lastMove = useSharedValue(0);
   const focused = useIsFocused();
-  const running = motion > 0 && focused && !!uri;
+  const away = useInBackground();
+  const running = motion > 0 && focused && !!uri && !away;
 
   // Seconds of motion so far (scaled by `motion`), advanced in steps.
   useFrameCallback((frame) => {
@@ -113,7 +115,8 @@ export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) 
     if (motion <= 0) clock.set(0);
   }, [clock, motion]);
 
-  return uri ? (
+  // In the background the three big blurred layers let go (the colour behind them stays).
+  return uri && !away ? (
     <>
       {LAYERS.map((spec, i) => (
         <Layer key={i} uri={uri} spec={spec} clock={clock} />

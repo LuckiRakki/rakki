@@ -226,6 +226,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       }
       index = 0;
     }
+    heldForVideo = null;
     generation++;
     set({ queue, index, shuffle, source: opts.source ?? null, error: null, buffering: true });
     // Radio plays with the engine on repeat-one (so a dropped stream reconnects): put the
@@ -254,6 +255,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     // SUB/WAVE: how far behind the station you'll hear it, for the lyrics.
     if (station.apiBase) measureBurst(station.streamUrl);
     unshuffledKeys = null;
+    heldForVideo = null;
     generation++;
     set({ queue, index: 0, source: { type: 'radio', id: station.id, name: station.name }, error: null, buffering: true });
     void engine.setRepeatMode('one');
@@ -308,7 +310,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   skipTo(i) {
     if (!get().queue[i]) return;
     set({ index: i });
-    void engine.skipTo(i);
+    void afterVideo().then(() => engine.skipTo(i));
   },
 
   toggle() {
@@ -319,19 +321,24 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     const radio = s.queue[s.index]?.item.Radio;
     const station = radio && !s.playing && !s.buffering && useStations.getState().stations.find((x) => x.id === radio.stationId);
     if (station) return get().playStation(station);
+    if (heldForVideo) {
+      // The music was put away for a video: back in the player, then play.
+      void afterVideo().then(() => engine.play());
+      return;
+    }
     void engine.togglePlayPause();
   },
 
   next() {
-    if (!radioPlaying()) void engine.skipToNext();
+    if (!radioPlaying()) void afterVideo().then(() => engine.skipToNext());
   },
 
   previous() {
-    if (!radioPlaying()) void engine.skipToPrevious();
+    if (!radioPlaying()) void afterVideo().then(() => engine.skipToPrevious());
   },
 
   seek(seconds) {
-    void engine.seekTo(seconds);
+    void afterVideo().then(() => engine.seekTo(seconds));
     reporter.seeked(seconds);
   },
 
@@ -488,6 +495,35 @@ const positionKey = (userId: string) => `rakki.queuePosition.${userId}`;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let restored = false;
 let loadingRestoredQueue = false;
+
+// ---- Music videos -----------------------------------------------------------------------
+// While a music video plays, the music player lets go completely: its native queue is emptied
+// (the queue stays here, with where the song was), so it has nothing to answer the lock
+// screen, Control Center or headphone buttons with, and those belong to the video alone (it
+// used to be both, fighting). When the video ends the queue goes back, paused where it was.
+
+let heldForVideo: { position: number } | null = null;
+
+/** A music video started (VideoHost): put the music away. */
+export async function holdForVideo() {
+  const s = usePlayer.getState();
+  if (heldForVideo || !s.queue.length || radioPlaying(s)) return;
+  heldForVideo = { position: engine.getProgress().position };
+  if (s.playing) reporter.pausedChanged(true, heldForVideo.position);
+  await engine.stop();
+  usePlayer.setState({ playing: false, buffering: false });
+}
+
+/** The music video ended (or music is wanted again): the queue goes back, paused, where it was. */
+export async function afterVideo() {
+  if (!heldForVideo) return;
+  const { position } = heldForVideo;
+  heldForVideo = null;
+  const s = usePlayer.getState();
+  if (!s.queue.length) return;
+  loadingRestoredQueue = true;
+  await engine.setQueue(toTracks(s.queue), s.index, position, false);
+}
 
 function userId(): string | null {
   return useAuth.getState().session?.userId ?? null;

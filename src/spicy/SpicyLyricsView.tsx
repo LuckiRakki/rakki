@@ -9,7 +9,7 @@ import type { Lyrics } from '@/lyrics/types';
 import { useShallow } from 'zustand/react/shallow';
 
 import { FONT_FILES, FONTS } from '@/appearance/fonts';
-import { useAppActive } from '@/lib/appActive';
+import { useAppActive, useInBackground } from '@/lib/appActive';
 import { useLyricsStyle } from '@/lyrics/style';
 import { SPICY_LAYOUT_DEFAULTS, SpicyScene, type SpicyLayout } from '@/spicy/scene';
 import { useTheme } from '@/ui/theme';
@@ -65,6 +65,7 @@ export function SpicyLyricsView({
   const picture = useSharedValue<SkPicture>(emptyPicture());
   // Drawing stops in the background (a frame loop there is a busy loop; see lib/appActive.ts).
   const active = useAppActive();
+  const away = useInBackground();
 
   const scene = useMemo(
     () =>
@@ -169,7 +170,9 @@ export function SpicyLyricsView({
         onLayout={(e: LayoutChangeEvent) =>
           setSize({ w: Math.round(e.nativeEvent.layout.width), h: Math.round(e.nativeEvent.layout.height) })
         }>
-        {scene ? (
+        {/* In the background the drawing surface lets go of its memory (the scene, and where
+            the lyrics were, stay). */}
+        {scene && !away ? (
           <Canvas style={{ flex: 1 }}>
             <Picture picture={picture} />
           </Canvas>

@@ -38,12 +38,14 @@ import { makeStyles, useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
 import { VideoShelf } from '@/ui/VideoShelf';
 import { videosByArtist } from '@/video/musicVideos';
+import { useInBackground } from '@/lib/appActive';
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const away = useInBackground();
   const client = useAuth((s) => s.client);
   const artist = useItem(id);
   const albums = useArtistAlbums(id);
@@ -124,7 +126,7 @@ export default function ArtistScreen() {
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: t.space.xxl }}>
         <View style={[styles.hero, { backgroundColor: t.tint(tint) }]}>
-          {cover ? (
+          {cover && !away ? (
             <Animated.View style={[StyleHero, heroMotion]}>
               <Image
                 source={{ uri: cover }}

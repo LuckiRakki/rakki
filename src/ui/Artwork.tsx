@@ -7,6 +7,8 @@ import { useArtistPictures } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { localArtUri, useDownloads } from '@/downloads/store';
 import { useTheme } from '@/ui/theme';
+import { useInBackground } from '@/lib/appActive';
+import { artColor } from '@/lib/blurhash';
 
 // Request a few fixed sizes so the same image is shared by the disk cache across screens.
 const BUCKETS = [120, 240, 480, 800, 1200];
@@ -41,6 +43,12 @@ export function Artwork({
     ? (item.Radio.coverUrl ?? item.Radio.imageUri)
     : ((hasLocal ? localArtUri(artId) : null) ?? (shown && client?.imageUrl(shown, bucket(size * PixelRatio.get()))));
   const blurhash = shown && client?.blurhash(shown);
+  // In the background the picture lets go of its memory (a flat colour from it holds the place);
+  // it comes back from the disk cache when Rakki does.
+  const away = useInBackground();
+  if (away && uri && !item?.Radio) {
+    return <View style={[box, { backgroundColor: artColor(blurhash ?? undefined, t.colors.surface3) }, style]} />;
+  }
 
   if (!uri) {
     return (
