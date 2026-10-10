@@ -49,27 +49,56 @@ What's stored where on the server:
   genre tags.
 - **New:** added in the last 30 days, or never played.
 
+## Tag groups (what keeps a mix cohesive)
+
+Genres that belong together are grouped before anything is picked, so Rock never lands in a
+Hip Hop mix, while close neighbours do share one: Plugg with Cloud Rap, Slacker Rock with
+Incelcore, Shoegaze with Dream Pop.
+
+- Each artist gets a tag profile: Last.fm `artist.getTopTags` (weighted by Last.fm's tag count)
+  plus the genre tags on your songs.
+- Tags that often appear on the same artists are linked (co-occurrence across your library,
+  weighted by how strongly each artist carries them), and the linked tags are clustered into
+  **tag groups**. That's how "plugg" and "cloud rap" end up together: the same artists carry
+  both, even though the words share nothing.
+- An artist belongs to the group holding most of its tag weight. A song belongs to its artist's
+  group unless its own genre tags clearly say otherwise.
+- A mix only takes songs from its seed's group (and, for a little variety, the group most
+  linked to it, at most 15% of the songs).
+
 ## How a mix is built
 
-1. **Seeds.** Rank your artists by plays lately. Mix 1's seed is your most played artist. The
-   other five are picked down the list so that each sits in a different tag cluster (genre /
-   tone) from the ones before. The user's later idea of fixed "mix feels" (e.g. "Mix 6 = an
-   artist with about half of Mix 1's plays") becomes a per-mix seed rule in settings.
-2. **Neighbourhood.** The seed artist plus similar artists you have (Last.fm similarity ≥ 0.25,
-   in the library), kept inside the seed's cluster by tag overlap (Jaccard on top tags + genre
-   tags) so a mix stays cohesive.
-3. **Three pools** from that neighbourhood's songs:
-   - *Popular:* highest worldwide playcount;
-   - *Yours:* highest plays lately (and liked);
-   - *New:* recently added or never played, ranked by likeness to the seed.
-4. **Fill 2:2:1** to 100 songs (40 popular, 40 yours, 20 new), dealt in a repeating P, Y, P, Y, N pattern.
-5. **Order.** First song: a seed-artist song you play a lot. After that, no artist twice within
-   3 songs, and no artist above ~15% of the mix (the seed artist can go to ~25%).
-6. **Day to day.** At most ~30% of yesterday's songs come back; seeds rotate among your top
-   artists over the week, so the mixes change without losing their character.
+1. **Pick the lead artist with a smart random picker, not "most played".** Every artist you
+   have is scored, then the lead is drawn at random with chances in proportion to the score:
+   - *You know them:* some plays of your own (enough that the mix starts somewhere familiar),
+     but the score flattens out at the top, so your five most played don't always win.
+   - *Niche counts too:* artists with fewer Last.fm listeners score a little higher, so lesser
+     known artists you play get their turn.
+   - *Room in the library:* enough songs in the artist's tag group to fill 100 well.
+   - **The 3-day rule:** an artist who led any mix in the last 3 days can't lead today (kept in
+     the plugin's data folder as the last 3 days of leads).
+   - *Different groups:* each of the six leads must come from a different tag group, so the
+     six mixes are six different genres or tones.
+
+   The user's later "mix feels" (e.g. "Mix 6 = an artist with about half of Mix 1's plays")
+   become per-mix rules on top of this.
+2. **Neighbourhood.** The lead plus artists you have that Last.fm calls similar (match ≥ 0.25)
+   *and* that sit in the same tag group.
+3. **Three pools** from the neighbourhood's songs, each ranked a different way:
+   - *Popular* (40): highest **Last.fm** playcount, songs the world plays most;
+   - *Yours* (40): highest **local** play counts lately (and liked songs);
+   - *New* (20): **niche**: low Last.fm playcounts, preferring songs added in the last 30 days
+     or never played by you, ranked by likeness to the lead.
+
+   A song lands in only one pool (the first that claims it, in that order).
+4. **Fill 2:2:1** to 100 songs (40 / 40 / 20), dealt in a repeating P, Y, P, Y, N pattern.
+5. **Order.** First song: a song by the lead artist that you play a lot. After that, no artist
+   twice within 3 songs, and no artist above ~15% of the mix (the lead can go to ~25%).
+6. **Day to day.** At most ~30% of yesterday's songs come back, and leads change every day (the
+   3-day rule), so each day's six mixes are new without losing their character.
 7. **Write.** Replace the items of `[Rakki] Daily Mix N` (create once, then update in place, so
    the playlist ids, and anything that refers to them, stay the same). Save a short "why" note
-   per mix (seed, cluster tags, pool counts) in the playlist overview for tuning.
+   per mix (lead, tag group, pool counts) in the playlist overview for tuning.
 
 ## The cover (1000×1000)
 

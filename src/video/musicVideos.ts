@@ -12,7 +12,7 @@ import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { matchKey } from '@/lib/lastfm';
 import { isOffline } from '@/lib/online';
-import { usePlayer } from '@/player/store';
+import { holdForVideo, usePlayer } from '@/player/store';
 import { showToast } from '@/ui/overlays';
 import { useVideoSession } from '@/video/session';
 
@@ -106,12 +106,15 @@ export async function playMusicVideo(video: BaseItem) {
     showToast('Music videos need your server');
     return;
   }
-  if (usePlayer.getState().playing) usePlayer.getState().toggle();
   if (inAppVideo) {
+    // The music lets go first (its lock screen info and controls with it), then the video
+    // starts and takes the lock screen.
+    await holdForVideo();
     useVideoSession.getState().play(video);
     router.push(`/video?id=${video.Id}` as never);
     return;
   }
+  if (usePlayer.getState().playing) usePlayer.getState().toggle();
   const session = newPlaySessionId();
   await WebBrowser.openBrowserAsync(client.videoStreamUrl(video, session), {
     presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,

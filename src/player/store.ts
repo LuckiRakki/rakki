@@ -189,6 +189,8 @@ function syncQueue(queue: QueueEntry[]) {
   const currentKey = usePlayer.getState().queue[usePlayer.getState().index]?.key;
   const index = Math.max(0, queue.findIndex((e) => e.key === currentKey));
   usePlayer.setState({ queue, index });
+  // Put away for a music video: the whole queue goes back when the video ends.
+  if (heldForVideo) return;
   void engine.updateQueue(toTracks(queue));
 }
 
@@ -417,6 +419,8 @@ reporter.bind({
 
 engine.subscribe({
   onState(e) {
+    // The emptied player's events while a video holds the music mean nothing for the queue.
+    if (heldForVideo) return;
     const s = usePlayer.getState();
     const found = e.key ? s.queue.findIndex((q) => q.key === e.key) : -1;
     if (e.playing !== s.playing) {
@@ -436,6 +440,7 @@ engine.subscribe({
     });
   },
   onTrackChange(e) {
+    if (heldForVideo) return;
     const s = usePlayer.getState();
     const found = s.queue.findIndex((q) => q.key === e.key);
     // A station's stream reconnected (repeat-one): its delay starts over.
@@ -502,13 +507,18 @@ let loadingRestoredQueue = false;
 // screen, Control Center or headphone buttons with, and those belong to the video alone (it
 // used to be both, fighting). When the video ends the queue goes back, paused where it was.
 
-let heldForVideo: { position: number } | null = null;
+let heldForVideo: { position: number; key: string | undefined } | null = null;
 
 /** A music video started (VideoHost): put the music away. */
 export async function holdForVideo() {
   const s = usePlayer.getState();
-  if (heldForVideo || !s.queue.length || radioPlaying(s)) return;
-  heldForVideo = { position: engine.getProgress().position };
+  // A station just stops (it starts again live afterwards anyway).
+  if (radioPlaying(s)) {
+    if (s.playing) s.toggle();
+    return;
+  }
+  if (heldForVideo || !s.queue.length) return;
+  heldForVideo = { position: engine.getProgress().position, key: s.queue[s.index]?.key };
   if (s.playing) reporter.pausedChanged(true, heldForVideo.position);
   await engine.stop();
   usePlayer.setState({ playing: false, buffering: false });
@@ -517,12 +527,16 @@ export async function holdForVideo() {
 /** The music video ended (or music is wanted again): the queue goes back, paused, where it was. */
 export async function afterVideo() {
   if (!heldForVideo) return;
-  const { position } = heldForVideo;
+  const { position, key } = heldForVideo;
   heldForVideo = null;
   const s = usePlayer.getState();
   if (!s.queue.length) return;
+  // Exactly the song that was on (found by its entry, whatever was added meanwhile).
+  const at = key ? s.queue.findIndex((e) => e.key === key) : -1;
+  const index = at >= 0 ? at : s.index;
+  usePlayer.setState({ index });
   loadingRestoredQueue = true;
-  await engine.setQueue(toTracks(s.queue), s.index, position, false);
+  await engine.setQueue(toTracks(s.queue), index, position, false);
 }
 
 function userId(): string | null {
@@ -632,7 +646,7 @@ let building = false;
 
 async function maybeAutoplay() {
   const s = usePlayer.getState();
-  if (!s.queue.length || s.index < s.queue.length - 1 || radioPlaying(s)) return;
+  if (!s.queue.length || s.index < s.queue.length - 1 || radioPlaying(s) || heldForVideo) return;
   if (!useSettings.getState().autoplay || s.repeat !== 'off') return;
   await extendQueue({ count: 25, origin: 'autoplay' });
 }
