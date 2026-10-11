@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Rakki companion plugin: the server side of the Rakki app (Daily Mixes first). -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>Jellyfin.Plugin.Rakki</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.Rakki</RootNamespace>
+    <Version>0.1.0</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Jellyfin loads plugins via reflection; don't copy its assemblies. -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.10" PrivateAssets="all" />
+    <PackageReference Include="Jellyfin.Model"      Version="10.11.10" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="src\Configuration\config.html">
+      <LogicalName>Jellyfin.Plugin.Rakki.Configuration.config.html</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

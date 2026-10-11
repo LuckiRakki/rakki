@@ -19,6 +19,7 @@ on:
       - 'docs/**'
       - '**/*.md'
       - '.github/workflows/ios.yml'
+      - 'server/**'
   workflow_dispatch:
 
 concurrency:

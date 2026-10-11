@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rakki</title>
+</head>
+<body>
+    <div id="RakkiConfigPage" data-role="page"
+         class="page type-interior pluginConfigurationPage"
+         data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <h1>Rakki</h1>
+                <p>Server features for the Rakki app.</p>
+
+                <form id="RakkiConfigForm">
+                    <h2>Daily Mixes</h2>
+                    <p>
+                        Six playlists built every night at 12 AM from your library: each one led by a
+                        different artist, kept to one kind of music, and mixed 2:2:1 from popular songs
+                        (Last.fm), songs you play, and songs that are new to you.
+                    </p>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="LastFmApiKey">Last.fm API key</label>
+                        <input is="emby-input" type="text" id="LastFmApiKey" autocomplete="off" spellcheck="false" />
+                        <div class="fieldDescription">
+                            Your own free key from
+                            <a href="https://www.last.fm/api/account/create" target="_blank" rel="noopener">last.fm/api</a>.
+                            Stays on the server; never sent to apps.
+                        </div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MixUserId">Build for user (id)</label>
+                        <input is="emby-input" type="text" id="MixUserId" autocomplete="off" spellcheck="false" />
+                        <div class="fieldDescription">Leave empty to use whoever opens the preview.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MixCount">Mixes</label>
+                        <input is="emby-input" type="number" id="MixCount" min="1" max="12" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MixSize">Songs per mix</label>
+                        <input is="emby-input" type="number" id="MixSize" min="10" max="500" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="LeadMinPlays">Plays an artist needs to lead a mix</label>
+                        <input is="emby-input" type="number" id="LeadMinPlays" min="0" max="1000" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="LeadRestDays">Days before a lead can lead again</label>
+                        <input is="emby-input" type="number" id="LeadRestDays" min="0" max="30" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="TagGroupLikeness">Tag group strictness (0.05 to 0.6)</label>
+                        <input is="emby-input" type="number" id="TagGroupLikeness" min="0.05" max="0.6" step="0.01" />
+                        <div class="fieldDescription">
+                            How alike two genre tags must be to share a group. Higher makes more, narrower
+                            groups; lower joins neighbours (for example Plugg and Cloud Rap) more readily.
+                        </div>
+                    </div>
+
+                    <br />
+                    <button is="emby-button" type="submit" class="raised button-submit block">
+                        <span>Save</span>
+                    </button>
+                </form>
+
+                <h2>Preview</h2>
+                <p>
+                    What tonight's build would make, without changing anything. The first preview looks
+                    up every artist on Last.fm and takes a few minutes; after that it's quick.
+                </p>
+                <button is="emby-button" type="button" id="RakkiPreview" class="raised block">
+                    <span>Preview tonight's mixes</span>
+                </button>
+                <div id="RakkiPreviewOut" style="margin-top:1em"></div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                var PluginId = '4aed0f98-72d3-47d4-9a96-8aa90b9669b8';
+                var page;
+                var timer = null;
+
+                function esc(s) {
+                    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+                        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+                    });
+                }
+
+                function loadConfig() {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(PluginId).then(function (cfg) {
+                        page.querySelector('#LastFmApiKey').value     = cfg.LastFmApiKey || '';
+                        page.querySelector('#MixUserId').value        = cfg.MixUserId || '';
+                        page.querySelector('#MixCount').value         = cfg.MixCount || 6;
+                        page.querySelector('#MixSize').value          = cfg.MixSize || 100;
+                        page.querySelector('#LeadMinPlays').value     = cfg.LeadMinPlays != null ? cfg.LeadMinPlays : 5;
+                        page.querySelector('#LeadRestDays').value     = cfg.LeadRestDays != null ? cfg.LeadRestDays : 3;
+                        page.querySelector('#TagGroupLikeness').value = cfg.TagGroupLikeness || 0.22;
+                        Dashboard.hideLoadingMsg();
+                    });
+                }
+
+                function num(id, fallback, min, max) {
+                    var v = parseFloat(page.querySelector(id).value);
+                    if (isNaN(v)) v = fallback;
+                    return Math.min(max, Math.max(min, v));
+                }
+
+                function saveConfig(e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(PluginId).then(function (cfg) {
+                        cfg.LastFmApiKey     = page.querySelector('#LastFmApiKey').value.trim();
+                        cfg.MixUserId        = page.querySelector('#MixUserId').value.trim();
+                        cfg.MixCount         = Math.round(num('#MixCount', 6, 1, 12));
+                        cfg.MixSize          = Math.round(num('#MixSize', 100, 10, 500));
+                        cfg.LeadMinPlays     = Math.round(num('#LeadMinPlays', 5, 0, 1000));
+                        cfg.LeadRestDays     = Math.round(num('#LeadRestDays', 3, 0, 30));
+                        cfg.TagGroupLikeness = num('#TagGroupLikeness', 0.22, 0.05, 0.6);
+                        ApiClient.updatePluginConfiguration(PluginId, cfg).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    return false;
+                }
+
+                function render(r) {
+                    var h = '<p>' + esc(r.Date) + ': ' + r.Songs + ' songs, ' + r.Artists + ' artists, built in ' +
+                        r.Seconds + ' s (' + r.LastFmRequests + ' Last.fm requests).</p>';
+                    if (r.Resting.length) h += '<p>Resting (led in the last few days): ' + esc(r.Resting.join(', ')) + '</p>';
+                    r.Notes.forEach(function (n) { h += '<p>' + esc(n) + '</p>'; });
+                    r.Mixes.forEach(function (m) {
+                        h += '<details style="margin:.6em 0"><summary><strong>Daily Mix ' + m.Number + ': ' + esc(m.Lead) +
+                            '</strong> (' + esc(m.Group) + ')</summary>';
+                        h += '<p>' + esc(m.Why) + '</p><p>Pools: ' + esc(Object.keys(m.Pools).map(function (k) {
+                            return k + ' ' + m.Pools[k];
+                        }).join(', ')) + '</p>';
+                        h += '<p>Artists: ' + esc(Object.keys(m.Neighbours).slice(0, 30).join(', ')) + '</p>';
+                        m.Notes.forEach(function (n) { h += '<p>' + esc(n) + '</p>'; });
+                        h += '<ol>';
+                        m.Tracks.forEach(function (t) {
+                            h += '<li>' + esc(t.Artist) + ' - ' + esc(t.Name) + ' <span style="opacity:.6">(' + esc(t.Pool) +
+                                ', yours ' + t.YourPlays + ', Last.fm ' + t.LastFmPlays.toLocaleString() + ')</span></li>';
+                        });
+                        h += '</ol></details>';
+                    });
+                    h += '<details><summary>Likeliest leads</summary><ol>';
+                    r.Candidates.forEach(function (c) {
+                        h += '<li>' + esc(c.Artist) + ' (' + esc(c.Group) + '): ' + c.ChancePct + '%, ' + c.Plays +
+                            ' plays, ' + c.Listeners.toLocaleString() + ' listeners</li>';
+                    });
+                    h += '</ol></details><details><summary>Tag groups (' + r.Groups.length + ')</summary><ul>';
+                    r.Groups.forEach(function (g) {
+                        h += '<li>' + esc(g.Tags.join(', ')) + ' <span style="opacity:.6">(' + g.Artists + ' artists, ' +
+                            g.Songs + ' songs)</span></li>';
+                    });
+                    h += '</ul></details>';
+                    return h;
+                }
+
+                function poll(refresh) {
+                    var out = page.querySelector('#RakkiPreviewOut');
+                    ApiClient.getJSON(ApiClient.getUrl('Rakki/DailyMix/Preview', refresh ? { refresh: true } : {})).then(function (s) {
+                        if (s.Running) {
+                            out.innerHTML = '<p>' + esc(s.Stage) + '...</p>';
+                            timer = setTimeout(function () { poll(false); }, 2000);
+                        } else if (s.Error) {
+                            out.innerHTML = '<p>Couldn’t build: ' + esc(s.Error) + '</p>';
+                        } else if (s.Result) {
+                            out.innerHTML = render(s.Result);
+                        }
+                    }, function () {
+                        out.innerHTML = '<p>Couldn’t reach the server.</p>';
+                    });
+                }
+
+                document.querySelector('#RakkiConfigPage')
+                    .addEventListener('pageshow', function () {
+                        page = this;
+                        page.querySelector('#RakkiConfigForm').addEventListener('submit', saveConfig);
+                        page.querySelector('#RakkiPreview').addEventListener('click', function () {
+                            clearTimeout(timer);
+                            poll(true);
+                        });
+                        loadConfig();
+                    });
+                document.querySelector('#RakkiConfigPage')
+                    .addEventListener('pagehide', function () { clearTimeout(timer); });
+            })();
+        </script>
+    </div>
+</body>
+</html>

@@ -8,7 +8,11 @@ from an artist/song you play a lot and grows from there. Stored as server playli
 own Home shelf and Library tab. Cover: 1000×1000, the seed artist's photo, "Daily Mix" big at
 the bottom left, the number at the bottom right.
 
-Status: framework only. Nothing is built yet.
+Status (2026-10-10): **phase 1 written, not deployed.** The companion plugin lives in
+`server/` (Jellyfin.Plugin.Rakki, net9.0, Jellyfin 10.11): settings page with the Last.fm key
+and the tuning knobs, and a dry run at `GET /Rakki/DailyMix/Preview` (admins only), also shown
+on the plugin's settings page as "Preview tonight's mixes". Nothing is written to the server
+yet: no playlists, no history.
 
 **Decided (2026-10-10):** built at **12 AM** every night; **100 songs** per mix; the user's
 Last.fm key may be stored in the plugin's settings on the server. It lives in the planned
@@ -122,7 +126,7 @@ it's finalised.
 ## Phases
 
 1. **Plugin task + report:** the builder and a dry-run endpoint
-   (`GET /SpicyLyrics/DailyMix/Preview`) that returns the six mixes with reasons, without
+   (`GET /Rakki/DailyMix/Preview`) that returns the six mixes with reasons, without
    writing anything. Tune with the user on real data.
 2. **Writing playlists + covers:** the nightly task creates and updates the playlists, with
    cover mockups approved first.
@@ -130,6 +134,23 @@ it's finalised.
    update; no native build).
 4. **Mix feels:** per-mix seed rules from the user ("Mix 1 = my most played artist", "Mix 6 =
    about half of Mix 1's plays", and so on).
+
+## The code (server/src)
+
+- `LastFm/LastFmClient.cs`: tags, listeners, similar artists, top tracks; one request at a
+  time (~4/s); every answer kept 30 days in `lastfm-cache.json`.
+- `DailyMix/Library.cs`: songs (under 60 s left out, duplicates folded), artists, "plays
+  lately" (Jellyfin keeps a play count and the last date, so recency weights the count).
+- `DailyMix/TagGroups.cs`: tag profiles and the average-linkage grouping
+  (`TagGroupLikeness`, default 0.22).
+- `DailyMix/MixBuilder.cs`: lead draw, neighbourhood, pools, order. Seeded by date + user,
+  so a day's preview and its build agree.
+- `DailyMix/MixService.cs` + `DailyMixController.cs`: background build with progress, the
+  preview endpoint. `MixModels.cs`: the result and the history file (written from phase 2).
+
+Build: `dotnet build -c Release` in `server/`; the DLL goes to
+`/config/data/plugins/Rakki_0.1.0.0/` on the server, then Jellyfin restarts. Pushes that only
+touch `server/` don't publish an app update.
 
 ## Questions for the user before building
 
