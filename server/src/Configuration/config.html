@@ -239,8 +239,7 @@
                         page.querySelector('#ScraperSkipExisting').checked    = cfg.ScraperSkipExisting !== false;
                         page.querySelector('#ScraperTimeoutSeconds').value    = cfg.ScraperTimeoutSeconds || 15;
                         page.querySelector('#ScraperSourcePref').value        = cfg.ScraperSourcePref || '';
-                        page.querySelector('#ScraperKPoeServers').value       = (cfg.ScraperKPoeServers || []).join('
-');
+                        page.querySelector('#ScraperKPoeServers').value       = (cfg.ScraperKPoeServers || []).join('\n');
                         page.querySelector('#SpicyApiEnabled').checked        = !!cfg.SpicyApiEnabled;
                         page.querySelector('#SpicyApiPriority').checked       = !!cfg.SpicyApiPriority;
                         page.querySelector('#SpicyApiKey').value              = cfg.SpicyApiKey || '';
@@ -273,8 +272,7 @@
                         cfg.ScraperTimeoutSeconds = Math.round(num('#ScraperTimeoutSeconds', 15, 3, 120));
                         cfg.ScraperSourcePref     = page.querySelector('#ScraperSourcePref').value.trim();
                         cfg.ScraperKPoeServers    = page.querySelector('#ScraperKPoeServers').value
-                            .split('
-').map(function (s) { return s.trim(); })
+                            .split('\n').map(function (s) { return s.trim(); })
                             .filter(function (s) { return s.length > 0; });
                         cfg.SpicyApiEnabled        = page.querySelector('#SpicyApiEnabled').checked;
                         cfg.SpicyApiPriority       = page.querySelector('#SpicyApiPriority').checked;
@@ -361,14 +359,10 @@
                     ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('Rakki/PerfLogs/' + encodeURIComponent(name)), dataType: 'text' })
                         .then(function (text) {
                             // The summary is everything before the first JSON line.
-                            var lines = String(text).split('
-');
+                            var lines = String(text).split('\n');
                             var end = lines.findIndex(function (l) { return l.charAt(0) === '{'; });
-                            pre.textContent = (end < 0 ? lines : lines.slice(0, end)).join('
-') +
-                                (end < 0 ? '' : '
-
-(' + (lines.length - end) + ' more lines of samples and events in the full log)');
+                            pre.textContent = (end < 0 ? lines : lines.slice(0, end)).join('\n') +
+                                (end < 0 ? '' : '\n\n(' + (lines.length - end) + ' more lines of samples and events in the full log)');
                         }, function () {
                             pre.textContent = 'Couldn’t load that log.';
                         });

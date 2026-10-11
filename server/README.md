@@ -34,13 +34,22 @@ restart Jellyfin.
 
 ## Spicy Lyrics API key: app template (planned)
 
-The Spicy Lyrics API needs a key per application. For an app other people install, Spicy Lyrics
-offers **app templates** (developers.spicylyrics.org/docs/keys): the developer submits the app
-once (Dashboard → Templates), and after approval it gets a catalog page where each user clicks
-**Add** to get their own application and key, with the key type and rate limit the template
-sets. It doesn't use the user's own application slots.
+Checked against the API Terms (developers.spicylyrics.org/terms, 2026-10-11):
 
-For Rakki the key lives in this plugin on the user's own server, so the template is a
-**secret key** (`sl_sk_`, server-side; no origin allowlist needed). Once the template is
-approved, the settings page's "Secret key" field links to its catalog page ("Get a key for
-Rakki"), replacing the "create an application" link.
+- One key shipped in the plugin is **not allowed** (section 3: don't share a key; everyone who
+  runs their own copy on a server needs their own key). The code must never contain a key.
+- Each user making their own application and `sl_sk_` key is allowed, but section 3 steers
+  apps used by non-developers to an **app template** (section 12) instead.
+- An app template fits Rakki: the plugin runs on each user's own server and needs a key per
+  person. Each user clicks **Add** on the template's catalog page and gets their own
+  application (key type, rate limit and scopes set by the template; it doesn't use up their
+  own application slots). The template is a **secret key** (`sl_sk_`), since the key lives
+  in the plugin on the user's server; no origin allowlist.
+- Still applies: 30-day cache (section 7, already done), naming the provider and crediting
+  the uploader wherever lyrics show (section 6, Rakki and the web mod do), lyrics only shown
+  in the app, never offered as a download or a public source (section 5), no "Spicy Lyrics"
+  in the app's name or listing, and anything ported from a Spicy Lyrics project says plainly
+  that it's unofficial (section 5).
+
+Steps: submit the template at developers.spicylyrics.org/dashboard/templates; once approved,
+its catalog link goes on the settings page ("Get a key for Rakki") and here.
