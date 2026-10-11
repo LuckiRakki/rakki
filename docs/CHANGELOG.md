@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.9.2 (2026-10-10)
+- Library button: tapping it while you're already in Library goes to its first tab (instead
+  of a double tap).
+
 ## 1.9.1 (2026-10-10)
 - **Fixed: music coming back 25 songs ahead after a video.** While a video held the music, the
   emptied player's events and the smart queue (which added a batch of 25) moved the queue on.
@@ -13,7 +17,8 @@ says otherwise.
   second it was on.
 - **Fixed: the lock screen showing the last song when a video starts.** The music now lets go
   before the video starts, so the video's title and picture are there from the first moment.
-- **Double-tap Library** to jump to its first tab.
+- **Tap Library while you're in it** to jump to its first tab (since 1.9.2; 1.9.1 needed a
+  double tap).
 
 ## 1.9.0 (2026-10-10)
 - **Music videos own the lock screen.** (The user's idea: the music player stayed loaded under

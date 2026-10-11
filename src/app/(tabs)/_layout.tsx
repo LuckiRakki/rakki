@@ -16,20 +16,6 @@ function tabIcon(active: IconName, inactive: IconName) {
   return TabIcon;
 }
 
-/** Two taps on Library in a row: back to the first of its tabs (Playlists, or whatever's first). */
-const DOUBLE_TAP_MS = 400;
-let lastLibraryTap = 0;
-function libraryDoubleTap() {
-  const now = Date.now();
-  if (now - lastLibraryTap < DOUBLE_TAP_MS) {
-    const { tabOrder, setTab } = useLibraryView.getState();
-    if (tabOrder[0]) setTab(tabOrder[0]);
-    lastLibraryTap = 0;
-    return;
-  }
-  lastLibraryTap = now;
-}
-
 export default function TabLayout() {
   const t = useTheme();
   return (
@@ -62,7 +48,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(library)"
         options={{ title: 'Your Library', tabBarIcon: tabIcon('library', 'library-outline') }}
-        listeners={{ tabPress: libraryDoubleTap }}
+        // Already in Library: tapping it again goes to the first of its tabs.
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            if (!navigation.isFocused()) return;
+            const { tabOrder, setTab } = useLibraryView.getState();
+            if (tabOrder[0]) setTab(tabOrder[0]);
+          },
+        })}
       />
     </Tabs>
   );
