@@ -35,8 +35,10 @@ build for, mix count (6), size (100).
 What's stored where on the server:
 - **Settings** (the Last.fm key, user, mix count/size): the plugin's configuration file,
   `/config/data/plugins/configurations/Jellyfin.Plugin.Rakki.xml`, edited on the plugin's page
-  in the Dashboard. Readable by Jellyfin admins and anyone with access to the server's files;
-  never sent to the phone.
+  in the Dashboard. Readable by Jellyfin admins and anyone with access to the server's files.
+  The key is shared with the Rakki app (admins only, `GET/POST /Rakki/LastFm/Key`): whichever
+  side has one fills in the other at sign-in, and a key changed in the app's Settings is sent
+  to the server after Last.fm accepts it (src/lib/companion.ts).
 - **Last.fm answers** (popularity, similar artists, tags): a cache file in the plugin's data
   folder (`/config/data/plugins/Rakki/lastfm-cache.json`), kept 30 days.
 - **The mixes themselves:** ordinary Jellyfin playlists (`[Rakki] Daily Mix 1` to `6`), stored

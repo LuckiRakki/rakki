@@ -30,6 +30,7 @@ import { startWidgets } from '@/widgets';
 import { logErrorNow, startPerfLog } from '@/perf/log';
 import { startMemoryCare } from '@/lib/memory';
 import { startPlaylistCache } from '@/library/playlistCache';
+import { startCompanionSync, syncLastfmKey } from '@/lib/companion';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -151,6 +152,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     prefetchMusicVideos();
     // Which songs each playlist has, on the phone (Add to playlist's ticks), kept in step.
     startPlaylistCache();
+    // The Last.fm key, shared with the Rakki plugin on the server (lib/companion.ts).
+    void syncLastfmKey();
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);
@@ -162,6 +165,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     watchRadio();
     // How the app uses the phone, for battery drain (Settings → Performance log).
     startPerfLog();
+    startCompanionSync();
     // Memory back to iOS in the background, so it doesn't close Rakki to get it.
     startMemoryCare();
     // The screen sleeps as usual except on lyrics and music videos (lib/keepAwake.ts).

@@ -12,7 +12,7 @@ const GET_KEY_URL = 'https://www.last.fm/api/account/create';
 
 /**
  * Settings → Last.fm: the user's own API key, for worldwide play counts on artist and album
- * pages. It's kept on the phone only.
+ * pages. Shared with the Rakki plugin on the server when there is one (lib/companion.ts).
  */
 export function LastfmSettings() {
   const t = useTheme();
@@ -48,7 +48,8 @@ export function LastfmSettings() {
         <T variant="bodyStrong">Worldwide play counts</T>
         <T variant="caption" style={{ fontSize: t.size(12), marginTop: 2 }}>
           Plays on Last.fm for artists&apos; popular songs and on album pages. That needs a free
-          Last.fm API key: create one, then paste it here. It stays on this phone.
+          Last.fm API key: create one, then paste it here. If your server has the Rakki plugin,
+          it gets the key too (for Daily Mixes), and a key already there fills in here.
         </T>
         <TextInput
           value={key}

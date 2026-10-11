@@ -6,6 +6,11 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.10.0 (2026-10-10)
+- The Rakki companion plugin (server/, for the server; Daily Mix preview so far) shares the
+  Last.fm key with the app: whichever has one fills in the other, so you only enter it once.
+  Changing it in Settings → Last.fm updates the server too (administrators only).
+
 ## 1.9.2 (2026-10-10)
 - Library button: tapping it while you're already in Library goes to its first tab (instead
   of a double tap).

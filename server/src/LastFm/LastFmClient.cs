@@ -113,6 +113,9 @@ namespace Jellyfin.Plugin.Rakki.LastFm
                     Playcount = (long)Num(t, "playcount"),
                 }).Where(t => t.Name.Length > 0).ToList());
 
+        /// <summary>Throws unless Last.fm accepts the key (used before a key from the app is saved).</summary>
+        public Task CheckKeyAsync(string key, CancellationToken ct) => FetchAsync("artist.gettoptracks", "Radiohead", "1", ct, key);
+
         /// <summary>Writes new answers to disk (also done every 50 answers).</summary>
         public void Save()
         {
@@ -186,9 +189,9 @@ namespace Jellyfin.Plugin.Rakki.LastFm
             return read(answer);
         }
 
-        private async Task<JsonElement> FetchAsync(string method, string artist, string? limit, CancellationToken ct)
+        private async Task<JsonElement> FetchAsync(string method, string artist, string? limit, CancellationToken ct, string? keyOverride = null)
         {
-            var apiKey = ApiKey;
+            var apiKey = keyOverride ?? ApiKey;
             if (apiKey.Length == 0) throw new LastFmException("No Last.fm API key in the Rakki plugin settings.", 10);
             var url = $"{Api}?method={method}&artist={Uri.EscapeDataString(artist)}&autocorrect=1&format=json&api_key={Uri.EscapeDataString(apiKey)}"
                 + (limit != null ? "&limit=" + limit : string.Empty);

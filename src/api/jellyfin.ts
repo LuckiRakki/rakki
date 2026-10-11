@@ -389,6 +389,21 @@ export class JellyfinClient {
     });
   }
 
+  /** The Rakki companion plugin, when the server has it (404 when it doesn't). */
+  getRakkiInfo() {
+    return this.get<{ Version: string; LastFmKeySet: boolean }>('/Rakki/Info');
+  }
+
+  /** The Last.fm key kept in the Rakki plugin (administrators only). */
+  getRakkiLastfmKey() {
+    return this.get<{ Key: string }>('/Rakki/LastFm/Key');
+  }
+
+  /** Give the Rakki plugin a Last.fm key (administrators only; the server checks it first). */
+  setRakkiLastfmKey(key: string) {
+    return this.send('POST', '/Rakki/LastFm/Key', { Key: key });
+  }
+
   /** Set an item's picture (a playlist cover): base64 image data. */
   uploadItemImage(itemId: string, base64: string, mimeType: string) {
     const { serverUrl, deviceId, token } = this.session;
