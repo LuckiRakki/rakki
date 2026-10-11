@@ -180,7 +180,7 @@ export function LoginForm({ adding = false, onDone }: { adding?: boolean; onDone
                 Rakki<T style={[styles.wordmark, { color: t.colors.accent }]}>.</T>
               </T>
               <T variant="caption" style={{ marginBottom: t.space.xxl, fontSize: t.size(15) }}>
-                Your Jellyfin music, with Spicy Lyrics.
+                Your Jellyfin music, word by word.
               </T>
             </>
           )}

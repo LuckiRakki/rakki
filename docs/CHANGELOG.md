@@ -6,6 +6,11 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.11.1 (2026-10-11)
+- Sign-in screen tagline no longer uses the Spicy Lyrics name (its API Terms keep it out of
+  app names and listings); the README and banners say plainly that the lyrics look is an
+  unofficial port.
+
 ## 1.11.0 (2026-10-11)
 - With the Rakki plugin on the server, the playlist cache (Add to playlist's ticks, the
   "in a playlist" heart) stays in step with one request instead of one per changed playlist.

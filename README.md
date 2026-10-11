@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.png" alt="Rakki: Jellyfin music for iPhone, with Spicy Lyrics built in" width="100%">
+  <img src="docs/images/banner.png" alt="Rakki: Jellyfin music for iPhone, with word-by-word lyrics" width="100%">
 </p>
 
 <p align="center">
@@ -26,9 +26,9 @@
 ---
 
 **Rakki** is a music app for your own [Jellyfin](https://jellyfin.org) server, made for the
-iPhone. It looks and feels like Spotify, does what Finamp and Feishin do, and has
-**[Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics)** at its heart: word-by-word
-karaoke lyrics that glow, lift and pop as they're sung.
+iPhone. It looks and feels like Spotify, does what Finamp and Feishin do, and has word-by-word
+karaoke lyrics at its heart that glow, lift and pop as they're sung, in the style of
+[Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) (an unofficial port; see Thanks).
 
 It's built with React Native and Expo, plays through its own gapless audio engine written in
 Swift, and updates itself over the air. Building and running it needs no Mac and no paid
@@ -48,7 +48,8 @@ Apple account.
 ## Features
 
 ### Lyrics, two ways
-- **Spicy mode** (the default): the Spicy Lyrics engine on a GPU canvas. Every word has its
+- **Spicy mode** (the default): an unofficial port of Spicy Lyrics' look and motion, drawn on a
+  GPU canvas. Every word has its
   own springs for size, lift and glow; long notes are spelled out letter by letter; duets sit
   left and right; background vocals, instrumental dots, and depth blur on the lines around
   the one being sung. Tap a line to jump to it.
@@ -116,8 +117,9 @@ Rakki is sideloaded with **[SideStore](https://sidestore.io)** and a free Apple 
 next time you open Rakki (or right away from **Settings → About → Check for updates**). You
 only need a new `.ipa` when the native side changes; the changelog says when.
 
-**For word-by-word lyrics**, the server needs the Spicy Lyrics plugin for Jellyfin. Without
-it, Rakki uses Jellyfin's own lyrics (LRC or plain text).
+**For word-by-word lyrics, Daily Mixes and the rest**, the server needs the Rakki plugin for
+Jellyfin ([server/](server/README.md)). Without it, Rakki uses Jellyfin's own lyrics (LRC or
+plain text).
 
 ## Build it yourself
 
@@ -154,11 +156,12 @@ modules/rakki-audio/   the native audio engine (Swift)
 ## Thanks
 
 Rakki stands on other people's work: [Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics)
-(the lyrics engine), [Finamp](https://github.com/jmshrv/finamp) and `just_audio` (how a
+(the look and motion of the lyrics, ported unofficially), [Finamp](https://github.com/jmshrv/finamp) and `just_audio` (how a
 gapless iOS player is built), [Feishin](https://github.com/jeffvli/feishin) (the look and the
 feature set), [Jellyfin](https://jellyfin.org) and [Expo](https://expo.dev). Details are in
 [NOTICE.md](NOTICE.md).
 
 ## Licence
 
-[AGPL-3.0](LICENSE). Rakki isn't affiliated with Jellyfin, Spotify or Spicy Lyrics.
+[AGPL-3.0](LICENSE). Rakki is an unofficial app: it isn't affiliated with or endorsed by
+Jellyfin, Spotify or Spicy Lyrics.
