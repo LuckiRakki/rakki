@@ -83,28 +83,63 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             return data.ToArray();
         }
 
-        /// <summary>The picture's most vivid colour, brightened to stand out on dark (Rakki orange for grey pictures).</summary>
+        /// <summary>
+        /// The artist's colour: the hue that covers most of the picture (weighted by how colourful
+        /// each part is, and the middle, where the artist usually is, most), averaged and brightened
+        /// to stand out on dark. Light grey for pictures with hardly any colour (black and white).
+        /// </summary>
         private static SKColor AccentOf(SKBitmap picture)
         {
-            using var small = picture.Resize(new SKImageInfo(24, 24), new SKSamplingOptions(SKFilterMode.Linear));
+            using var small = picture.Resize(new SKImageInfo(48, 48), new SKSamplingOptions(SKFilterMode.Linear));
             if (small == null) return RakkiOrange;
-            var best = RakkiOrange;
-            var bestScore = 0f;
+            const int Bins = 24;
+            var weight = new float[Bins];
+            var sumSat = new float[Bins];
+            var sumVal = new float[Bins];
+            var sumX = new float[Bins];
+            var sumY = new float[Bins];
+            float total = 0;
             for (var y = 0; y < small.Height; y++)
             {
                 for (var x = 0; x < small.Width; x++)
                 {
                     small.GetPixel(x, y).ToHsv(out var hue, out var sat, out var val);
-                    if (val < 35) continue;
-                    var score = sat * val;
-                    if (score > bestScore)
-                    {
-                        bestScore = score;
-                        best = SKColor.FromHsv(hue, Math.Max(sat, 55), Math.Max(val, 90));
-                    }
+                    total++;
+                    if (sat < 12 || val < 20) continue;
+                    // The middle counts most: that's usually the artist, the edges the background.
+                    var dx = (x + 0.5f) / small.Width - 0.5f;
+                    var dy = (y + 0.5f) / small.Height - 0.45f;
+                    var centre = 1f - Math.Min(1f, MathF.Sqrt(dx * dx + dy * dy) / 0.6f) * 0.85f;
+                    var w = sat / 100f * val / 100f * centre;
+                    var bin = (int)(hue / 360f * Bins) % Bins;
+                    weight[bin] += w;
+                    sumSat[bin] += sat * w;
+                    sumVal[bin] += val * w;
+                    // Hue as a direction, so reds either side of 0° average properly.
+                    var rad = hue * MathF.PI / 180f;
+                    sumX[bin] += MathF.Cos(rad) * w;
+                    sumY[bin] += MathF.Sin(rad) * w;
                 }
             }
-            return bestScore < 25 * 50 ? RakkiOrange : best;
+            // Neighbouring bins count together, so one colour split across two bins still wins.
+            var best = 0;
+            var bestWeight = 0f;
+            for (var b = 0; b < Bins; b++)
+            {
+                var around = weight[(b + Bins - 1) % Bins] * 0.5f + weight[b] + weight[(b + 1) % Bins] * 0.5f;
+                if (around > bestWeight)
+                {
+                    bestWeight = around;
+                    best = b;
+                }
+            }
+            // Too little colour in the picture (black and white): a light grey, like the photo.
+            if (weight[best] <= 0 || bestWeight < total * 0.012f) return new SKColor(232, 232, 232);
+            var avgHue = MathF.Atan2(sumY[best], sumX[best]) * 180f / MathF.PI;
+            if (avgHue < 0) avgHue += 360;
+            var avgSat = sumSat[best] / weight[best];
+            var avgVal = sumVal[best] / weight[best];
+            return SKColor.FromHsv(avgHue, Math.Clamp(avgSat * 1.15f, 50, 95), Math.Clamp(avgVal * 1.25f, 85, 100));
         }
     }
 }

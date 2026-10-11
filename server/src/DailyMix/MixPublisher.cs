@@ -43,17 +43,19 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         {
             static string? Local(BaseItem? item, ImageType type) =>
                 item?.GetImagePath(type, 0) is string p && File.Exists(p) ? p : null;
-            try
+            // The library's own artist (with its pictures). GetArtist(name) can hand back a bare
+            // by-name artist with none, so look it up and take one that has a picture.
+            var artists = _library.GetItemList(new InternalItemsQuery
             {
-                var artist = _library.GetArtist(mix.Lead);
-                var path = Local(artist, ImageType.Primary) ?? Local(artist, ImageType.Backdrop);
-                if (path != null) return path;
-            }
-            catch (Exception e)
-            {
-                _logger.LogDebug(e, "Rakki: no artist item for {Artist}", mix.Lead);
-            }
+                IncludeItemTypes = new[] { BaseItemKind.MusicArtist },
+                Name             = mix.Lead,
+                Recursive        = true,
+            });
+            var path = artists.Select(a => Local(a, ImageType.Primary)).FirstOrDefault(p => p != null)
+                ?? artists.Select(a => Local(a, ImageType.Backdrop)).FirstOrDefault(p => p != null);
+            if (path != null) return path;
             var first = mix.Tracks.FirstOrDefault() is MixTrack t ? _library.GetItemById(t.Id) : null;
+            _logger.LogInformation("Rakki: no picture for {Artist} ({Count} artist items); using album art", mix.Lead, artists.Count);
             return Local(first, ImageType.Primary) ?? Local(first?.GetParent(), ImageType.Primary);
         }
 
