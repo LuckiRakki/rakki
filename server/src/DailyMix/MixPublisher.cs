@@ -2,10 +2,11 @@
 // owned by the user. Each is created once and then updated in place (its songs replaced), so
 // its id, and anything that points at it, stays the same. The overview says why the mix is what
 // it is. The day goes into the history (leads for the 3-day rule, songs for "not too much of
-// yesterday"). Covers come later, once the design is approved.
+// yesterday"). Each gets a cover with the lead artist's picture (MixCover.cs).
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Playlists;
+using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Playlists;
 using Microsoft.Extensions.Logging;
 
@@ -24,13 +27,50 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
 
         private readonly IPlaylistManager _playlists;
         private readonly ILibraryManager _library;
+        private readonly IProviderManager _providers;
         private readonly ILogger<MixPublisher> _logger;
 
-        public MixPublisher(IPlaylistManager playlists, ILibraryManager library, ILogger<MixPublisher> logger)
+        public MixPublisher(IPlaylistManager playlists, ILibraryManager library, IProviderManager providers, ILogger<MixPublisher> logger)
         {
             _playlists = playlists;
             _library = library;
+            _providers = providers;
             _logger = logger;
+        }
+
+        /// <summary>The lead artist's picture on disk (else the opening song's album cover), or null.</summary>
+        private string? PictureFor(MixInfo mix)
+        {
+            static string? Local(BaseItem? item, ImageType type) =>
+                item?.GetImagePath(type, 0) is string p && File.Exists(p) ? p : null;
+            try
+            {
+                var artist = _library.GetArtist(mix.Lead);
+                var path = Local(artist, ImageType.Primary) ?? Local(artist, ImageType.Backdrop);
+                if (path != null) return path;
+            }
+            catch (Exception e)
+            {
+                _logger.LogDebug(e, "Rakki: no artist item for {Artist}", mix.Lead);
+            }
+            var first = mix.Tracks.FirstOrDefault() is MixTrack t ? _library.GetItemById(t.Id) : null;
+            return Local(first, ImageType.Primary) ?? Local(first?.GetParent(), ImageType.Primary);
+        }
+
+        private async Task SetCoverAsync(BaseItem playlist, MixInfo mix, CancellationToken ct)
+        {
+            try
+            {
+                var jpeg = MixCover.Draw(PictureFor(mix), mix.Number);
+                using var stream = new MemoryStream(jpeg);
+                await _providers.SaveImage(playlist, stream, "image/jpeg", ImageType.Primary, null, ct).ConfigureAwait(false);
+                await playlist.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, ct).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                // A mix without its cover still plays; Jellyfin shows its own picture.
+                _logger.LogWarning(e, "Rakki: couldn't draw the cover for Daily Mix {Number}", mix.Number);
+            }
         }
 
         public async Task PublishAsync(MixPreview preview, CancellationToken ct)
@@ -71,6 +111,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                     item.Overview = $"{mix.Lead}{(artists.Count > 0 ? ", " + string.Join(", ", artists) : string.Empty)} and more. "
                         + $"Daily Mix for {preview.Date}. {mix.Why}";
                     await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, ct).ConfigureAwait(false);
+                    await SetCoverAsync(item, mix, ct).ConfigureAwait(false);
                 }
             }
 

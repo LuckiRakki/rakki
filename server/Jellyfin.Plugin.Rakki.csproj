@@ -16,11 +16,17 @@
     <PackageReference Include="Jellyfin.Controller" Version="10.11.10" PrivateAssets="all" />
     <PackageReference Include="Jellyfin.Model"      Version="10.11.10" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" PrivateAssets="all" />
+    <!-- Daily Mix covers. Jellyfin ships SkiaSharp 3.116.1 (and its native library); use that one. -->
+    <PackageReference Include="SkiaSharp" Version="3.116.1" PrivateAssets="all" ExcludeAssets="runtime;native" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="src\Configuration\config.html">
       <LogicalName>Jellyfin.Plugin.Rakki.Configuration.config.html</LogicalName>
+    </EmbeddedResource>
+    <!-- Inter Black (SIL Open Font License), for the Daily Mix covers. -->
+    <EmbeddedResource Include="assets\fonts\Inter_900Black.ttf">
+      <LogicalName>Jellyfin.Plugin.Rakki.Inter_900Black.ttf</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 

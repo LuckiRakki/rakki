@@ -332,7 +332,9 @@
                         } else if (s.Result) {
                             out.innerHTML = (s.Published
                                 ? '<p><strong>These mixes are on the [Rakki] Daily Mix playlists.</strong> The 12 AM run leaves ' +
-                                    esc(s.Result.Date) + ' as it is.</p>'
+                                    esc(s.Result.Date) + ' as it is.</p>' +
+                                    '<button is="emby-button" type="button" id="RakkiPublish" class="raised block">' +
+                                    '<span>Publish again (songs and covers)</span></button>'
                                 : '<button is="emby-button" type="button" id="RakkiPublish" class="raised button-submit block">' +
                                     '<span>Publish these mixes now</span></button>' +
                                     '<p style="opacity:.7">Writes them to the [Rakki] Daily Mix playlists now instead of at 12 AM.</p>') +
