@@ -6,6 +6,11 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.14.1 (2026-10-11)
+- Performance log: CPU readings no longer come from sub-second windows (a sample taken right as
+  the app changed state read as 500-1000 %), and the summary averages CPU by time instead of
+  by sample. Re-scored, the last day's background CPU was 0-1 %.
+
 ## 1.14.0 (2026-10-11)
 - Fixed: scrolling Recent searches closed it (scrolling hides the keyboard, which used to end
   search mode). Search mode now lasts until Cancel.

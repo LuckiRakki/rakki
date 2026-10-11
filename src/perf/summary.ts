@@ -27,6 +27,7 @@ interface Bucket {
   ms: number;
   drainPct: number;
   drainMs: number;
+  /** CPU % × milliseconds, and the milliseconds with a CPU figure (a time-weighted average). */
   cpuSum: number;
   cpuN: number;
   cpuMax: number;
@@ -100,8 +101,8 @@ export function summarize(lines: string[], expectGapMs: number): string {
       bucket.drainMs += gap;
     }
     if (b.cpu !== undefined) {
-      bucket.cpuSum += b.cpu;
-      bucket.cpuN++;
+      bucket.cpuSum += b.cpu * gap;
+      bucket.cpuN += gap;
       bucket.cpuMax = Math.max(bucket.cpuMax, b.cpu);
     }
     if ((a.thermal ?? 0) >= 2) bucket.hot += gap;

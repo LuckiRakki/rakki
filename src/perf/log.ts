@@ -38,6 +38,7 @@ let db: SQLite.SQLiteDatabase | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let dueAt = 0;
 let lastCpu: { at: number; seconds: number } | null = null;
+const MIN_CPU_WINDOW_MS = 10_000;
 let lastGc: { count: number; seconds: number } | null = null;
 let sending = false;
 let started = false;
@@ -92,8 +93,14 @@ async function hardware(now: number): Promise<Partial<Sample>> {
   if (!s) return {};
   let cpu: number | undefined;
   if (s.cpuSeconds !== undefined) {
-    if (lastCpu && now > lastCpu.at) cpu = Math.round(((s.cpuSeconds - lastCpu.seconds) / ((now - lastCpu.at) / 1000)) * 1000) / 10;
-    lastCpu = { at: now, seconds: s.cpuSeconds };
+    // Over a short window (a sample taken right after another, when the app changes state) a
+    // moment's work reads as several cores flat out; such a sample gets no CPU figure and the
+    // next one covers the whole stretch.
+    if (!lastCpu) lastCpu = { at: now, seconds: s.cpuSeconds };
+    else if (now - lastCpu.at >= MIN_CPU_WINDOW_MS) {
+      cpu = Math.round(((s.cpuSeconds - lastCpu.seconds) / ((now - lastCpu.at) / 1000)) * 1000) / 10;
+      lastCpu = { at: now, seconds: s.cpuSeconds };
+    }
   }
   return {
     cpu,
