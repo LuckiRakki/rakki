@@ -841,7 +841,7 @@ export class JellyfinClient {
     return this.items({
       IncludeItemTypes: 'Playlist',
       SortBy: 'SortName',
-      Fields: 'ChildCount,DateCreated,Etag',
+      Fields: 'ChildCount,DateCreated,Etag,Overview',
     });
   }
 

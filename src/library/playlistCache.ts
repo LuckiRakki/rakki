@@ -22,6 +22,7 @@ import { create } from 'zustand';
 import { JellyfinError, type BaseItem, type PlaylistEntry } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { onPlaylistsChanged } from '@/lib/events';
+import { isMix } from '@/lib/mixes';
 import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 
@@ -154,7 +155,8 @@ export async function syncPlaylists(force = false): Promise<void> {
         for (const [id, stamp] of Object.entries(known)) if (stamp === '') dirty.add(id);
       }
     }
-    const playlists = (await client.getPlaylists()).Items;
+    // Daily Mixes aren't yours to add to, and don't light the heart (lib/mixes.ts).
+    const playlists = (await client.getPlaylists()).Items.filter((p) => !isMix(p));
     const current = usePlaylistCache.getState().lists;
     // Deleted playlists go.
     for (const id of Object.keys(current)) if (!playlists.some((p) => p.Id === id)) put(id, null);

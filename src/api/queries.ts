@@ -1,4 +1,5 @@
 import { keepPreviousData, QueryClient, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import type { BaseItem, ItemsResult, JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
@@ -19,6 +20,7 @@ import {
 import { useDownloads } from '@/downloads/store';
 import { seededShuffle } from '@/library/view';
 import { artistTopTracks, LastfmError, matchKey, matchPopular, trackPlaycount } from '@/lib/lastfm';
+import { isMix, mixNumber } from '@/lib/mixes';
 import { useOffline } from '@/lib/online';
 import { useSettings } from '@/settings/store';
 
@@ -310,8 +312,22 @@ export const useGenreTopTracks = (genre?: string) =>
     { enabled: !!genre },
   );
 
-export const usePlaylists = () =>
+const useAllPlaylists = () =>
   useUserQuery(['playlists'], async (c) => (await c.getPlaylists()).Items, { offline: downloadedPlaylists });
+
+/** Your playlists (Daily Mixes left out; see lib/mixes.ts). */
+export function usePlaylists() {
+  const q = useAllPlaylists();
+  const data = useMemo(() => q.data?.filter((p) => !isMix(p)), [q.data]);
+  return { ...q, data } as typeof q;
+}
+
+/** The Daily Mixes the Rakki plugin made, in order. */
+export function useDailyMixes() {
+  const q = useAllPlaylists();
+  const data = useMemo(() => q.data?.filter(isMix).sort((a, b) => mixNumber(a) - mixNumber(b)), [q.data]);
+  return { ...q, data } as typeof q;
+}
 export const usePlaylistItems = (id?: string) =>
   useUserQuery(['playlistItems', id], async (c) => (await c.getPlaylistItems(id!)).Items, {
     enabled: !!id,

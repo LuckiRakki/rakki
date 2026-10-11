@@ -25,6 +25,7 @@ import { PlaylistEditor } from '@/ui/PlaylistEditor';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
+import { displayName } from '@/lib/mixes';
 
 type PlaylistSort = 'custom' | 'recent' | 'title' | 'artist' | 'album' | 'length' | 'random';
 
@@ -90,7 +91,7 @@ export default function PlaylistScreen() {
   const p = playlist.data ?? undefined;
   const list = items.data ?? [];
   const seconds = list.reduce((sum, x) => sum + ticksToSeconds(x.RunTimeTicks), 0);
-  const source = { type: 'playlist' as const, id, name: p?.Name ?? 'Playlist' };
+  const source = { type: 'playlist' as const, id, name: p ? displayName(p) : 'Playlist' };
   // The playlist in the chosen order (Play follows it), then Find narrows down what's shown;
   // playing a found song still plays the whole (sorted) playlist from there.
   const ordered = sortPlaylist(list, sortKey, seed);
@@ -126,7 +127,7 @@ export default function PlaylistScreen() {
       <CollectionHeader
         art={<Artwork item={p} size={232} />}
         tint={artColor(p && client?.blurhash(p))}
-        title={p?.Name ?? ' '}
+        title={p ? displayName(p) : ' '}
         lines={[
           'Playlist',
           list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : '',
@@ -191,7 +192,7 @@ export default function PlaylistScreen() {
           />
         )}
       />
-      <StickyTitleBar y={y} title={p?.Name ?? ''} color={t.tint(artColor(p && client?.blurhash(p)))} />
+      <StickyTitleBar y={y} title={p ? displayName(p) : ''} color={t.tint(artColor(p && client?.blurhash(p)))} />
       <BackButton onPress={() => router.back()} />
     </View>
   );

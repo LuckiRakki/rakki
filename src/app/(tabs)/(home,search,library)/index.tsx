@@ -9,6 +9,7 @@ import {
   queryClient,
   useMostPlayed,
   useMusicVideos,
+  useDailyMixes,
   usePlaylists,
   useRandomAlbums,
   useRecentlyAdded,
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const rediscover = useRediscover();
   const random = useRandomAlbums();
   const playlists = usePlaylists();
+  const mixes = useDailyMixes();
   const topArtists = useTopArtists();
   const videos = useMusicVideos();
   const hasStations = useStations((s) => s.stations.length > 0);
@@ -59,6 +61,7 @@ export default function HomeScreen() {
   const jumpBackIn = recent.data?.slice(quick.length) ?? [];
   const shelves: Record<ShelfId, ReactNode> = {
     jumpBackIn: <Shelf key="jumpBackIn" title="Jump back in" items={jumpBackIn} />,
+    dailyMixes: <Shelf key="dailyMixes" title="Your Daily Mixes" items={mixes.data} />,
     playlists: (
       <Shelf key="playlists" title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
     ),
@@ -85,6 +88,7 @@ export default function HomeScreen() {
   // Which shelves have something to show yet (the rest rise in when their items arrive).
   const ready: Record<ShelfId, boolean> = {
     jumpBackIn: jumpBackIn.length > 0,
+    dailyMixes: !!mixes.data?.length,
     playlists: !!playlists.data?.length,
     artists: !!topArtists.data?.length,
     recentlyAdded: !!added.data?.length,

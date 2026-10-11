@@ -21,6 +21,7 @@ namespace Jellyfin.Plugin.Rakki
             serviceCollection.AddHttpClient();
             serviceCollection.AddSingleton<LastFmClient>();
             serviceCollection.AddSingleton<MixService>();
+            serviceCollection.AddSingleton<MixPublisher>();
             serviceCollection.AddSingleton<SkipTracker>();
             serviceCollection.AddHostedService<StartupService>();
 

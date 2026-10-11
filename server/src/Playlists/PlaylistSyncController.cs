@@ -71,7 +71,9 @@ namespace Jellyfin.Plugin.Rakki.Playlists
             {
                 IncludeItemTypes = new[] { BaseItemKind.Playlist },
                 Recursive        = true,
-            }).OfType<Playlist>();
+            }).OfType<Playlist>()
+              // Daily Mixes aren't the user's own playlists (the app keeps them out of these places).
+              .Where(p => p.Name?.StartsWith("[Rakki] ", StringComparison.Ordinal) != true);
 
             var answer = new PlaylistSyncResponse();
             foreach (var p in playlists)

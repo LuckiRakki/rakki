@@ -72,13 +72,15 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
 
     /// <summary>
     /// Each night's leads and songs (kept two weeks) for the 3-day rule and the "not too much of
-    /// yesterday" rule. Only the nightly build writes it; previews just read it.
+    /// yesterday" rule. Publishing writes it; previews just read it.
     /// </summary>
     public sealed class MixHistory
     {
         public sealed class Day
         {
             public string       Date  { get; set; } = string.Empty;
+            /// <summary>Written to the playlists (false: only a preview was saved).</summary>
+            public bool         Published { get; set; }
             public List<string> Leads { get; set; } = new();
             public List<Guid>   Songs { get; set; } = new();
         }

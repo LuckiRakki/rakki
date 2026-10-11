@@ -10,6 +10,7 @@ import { readPref, writePref } from '@/lib/prefs';
 export type ShelfId =
   | 'jumpBackIn'
   | 'playlists'
+  | 'dailyMixes'
   | 'artists'
   | 'recentlyAdded'
   | 'mostPlayed'
@@ -21,6 +22,7 @@ export type ShelfId =
 /** Home's shelves, in their default order. */
 export const SHELVES: { id: ShelfId; label: string }[] = [
   { id: 'jumpBackIn', label: 'Jump back in' },
+  { id: 'dailyMixes', label: 'Your Daily Mixes' },
   { id: 'playlists', label: 'Your playlists' },
   { id: 'artists', label: 'Artists you play' },
   { id: 'recentlyAdded', label: 'Recently added' },

@@ -11,6 +11,7 @@ import { matchKey } from '@/lib/lastfm';
 import { isOffline } from '@/lib/online';
 import { readPref, writePref } from '@/lib/prefs';
 import { prepare, type Entry, type FuzzyIndex, type Kind } from '@/search/fuzzy';
+import { isMix } from '@/lib/mixes';
 
 const PAGE = 1000;
 const FULL_EVERY = 7 * 24 * 3600_000;
@@ -59,7 +60,7 @@ function load(client: JellyfinClient): Stored | null {
 function addRows(items: BaseItem[], rows: Map<string, Row>) {
   for (const it of items) {
     const kind = it.Type === 'Audio' ? 0 : it.Type === 'MusicAlbum' ? 1 : it.Type === 'Playlist' ? 3 : -1;
-    if (kind < 0 || !it.Name) continue;
+    if (kind < 0 || !it.Name || isMix(it)) continue;
     const by = kind === 0 ? it.Artists?.join(', ') || it.AlbumArtist : kind === 1 ? it.AlbumArtist : undefined;
     rows.set(it.Id, by ? [it.Id, kind, it.Name, by] : [it.Id, kind, it.Name]);
     // Artists come from the songs and albums themselves, so no separate artist download.

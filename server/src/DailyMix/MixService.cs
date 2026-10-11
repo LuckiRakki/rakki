@@ -1,6 +1,7 @@
 // Runs Daily Mix builds. The first build looks up every artist's tags on Last.fm (several
 // minutes; kept 30 days after that), so a build runs in the background and the preview
-// endpoint reports its progress until it's done. One build at a time.
+// endpoint reports its progress until it's done. One build at a time. Publishing (the plugin
+// page's "Publish now", or the 12 AM task) writes a build to the playlists (MixPublisher).
 
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,8 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         public string      Stage    { get; set; } = string.Empty;
         public string?     Error    { get; set; }
         public MixPreview? Result   { get; set; }
+        /// <summary>This day's mixes are on the playlists already.</summary>
+        public bool        Published { get; set; }
     }
 
     public class MixService
@@ -31,6 +34,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         private readonly IUserManager _users;
         private readonly LastFmClient _lastFm;
         private readonly SkipTracker _skips;
+        private readonly MixPublisher _publisher;
         private readonly ILogger<MixService> _logger;
         private readonly object _lock = new();
 
@@ -40,38 +44,53 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         private string? _error;
         private MixPreview? _done;
 
-        public MixService(ILibraryManager library, IUserDataManager userData, IUserManager users, LastFmClient lastFm, SkipTracker skips, ILogger<MixService> logger)
+        public MixService(ILibraryManager library, IUserDataManager userData, IUserManager users, LastFmClient lastFm, SkipTracker skips, MixPublisher publisher, ILogger<MixService> logger)
         {
             _library = library;
             _userData = userData;
             _users = users;
             _lastFm = lastFm;
             _skips = skips;
+            _publisher = publisher;
             _logger = logger;
         }
 
         /// <summary>
         /// The preview for a user and day: the finished result, or the running build's progress
         /// (starting one when needed; <paramref name="refresh"/> starts a new one regardless).
+        /// <paramref name="publish"/>: also write it to the playlists (the preview already shown
+        /// is the one published, unless <paramref name="refresh"/>).
         /// </summary>
-        public MixStatus Preview(Guid user, DateOnly date, bool refresh)
+        public MixStatus Preview(Guid user, DateOnly date, bool refresh, bool publish = false)
         {
             var key = $"{user:N}|{date:yyyy-MM-dd}";
+            var dateKey = date.ToString("yyyy-MM-dd");
+            bool Published() => MixHistory.Load(user).Days.Any(d => d.Date == dateKey && d.Published);
             lock (_lock)
             {
                 if (_running is { IsCompleted: false })
                 {
                     return new MixStatus { Running = true, Stage = _key == key ? _stage : "Busy with another build: " + _stage };
                 }
-                if (!refresh && _key == key && (_done != null || _error != null))
+                if (!refresh && !publish && _key == key && (_done != null || _error != null))
                 {
-                    return new MixStatus { Ready = _done != null, Result = _done, Error = _error };
+                    return new MixStatus { Ready = _done != null, Result = _done, Error = _error, Published = Published() };
                 }
+                var reuse = publish && !refresh && _key == key ? _done : null;
                 _key = key;
                 _done = null;
                 _error = null;
-                _stage = "Starting";
-                _running = Task.Run(() => BuildAsync(user, date, CancellationToken.None));
+                _stage = publish ? "Publishing" : "Starting";
+                _running = Task.Run(async () =>
+                {
+                    var built = reuse ?? await BuildAsync(user, date, CancellationToken.None).ConfigureAwait(false);
+                    if (publish)
+                    {
+                        lock (_lock) _stage = "Writing the playlists";
+                        await _publisher.PublishAsync(built, CancellationToken.None).ConfigureAwait(false);
+                    }
+                    return built;
+                });
                 _running.ContinueWith(
                     t =>
                     {
@@ -91,6 +110,13 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                     TaskScheduler.Default);
                 return new MixStatus { Running = true, Stage = _stage };
             }
+        }
+
+        /// <summary>Builds a day's mixes and writes them to the playlists (the nightly task).</summary>
+        public async Task PublishAsync(Guid user, DateOnly date, CancellationToken ct)
+        {
+            var built = await BuildAsync(user, date, ct).ConfigureAwait(false);
+            await _publisher.PublishAsync(built, ct).ConfigureAwait(false);
         }
 
         /// <summary>Builds a day's mixes (nothing is written to the server).</summary>

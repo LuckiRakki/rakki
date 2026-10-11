@@ -330,7 +330,13 @@
                         } else if (s.Error) {
                             out.innerHTML = '<p>Couldn’t build: ' + esc(s.Error) + '</p>';
                         } else if (s.Result) {
-                            out.innerHTML = render(s.Result);
+                            out.innerHTML = (s.Published
+                                ? '<p><strong>These mixes are on the [Rakki] Daily Mix playlists.</strong> The 12 AM run leaves ' +
+                                    esc(s.Result.Date) + ' as it is.</p>'
+                                : '<button is="emby-button" type="button" id="RakkiPublish" class="raised button-submit block">' +
+                                    '<span>Publish these mixes now</span></button>' +
+                                    '<p style="opacity:.7">Writes them to the [Rakki] Daily Mix playlists now instead of at 12 AM.</p>') +
+                                render(s.Result);
                         }
                     }, function () {
                         out.innerHTML = '<p>Couldn’t reach the server.</p>';
@@ -374,6 +380,15 @@
                         if (page.dataset.bound) return loadConfig();
                         page.dataset.bound = '1';
                         page.querySelector('#RakkiConfigForm').addEventListener('submit', saveConfig);
+                        page.querySelector('#RakkiPreviewOut').addEventListener('click', function (e) {
+                            if (!e.target.closest('#RakkiPublish')) return;
+                            clearTimeout(timer);
+                            page.querySelector('#RakkiPreviewOut').innerHTML = '<p>Publishing...</p>';
+                            ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Rakki/DailyMix/Publish'), dataType: 'json' })
+                                .then(function () { poll(false); }, function () {
+                                    page.querySelector('#RakkiPreviewOut').innerHTML = '<p>Couldn’t publish.</p>';
+                                });
+                        });
                         page.querySelector('#RakkiPreview').addEventListener('click', function () {
                             clearTimeout(timer);
                             poll(true);

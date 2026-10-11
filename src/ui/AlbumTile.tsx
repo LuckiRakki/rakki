@@ -7,6 +7,7 @@ import { openAlbum, openItem } from '@/ui/nav';
 import { openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
+import { displayName, isMix, mixArtists } from '@/lib/mixes';
 
 export { openAlbum };
 
@@ -42,10 +43,10 @@ export function ItemTile({
         variant="bodyStrong"
         numberOfLines={1}
         style={{ marginTop: 8, fontSize: t.size(14), textAlign: round ? 'center' : 'left' }}>
-        {item.Name}
+        {displayName(item)}
       </T>
       <T variant="caption" numberOfLines={1} style={{ textAlign: round ? 'center' : 'left' }}>
-        {subtitle ?? subtitleOf(item)}
+        {subtitle ?? (isMix(item) ? mixArtists(item) : subtitleOf(item))}
       </T>
     </Pressable>
   );

@@ -8,7 +8,8 @@ from an artist/song you play a lot and grows from there. Stored as server playli
 own Home shelf and Library tab. Cover: 1000×1000, the seed artist's photo, "Daily Mix" big at
 the bottom left, the number at the bottom right.
 
-Status (2026-10-10): **phase 1 written, not deployed.** The companion plugin lives in
+Status (2026-10-11): **phases 1 and 2 live (covers to come), phase 3 partly** (hidden from
+the playlist places, Home shelf; the Library "Mixes" tab is still to do). Phase 1 notes: The companion plugin lives in
 `server/` (Jellyfin.Plugin.Rakki, net9.0, Jellyfin 10.11): settings page with the Last.fm key
 and the tuning knobs, and a dry run at `GET /Rakki/DailyMix/Preview` (admins only), also shown
 on the plugin's settings page as "Preview tonight's mixes". Nothing is written to the server

@@ -6,6 +6,13 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.12.0 (2026-10-11)
+- **Daily Mixes** arrive: the Rakki plugin writes them to "[Rakki] Daily Mix 1" to "6" every
+  night at 12 AM (or now, with Publish on the plugin's page). Home has a "Your Daily Mixes"
+  shelf (move it in Customize Home); each shows as "Daily Mix N" with its lead artists.
+- Mixes stay out of Library → Playlists, Home's "Your playlists", Add to playlist, search and
+  the "in a playlist" heart.
+
 ## 1.11.1 (2026-10-11)
 - Sign-in screen tagline no longer uses the Spicy Lyrics name (its API Terms keep it out of
   app names and listings); the README and banners say plainly that the lyrics look is an
