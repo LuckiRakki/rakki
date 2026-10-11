@@ -5,12 +5,13 @@ import { create } from 'zustand';
 
 import { readPref, writePref } from '@/lib/prefs';
 
-export type LibraryTab = 'playlists' | 'albums' | 'songs' | 'artists' | 'genres' | 'radio' | 'videos' | 'downloads';
+export type LibraryTab = 'playlists' | 'mixes' | 'albums' | 'songs' | 'artists' | 'genres' | 'radio' | 'videos' | 'downloads';
 export type LibraryLayout = 'grid' | 'list';
 
 /** The Library's chips, in their default order. */
 export const LIBRARY_TABS: { key: LibraryTab; label: string }[] = [
   { key: 'playlists', label: 'Playlists' },
+  { key: 'mixes', label: 'Mixes' },
   { key: 'albums', label: 'Albums' },
   { key: 'songs', label: 'Songs' },
   { key: 'artists', label: 'Artists' },
@@ -37,6 +38,8 @@ export const SORTS: Record<LibraryTab, SortOption[]> = {
     { key: 'alpha', label: 'Alphabetical', sortBy: 'SortName', sortOrder: 'Ascending' },
     RANDOM,
   ],
+  // Daily Mixes (lib/mixes.ts), in their own order.
+  mixes: [{ key: 'number', label: 'Mix number', sortBy: '', sortOrder: 'Ascending' }],
   albums: [
     { key: 'alpha', label: 'Alphabetical', sortBy: 'SortName', sortOrder: 'Ascending' },
     { key: 'recent', label: 'Recently added', sortBy: 'DateCreated,SortName', sortOrder: 'Descending' },
@@ -85,6 +88,7 @@ export const SORTS: Record<LibraryTab, SortOption[]> = {
 
 const DEFAULT_LAYOUT: Record<LibraryTab, LibraryLayout> = {
   playlists: 'list',
+  mixes: 'grid',
   albums: 'grid',
   songs: 'list',
   artists: 'list',
@@ -105,6 +109,7 @@ interface Saved {
 function savedTab(): LibraryTab {
   const v = readPref(TAB_KEY);
   return v === 'playlists' ||
+    v === 'mixes' ||
     v === 'artists' ||
     v === 'albums' ||
     v === 'songs' ||

@@ -23,6 +23,8 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         public string   ArtistKey { get; init; } = string.Empty;
         /// <summary>The title reduced for matching against Last.fm (see Library.TitleKey).</summary>
         public string   TitleKey  { get; init; } = string.Empty;
+        /// <summary>The song's album (artist and title, reduced); empty for a song without one.</summary>
+        public string   AlbumKey  { get; init; } = string.Empty;
         public string[] Genres    { get; init; } = System.Array.Empty<string>();
         public int      Plays     { get; init; }
         public DateTime? LastPlayed { get; init; }
@@ -90,6 +92,8 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                     Artist     = artistName,
                     ArtistKey  = artistKey,
                     TitleKey   = titleKey,
+                    AlbumKey   = string.IsNullOrWhiteSpace(item.Album) ? string.Empty
+                        : NameKey(item.AlbumArtists?.FirstOrDefault() ?? artistName) + "|" + TitleKey(item.Album),
                     Genres     = (item.Genres ?? System.Array.Empty<string>()).Select(TagGroups.NormTag).Where(g => g.Length > 0).Distinct().ToArray(),
                     Plays      = plays,
                     LastPlayed = ud?.LastPlayedDate,

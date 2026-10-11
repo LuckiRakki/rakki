@@ -7,6 +7,7 @@
 // 3. Pools, 2:2:1: Popular (Last.fm plays), Yours (your plays lately), New (niche on Last.fm,
 //    recently added or never played). A song lands in one pool only.
 // Songs you skip a lot are left out, and ones you skip sometimes rank lower.
+// No more than MaxPerAlbum (3) songs from one album, 15% from one artist (25% the lead).
 // 4. Order: a lead song you play a lot first, then P, Y, P, Y, N, no artist twice within 3.
 // The draw is seeded by the date and user, so a day's preview and its build agree.
 
@@ -201,6 +202,8 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             // ── Pools ──
             var claimed = new HashSet<Guid>();
             var perArtist = new Dictionary<string, int>(StringComparer.Ordinal);
+            var perAlbum = new Dictionary<string, int>(StringComparer.Ordinal);
+            var albumCap = Math.Max(1, _cfg.MaxPerAlbum);
             var artistCap = (int)Math.Ceiling(size * 0.15);
             var leadCap = (int)Math.Ceiling(size * 0.25);
             var sideCap = (int)Math.Ceiling(size * 0.15);
@@ -210,12 +213,14 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             bool Allowed(Song s) =>
                 !claimed.Contains(s.Id)
                 && perArtist.GetValueOrDefault(s.ArtistKey) < (s.ArtistKey == lead.Artist.Key ? leadCap : artistCap)
+                && (s.AlbumKey.Length == 0 || perAlbum.GetValueOrDefault(s.AlbumKey) < albumCap)
                 && (!side.ContainsKey(s.ArtistKey) || sideUsed < sideCap)
                 && (!yesterday.Contains(s.Id) || fromYesterday < fromYesterdayCap);
             void Claim(Song s)
             {
                 claimed.Add(s.Id);
                 perArtist[s.ArtistKey] = perArtist.GetValueOrDefault(s.ArtistKey) + 1;
+                if (s.AlbumKey.Length > 0) perAlbum[s.AlbumKey] = perAlbum.GetValueOrDefault(s.AlbumKey) + 1;
                 if (side.ContainsKey(s.ArtistKey)) sideUsed++;
                 if (yesterday.Contains(s.Id)) fromYesterday++;
             }

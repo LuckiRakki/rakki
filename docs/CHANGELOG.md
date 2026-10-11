@@ -6,6 +6,12 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.13.0 (2026-10-11)
+- **Library → Mixes**: your Daily Mixes as a Library tab (hold the chips to move it), and
+  "Show all" on Home's "Your Daily Mixes" opens it.
+- Daily Mixes: at most 3 songs from one album per mix (the plugin's "Most songs from one album"
+  setting), covers with the lead artist's photo and a stripe in the artist's colour.
+
 ## 1.12.0 (2026-10-11)
 - **Daily Mixes** arrive: the Rakki plugin writes them to "[Rakki] Daily Mix 1" to "6" every
   night at 12 AM (or now, with Publish on the plugin's page). Home has a "Your Daily Mixes"

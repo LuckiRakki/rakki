@@ -77,8 +77,12 @@ Apple account.
 
 ### Your library
 - **Home** with Jump back in, Recently added, Most played, Rediscover and more (reorder or
-  hide any of them). **Search** that forgives typos. A **Library** with Playlists, Albums,
-  Songs, Artists, Genres, Radio and Downloads (hold a tab to reorder them).
+  hide any of them). **Search** that forgives typos. A **Library** with Playlists, Mixes,
+  Albums, Songs, Artists, Genres, Radio and Downloads (hold a tab to reorder them).
+- **Daily Mixes**: six fresh 100-song mixes every night, each led by a different artist you
+  play and kept to one kind of music, mixing popular songs, ones you play a lot and ones that
+  are new to you (no more than 3 from one album, and songs you keep skipping left out). Each
+  gets a cover with its artist's photo. Made on your server by the Rakki plugin.
 - Album, artist, playlist and genre pages, a Spotify-style **Add to playlist** that shows
   where a song already is, and playlist editing.
 - **Popular worldwide**: artists' top songs and album play counts from Last.fm (with your own
@@ -123,6 +127,24 @@ only need a new `.ipa` when the native side changes; the changelog says when.
 Jellyfin ([server/](server/README.md)). Without it, Rakki uses Jellyfin's own lyrics (LRC or
 plain text).
 
+## Your tags matter
+
+Rakki is **metadata driven**: it reads what's in your music files' tags (through Jellyfin), so
+it works best with a clean library. In particular:
+
+- **Artists separated properly.** Each artist in its own artist tag (or split with `;`), not
+  `Artist A, Artist B` in one field, and the same spelling everywhere. Artist pages, the smart
+  queue and Daily Mixes all go by artist, and a joined or misspelled name becomes a separate
+  artist.
+- **Album artist on every song**, so albums stay together and land under the right artist.
+- **Genre tags.** Daily Mixes group your music by genre (Jellyfin's genres plus Last.fm's
+  tags), so missing or odd genres make looser mixes.
+- **MusicBrainz or Spotify IDs** for word-by-word lyrics from the Spicy Lyrics API: it looks
+  songs up by Spotify ID, which the Rakki plugin finds through the song's MusicBrainz
+  recording (tag with MusicBrainz Picard, or set a `Spotify` provider ID on the song).
+  `.ttml` lyric files next to your songs work without any IDs.
+- **Artist pictures** (Jellyfin fetches them): artist pages and Daily Mix covers use them.
+
 ## Build it yourself
 
 Everything runs on Windows, macOS or Linux; iOS builds happen on GitHub's Macs.
@@ -154,6 +176,13 @@ src/radio/             internet radio and SUB/WAVE
 src/widgets/           Home Screen and Lock Screen widgets
 modules/rakki-audio/   the native audio engine (Swift)
 ```
+
+## What's next
+
+- **Demo:** screenshots, GIFs and videos of the main screens and the widget options.
+- **A Jellyfin music suite:** the tools that keep a library's tags clean enough for Rakki
+  (a review queue for new music, a Spotify playlist monitor, downloader tagging) together
+  with a step-by-step guide to setting up Rakki and its server side.
 
 ## Thanks
 

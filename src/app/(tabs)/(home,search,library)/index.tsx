@@ -61,7 +61,9 @@ export default function HomeScreen() {
   const jumpBackIn = recent.data?.slice(quick.length) ?? [];
   const shelves: Record<ShelfId, ReactNode> = {
     jumpBackIn: <Shelf key="jumpBackIn" title="Jump back in" items={jumpBackIn} />,
-    dailyMixes: <Shelf key="dailyMixes" title="Your Daily Mixes" items={mixes.data} />,
+    dailyMixes: (
+      <Shelf key="dailyMixes" title="Your Daily Mixes" items={mixes.data} onShowAll={() => openLibrary('mixes')} />
+    ),
     playlists: (
       <Shelf key="playlists" title="Your playlists" items={playlists.data} onShowAll={() => openLibrary('playlists')} />
     ),

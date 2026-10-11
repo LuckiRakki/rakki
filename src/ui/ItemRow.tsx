@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { tick } from '@/lib/haptics';
+import { displayName } from '@/lib/mixes';
 import type { BaseItem } from '@/api/jellyfin';
 import { Artwork } from '@/ui/Artwork';
 import { openItem } from '@/ui/nav';
@@ -38,7 +39,7 @@ export function ItemRow({
       {art ?? <Artwork item={item} size={56} rounded={item.Type === 'MusicArtist' ? 28 : undefined} />}
       <View style={{ flex: 1, marginLeft: t.space.md }}>
         <T variant="bodyStrong" numberOfLines={1}>
-          {item.Name}
+          {displayName(item)}
         </T>
         <T variant="caption" numberOfLines={1}>
           {subtitle}

@@ -17,6 +17,9 @@ namespace Jellyfin.Plugin.Rakki.Configuration
 
         public int MixSize { get; set; } = 100;
 
+        /// <summary>Most songs from any one album in a mix (so a mix doesn't play one album over and over).</summary>
+        public int MaxPerAlbum { get; set; } = 3;
+
         /// <summary>An artist needs at least this many plays of their songs to lead a mix.</summary>
         public int LeadMinPlays { get; set; } = 5;
 

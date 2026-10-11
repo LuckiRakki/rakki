@@ -57,6 +57,11 @@
                     </div>
 
                     <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxPerAlbum">Most songs from one album in a mix</label>
+                        <input is="emby-input" type="number" id="MaxPerAlbum" min="1" max="50" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="TagGroupLikeness">Tag group strictness (0.05 to 0.6)</label>
                         <input is="emby-input" type="number" id="TagGroupLikeness" min="0.05" max="0.6" step="0.01" />
                         <div class="fieldDescription">
@@ -234,6 +239,7 @@
                         page.querySelector('#MixSize').value          = cfg.MixSize || 100;
                         page.querySelector('#LeadMinPlays').value     = cfg.LeadMinPlays != null ? cfg.LeadMinPlays : 5;
                         page.querySelector('#LeadRestDays').value     = cfg.LeadRestDays != null ? cfg.LeadRestDays : 3;
+                        page.querySelector('#MaxPerAlbum').value      = cfg.MaxPerAlbum || 3;
                         page.querySelector('#TagGroupLikeness').value = cfg.TagGroupLikeness || 0.22;
                         page.querySelector('#ScraperEnabled').checked         = !!cfg.ScraperEnabled;
                         page.querySelector('#ScraperSkipExisting').checked    = cfg.ScraperSkipExisting !== false;
@@ -266,6 +272,7 @@
                         cfg.MixSize          = Math.round(num('#MixSize', 100, 10, 500));
                         cfg.LeadMinPlays     = Math.round(num('#LeadMinPlays', 5, 0, 1000));
                         cfg.LeadRestDays     = Math.round(num('#LeadRestDays', 3, 0, 30));
+                        cfg.MaxPerAlbum      = Math.round(num('#MaxPerAlbum', 3, 1, 50));
                         cfg.TagGroupLikeness = num('#TagGroupLikeness', 0.22, 0.05, 0.6);
                         cfg.ScraperEnabled        = page.querySelector('#ScraperEnabled').checked;
                         cfg.ScraperSkipExisting   = page.querySelector('#ScraperSkipExisting').checked;
