@@ -18,7 +18,6 @@
 <p align="center">
   <b><a href="#install">Install</a></b> ·
   <b><a href="#features">Features</a></b> ·
-  <b><a href="#see-it">Screenshots</a></b> ·
   <b><a href="#lyrics-setup">Lyrics setup</a></b> ·
   <b><a href="#build-it-yourself">Build it yourself</a></b> ·
   <b><a href="docs/CHANGELOG.md">Changelog</a></b>
@@ -37,55 +36,6 @@ It's built with React Native and Expo, plays through its own gapless audio engin
 Swift, and updates itself over the air. Building and running it needs no Mac and no paid
 Apple account.
 
-## See it
-
-<p align="center">
-  <img src="docs/images/demo/lyrics-demo-1.gif" width="270" alt="Spicy lyrics: words glow and lift as they're sung, the lines around them blur">
-  &nbsp;
-  <img src="docs/images/demo/lyrics-demo-2.gif" width="270" alt="The lyrics card under the player, and full-screen lyrics">
-  &nbsp;
-  <img src="docs/images/demo/music-video-demo.gif" width="200" alt="A music video playing in the app">
-</p>
-
-<table>
-  <tr>
-    <td align="center"><img src="docs/images/demo/home.jpg" width="200"><br><sub>Home</sub></td>
-    <td align="center"><img src="docs/images/demo/now-playing.jpg" width="200"><br><sub>Now playing</sub></td>
-    <td align="center"><img src="docs/images/demo/lyrics-spicy.jpg" width="200"><br><sub>Spicy lyrics</sub></td>
-    <td align="center"><img src="docs/images/demo/lyrics-regular.jpg" width="200"><br><sub>Regular lyrics</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/demo/album.jpg" width="200"><br><sub>Album</sub></td>
-    <td align="center"><img src="docs/images/demo/artist.jpg" width="200"><br><sub>Artist</sub></td>
-    <td align="center"><img src="docs/images/demo/home-daily-mixes.jpg" width="200"><br><sub>Home with Daily Mixes</sub></td>
-    <td align="center"><img src="docs/images/demo/daily-mixes.jpg" width="200"><br><sub>Daily Mixes</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/demo/search.jpg" width="200"><br><sub>Search</sub></td>
-    <td align="center"><img src="docs/images/demo/lyrics-search.jpg" width="200"><br><sub>Search by lyrics</sub></td>
-    <td align="center"><img src="docs/images/demo/popular.jpg" width="200"><br><sub>Popular (Last.fm plays)</sub></td>
-    <td align="center"><img src="docs/images/demo/discography.jpg" width="200"><br><sub>Discography, singles and EPs</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/demo/music-videos.jpg" width="200"><br><sub>Music videos, Appears on</sub></td>
-    <td align="center"><img src="docs/images/demo/fans-also-like.jpg" width="200"><br><sub>Fans also like</sub></td>
-    <td align="center"><img src="docs/images/demo/widget-small.jpg" width="160"><br><sub>Now Playing widget</sub></td>
-    <td align="center"><img src="docs/images/demo/widget-jump-back-in.jpg" width="200"><br><sub>Jump Back In widget</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/demo/theme-colour.jpg" width="200"><br><sub>Colour (Lucid or your own)</sub></td>
-    <td align="center"><img src="docs/images/demo/theme-text.jpg" width="200"><br><sub>Fonts and shape</sub></td>
-    <td align="center"><img src="docs/images/demo/theme-player.jpg" width="200"><br><sub>Mini-player and Now Playing</sub></td>
-    <td align="center"><img src="docs/images/demo/customize-home.jpg" width="200"><br><sub>Customize Home</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/demo/streaming-quality.jpg" width="200"><br><sub>Streaming quality</sub></td>
-    <td align="center"><img src="docs/images/demo/downloads.jpg" width="200"><br><sub>Downloads and offline</sub></td>
-    <td align="center"><img src="docs/images/demo/theme-feel.jpg" width="200"><br><sub>Haptics, motion, share your look</sub></td>
-    <td></td>
-  </tr>
-</table>
-
 ## Features
 
 ### Lyrics, two ways
@@ -102,6 +52,20 @@ Apple account.
 - A lyrics style editor (size, font, colour, motion, backdrop) with a live preview.
 - How to get word-by-word lyrics for your songs: [Lyrics setup](#lyrics-setup).
 
+<p align="center">
+  <img src="docs/images/demo/lyrics-demo-1.gif" width="260" alt="Spicy lyrics: words glow and lift as they are sung, the lines around them blur">
+  &nbsp;
+  <img src="docs/images/demo/lyrics-demo-2.gif" width="260" alt="The lyrics card under the player, and full-screen lyrics">
+</p>
+
+<p align="center">
+  <img src="docs/images/demo/lyrics-spicy.jpg" width="230" alt="Spicy lyrics">
+  &nbsp;
+  <img src="docs/images/demo/lyrics-regular.jpg" width="230" alt="Regular lyrics on the album colour">
+  &nbsp;
+  <img src="docs/images/demo/lyrics-search.jpg" width="230" alt="Search by lyrics">
+</p>
+
 ### Player
 - Its own **gapless** engine (an AVQueuePlayer that always has the next song ready), with the
   lock screen, Control Center, AirPlay and headphone controls.
@@ -116,6 +80,12 @@ Apple account.
   video plays, the music steps aside and picks up where it left off.
 - A **visualizer** that follows the actual sound, in the mini-player and the lyrics screen.
 - A sleep timer, volume normalization and song credits.
+
+<p align="center">
+  <img src="docs/images/demo/now-playing.jpg" width="230" alt="Now playing">
+  &nbsp;
+  <img src="docs/images/demo/music-video-demo.gif" width="230" alt="A music video playing in the app">
+</p>
 
 ### Your library
 - **Home** with quick picks, Jump back in, Your Daily Mixes, Recently added, Most played,
@@ -132,10 +102,42 @@ Apple account.
   **Add to playlist** that shows where a song already is, and playlist editing. A heart on
   every song that's liked or in one of your playlists.
 
+<p align="center">
+  <img src="docs/images/demo/home.jpg" width="200" alt="Home">
+  &nbsp;
+  <img src="docs/images/demo/home-daily-mixes.jpg" width="200" alt="Home with Your Daily Mixes">
+  &nbsp;
+  <img src="docs/images/demo/daily-mixes.jpg" width="200" alt="Daily Mixes with their covers">
+  &nbsp;
+  <img src="docs/images/demo/search.jpg" width="200" alt="Search and Browse all">
+</p>
+
+<p align="center">
+  <img src="docs/images/demo/artist.jpg" width="200" alt="Artist page">
+  &nbsp;
+  <img src="docs/images/demo/popular.jpg" width="200" alt="Popular songs with Last.fm plays">
+  &nbsp;
+  <img src="docs/images/demo/discography.jpg" width="200" alt="Discography, singles and EPs">
+  &nbsp;
+  <img src="docs/images/demo/album.jpg" width="200" alt="Album page">
+</p>
+
+<p align="center">
+  <img src="docs/images/demo/music-videos.jpg" width="260" alt="Music videos and Appears on">
+  &nbsp;
+  <img src="docs/images/demo/fans-also-like.jpg" width="260" alt="Fans also like">
+</p>
+
 ### Widgets
 - **Now Playing** (small, medium and Lock Screen): the song and its cover; tap to open the
   player.
 - **Jump Back In** (medium and large): what you played last, one tap away.
+
+<p align="center">
+  <img src="docs/images/demo/widget-small.jpg" width="170" alt="Now Playing widget">
+  &nbsp;
+  <img src="docs/images/demo/widget-jump-back-in.jpg" width="340" alt="Jump Back In widget">
+</p>
 
 ### Offline and data
 - Download albums, playlists and Liked Songs, with their lyrics and covers. They're real
@@ -143,6 +145,12 @@ Apple account.
 - **Streaming quality** set separately for Wi-Fi and cellular (Original lossless down to a
   96 kbps data saver), and **download quality** (keep lossless, or save space as AAC).
 - Offline mode plays what's on the phone, and plays made offline still count once you're back.
+
+<p align="center">
+  <img src="docs/images/demo/streaming-quality.jpg" width="230" alt="Streaming quality on Wi-Fi and cellular">
+  &nbsp;
+  <img src="docs/images/demo/downloads.jpg" width="230" alt="Download quality and offline mode">
+</p>
 
 ### Radio
 - Any internet radio by its address, plus **SUB/WAVE** stations built in: what's on air, the
@@ -158,6 +166,20 @@ Apple account.
 - Haptics and motion (follow iOS, reduced or full). **Export** your look as text to back it up
   or share it, and **import** someone else's.
 - Three app icons, and multiple Jellyfin accounts.
+
+<p align="center">
+  <img src="docs/images/demo/theme-colour.jpg" width="200" alt="Accent colour: Lucid or your own">
+  &nbsp;
+  <img src="docs/images/demo/theme-text.jpg" width="200" alt="Fonts and shape">
+  &nbsp;
+  <img src="docs/images/demo/theme-player.jpg" width="200" alt="Mini-player and Now Playing background">
+  &nbsp;
+  <img src="docs/images/demo/customize-home.jpg" width="200" alt="Customize Home">
+</p>
+
+<p align="center">
+  <img src="docs/images/demo/theme-feel.jpg" width="260" alt="Haptics, motion, and sharing your look">
+</p>
 
 <p align="center">
   <img src="docs/images/icons.png" width="460" alt="App icons: Rakki, Neko player, Lyric lines">
