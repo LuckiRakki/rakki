@@ -70,7 +70,7 @@ Apple account.
   starts at once; the rest fills in behind it within seconds.
 - A sleep timer, volume normalization and song credits.
 - A **performance log** (Settings): what the app does to the phone (CPU, memory, heat,
-  battery), sent to your Jellyfin server to look into battery drain.
+  battery), sent to your Jellyfin server to look into app performance on device hardware.
 - A **visualizer** that follows the actual sound, in the mini-player and the lyrics screen.
 - **Music videos** from your Jellyfin library, matched to your songs and played in the app
   (picture in picture, AirPlay).
@@ -127,7 +127,7 @@ only need a new `.ipa` when the native side changes; the changelog says when.
 Jellyfin ([server/](server/README.md)). Without it, Rakki uses Jellyfin's own lyrics (LRC or
 plain text).
 
-## Your tags matter
+## Your Tags Matter
 
 Rakki is **metadata driven**: it reads what's in your music files' tags (through Jellyfin), so
 it works best with a clean library. In particular:
@@ -177,12 +177,6 @@ src/widgets/           Home Screen and Lock Screen widgets
 modules/rakki-audio/   the native audio engine (Swift)
 ```
 
-## What's next
-
-- **Demo:** screenshots, GIFs and videos of the main screens and the widget options.
-- **A Jellyfin music suite:** the tools that keep a library's tags clean enough for Rakki
-  (a review queue for new music, a Spotify playlist monitor, downloader tagging) together
-  with a step-by-step guide to setting up Rakki and its server side.
 
 ## Thanks
 
