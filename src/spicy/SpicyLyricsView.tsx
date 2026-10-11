@@ -27,6 +27,8 @@ function emptyPicture(): SkPicture {
  */
 /** How long everything must be still (paused, nothing moving) before drawing rests. */
 const SETTLE_MS = 1500;
+/** Pictures kept after they're replaced, in case the screen is a few frames behind. */
+const KEEP_PICTURES = 4;
 /** While resting, how often to look for play, a touch or a seek. */
 const REST_CHECK_MS = 50;
 
@@ -89,6 +91,11 @@ export function SpicyLyricsView({
     const bounds = Skia.XYWHRect(0, 0, size.w, size.h);
     // One recorder for the whole screen (a new one each frame was garbage 60 times a second).
     const rec = Skia.PictureRecorder();
+    // Each frame's picture holds every glyph on screen in native memory the JS garbage
+    // collector can't see, and it only collects now and then: dozens of old pictures could pile
+    // up and the phone ran out of memory mid-draw (the crash reports: Skia failing to allocate in
+    // drawText). Old pictures are freed as soon as the screen can't still be showing them.
+    const old: SkPicture[] = [];
     const frame = (t: number) => {
       const dt = last ? Math.min(t - last, 100) / 1000 : 0;
       last = t;
@@ -107,7 +114,10 @@ export function SpicyLyricsView({
         return;
       }
       scene.draw(rec.beginRecording(bounds));
-      picture.value = rec.finishRecordingAsPicture();
+      const next = rec.finishRecordingAsPicture();
+      old.push(picture.value);
+      picture.value = next;
+      while (old.length > KEEP_PICTURES) old.shift()?.dispose();
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

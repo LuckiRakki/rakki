@@ -6,6 +6,13 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.14.2 (2026-10-11)
+- Fewer crashes: Spicy lyrics drew a new picture every frame and left the old ones for the
+  garbage collector, which can't see their (native) size, so memory could pile up until an
+  allocation failed (the crash reports: Skia running out of memory in drawText, React failing
+  to create a view, often right as you switched Spicy and Regular). Old pictures are now freed
+  as soon as the screen can't be showing them.
+
 ## 1.14.1 (2026-10-11)
 - Performance log: CPU readings no longer come from sub-second windows (a sample taken right as
   the app changed state read as 500-1000 %), and the summary averages CPU by time instead of

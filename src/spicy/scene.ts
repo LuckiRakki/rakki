@@ -342,7 +342,7 @@ export class SpicyScene {
       const size = fonts.credits.getSize();
       // The lyrics credits a size below "Written by".
       const typeface = fonts.credits.getTypeface();
-      const smallFont = typeface ? Skia.Font(typeface, size * 0.8) : fonts.credits;
+      const smallFont = smallerFont(typeface, size * 0.8) ?? fonts.credits;
       const first = this.rows.length;
       y += gap + size * 0.6;
       credits.forEach((c, i) => {
@@ -1276,4 +1276,17 @@ function primaryAgent(lines: LyricLine[]): string {
     }
   }
   return best;
+}
+
+/**
+ * A font at another size from the same typeface. In the browser preview, getTypeface() hands back
+ * an unwrapped CanvasKit object that Skia.Font rejects; the caller then keeps the original size.
+ */
+function smallerFont(typeface: ReturnType<SkFont['getTypeface']>, size: number): SkFont | null {
+  if (!typeface) return null;
+  try {
+    return Skia.Font(typeface, size);
+  } catch {
+    return null;
+  }
 }
