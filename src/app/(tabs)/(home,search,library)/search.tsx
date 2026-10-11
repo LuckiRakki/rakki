@@ -76,7 +76,9 @@ export default function SearchScreen() {
   const input = useRef<TextInput>(null);
   const [text, setText] = useState('');
   const [term, setTerm] = useState('');
-  const [focused, setFocused] = useState(false);
+  // Search mode (Recent searches, Cancel) starts when the box is tapped and lasts until Cancel:
+  // scrolling hides the keyboard (and blurs the box), which mustn't close Recent searches.
+  const [searching, setSearching] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
 
   // Search once typing pauses; clearing the box is instant.
@@ -89,8 +91,9 @@ export default function SearchScreen() {
     void ensureSearchIndex();
   }, []);
 
-  const active = focused || text.length > 0;
+  const active = searching || text.length > 0;
   const cancel = () => {
+    setSearching(false);
     setText('');
     setFilter('all');
     input.current?.blur();
@@ -112,8 +115,7 @@ export default function SearchScreen() {
               ref={input}
               value={text}
               onChangeText={setText}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
+              onFocus={() => setSearching(true)}
               placeholder="What do you want to listen to?"
               placeholderTextColor={active ? t.colors.textMuted : '#555'}
               returnKeyType="search"

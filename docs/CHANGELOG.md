@@ -6,6 +6,13 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.14.0 (2026-10-11)
+- Fixed: scrolling Recent searches closed it (scrolling hides the keyboard, which used to end
+  search mode). Search mode now lasts until Cancel.
+- README: new screenshots and demo GIFs, a lyrics setup guide (local .ttml files and the Spicy
+  Lyrics API), how caching and the nightly server tasks work, widgets, and why CarPlay isn't
+  here yet.
+
 ## 1.13.0 (2026-10-11)
 - **Library → Mixes**: your Daily Mixes as a Library tab (hold the chips to move it), and
   "Show all" on Home's "Your Daily Mixes" opens it.
