@@ -25,7 +25,7 @@
 
 ---
 
-**AI NOTICE** This project is primarily lead by Claude Code[Link Text](https://github.com/anthropics/claude-code). I understand the feelings some have toward AI usage so use this statement as an AI disclosure.
+**AI NOTICE** This project is primarily lead by [Claude Code](https://github.com/anthropics/claude-code). I understand the feelings some have toward AI usage so use this statement as an AI disclosure.
 
 **Rakki** is a music app for your own [Jellyfin](https://jellyfin.org) server, made for the
 iPhone. It looks and feels like Spotify, does what Finamp and Feishin do, and has word-by-word
