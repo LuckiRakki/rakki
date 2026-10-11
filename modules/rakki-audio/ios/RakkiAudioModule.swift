@@ -111,6 +111,18 @@ public class RakkiAudioModule: Module {
       self.ensurePlayer().stop()
     }.runOnQueue(.main)
 
+    /// A music video took over (true) or ended (false): the lock screen and headphone buttons
+    /// belong to the video meanwhile.
+    AsyncFunction("stepAside") { (aside: Bool) in
+      self.ensurePlayer().stepAside(aside)
+    }.runOnQueue(.main)
+
+    /// Songs that finished streaming since the last call, with the bytes each pulled off the
+    /// network (the performance log's data use per song).
+    Function("takeStreamedBytes") { () -> [[String: Any]] in
+      self.currentPlayer()?.takeStreamed() ?? []
+    }
+
     /// Synchronous and cheap (reads a locked snapshot): safe to call every animation frame.
     Function("getProgress") { () -> [String: Any] in
       guard let existing = self.currentPlayer() else {

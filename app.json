@@ -2,8 +2,8 @@
   "expo": {
     "name": "Rakki",
     "slug": "rakki",
-    "version": "1.14.2",
-    "orientation": "portrait",
+    "version": "1.15.0",
+    "orientation": "default",
     "icon": "./assets/icons/rakki.png",
     "scheme": "rakki",
     "userInterfaceStyle": "dark",
@@ -64,21 +64,7 @@
         "./plugins/withGlassAlternateIcons",
         {
           "icons": [
-            "./assets/icons/app/SageGlass.icon",
-            "./assets/icons/app/SkyGlass.icon",
-            "./assets/icons/app/LemonGlass.icon",
-            "./assets/icons/app/SandGlass.icon",
             "./assets/icons/app/LavenderGlass.icon",
-            "./assets/icons/app/CoralGlass.icon",
-            "./assets/icons/app/MintGlass.icon",
-            "./assets/icons/app/BlushGlass.icon",
-            "./assets/icons/app/AquaGlass.icon",
-            "./assets/icons/app/PeachGlass.icon",
-            "./assets/icons/app/PeriwinkleGlass.icon",
-            "./assets/icons/app/MochaGlass.icon",
-            "./assets/icons/app/CyanGlass.icon",
-            "./assets/icons/app/LimeGlass.icon",
-            "./assets/icons/app/PinkGlass.icon",
             "./assets/icons/app/MidnightGlass.icon"
           ]
         }
@@ -103,124 +89,12 @@
             "ios": "./assets/icons/app/ClassicFlat.png"
           },
           {
-            "name": "SageDepth",
-            "ios": "./assets/icons/app/SageDepth.png"
-          },
-          {
-            "name": "SageFlat",
-            "ios": "./assets/icons/app/SageFlat.png"
-          },
-          {
-            "name": "SkyDepth",
-            "ios": "./assets/icons/app/SkyDepth.png"
-          },
-          {
-            "name": "SkyFlat",
-            "ios": "./assets/icons/app/SkyFlat.png"
-          },
-          {
-            "name": "LemonDepth",
-            "ios": "./assets/icons/app/LemonDepth.png"
-          },
-          {
-            "name": "LemonFlat",
-            "ios": "./assets/icons/app/LemonFlat.png"
-          },
-          {
-            "name": "SandDepth",
-            "ios": "./assets/icons/app/SandDepth.png"
-          },
-          {
-            "name": "SandFlat",
-            "ios": "./assets/icons/app/SandFlat.png"
-          },
-          {
             "name": "LavenderDepth",
             "ios": "./assets/icons/app/LavenderDepth.png"
           },
           {
             "name": "LavenderFlat",
             "ios": "./assets/icons/app/LavenderFlat.png"
-          },
-          {
-            "name": "CoralDepth",
-            "ios": "./assets/icons/app/CoralDepth.png"
-          },
-          {
-            "name": "CoralFlat",
-            "ios": "./assets/icons/app/CoralFlat.png"
-          },
-          {
-            "name": "MintDepth",
-            "ios": "./assets/icons/app/MintDepth.png"
-          },
-          {
-            "name": "MintFlat",
-            "ios": "./assets/icons/app/MintFlat.png"
-          },
-          {
-            "name": "BlushDepth",
-            "ios": "./assets/icons/app/BlushDepth.png"
-          },
-          {
-            "name": "BlushFlat",
-            "ios": "./assets/icons/app/BlushFlat.png"
-          },
-          {
-            "name": "AquaDepth",
-            "ios": "./assets/icons/app/AquaDepth.png"
-          },
-          {
-            "name": "AquaFlat",
-            "ios": "./assets/icons/app/AquaFlat.png"
-          },
-          {
-            "name": "PeachDepth",
-            "ios": "./assets/icons/app/PeachDepth.png"
-          },
-          {
-            "name": "PeachFlat",
-            "ios": "./assets/icons/app/PeachFlat.png"
-          },
-          {
-            "name": "PeriwinkleDepth",
-            "ios": "./assets/icons/app/PeriwinkleDepth.png"
-          },
-          {
-            "name": "PeriwinkleFlat",
-            "ios": "./assets/icons/app/PeriwinkleFlat.png"
-          },
-          {
-            "name": "MochaDepth",
-            "ios": "./assets/icons/app/MochaDepth.png"
-          },
-          {
-            "name": "MochaFlat",
-            "ios": "./assets/icons/app/MochaFlat.png"
-          },
-          {
-            "name": "CyanDepth",
-            "ios": "./assets/icons/app/CyanDepth.png"
-          },
-          {
-            "name": "CyanFlat",
-            "ios": "./assets/icons/app/CyanFlat.png"
-          },
-          {
-            "name": "LimeDepth",
-            "ios": "./assets/icons/app/LimeDepth.png"
-          },
-          {
-            "name": "LimeFlat",
-            "ios": "./assets/icons/app/LimeFlat.png"
-          },
-          {
-            "name": "PinkDepth",
-            "ios": "./assets/icons/app/PinkDepth.png"
-          },
-          {
-            "name": "PinkFlat",
-            "ios": "./assets/icons/app/PinkFlat.png"
           },
           {
             "name": "MidnightDepth",
@@ -273,6 +147,12 @@
             }
           ]
         }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "PORTRAIT_UP"
+        }
       ]
     ],
     "experiments": {
@@ -285,7 +165,7 @@
         "projectId": "6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc"
       }
     },
-    "runtimeVersion": "1.6.3",
+    "runtimeVersion": "1.15.0",
     "updates": {
       "url": "https://u.expo.dev/6ae8a4dc-a2f5-4e8e-a799-7f9bb3d6e8fc",
       "requestHeaders": {

@@ -6,6 +6,22 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.15.0, native build (2026-10-11)
+A new `.ipa` (runtime 1.15.0): install it with SideStore. Older installs stay on 1.14.2.
+- **About half the size.** App icons were 92 of its 181 MB, so the app now carries Classic,
+  Lavender and Midnight (Liquid Glass, Depth and Flat) plus Neko player and Lyric lines.
+  Customize → App icon → **More colours** links to the other 14 as images, with how to make
+  one your Home Screen icon through a Shortcuts shortcut (docs/ICONS.md).
+- **Music videos turn with the phone**: hold it sideways on the video screen and the video
+  fills the screen, controls and all, no full-screen button needed. Every other screen stays
+  upright.
+- **Music videos own the lock screen natively**: while one plays, the music player gives up its
+  lock screen, Control Center and headphone buttons entirely, and takes them back after.
+- **Performance log: data per song** (what each streamed song pulled off the network).
+- Songs that end on their own are now let go of properly (their visualizer tap and bookkeeping
+  stayed behind before, a little memory per song played).
+- Updated Reanimated (4.5.5) and Expo patches: two of the crash reports were inside Reanimated.
+
 ## 1.14.2 (2026-10-11)
 - Fewer crashes: Spicy lyrics drew a new picture every frame and left the old ones for the
   garbage collector, which can't see their (native) size, so memory could pile up until an

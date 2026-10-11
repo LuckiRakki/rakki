@@ -1,7 +1,9 @@
-// The Home Screen icon: one of 17 colour palettes in three styles (Liquid Glass, Depth, Flat),
-// or one of the two extra designs. Every icon is built into the app (iOS can only switch to
-// icons that ship inside it; see app.json and plugins/withGlassAlternateIcons.js). Builds
-// before 0.2.0 can't switch at all, so everything is guarded and loaded lazily.
+// The Home Screen icon: one of the built-in colour palettes in three styles (Liquid Glass,
+// Depth, Flat), or one of the two extra designs. iOS can only switch to icons that ship inside
+// the app (app.json and plugins/withGlassAlternateIcons.js), and every one adds to the app's
+// size, so the build carries three palettes; the other 14 are images in the repo for a Home
+// Screen shortcut (docs/ICONS.md, linked from the picker). Builds before 0.2.0 can't switch at
+// all, so everything is guarded and loaded lazily.
 import { requireOptionalNativeModule } from 'expo';
 import type { ImageSourcePropType } from 'react-native';
 import { Platform } from 'react-native';
@@ -14,26 +16,8 @@ export const ICON_STYLES: { key: IconStyle; label: string }[] = [
   { key: 'Flat', label: 'Flat' },
 ];
 
-/** The palettes, in the order they're shown. The names match the icons in the build. */
-export const PALETTES = [
-  'Classic',
-  'Sage',
-  'Sky',
-  'Lemon',
-  'Sand',
-  'Lavender',
-  'Coral',
-  'Mint',
-  'Blush',
-  'Aqua',
-  'Peach',
-  'Periwinkle',
-  'Mocha',
-  'Cyan',
-  'Lime',
-  'Pink',
-  'Midnight',
-] as const;
+/** The palettes built into the app, in the order they're shown (names match the icons in the build). */
+export const PALETTES = ['Classic', 'Lavender', 'Midnight'] as const;
 export type Palette = (typeof PALETTES)[number];
 
 /** The two designs that aren't the neko. */
@@ -46,55 +30,16 @@ const PREVIEWS: Record<string, ImageSourcePropType> = {
   'Classic-Glass': require('../../assets/icons/previews/Classic-Glass.png'),
   'Classic-Depth': require('../../assets/icons/previews/Classic-Depth.png'),
   'Classic-Flat': require('../../assets/icons/previews/Classic-Flat.png'),
-  'Sage-Glass': require('../../assets/icons/previews/Sage-Glass.png'),
-  'Sage-Depth': require('../../assets/icons/previews/Sage-Depth.png'),
-  'Sage-Flat': require('../../assets/icons/previews/Sage-Flat.png'),
-  'Sky-Glass': require('../../assets/icons/previews/Sky-Glass.png'),
-  'Sky-Depth': require('../../assets/icons/previews/Sky-Depth.png'),
-  'Sky-Flat': require('../../assets/icons/previews/Sky-Flat.png'),
-  'Lemon-Glass': require('../../assets/icons/previews/Lemon-Glass.png'),
-  'Lemon-Depth': require('../../assets/icons/previews/Lemon-Depth.png'),
-  'Lemon-Flat': require('../../assets/icons/previews/Lemon-Flat.png'),
-  'Sand-Glass': require('../../assets/icons/previews/Sand-Glass.png'),
-  'Sand-Depth': require('../../assets/icons/previews/Sand-Depth.png'),
-  'Sand-Flat': require('../../assets/icons/previews/Sand-Flat.png'),
   'Lavender-Glass': require('../../assets/icons/previews/Lavender-Glass.png'),
   'Lavender-Depth': require('../../assets/icons/previews/Lavender-Depth.png'),
   'Lavender-Flat': require('../../assets/icons/previews/Lavender-Flat.png'),
-  'Coral-Glass': require('../../assets/icons/previews/Coral-Glass.png'),
-  'Coral-Depth': require('../../assets/icons/previews/Coral-Depth.png'),
-  'Coral-Flat': require('../../assets/icons/previews/Coral-Flat.png'),
-  'Mint-Glass': require('../../assets/icons/previews/Mint-Glass.png'),
-  'Mint-Depth': require('../../assets/icons/previews/Mint-Depth.png'),
-  'Mint-Flat': require('../../assets/icons/previews/Mint-Flat.png'),
-  'Blush-Glass': require('../../assets/icons/previews/Blush-Glass.png'),
-  'Blush-Depth': require('../../assets/icons/previews/Blush-Depth.png'),
-  'Blush-Flat': require('../../assets/icons/previews/Blush-Flat.png'),
-  'Aqua-Glass': require('../../assets/icons/previews/Aqua-Glass.png'),
-  'Aqua-Depth': require('../../assets/icons/previews/Aqua-Depth.png'),
-  'Aqua-Flat': require('../../assets/icons/previews/Aqua-Flat.png'),
-  'Peach-Glass': require('../../assets/icons/previews/Peach-Glass.png'),
-  'Peach-Depth': require('../../assets/icons/previews/Peach-Depth.png'),
-  'Peach-Flat': require('../../assets/icons/previews/Peach-Flat.png'),
-  'Periwinkle-Glass': require('../../assets/icons/previews/Periwinkle-Glass.png'),
-  'Periwinkle-Depth': require('../../assets/icons/previews/Periwinkle-Depth.png'),
-  'Periwinkle-Flat': require('../../assets/icons/previews/Periwinkle-Flat.png'),
-  'Mocha-Glass': require('../../assets/icons/previews/Mocha-Glass.png'),
-  'Mocha-Depth': require('../../assets/icons/previews/Mocha-Depth.png'),
-  'Mocha-Flat': require('../../assets/icons/previews/Mocha-Flat.png'),
-  'Cyan-Glass': require('../../assets/icons/previews/Cyan-Glass.png'),
-  'Cyan-Depth': require('../../assets/icons/previews/Cyan-Depth.png'),
-  'Cyan-Flat': require('../../assets/icons/previews/Cyan-Flat.png'),
-  'Lime-Glass': require('../../assets/icons/previews/Lime-Glass.png'),
-  'Lime-Depth': require('../../assets/icons/previews/Lime-Depth.png'),
-  'Lime-Flat': require('../../assets/icons/previews/Lime-Flat.png'),
-  'Pink-Glass': require('../../assets/icons/previews/Pink-Glass.png'),
-  'Pink-Depth': require('../../assets/icons/previews/Pink-Depth.png'),
-  'Pink-Flat': require('../../assets/icons/previews/Pink-Flat.png'),
   'Midnight-Glass': require('../../assets/icons/previews/Midnight-Glass.png'),
   'Midnight-Depth': require('../../assets/icons/previews/Midnight-Depth.png'),
   'Midnight-Flat': require('../../assets/icons/previews/Midnight-Flat.png'),
 };
+
+/** Every other colour, as images for a Home Screen shortcut (with how to). */
+export const MORE_ICONS_URL = 'https://github.com/LuckiRakki/rakki/blob/main/docs/ICONS.md';
 
 export function iconPreview(palette: Palette, style: IconStyle): ImageSourcePropType {
   return PREVIEWS[`${palette}-${style}`];

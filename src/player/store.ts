@@ -511,6 +511,8 @@ let heldForVideo: { position: number; key: string | undefined } | null = null;
 
 /** A music video started (VideoHost): put the music away. */
 export async function holdForVideo() {
+  // The lock screen and headphone buttons go to the video (the native player lets go of them).
+  void engine.stepAside(true);
   const s = usePlayer.getState();
   // A station just stops (it starts again live afterwards anyway).
   if (radioPlaying(s)) {
@@ -526,6 +528,7 @@ export async function holdForVideo() {
 
 /** The music video ended (or music is wanted again): the queue goes back, paused, where it was. */
 export async function afterVideo() {
+  void engine.stepAside(false);
   if (!heldForVideo) return;
   const { position, key } = heldForVideo;
   heldForVideo = null;

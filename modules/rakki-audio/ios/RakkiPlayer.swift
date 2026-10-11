@@ -60,6 +60,18 @@ final class RakkiPlayer: NSObject {
   private var isLive: Bool { tracks.indices.contains(index) && tracks[index].live }
 
   private var itemKeys: [ObjectIdentifier: String] = [:]
+  /// Each item's Jellyfin id, for the streamed-bytes record.
+  private var itemIds: [ObjectIdentifier: String] = [:]
+  /// The item that was current, so the one AVQueuePlayer drops when a song ends naturally is
+  /// let go of too (its observation and visualizer tap would otherwise stay behind).
+  private var currentRef: AVPlayerItem?
+  /// Songs that finished streaming (their id and bytes off the network), for the performance
+  /// log; taken with takeStreamedBytes() from the JS thread, hence the lock.
+  private var streamed: [[String: Any]] = []
+  private let streamedLock = NSLock()
+  /// While a music video plays, the video owns the lock screen: no remote commands or Now
+  /// Playing info from here (stepAside).
+  private var asideForVideo = false
   /// Each item's audio tap, for the visualizer (RakkiLevels).
   private var itemTokens: [ObjectIdentifier: Int] = [:]
   private let meter = RakkiLevels()
@@ -291,6 +303,48 @@ final class RakkiPlayer: NSObject {
     return meter.read(count: count, playing: playing)
   }
 
+  /// A music video is playing (true) or has stopped (false). While it plays, this player gives
+  /// up the lock screen, Control Center and headphone buttons (its command handlers and Now
+  /// Playing info), so the video's own (expo-video) are the only ones; afterwards it takes
+  /// them back.
+  func stepAside(_ aside: Bool) {
+    guard aside != asideForVideo else { return }
+    if aside {
+      asideForVideo = true
+      for (command, target) in remoteTargets {
+        command.removeTarget(target)
+      }
+      remoteTargets = []
+      MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    } else {
+      asideForVideo = false
+      setupRemoteCommands()
+      updateNowPlaying()
+    }
+  }
+
+  /// Songs that finished streaming since the last call: [{ id, bytes }]. Any thread.
+  func takeStreamed() -> [[String: Any]] {
+    streamedLock.lock()
+    defer { streamedLock.unlock() }
+    let taken = streamed
+    streamed = []
+    return taken
+  }
+
+  /// What an item pulled off the network (its access log); nothing for downloaded files.
+  private func recordStreamed(_ item: AVPlayerItem) {
+    guard let id = itemIds[ObjectIdentifier(item)],
+          !((item.asset as? AVURLAsset)?.url.isFileURL ?? true),
+          let events = item.accessLog()?.events else { return }
+    let bytes = events.reduce(Int64(0)) { $0 + max(0, $1.numberOfBytesTransferred) }
+    guard bytes > 0 else { return }
+    streamedLock.lock()
+    streamed.append(["id": id, "bytes": Double(bytes)])
+    if streamed.count > 500 { streamed.removeFirst(streamed.count - 500) }
+    streamedLock.unlock()
+  }
+
   // MARK: - Treadmill
 
   private func jump(to target: Int, position: Double) {
@@ -300,6 +354,7 @@ final class RakkiPlayer: NSObject {
     index = target
     let item = makeItem(tracks[target])
     player.insert(item, after: nil)
+    currentRef = item
     if position > 0 {
       pendingSeek = position
     }
@@ -351,6 +406,7 @@ final class RakkiPlayer: NSObject {
     let item = AVPlayerItem(url: track.url)
     let id = ObjectIdentifier(item)
     itemKeys[id] = track.key
+    itemIds[id] = track.id
     let token = meter.register()
     itemTokens[id] = token
     meter.attach(to: item, token: token)
@@ -364,6 +420,11 @@ final class RakkiPlayer: NSObject {
 
   private func forget(_ item: AVPlayerItem) {
     let id = ObjectIdentifier(item)
+    // Only once per item (keys are cleared below), and only for songs that were played or
+    // buffered from the network.
+    if itemKeys[id] != nil { recordStreamed(item) }
+    itemIds[id] = nil
+    if currentRef === item { currentRef = nil }
     itemObservations[id]?.invalidate()
     itemObservations[id] = nil
     itemKeys[id] = nil
@@ -408,6 +469,11 @@ final class RakkiPlayer: NSObject {
 
   private func currentItemChanged() {
     if isRebuilding { return }
+    // The song before (dropped by AVQueuePlayer when it ended) is let go of here.
+    if let old = currentRef, old !== player.currentItem, !player.items().contains(where: { $0 === old }) {
+      forget(old)
+    }
+    currentRef = player.currentItem
     guard let key = currentItemKey() else {
       // Nothing left to play: the queue ran out with repeat off.
       if !tracks.isEmpty && player.items().isEmpty {
@@ -667,6 +733,7 @@ final class RakkiPlayer: NSObject {
   /// A live stream gets radio controls, like SUB/WAVE's own app: a stop square instead of
   /// pause, and no skipping or seeking.
   private func updateRemoteCommands() {
+    if asideForVideo { return }
     let center = MPRemoteCommandCenter.shared()
     let live = isLive
     center.pauseCommand.isEnabled = !live
@@ -677,6 +744,7 @@ final class RakkiPlayer: NSObject {
   }
 
   private func updateNowPlaying() {
+    if asideForVideo { return }
     guard tracks.indices.contains(index), player.currentItem != nil else {
       MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
       return

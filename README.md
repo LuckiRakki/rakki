@@ -145,7 +145,8 @@ An accent colour of your choice, or **Lucid**: the colour of the album that's pl
 OLED black or tinted backgrounds, four fonts, text size, roundness, spacing and grid columns;
 the mini-player as album colour, solid or glass; a moving, gradient, blurred or solid Now
 Playing background. Haptics and motion settings, and **export** your look as text to back it
-up or share it (and **import** someone else's). Plus app icons and multiple Jellyfin accounts.
+up or share it (and **import** someone else's). Plus app icons ([more colours](docs/ICONS.md))
+and multiple Jellyfin accounts.
 
 <p align="center"><img src="docs/images/demo/theme-colour.jpg" width="300" alt="Accent colour: Lucid or your own"></p>
 

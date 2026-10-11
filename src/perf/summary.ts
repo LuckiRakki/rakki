@@ -21,6 +21,9 @@ export interface Sample {
   lowPower?: boolean;
   brightness?: number;
   apiKB?: number;
+  /** Streamed off the network by songs that finished since the last sample (1.7.0 builds on). */
+  streamKB?: number;
+  songs?: number;
 }
 
 interface Bucket {
@@ -49,6 +52,8 @@ export function summarize(lines: string[], expectGapMs: number): string {
   const lags: number[] = [];
   let apiKB = 0;
   let dlKB = 0;
+  let streamKB = 0;
+  let streamedSongs = 0;
   let metricKit = 0;
   const data: string[] = [];
   const mb = (s: string | undefined) => (s ? Math.round(parseFloat(s) / 1024) : 0);
@@ -68,6 +73,8 @@ export function summarize(lines: string[], expectGapMs: number): string {
         if (row.lag !== undefined) lags.push(row.lag);
         apiKB += row.apiKB ?? 0;
         dlKB += row.dlKB ?? 0;
+        streamKB += row.streamKB ?? 0;
+        streamedSongs += row.songs ?? 0;
       } else if (row.k === 'e' && row.kind === 'queue' && row.ms !== undefined) queueMs.push(row.ms);
       else if (row.k === 'e' && row.kind === 'error' && row.message) errors.push(row.message);
       else if (row.k === 'metrickit') {
@@ -127,7 +134,10 @@ export function summarize(lines: string[], expectGapMs: number): string {
   const sorted = [...lags].sort((a, b) => a - b);
   const p95 = sorted.length ? sorted[Math.floor(sorted.length * 0.95)] : undefined;
   out.push(`JS heap max ${heapMax.toFixed(0)} MB; JS delay p95 ${p95 ?? 'n/a'} ms.`);
-  out.push(`Data: server API ${(apiKB / 1024).toFixed(1)} MB, downloads ${(dlKB / 1024).toFixed(1)} MB (streaming is in iOS's daily totals below).`);
+  const streaming = streamedSongs
+    ? `streaming ${(streamKB / 1024).toFixed(1)} MB (${streamedSongs} songs, ${(streamKB / 1024 / streamedSongs).toFixed(1)} MB each)`
+    : "streaming: none recorded (needs the 1.7.0 build; also in iOS's daily totals below)";
+  out.push(`Data: server API ${(apiKB / 1024).toFixed(1)} MB, ${streaming}, downloads ${(dlKB / 1024).toFixed(1)} MB.`);
   if (data.length) out.push(`Data per day (iOS): ${data.join(' | ')}`);
   if (queueMs.length) {
     const q = [...queueMs].sort((a, b) => a - b);

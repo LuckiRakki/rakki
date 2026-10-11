@@ -119,6 +119,8 @@ async function sample() {
   const now = Date.now();
   const late = dueAt ? Math.max(0, now - dueAt) : undefined;
   try {
+    // Songs that finished streaming since the last sample, with what each pulled off the network.
+    const streamed = RakkiAudio?.takeStreamedBytes?.() ?? [];
     const [lag, hw, net] = await Promise.all([jsDelay(), hardware(now), Network.getNetworkStateAsync().catch(() => null)]);
     const row: Sample & Record<string, unknown> = {
       k: 's',
@@ -131,6 +133,8 @@ async function sample() {
       late,
       apiKB: Math.round(takeApiBytes() / 102.4) / 10,
       dlKB: Math.round(takeDownloadBytes() / 1024),
+      streamKB: streamed.length ? Math.round(streamed.reduce((n, x) => n + x.bytes, 0) / 1024) : undefined,
+      songs: streamed.length || undefined,
       ...hermes(),
       ...hw,
     };

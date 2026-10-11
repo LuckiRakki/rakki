@@ -2,9 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -16,6 +16,7 @@ import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { tick } from '@/lib/haptics';
 import { useScreenAwake } from '@/lib/keepAwake';
+import { allowTurning, lockPortrait } from '@/lib/orientation';
 import { useSettings } from '@/settings/store';
 import { FlowingCover } from '@/spicy/Backdrop';
 import { ArtistLinks } from '@/ui/ArtistLinks';
@@ -40,7 +41,8 @@ const UP_NEXT_ROWS = 3;
  * slowly behind it. Swiping down (or the chevron) tucks it into the mini-player, where it keeps
  * playing; swiping the video sideways goes through the queue. Full screen turns it sideways
  * across the whole screen, with the same controls. When it ends, the next in the queue follows
- * after a short countdown, unless Settings → Autoplay music videos is off.
+ * after a short countdown, unless Settings → Autoplay music videos is off. This is the one screen
+ * that turns with the phone: held sideways, the video fills the screen with the same controls.
  */
 export default function VideoScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -54,6 +56,15 @@ export default function VideoScreen() {
   const [fullscreen, setFullscreen] = useState(false);
   const song = useVideoSong(video).data;
   useScreenAwake('video');
+  // Turns with the phone while it's open; leaving it stands the app upright again.
+  useFocusEffect(
+    useCallback(() => {
+      allowTurning();
+      return lockPortrait;
+    }, []),
+  );
+  // Held sideways, the screen lays itself out landscape (the rotated full screen is for upright).
+  const landscape = width > height;
 
   // Opened from a link with nothing playing yet: start that video.
   useEffect(() => {
@@ -65,7 +76,7 @@ export default function VideoScreen() {
   // Swipe down: the screen follows the finger, then tucks away (or springs back).
   const drag = useSharedValue(0);
   const swipeDown = Gesture.Pan()
-    .enabled(!fullscreen)
+    .enabled(!fullscreen && !landscape)
     .activeOffsetY(24)
     .failOffsetX([-16, 16])
     .onUpdate((e) => {
@@ -84,15 +95,33 @@ export default function VideoScreen() {
   }));
 
   const cardW = width - t.space.lg * 2;
-  const stageW = fullscreen ? height : cardW;
-  const stageH = fullscreen ? width : Math.round((cardW * 9) / 16);
+  // Sideways: as big as the screen allows at 16:9, inside the notch-free area.
+  const sideW = Math.min(width - insets.left - insets.right, Math.round((height * 16) / 9));
+  const stageW = landscape ? sideW : fullscreen ? height : cardW;
+  const stageH = landscape ? Math.round((sideW * 9) / 16) : fullscreen ? width : Math.round((cardW * 9) / 16);
   const stage = VideoStage ? (
     <Suspense fallback={null}>
-      <VideoStage width={stageW} height={stageH} fullscreen={fullscreen} onFullscreen={setFullscreen} />
+      <VideoStage
+        width={stageW}
+        height={stageH}
+        fullscreen={fullscreen || landscape}
+        // Sideways, "exit full screen" tucks the video into the mini-player instead.
+        onFullscreen={landscape ? () => router.back() : setFullscreen}
+      />
     </Suspense>
   ) : (
     <ActivityIndicator color={t.colors.text} style={{ flex: 1 }} />
   );
+
+  // Held sideways: just the video, filling the screen.
+  if (landscape) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
+        <StatusBar hidden />
+        <View style={{ width: stageW, height: stageH }}>{stage}</View>
+      </View>
+    );
+  }
 
   // Full screen: the stage turned a quarter, filling the (portrait) screen.
   if (fullscreen) {

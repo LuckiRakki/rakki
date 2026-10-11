@@ -44,6 +44,8 @@ export interface PlayerEngine {
   getProgress(): Progress;
   /** The visualizer's band levels (0–1, low to high), or null where there are none to read. */
   getLevels(count: number): number[] | null;
+  /** A music video owns the lock screen meanwhile (true), or has ended (false). */
+  stepAside(aside: boolean): Promise<void>;
   subscribe(handlers: EngineHandlers): () => void;
 }
 
@@ -64,6 +66,9 @@ function nativeEngine(mod: NonNullable<typeof RakkiAudio>): PlayerEngine {
     stop: () => mod.stop(),
     getProgress: () => mod.getProgress(),
     getLevels: (count) => mod.getLevels?.(count) ?? null,
+    stepAside: async (aside) => {
+      await mod.stepAside?.(aside);
+    },
     subscribe(h) {
       const subs = [
         mod.addListener('onState', h.onState),
@@ -233,6 +238,7 @@ function fallbackEngine(): PlayerEngine {
     },
     getProgress: () => last,
     getLevels: () => null,
+    stepAside: async () => {},
     subscribe(h) {
       listeners.add(h);
       return () => listeners.delete(h);

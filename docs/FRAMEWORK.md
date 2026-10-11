@@ -447,7 +447,8 @@ ideas (Discord Rich Presence, a desktop app).
   performance log's hardware readings (RakkiDeviceStats.swift, MetricKit) and the root error
   boundary. Updates now go to runtime 1.6.3; 1.2.0 stays on update 1.6.2, which crashes, so
   every phone needs this build.
-- **Next native build (planned; the user's notes, 2026-10-04):**
+- ~~**Next native build**~~ **built as 1.15.0** (2026-10-11), with slim icons (Classic, Lavender,
+  Midnight + extras; the rest in docs/ICONS.md), Reanimated 4.5.5 and the items below. The plan was:
   - **Music videos turn with the phone** (the user's notes, again 2026-10-10): allow landscape
     in the app (portrait-only today) and lock every screen except the video screen to portrait
     (expo-screen-orientation). Turning the phone on the video screen lays it out landscape

@@ -90,6 +90,13 @@ declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
   deviceStats?(): Promise<DeviceStats>;
   /** iOS's daily MetricKit reports (JSON text) since the last call. Missing before 1.6.0. */
   takeMetricReports?(): string[];
+  /**
+   * A music video took over (true) or ended (false): meanwhile the lock screen, Control Center
+   * and headphone buttons belong to the video. Missing before 1.7.0.
+   */
+  stepAside?(aside: boolean): Promise<void>;
+  /** Songs that finished streaming since the last call, with the bytes each pulled off the network. Missing before 1.7.0. */
+  takeStreamedBytes?(): { id: string; bytes: number }[];
 }
 
 export interface DeviceStats {

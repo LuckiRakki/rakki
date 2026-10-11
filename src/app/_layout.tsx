@@ -29,6 +29,7 @@ import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
 import { logErrorNow, startPerfLog } from '@/perf/log';
 import { startMemoryCare } from '@/lib/memory';
+import { lockPortrait } from '@/lib/orientation';
 import { startPlaylistCache } from '@/library/playlistCache';
 import { startCompanionSync, syncLastfmKey } from '@/lib/companion';
 
@@ -168,6 +169,8 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     startCompanionSync();
     // Memory back to iOS in the background, so it doesn't close Rakki to get it.
     startMemoryCare();
+    // Upright everywhere but the music video screen (lib/orientation.ts).
+    lockPortrait();
     // The screen sleeps as usual except on lyrics and music videos (lib/keepAwake.ts).
     resetScreenAwake();
   }, []);
