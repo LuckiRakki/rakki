@@ -6,6 +6,12 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.11.0 (2026-10-11)
+- With the Rakki plugin on the server, the playlist cache (Add to playlist's ticks, the
+  "in a playlist" heart) stays in step with one request instead of one per changed playlist.
+- The Rakki plugin now holds the lyrics too (it replaces the Spicy Lyrics TTML plugin on the
+  server), notes skips for Daily Mixes, and shows the performance logs on its settings page.
+
 ## 1.10.0 (2026-10-10)
 - The Rakki companion plugin (server/, for the server; Daily Mix preview so far) shares the
   Last.fm key with the app: whichever has one fills in the other, so you only enter it once.

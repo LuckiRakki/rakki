@@ -65,6 +65,126 @@
                         </div>
                     </div>
 
+                    <h2>Lyrics</h2>
+                    <p>
+                        Word-by-word lyrics for Rakki and the Spicy Lyrics web mod: read from <code>.ttml</code>
+                        files next to your songs (served at <code>/SpicyLyrics/{itemId}/ttml</code>), with the
+                        Spicy Lyrics API as a fallback, a nightly scraper for missing files, and lyrics search.
+                    </p>
+
+                    <h2>Lyrics: nightly TTML scraper</h2>
+                    <p>
+                        Optionally fetch missing TTML sidecars from the public
+                        <a href="https://github.com/ibratabian17/lyricsplus" target="_blank" rel="noopener">
+                            LyricsPlus / KPoe
+                        </a>
+                        aggregator. Runs as a Scheduled Task; default trigger is
+                        daily at 3 AM. Run on-demand or change the schedule under
+                        <strong>Dashboard → Scheduled Tasks → Spicy Lyrics</strong>.
+                    </p>
+
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="ScraperEnabled" />
+                            <span>Enable nightly scraper</span>
+                        </label>
+                    </div>
+
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="ScraperSkipExisting" />
+                            <span>Skip tracks that already have a <code>.ttml</code> sidecar</span>
+                        </label>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ScraperTimeoutSeconds">
+                            Per-request timeout (seconds)
+                        </label>
+                        <input is="emby-input" type="number" id="ScraperTimeoutSeconds"
+                               min="3" max="120" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ScraperSourcePref">
+                            KPoe source preference (comma-separated)
+                        </label>
+                        <input is="emby-input" type="text" id="ScraperSourcePref" />
+                        <div class="fieldDescription">
+                            e.g. <code>apple,lyricsplus,musixmatch,spotify,qq,deezer,musixmatch-word</code>
+                        </div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ScraperKPoeServers">
+                            KPoe mirrors (one per line; tried in order)
+                        </label>
+                        <textarea id="ScraperKPoeServers" rows="4"
+                                  style="width:100%;box-sizing:border-box;font-family:monospace"></textarea>
+                    </div>
+
+                    <h2>Lyrics: Spicy Lyrics API</h2>
+                    <p>
+                        Fallback for tracks with no <code>.ttml</code> sidecar, using the
+                        <a href="https://developers.spicylyrics.org/docs" target="_blank" rel="noopener">Spicy Lyrics API</a>.
+                        Sidecars always win. Lyrics from the API are cached for speed, refreshed
+                        nightly before they are 30 days old, and deleted if a refresh fails for
+                        that long, as the API Terms require. Clients show the provider and, for
+                        community syncs, credit the uploader and maker.
+                    </p>
+                    <p>
+                        The API looks lyrics up by Spotify track ID. Tracks are matched to Spotify
+                        for free via MusicBrainz, so this works best when your library is tagged
+                        with MusicBrainz IDs (e.g. by MusicBrainz Picard or Jellyfin's MusicBrainz
+                        metadata). Tracks with no MusicBrainz&nbsp;&rarr;&nbsp;Spotify link fall
+                        back to line-by-line lyrics. To force a match, set a <code>Spotify</code>
+                        provider ID on the track.
+                    </p>
+
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="SpicyApiEnabled" />
+                            <span>Enable Spicy Lyrics API</span>
+                        </label>
+                    </div>
+
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="SpicyApiPriority" />
+                            <span>Prefer the API over local <code>.ttml</code> sidecars (sidecar becomes the fallback). A synced sidecar is never replaced by unsynced API text.</span>
+                        </label>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SpicyApiKey">Secret key (sl_sk_&hellip;)</label>
+                        <input is="emby-input" type="password" id="SpicyApiKey" autocomplete="off" />
+                        <div class="fieldDescription">
+                            Create one at <a href="https://developers.spicylyrics.org/dashboard/applications" target="_blank" rel="noopener">developers.spicylyrics.org</a>.
+                            Stays on the server; never sent to apps.
+                        </div>
+                    </div>
+
+
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="SpicyFetchOnPlay" />
+                            <span>Fetch on first play when nothing is cached (otherwise only the nightly task fetches)</span>
+                        </label>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SpicyRefreshAfterDays">Refresh cached lyrics after (days, 1&ndash;29)</label>
+                        <input is="emby-input" type="number" id="SpicyRefreshAfterDays" min="1" max="29" step="1" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SpicyMaxRequestsPerRun">Max tracks per nightly run</label>
+                        <input is="emby-input" type="number" id="SpicyMaxRequestsPerRun" min="1" max="10000" step="1" />
+                        <div class="fieldDescription">
+                            Task: <strong>Dashboard &rarr; Scheduled Tasks &rarr; Spicy Lyrics &rarr; Refresh Spicy Lyrics API cache</strong> (daily, 4 AM).
+                        </div>
+                    </div>
+
                     <br />
                     <button is="emby-button" type="submit" class="raised button-submit block">
                         <span>Save</span>
@@ -80,6 +200,16 @@
                     <span>Preview tonight's mixes</span>
                 </button>
                 <div id="RakkiPreviewOut" style="margin-top:1em"></div>
+
+                <h2>Performance logs</h2>
+                <p>
+                    Logs the Rakki app uploads (Settings &rarr; Performance log in the app): battery, CPU,
+                    memory, data use and crash reports. Pick one to read its summary.
+                </p>
+                <button is="emby-button" type="button" id="RakkiLogs" class="raised block">
+                    <span>Show logs</span>
+                </button>
+                <div id="RakkiLogsOut" style="margin-top:1em"></div>
             </div>
         </div>
 
@@ -105,6 +235,18 @@
                         page.querySelector('#LeadMinPlays').value     = cfg.LeadMinPlays != null ? cfg.LeadMinPlays : 5;
                         page.querySelector('#LeadRestDays').value     = cfg.LeadRestDays != null ? cfg.LeadRestDays : 3;
                         page.querySelector('#TagGroupLikeness').value = cfg.TagGroupLikeness || 0.22;
+                        page.querySelector('#ScraperEnabled').checked         = !!cfg.ScraperEnabled;
+                        page.querySelector('#ScraperSkipExisting').checked    = cfg.ScraperSkipExisting !== false;
+                        page.querySelector('#ScraperTimeoutSeconds').value    = cfg.ScraperTimeoutSeconds || 15;
+                        page.querySelector('#ScraperSourcePref').value        = cfg.ScraperSourcePref || '';
+                        page.querySelector('#ScraperKPoeServers').value       = (cfg.ScraperKPoeServers || []).join('
+');
+                        page.querySelector('#SpicyApiEnabled').checked        = !!cfg.SpicyApiEnabled;
+                        page.querySelector('#SpicyApiPriority').checked       = !!cfg.SpicyApiPriority;
+                        page.querySelector('#SpicyApiKey').value              = cfg.SpicyApiKey || '';
+                        page.querySelector('#SpicyFetchOnPlay').checked       = cfg.SpicyFetchOnPlay !== false;
+                        page.querySelector('#SpicyRefreshAfterDays').value    = cfg.SpicyRefreshAfterDays || 25;
+                        page.querySelector('#SpicyMaxRequestsPerRun').value   = cfg.SpicyMaxRequestsPerRun || 500;
                         Dashboard.hideLoadingMsg();
                     });
                 }
@@ -126,6 +268,20 @@
                         cfg.LeadMinPlays     = Math.round(num('#LeadMinPlays', 5, 0, 1000));
                         cfg.LeadRestDays     = Math.round(num('#LeadRestDays', 3, 0, 30));
                         cfg.TagGroupLikeness = num('#TagGroupLikeness', 0.22, 0.05, 0.6);
+                        cfg.ScraperEnabled        = page.querySelector('#ScraperEnabled').checked;
+                        cfg.ScraperSkipExisting   = page.querySelector('#ScraperSkipExisting').checked;
+                        cfg.ScraperTimeoutSeconds = Math.round(num('#ScraperTimeoutSeconds', 15, 3, 120));
+                        cfg.ScraperSourcePref     = page.querySelector('#ScraperSourcePref').value.trim();
+                        cfg.ScraperKPoeServers    = page.querySelector('#ScraperKPoeServers').value
+                            .split('
+').map(function (s) { return s.trim(); })
+                            .filter(function (s) { return s.length > 0; });
+                        cfg.SpicyApiEnabled        = page.querySelector('#SpicyApiEnabled').checked;
+                        cfg.SpicyApiPriority       = page.querySelector('#SpicyApiPriority').checked;
+                        cfg.SpicyApiKey            = page.querySelector('#SpicyApiKey').value.trim();
+                        cfg.SpicyFetchOnPlay       = page.querySelector('#SpicyFetchOnPlay').checked;
+                        cfg.SpicyRefreshAfterDays  = Math.round(num('#SpicyRefreshAfterDays', 25, 1, 29));
+                        cfg.SpicyMaxRequestsPerRun = Math.round(num('#SpicyMaxRequestsPerRun', 500, 1, 10000));
                         ApiClient.updatePluginConfiguration(PluginId, cfg).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);
                         });
@@ -183,13 +339,57 @@
                     });
                 }
 
+                function showLogs() {
+                    var out = page.querySelector('#RakkiLogsOut');
+                    ApiClient.getJSON(ApiClient.getUrl('Rakki/PerfLogs')).then(function (logs) {
+                        if (!logs.length) {
+                            out.innerHTML = '<p>No logs yet.</p>';
+                            return;
+                        }
+                        out.innerHTML = '<ul>' + logs.map(function (l) {
+                            return '<li><a href="#" data-log="' + esc(l.Name) + '">' + esc(new Date(l.Date).toLocaleString()) +
+                                '</a> <span style="opacity:.6">(' + esc(l.Name) + ', ' + Math.round(l.Size / 1024) + ' KB)</span></li>';
+                        }).join('') + '</ul><pre id="RakkiLogText" style="white-space:pre-wrap;font-size:.85em"></pre>';
+                    }, function () {
+                        out.innerHTML = '<p>Couldn’t load the logs.</p>';
+                    });
+                }
+
+                function showLog(name) {
+                    var pre = page.querySelector('#RakkiLogText');
+                    pre.textContent = 'Loading...';
+                    ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('Rakki/PerfLogs/' + encodeURIComponent(name)), dataType: 'text' })
+                        .then(function (text) {
+                            // The summary is everything before the first JSON line.
+                            var lines = String(text).split('
+');
+                            var end = lines.findIndex(function (l) { return l.charAt(0) === '{'; });
+                            pre.textContent = (end < 0 ? lines : lines.slice(0, end)).join('
+') +
+                                (end < 0 ? '' : '
+
+(' + (lines.length - end) + ' more lines of samples and events in the full log)');
+                        }, function () {
+                            pre.textContent = 'Couldn’t load that log.';
+                        });
+                }
+
                 document.querySelector('#RakkiConfigPage')
                     .addEventListener('pageshow', function () {
                         page = this;
+                        if (page.dataset.bound) return loadConfig();
+                        page.dataset.bound = '1';
                         page.querySelector('#RakkiConfigForm').addEventListener('submit', saveConfig);
                         page.querySelector('#RakkiPreview').addEventListener('click', function () {
                             clearTimeout(timer);
                             poll(true);
+                        });
+                        page.querySelector('#RakkiLogs').addEventListener('click', showLogs);
+                        page.querySelector('#RakkiLogsOut').addEventListener('click', function (e) {
+                            var a = e.target.closest('[data-log]');
+                            if (!a) return;
+                            e.preventDefault();
+                            showLog(a.getAttribute('data-log'));
                         });
                         loadConfig();
                     });

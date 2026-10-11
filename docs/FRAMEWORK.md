@@ -466,13 +466,13 @@ ideas (Discord Rich Presence, a desktop app).
     to step aside (drop its remote command targets and Now Playing info) while a video plays,
     then turn on expo-video's showNowPlayingNotification with the video's title, artist and
     thumbnail (VideoSource metadata); take them back when the video stops.
-- **Rakki companion plugin** (the user's request, 2026-10-10; backlog): one Jellyfin plugin
-  that holds everything Rakki needs from the server, so setting up the server is one install.
-  It takes over what the Spicy Lyrics plugin does for Rakki today (word-by-word lyrics and the
-  Spicy Lyrics API with its cache, lyrics search and its index, timing offsets) and adds Daily
-  Mixes (docs/DAILY_MIX.md) and the user's Last.fm key in its settings. Rakki looks for it
-  (`/Rakki/Info`) and falls back to the Spicy Lyrics plugin's endpoints while it isn't there.
-  The Spicy Lyrics plugin stays for the Jellyfin web mod.
+- **Rakki companion plugin: built and installed 2026-10-11** (server/, see server/README.md).
+  One plugin with everything Rakki needs from the server: the Spicy Lyrics TTML plugin merged
+  in (lyrics, Spicy Lyrics API, scraper, lyrics search, offsets; same `/SpicyLyrics/...` paths,
+  so the web mod and Feishin still work), Daily Mix preview, skip tracking, one-request playlist
+  sync, the performance log viewer and the shared Last.fm key. The old plugin was removed from
+  the server (backup in /config/plugin-backups). Next: a Spicy Lyrics **app template** so each
+  user gets their own API key from the catalog (server/README.md).
 - **Siri** (the user's request, 2026-10-04; backlog, not started). Wants it smart: "Play All I
   Wanted by Paramore", "Play Brand New Eyes by Paramore", "Play Brand New Eyes", best match,
   fast. Constraints and design:

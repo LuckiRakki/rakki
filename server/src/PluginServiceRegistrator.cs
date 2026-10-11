@@ -3,6 +3,11 @@
 
 using Jellyfin.Plugin.Rakki.DailyMix;
 using Jellyfin.Plugin.Rakki.LastFm;
+using Jellyfin.Plugin.Rakki.Skips;
+using Jellyfin.Plugin.Rakki.SpicyLyrics;
+using Jellyfin.Plugin.Rakki.SpicyLyrics.LyricsSearch;
+using Jellyfin.Plugin.Rakki.SpicyLyrics.Scraping;
+using Jellyfin.Plugin.Rakki.SpicyLyrics.SpicyApi;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +21,17 @@ namespace Jellyfin.Plugin.Rakki
             serviceCollection.AddHttpClient();
             serviceCollection.AddSingleton<LastFmClient>();
             serviceCollection.AddSingleton<MixService>();
+            serviceCollection.AddSingleton<SkipTracker>();
+            serviceCollection.AddHostedService<StartupService>();
+
+            // Lyrics (merged from the Spicy Lyrics TTML plugin): .ttml sidecars, the Spicy
+            // Lyrics API fallback, the KPoe scraper and lyrics search.
+            serviceCollection.AddSingleton<TTMLLyricProvider>();
+            serviceCollection.AddSingleton<KPoeClient>();
+            serviceCollection.AddSingleton<SpotifyResolver>();
+            serviceCollection.AddSingleton<SpicyLyricsClient>();
+            serviceCollection.AddSingleton<SpicyLyricsService>();
+            serviceCollection.AddSingleton<LyricsIndex>();
         }
     }
 }

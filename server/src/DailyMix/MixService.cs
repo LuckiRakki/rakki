@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Rakki.LastFm;
+using Jellyfin.Plugin.Rakki.Skips;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
 
@@ -29,6 +30,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         private readonly IUserDataManager _userData;
         private readonly IUserManager _users;
         private readonly LastFmClient _lastFm;
+        private readonly SkipTracker _skips;
         private readonly ILogger<MixService> _logger;
         private readonly object _lock = new();
 
@@ -38,12 +40,13 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         private string? _error;
         private MixPreview? _done;
 
-        public MixService(ILibraryManager library, IUserDataManager userData, IUserManager users, LastFmClient lastFm, ILogger<MixService> logger)
+        public MixService(ILibraryManager library, IUserDataManager userData, IUserManager users, LastFmClient lastFm, SkipTracker skips, ILogger<MixService> logger)
         {
             _library = library;
             _userData = userData;
             _users = users;
             _lastFm = lastFm;
+            _skips = skips;
             _logger = logger;
         }
 
@@ -104,7 +107,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             }
 
             Stage("Reading the library");
-            var lib = Library.Read(_library, _userData, _users, user, now);
+            var lib = Library.Read(_library, _userData, _users, user, now, _skips.For(user));
 
             // Tag profiles: Last.fm tags for artists with 2+ songs or any plays; the rest go by their songs' genres.
             var lookUp = lib.Artists.Values.Where(a => a.Songs.Count >= 2 || a.Plays > 0).ToList();

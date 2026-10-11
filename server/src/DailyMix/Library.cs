@@ -27,6 +27,11 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         public int      Plays     { get; init; }
         public DateTime? LastPlayed { get; init; }
         public bool     Liked     { get; init; }
+        /// <summary>Times you stopped it before halfway (Skips/SkipTracker.cs).</summary>
+        public int      Skips     { get; init; }
+
+        /// <summary>1 for songs you never skip, less the more you skip them compared with playing them.</summary>
+        public double   Keep      => (1.0 + Plays) / (1.0 + Plays + Skips);
         public DateTime Added     { get; init; }
 
         /// <summary>
@@ -56,7 +61,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
         public List<Song> Songs { get; } = new();
         public Dictionary<string, Artist> Artists { get; } = new();
 
-        public static Library Read(ILibraryManager library, IUserDataManager userData, IUserManager users, Guid userId, DateTime now)
+        public static Library Read(ILibraryManager library, IUserDataManager userData, IUserManager users, Guid userId, DateTime now, IReadOnlyDictionary<Guid, Skips.SkipRecord> skips)
         {
             var user = users.GetUserById(userId) ?? throw new ArgumentException("No such user.", nameof(userId));
             var items = library.GetItemList(new InternalItemsQuery(user)
@@ -75,6 +80,9 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                 var titleKey = TitleKey(item.Name ?? string.Empty);
                 var ud = userData.GetUserData(user, item);
                 var plays = ud?.PlayCount ?? 0;
+                var skipped = skips.TryGetValue(item.Id, out var sk) ? sk.Count : 0;
+                // Songs you mostly skip never go in a mix.
+                if (skipped >= 3 && skipped > plays) continue;
                 var song = new Song
                 {
                     Id         = item.Id,
@@ -86,6 +94,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                     Plays      = plays,
                     LastPlayed = ud?.LastPlayedDate,
                     Liked      = ud?.IsFavorite ?? false,
+                    Skips      = skipped,
                     Added      = item.DateCreated,
                     Lately     = LatelyOf(plays, ud?.LastPlayedDate, ud?.IsFavorite ?? false, now),
                 };

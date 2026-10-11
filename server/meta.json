@@ -1,7 +1,7 @@
 {
   "category": "General",
-  "changelog": "Daily Mix preview; Last.fm key shared with the Rakki app.",
-  "description": "Server features for the Rakki app: Daily Mixes (preview), and the Last.fm key shared with the app so it's entered once.",
+  "changelog": "Daily Mix preview, skip tracking, one-request playlist check, performance log viewer, and the Spicy Lyrics TTML plugin merged in (lyrics, Spicy Lyrics API, scraper, lyrics search).",
+  "description": "Server features for the Rakki app: word-by-word lyrics (formerly Spicy Lyrics TTML), Daily Mixes, skip tracking, playlist sync and performance logs.",
   "guid": "4aed0f98-72d3-47d4-9a96-8aa90b9669b8",
   "name": "Rakki",
   "overview": "Companion plugin for the Rakki music app.",

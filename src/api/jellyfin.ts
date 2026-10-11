@@ -404,6 +404,18 @@ export class JellyfinClient {
     return this.send('POST', '/Rakki/LastFm/Key', { Key: key });
   }
 
+  /**
+   * The Rakki plugin's one-request playlist check: every playlist with its stamp, and the songs
+   * ([song id, entry id]) of each whose stamp differs from `known` (404 without the plugin).
+   */
+  rakkiPlaylistSync(known: Record<string, string>) {
+    return this.send<{ Playlists: { Id: string; Stamp: string }[]; Changed: { Id: string; Stamp: string; Pairs: [string, string][] }[] }>(
+      'POST',
+      '/Rakki/Playlists/Sync',
+      { Known: known },
+    );
+  }
+
   /** Set an item's picture (a playlist cover): base64 image data. */
   uploadItemImage(itemId: string, base64: string, mimeType: string) {
     const { serverUrl, deviceId, token } = this.session;

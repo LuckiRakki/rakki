@@ -6,6 +6,7 @@
 //    in the same tag group (a little from the closest other group, at most 15%).
 // 3. Pools, 2:2:1: Popular (Last.fm plays), Yours (your plays lately), New (niche on Last.fm,
 //    recently added or never played). A song lands in one pool only.
+// Songs you skip a lot are left out, and ones you skip sometimes rank lower.
 // 4. Order: a lead song you play a lot first, then P, Y, P, Y, N, no artist twice within 3.
 // The draw is seeded by the date and user, so a day's preview and its build agree.
 
@@ -245,8 +246,8 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             var yoursNeed = (int)Math.Round(size * 0.4) - (opener != null ? 1 : 0);
             var newNeed = size - popularNeed - yoursNeed - (opener != null ? 1 : 0);
 
-            var popular = Take(songs.Where(s => s.LastFmPlays > 0).OrderByDescending(s => s.LastFmPlays * Math.Sqrt(Like(s))), popularNeed);
-            var yours = Take(songs.Where(s => s.Plays > 0 || s.Liked).OrderByDescending(s => s.Lately * Math.Sqrt(Like(s))), yoursNeed);
+            var popular = Take(songs.Where(s => s.LastFmPlays > 0).OrderByDescending(s => s.LastFmPlays * Math.Sqrt(Like(s)) * s.Keep), popularNeed);
+            var yours = Take(songs.Where(s => s.Plays > 0 || s.Liked).OrderByDescending(s => s.Lately * Math.Sqrt(Like(s)) * s.Keep), yoursNeed);
             var known = songs.Where(s => s.LastFmPlays > 0).Select(s => s.LastFmPlays).OrderBy(x => x).ToList();
             var nicheCut = known.Count > 0 ? known[known.Count / 2] : long.MaxValue;
             var fresh = Take(
@@ -254,6 +255,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                     .Select(s => (s, w: Like(s)
                         * ((_now - s.Added).TotalDays <= 30 ? 1.6 : 1)
                         * (s.Plays == 0 ? 1.4 : 1)
+                        * s.Keep
                         * (0.6 + 0.8 * _rng.NextDouble())))
                     .OrderByDescending(x => x.w).Select(x => x.s),
                 newNeed);

@@ -13,11 +13,13 @@
 //   past the Etag.
 // - Saving in Add to playlist never trusts it: Done asks the server for the playlists it's
 //   about to change first (refreshPlaylist).
+// - With the Rakki plugin on the server, the check and the fetching are one request
+//   (POST /Rakki/Playlists/Sync: the server compares the stamps and sends only what changed).
 // Stored per user in the phone's preferences (ids only: ~250 KB for 3,400 songs).
 import { AppState } from 'react-native';
 import { create } from 'zustand';
 
-import type { BaseItem, PlaylistEntry } from '@/api/jellyfin';
+import { JellyfinError, type BaseItem, type PlaylistEntry } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { onPlaylistsChanged } from '@/lib/events';
 import { isOffline } from '@/lib/online';
@@ -63,6 +65,8 @@ let server: string | null = null;
 /** Playlists Rakki just changed: fetched on the next check whatever their stamp says. */
 const dirty = new Set<string>();
 let again = false;
+/** The server has the Rakki plugin's playlist check (null: not known yet). */
+let pluginSync: boolean | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let soonTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -107,6 +111,7 @@ function load() {
     }
   }
   dirty.clear();
+  pluginSync = null;
   usePlaylistCache.setState({ lists, checkedAt: 0, syncing: false });
 }
 
@@ -123,8 +128,33 @@ export async function syncPlaylists(force = false): Promise<void> {
   }
   usePlaylistCache.setState({ syncing: true });
   try {
-    const playlists = (await client.getPlaylists()).Items;
     const now = Date.now();
+    if (pluginSync !== false) {
+      const current = usePlaylistCache.getState().lists;
+      const known: Record<string, string> = {};
+      for (const [id, c] of Object.entries(current)) {
+        known[id] = force || dirty.has(id) || now - c.at > FULL_EVERY_MS ? '' : c.stamp;
+      }
+      // Clear the marks first: a change made while this runs marks it again.
+      dirty.clear();
+      try {
+        const answer = await client.rakkiPlaylistSync(known);
+        pluginSync = true;
+        const live = new Set(answer.Playlists.map((p) => p.Id));
+        for (const id of Object.keys(usePlaylistCache.getState().lists)) if (!live.has(id)) put(id, null);
+        for (const p of answer.Changed) put(p.Id, { stamp: p.Stamp, at: Date.now(), pairs: p.Pairs });
+        usePlaylistCache.setState({ checkedAt: Date.now() });
+        return;
+      } catch (e) {
+        if (!(e instanceof JellyfinError && e.status === 404)) {
+          for (const [id, stamp] of Object.entries(known)) if (stamp === '') dirty.add(id);
+          throw e;
+        }
+        pluginSync = false;
+        for (const [id, stamp] of Object.entries(known)) if (stamp === '') dirty.add(id);
+      }
+    }
+    const playlists = (await client.getPlaylists()).Items;
     const current = usePlaylistCache.getState().lists;
     // Deleted playlists go.
     for (const id of Object.keys(current)) if (!playlists.some((p) => p.Id === id)) put(id, null);
