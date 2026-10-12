@@ -62,7 +62,7 @@ export async function otherRakkiDevices(client: JellyfinClient): Promise<RakkiDe
   const sessions = await client.getSessions();
   const now = Date.now();
   return sessions
-    .filter((s) => s.Client === CLIENT_NAME && s.DeviceId !== client.session.deviceId)
+    .filter((s) => s.Client === CLIENT_NAME && s.UserId === client.session.userId && s.DeviceId !== client.session.deviceId)
     .map((s) => ({
       sessionId: s.Id,
       deviceId: s.DeviceId ?? '',

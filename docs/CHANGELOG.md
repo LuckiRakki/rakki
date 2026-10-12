@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.15.2 (2026-10-12)
+- The list of your other Rakki apps (the desktop's Devices button) now finds the phone: it
+  asked the server only for apps that accept remote control, which Rakki doesn't yet.
+
 ## 1.15.1 (2026-10-12)
 - Rakki now tells your server what it can play and sends the queue around the song with its
   playback reports, so **Rakki on your computer can see what your phone is playing** (its

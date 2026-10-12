@@ -359,9 +359,13 @@ export class JellyfinClient {
     return this.send('POST', '/Sessions/Playing/Stopped', info);
   }
 
-  /** Every app signed in as you that's been active in the last `withinSeconds`. */
+  /**
+   * Apps signed in to the server and active in the last `withinSeconds` (yours, or everyone's
+   * for an administrator). Not ControllableByUserId: Jellyfin then leaves out every app that
+   * doesn't accept remote control.
+   */
   getSessions(withinSeconds = 960) {
-    return this.get<SessionInfo[]>('/Sessions', { ControllableByUserId: this.session.userId, ActiveWithinSeconds: withinSeconds });
+    return this.get<SessionInfo[]>('/Sessions', { ActiveWithinSeconds: withinSeconds });
   }
 
   /** Tell the server what this app can do (it shows other apps and the dashboard). */

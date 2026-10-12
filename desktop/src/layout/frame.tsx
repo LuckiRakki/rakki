@@ -2,6 +2,9 @@
 // the player bar along the bottom. The right sidebar is layout/NowPlayingPanel.tsx.
 import {
   ChevronLeft,
+  Plus,
+  ChevronDown,
+  ChevronUp,
   ChevronRight,
   CircleArrowDown,
   MonitorPlay,
@@ -39,6 +42,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import { create } from 'zustand';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { displayName } from '@/lib/mixes';
 import { useAuth } from '~/auth/session';
@@ -191,37 +195,107 @@ export function TitleBar() {
 
 // ---- Sidebar ----
 
+/** Your Library's buttons: folded away or not, and the ones you closed (remembered). */
+const useLibraryTabs = create<{ open: boolean; hidden: string[]; set(p: Partial<{ open: boolean; hidden: string[] }>): void }>((set, get) => {
+  let saved: { open?: boolean; hidden?: string[] } = {};
+  try {
+    saved = JSON.parse(localStorage.getItem('rakki.libraryTabs') ?? '{}');
+  } catch {
+    // Defaults.
+  }
+  return {
+    open: saved.open ?? true,
+    hidden: saved.hidden ?? [],
+    set(p) {
+      const next = { open: get().open, hidden: get().hidden, ...p };
+      localStorage.setItem('rakki.libraryTabs', JSON.stringify(next));
+      set(next);
+    },
+  };
+});
+
+const LIBRARY_TABS: { to: Route; label: string; Icon: typeof ListMusic }[] = [
+  { to: { name: 'playlists' }, label: 'Playlists', Icon: ListMusic },
+  { to: { name: 'mixes' }, label: 'Daily Mixes', Icon: Blend },
+  { to: { name: 'albums' }, label: 'Albums', Icon: Disc3 },
+  { to: { name: 'songs' }, label: 'Songs', Icon: Music },
+  { to: { name: 'artists' }, label: 'Artists', Icon: UserRound },
+  { to: { name: 'genres' }, label: 'Genres', Icon: Tags },
+  { to: { name: 'radio' }, label: 'Radio', Icon: Radio },
+  { to: { name: 'videos' }, label: 'Videos', Icon: MonitorPlay },
+];
+
 function NavLink({ to, icon, label }: { to: Route; icon: ReactNode; label: string }) {
   const on = useNav((s) => s.route.name === to.name);
+  const close = () => useLibraryTabs.getState().set({ hidden: [...useLibraryTabs.getState().hidden, to.name] });
   return (
-    <button className={`link${on ? ' on' : ''}`} onClick={() => go(to)}>
+    <div
+      className={`link${on ? ' on' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => go(to)}
+      onKeyDown={(e) => e.key === 'Enter' && go(to)}
+      onContextMenu={(e) => openMenu(e, [{ label: `Close ${label}`, icon: X, run: close }], label)}>
       <span className="link-icon">{icon}</span>
       <span className="link-label">{label}</span>
+      <button
+        className="link-close"
+        aria-label={`Close ${label}`}
+        title={`Close ${label} (right-click Your Library to bring it back)`}
+        onClick={(e) => {
+          e.stopPropagation();
+          close();
+        }}>
+        <X size={13} />
+      </button>
+    </div>
+  );
+}
+
+function LibraryHead() {
+  const { open, hidden } = useLibraryTabs();
+  const set = useLibraryTabs.getState().set;
+  const closed = LIBRARY_TABS.filter((t) => hidden.includes(t.to.name));
+  return (
+    <button
+      className="side-head"
+      title={open ? 'Fold the library buttons away' : 'Show the library buttons'}
+      onClick={() => set({ open: !open })}
+      onContextMenu={(e) =>
+        openMenu(
+          e,
+          [
+            { label: open ? 'Fold buttons away' : 'Show buttons', icon: open ? ChevronUp : ChevronDown, run: () => set({ open: !open }) },
+            ...closed.map((t, i) => ({ label: `Bring back ${t.label}`, icon: t.Icon, divider: i === 0, run: () => set({ hidden: hidden.filter((h) => h !== t.to.name) }) })),
+            ...(closed.length > 1 ? [{ label: 'Bring them all back', icon: Plus, run: () => set({ hidden: [] }) }] : []),
+          ],
+          'Your Library',
+        )
+      }>
+      <Library size={20} />
+      <span>Your Library</span>
+      <span className="side-head-chev">{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
     </button>
   );
 }
 
 export function Sidebar() {
+  const libOpen = useLibraryTabs((s) => s.open);
+  const hiddenTabs = useLibraryTabs((s) => s.hidden);
   const playlists = usePlaylists().data;
   const mixes = useDailyMixes().data;
   const route = useNav((s) => s.route);
   const current = route.name === 'playlist' ? route.id : null;
   return (
     <aside className="sidebar panel">
-      <div className="side-head">
-        <Library size={20} />
-        <span>Your Library</span>
-      </div>
-      <nav className="side-links">
-        <NavLink to={{ name: 'playlists' }} icon={<ListMusic size={17} />} label="Playlists" />
-        <NavLink to={{ name: 'mixes' }} icon={<Blend size={17} />} label="Daily Mixes" />
-        <NavLink to={{ name: 'albums' }} icon={<Disc3 size={17} />} label="Albums" />
-        <NavLink to={{ name: 'songs' }} icon={<Music size={17} />} label="Songs" />
-        <NavLink to={{ name: 'artists' }} icon={<UserRound size={17} />} label="Artists" />
-        <NavLink to={{ name: 'genres' }} icon={<Tags size={17} />} label="Genres" />
-        <NavLink to={{ name: 'radio' }} icon={<Radio size={17} />} label="Radio" />
-        <NavLink to={{ name: 'videos' }} icon={<MonitorPlay size={17} />} label="Videos" />
-      </nav>
+      <LibraryHead />
+      {libOpen ? (
+        <nav className="side-links">
+          {LIBRARY_TABS.filter((t) => !hiddenTabs.includes(t.to.name)).map(({ to, label, Icon }) => (
+            <NavLink key={to.name} to={to} icon={<Icon size={17} />} label={label} />
+          ))}
+        </nav>
+      ) : null}
       <div className="side-lists">
         <button className={`row${route.name === 'liked' ? ' on' : ''}`} onClick={() => go({ name: 'liked' })}>
           <div className="artwork empty liked-art thumb">
