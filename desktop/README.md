@@ -1,7 +1,7 @@
 # Rakki for Windows and Linux
 
-Rakki's desktop app: Jellyfin music with word-by-word lyrics, light enough to leave running in
-the background (while gaming, on a laptop).
+Rakki's desktop app: Jellyfin music with synced lyrics, light enough to leave running in the
+background (while gaming, on a laptop). What it does so far: docs/DESKTOP.md.
 
 - **Window:** [Tauri](https://tauri.app) (the system's own webview: WebView2 on Windows,
   WebKitGTK on Linux), not a bundled browser. The interface is React + TypeScript and shares the
@@ -12,6 +12,10 @@ the background (while gaming, on a laptop).
   playing with the window closed to the tray and the interface asleep.
 - **System controls:** media keys, Windows' media overlay and Linux's MPRIS
   (`src-tauri/src/media.rs`, souvlaki), and a tray menu.
+- **Out of sight** (tray or minimized): the page sleeps and WebView2 stops rendering and keeps
+  its memory low (`src-tauri/src/memory.rs`).
+- **Music videos** open in their own mpv window (`src-tauri/src/video.rs`).
+- **Discord** "Listening to" through the Discord app's local IPC (`src-tauri/src/discord.rs`).
 
 ## Run it
 
@@ -23,3 +27,10 @@ npm run tauri dev
 ```
 
 `RAKKI_MPV` points at a specific mpv binary if it isn't on the PATH.
+
+## Installers
+
+`.github/workflows/desktop.yml` builds them on GitHub: a Windows installer with mpv inside, and
+a Linux AppImage and .deb (both use the system's mpv; the .deb installs it). Run the workflow by
+hand for test builds, or push a `desktop-vX.Y.Z` tag for a draft release. Rakki checks for a
+newer `desktop-v*` release and shows an Update button.
