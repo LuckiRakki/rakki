@@ -244,6 +244,8 @@ h1, h2, h3, p { margin: 0; }
 .tracktable.dragging .tt-row:hover { background: none; }
 .tt-row.lifted { opacity: 0.45; }
 .tt-drop { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--accent); border-radius: 2px; z-index: 2; pointer-events: none; }
+.update-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; margin-right: 8px; border-radius: 999px; background: var(--accent); color: #000; font-weight: 800; font-size: 13px; transition: filter 0.15s; }
+.update-btn:hover { filter: brightness(1.1); }
 .home-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .page.home .home-head h1 { margin-bottom: 0; }
 .pill-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); font-weight: 700; font-size: 13px; transition: background 0.15s, color 0.15s; }

@@ -86,5 +86,6 @@ Phone app features, and where the desktop is.
 - [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
 - [x] Discord presence ("Listening to"): set up in Settings with your own Discord application.
 - [ ] Start with the computer.
-- [ ] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb; GitHub Actions builds;
-      auto-update.
+- [x] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb (needs mpv), built by
+      .github/workflows/desktop.yml (by hand, or a desktop-v* tag for a draft release).
+- [x] Update check: a newer desktop-v* release shows an Update button (opens the download page).

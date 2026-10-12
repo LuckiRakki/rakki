@@ -7,6 +7,7 @@ import { checkLastfmKey, LastfmError } from '@/lib/lastfm';
 import { SWATCHES } from '@/appearance/presets';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { useAuth } from '~/auth/session';
+import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { useDiscord } from '~/player/discord';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
 import pkg from '../../package.json';
@@ -76,6 +77,7 @@ export function Settings() {
   const client = useAuth((s) => s.client);
   const { accent, lucid, set: setTheme } = useTheme();
   const s = useSettings();
+  const update = useUpdate((u) => u.version);
   const [key, setKey] = useState(s.lastfmApiKey);
   const [keyState, setKeyState] = useState<string | null>(null);
   const [custom, setCustom] = useState(accent);
@@ -178,6 +180,14 @@ export function Settings() {
         <div className="setting">
           <div className="setting-text">
             <div className="setting-label">Rakki for desktop {pkg.version}</div>
+            {update ? (
+              <div className="setting-detail">
+                Rakki {update} is out.{' '}
+                <span className="linkish" onClick={openUpdate}>
+                  Download it
+                </span>
+              </div>
+            ) : null}
             <div className="setting-detail">Jellyfin music, word by word. Music plays through mpv; closing the window keeps it playing in the tray.</div>
           </div>
         </div>

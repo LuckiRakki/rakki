@@ -3,6 +3,7 @@
 import {
   ChevronLeft,
   ChevronRight,
+  CircleArrowDown,
   Copy,
   Disc3,
   Heart,
@@ -43,6 +44,7 @@ import { setLiked } from '~/library/actions';
 import { collectionMenu, songMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout, win } from '~/layout/layout';
 import { setMini } from '~/layout/MiniPlayer';
+import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav, type Route } from '~/nav';
 import { useSleep } from '~/player/sleep';
 import { currentPosition, usePlayer } from '~/player/store';
@@ -106,6 +108,18 @@ function UserButton() {
   );
 }
 
+/** A newer Rakki is out (lib/updateCheck): opens its download page. */
+function UpdateButton() {
+  const version = useUpdate((s) => s.version);
+  if (!version) return null;
+  return (
+    <button className="update-btn" title={`Rakki ${version} is out: open the download page`} onClick={openUpdate}>
+      <CircleArrowDown size={16} />
+      Update
+    </button>
+  );
+}
+
 export function TitleBar() {
   const { at, stack, route } = useNav();
   const [term, setTerm] = useState(route.name === 'search' ? (route.term ?? '') : '');
@@ -164,6 +178,7 @@ export function TitleBar() {
         </label>
       </div>
       <div className="tb-right" data-tauri-drag-region>
+        <UpdateButton />
         <UserButton />
         <WindowButtons />
       </div>

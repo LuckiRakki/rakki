@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Rakki",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.luckirakki.rakki.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -38,6 +38,21 @@
       "icons/icon.ico"
     ],
     "shortDescription": "Rakki: Jellyfin music, word by word",
-    "publisher": "LuckiRakki"
+    "publisher": "LuckiRakki",
+    "copyright": "LuckiRakki. AGPL-3.0.",
+    "category": "Music",
+    "longDescription": "Rakki for Windows and Linux: your Jellyfin music library with synced lyrics, smart radio and Daily Mixes. Plays through mpv.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "mpv"
+        ]
+      }
+    }
   }
 }
