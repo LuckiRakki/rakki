@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { startPlaylistCache } from '@/library/playlistCache';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
@@ -70,9 +71,13 @@ function App() {
   }, []);
 
   // The Last.fm key, shared with the Rakki plugin on the server (as on the phone).
+  // And the playlist cache behind the save buttons and Add to playlist (shared with the phone).
+  const userId = useAuth((s) => s.session?.userId);
   useEffect(() => {
-    if (signedIn) void syncLastfmKey();
-  }, [signedIn]);
+    if (!signedIn) return;
+    void syncLastfmKey();
+    startPlaylistCache();
+  }, [signedIn, userId]);
 
   return (
     <>

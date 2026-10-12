@@ -46,7 +46,7 @@ import { useSleep } from '~/player/sleep';
 import { currentPosition, usePlayer } from '~/player/store';
 import { useDailyMixes, usePlaylists } from '~/queries';
 import { openMenu } from '~/ui/overlays';
-import { ArtistLinks, Artwork, formatTime } from '~/ui/parts';
+import { ArtistLinks, Artwork, formatTime, SaveButton } from '~/ui/parts';
 
 export { useLayout } from '~/layout/layout';
 
@@ -412,7 +412,6 @@ export function PlayerBar() {
   const open = useLayout((s) => s.nowPlaying);
   const tab = useLayout((s) => s.playerTab);
   const l = useLayout.getState();
-  const liked = !!now?.UserData?.IsFavorite;
   return (
     <footer className="playerbar">
       <div className="np">
@@ -432,9 +431,7 @@ export function PlayerBar() {
                 <ArtistLinks item={now} />
               </div>
             </div>
-            <button className={`heart${liked ? ' on' : ''}`} aria-label="Like" title={liked ? 'Remove from Liked Songs' : 'Add to Liked Songs'} onClick={() => void setLiked([now], !liked)}>
-              <Heart size={17} fill={liked ? 'currentColor' : 'none'} />
-            </button>
+            <SaveButton item={now} size={17} />
           </>
         ) : null}
       </div>

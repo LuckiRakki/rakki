@@ -3,13 +3,12 @@
 //   full player's lyrics), About the artist, Credits (artists, writers, producers; album, year,
 //   genre, file format), and the next song.
 // - Queue: everything that's coming, then what already played.
-import { ChevronLeft, Ellipsis, Heart, ListMusic, Maximize2, X } from 'lucide-react';
+import { ChevronLeft, Ellipsis, ListMusic, Maximize2, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { artColor } from '@/lib/blurhash';
 import { useAuth } from '~/auth/session';
-import { setLiked } from '~/library/actions';
 import { songMenu } from '~/library/menus';
 import { useLayout } from '~/layout/layout';
 import { LyricsView } from '~/lyrics/LyricsView';
@@ -17,7 +16,7 @@ import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
 import { openMenu } from '~/ui/overlays';
-import { ArtistLinks, Artwork, formatTime, ticksToSeconds } from '~/ui/parts';
+import { ArtistLinks, Artwork, formatTime, SaveButton, ticksToSeconds } from '~/ui/parts';
 
 type Stream = { Type: string; Codec?: string; SampleRate?: number; BitDepth?: number; BitRate?: number };
 
@@ -85,7 +84,6 @@ function NowView({ item }: { item: BaseItem }) {
   const { queue, index } = usePlayer();
   const next = queue[index + 1];
   const song = { ...item, ...full, UserData: item.UserData };
-  const liked = !!item.UserData?.IsFavorite;
   const tint = client ? artColor(client.blurhash(item), '#2a2a2e') : '#2a2a2e';
   const year = song.ProductionYear;
   const format = formatOf(song);
@@ -107,9 +105,7 @@ function NowView({ item }: { item: BaseItem }) {
         <button className="iconbtn" aria-label="More" title="More" onClick={(e) => openMenu(e, songMenu([item]))}>
           <Ellipsis size={18} />
         </button>
-        <button className={`heart${liked ? ' on' : ''}`} aria-label="Like" title={liked ? 'Remove from Liked Songs' : 'Add to Liked Songs'} onClick={() => void setLiked([item], !liked)}>
-          <Heart size={19} fill={liked ? 'currentColor' : 'none'} />
-        </button>
+        <SaveButton item={item} size={19} />
       </div>
       <div className="np-tags">
         {item.Album ? (

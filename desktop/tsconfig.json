@@ -17,7 +17,8 @@
     "paths": {
       "@/*": ["./src/overrides/*", "../src/*"],
       "~/*": ["./src/*"],
-      "expo-device": ["./src/shims/expo-device.ts"]
+      "expo-device": ["./src/shims/expo-device.ts"],
+      "react-native": ["./src/shims/react-native.ts"]
     }
   },
   "include": ["src"],

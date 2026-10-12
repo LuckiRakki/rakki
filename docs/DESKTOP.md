@@ -71,7 +71,8 @@ Phone app features, and where the desktop is.
 - [x] Settings: accounts, appearance (accent, Lucid, fonts, size, density), playback (quality,
       normalization, autoplay, gapless), Last.fm, about.
 - [ ] Music videos (mpv can show video), internet radio and SUB/WAVE.
-- [ ] Liked songs and playlist cache (the heart for "in a playlist").
+- [x] Playlist cache (shared with the phone): the heart is filled when a song is liked or in any
+      playlist; Add to playlist ticks show at once.
 
 ### Playing across devices
 - [ ] Like Spotify Connect: see what your other Rakki apps play, control them, move playback

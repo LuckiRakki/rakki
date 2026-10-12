@@ -5,13 +5,12 @@
 // expand button (or F11) makes the window fill the screen. The top fades while the mouse is
 // still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Ellipsis, Expand, Heart, ListMusic, MicVocal, Radio, Shrink } from 'lucide-react';
+import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { artColor } from '@/lib/blurhash';
 import { useAuth } from '~/auth/session';
-import { setLiked } from '~/library/actions';
 import { songMenu } from '~/library/menus';
 import { WindowButtons } from '~/layout/frame';
 import { useLayout, type PlayerTab } from '~/layout/layout';
@@ -21,7 +20,7 @@ import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
 import { openMenu } from '~/ui/overlays';
-import { ArtistLinks, Artwork, formatTime, ticksToSeconds } from '~/ui/parts';
+import { ArtistLinks, Artwork, formatTime, SaveButton, ticksToSeconds } from '~/ui/parts';
 
 /** Genres for songs that came without them (song lists don't ask for genres), 100 at a time. */
 function useGenres(songs: BaseItem[]): Map<string, string> {
@@ -69,7 +68,6 @@ function SongTable({ songs, first, current, onPlay, queue }: { songs: BaseItem[]
       {songs.map((t, k) => {
         const i = first + k;
         const now = i === current;
-        const liked = !!t.UserData?.IsFavorite;
         return (
           <div
             key={`${t.Id}-${i}`}
@@ -94,9 +92,7 @@ function SongTable({ songs, first, current, onPlay, queue }: { songs: BaseItem[]
             <span className="st-genre">{t.Genres?.[0] ?? genres.get(t.Id) ?? ''}</span>
             <span className="st-year">{t.ProductionYear ?? ''}</span>
             <span className="st-len">{formatTime(ticksToSeconds(t.RunTimeTicks))}</span>
-            <button className={`heart${liked ? ' on' : ''}`} aria-label="Like" title={liked ? 'Remove from Liked Songs' : 'Add to Liked Songs'} onClick={() => void setLiked([t], !liked)}>
-              <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
-            </button>
+            <SaveButton item={t} />
           </div>
         );
       })}
@@ -173,7 +169,6 @@ export function NowPlaying() {
   if (!open || !item) return null;
   const tint = client ? artColor(client.blurhash(item), '#202024') : '#202024';
   const big = client?.imageUrl(item, 1000);
-  const liked = !!item.UserData?.IsFavorite;
   const song = { ...item, ...full, UserData: item.UserData };
   const badges = [formatOf(song)[0], song.ProductionYear].filter(Boolean);
   const l = useLayout.getState();
@@ -225,9 +220,7 @@ export function NowPlaying() {
                   {b}
                 </span>
               ))}
-              <button className={`heart${liked ? ' on' : ''}`} aria-label="Like" title={liked ? 'Remove from Liked Songs' : 'Add to Liked Songs'} onClick={() => void setLiked([item], !liked)}>
-                <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
-              </button>
+              <SaveButton item={item} size={18} />
             </div>
           </div>
         </div>

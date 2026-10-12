@@ -36,6 +36,7 @@ export default defineConfig(() => ({
     alias: {
       '~': path.join(here, 'src'),
       'expo-device': path.join(here, 'src', 'shims', 'expo-device.ts'),
+      'react-native': path.join(here, 'src', 'shims', 'react-native.ts'),
     },
     dedupe: ['react', 'react-dom', 'zustand', '@tanstack/react-query'],
   },

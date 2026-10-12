@@ -5,10 +5,12 @@ import { ChevronLeft, ChevronRight, Clock3, Heart, MoreHorizontal, Music2, Pause
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { useInAnyPlaylist } from '@/library/playlistCache';
 import { artColor } from '@/lib/blurhash';
 import { displayName, isMix, mixArtists } from '@/lib/mixes';
 import { useAuth } from '~/auth/session';
 import { playItem, setLiked } from '~/library/actions';
+import { openAddToPlaylist } from '~/library/AddToPlaylist';
 import { collectionMenu, songMenu, type MenuContext } from '~/library/menus';
 import { go, openItem } from '~/nav';
 import { usePlayer } from '~/player/store';
@@ -147,6 +149,30 @@ export function ArtistLinks({ item, sep = ', ' }: { item: BaseItem; sep?: string
   );
 }
 
+/**
+ * A song's save button (Spotify's): filled when the song is in Liked Songs or any of your
+ * playlists. Not saved: one click likes it. Saved: opens Add to playlist to change where.
+ */
+export function SaveButton({ item, size = 16, className = '' }: { item: BaseItem; size?: number; className?: string }) {
+  const inPlaylist = useInAnyPlaylist(item.Id);
+  const liked = !!item.UserData?.IsFavorite;
+  const saved = liked || inPlaylist;
+  const title = liked ? 'In Liked Songs: change where it’s saved' : inPlaylist ? 'In your playlists: change where it’s saved' : 'Add to Liked Songs';
+  return (
+    <button
+      className={`heart${saved ? ' on' : ''}${className ? ` ${className}` : ''}`}
+      aria-label={title}
+      title={title}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (saved) openAddToPlaylist([item]);
+        else void setLiked([item], true);
+      }}>
+      <Heart size={size} fill={saved ? 'currentColor' : 'none'} />
+    </button>
+  );
+}
+
 /** Animated bars for the song that's playing (still while paused). */
 function Playing({ paused }: { paused: boolean }) {
   return (
@@ -282,7 +308,6 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
         {rows.getVirtualItems().map((row) => {
           const t = tracks[row.index];
           const now = t.Id === nowId;
-          const liked = !!t.UserData?.IsFavorite;
           const count = playsOf?.(t);
           return (
             <div
@@ -340,16 +365,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
               ) : null}
               {plays ? <div className="right plays">{count !== undefined ? count.toLocaleString() : (t.UserData?.PlayCount ?? 0) || ''}</div> : null}
               <div className="like">
-                <button
-                  className={`heart${liked ? ' on' : ''}`}
-                  aria-label={liked ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
-                  title={liked ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void setLiked([t], !liked);
-                  }}>
-                  <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
-                </button>
+                <SaveButton item={t} />
               </div>
               <div className="right len">{formatTime(ticksToSeconds(t.RunTimeTicks))}</div>
             </div>

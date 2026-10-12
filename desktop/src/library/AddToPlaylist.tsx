@@ -1,10 +1,14 @@
 // "Add to playlist", like the phone app's: every playlist with a tick where the songs already
 // are (or how many of them are), Liked Songs on top for a single song, find, New playlist.
 // Ticks are staged and saved on Done; saving asks the server what each playlist has right then.
+// The ticks show at once from the shared playlist cache (library/playlistCache, as on the phone),
+// which checks the server again as the dialog opens.
 import { Check, Circle, Heart, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { cachedEntries, checkPlaylistsNow, usePlaylistCache } from '@/library/playlistCache';
+import { emitPlaylistsChanged } from '@/lib/events';
 import { displayName } from '@/lib/mixes';
 import { client } from '~/auth/session';
 import { createPlaylist, setLiked, songsOf } from '~/library/actions';
@@ -25,24 +29,38 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
   const playlists = usePlaylists().data ?? [];
   const ids = useMemo(() => new Set(songs.map((s) => s.Id)), [songs]);
   const single = songs.length === 1 ? songs[0] : null;
-  const [have, setHave] = useState<Record<string, number>>({});
+  const [fetched, setFetched] = useState<Record<string, number>>({});
   const [changes, setChanges] = useState<Record<string, boolean>>({});
   const [find, setFind] = useState('');
   const [saving, setSaving] = useState(false);
+  const cache = usePlaylistCache((s) => s.lists);
 
-  // How many of the songs each playlist already has.
+  // How many of the songs each playlist already has: from the cache, else asked.
+  const have = useMemo(() => {
+    const out: Record<string, number> = { ...fetched };
+    for (const p of playlists) {
+      const entries = cachedEntries(p.Id);
+      if (entries) out[p.Id] = entries.filter((e) => ids.has(e.Id)).length;
+    }
+    return out;
+  }, [cache, fetched, playlists, ids]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => checkPlaylistsNow(), []);
+
+  // Playlists the cache doesn't have yet (just after signing in).
   useEffect(() => {
     const c = client();
-    if (!c) return;
+    const missing = playlists.filter((p) => !cachedEntries(p.Id));
+    if (!c || !missing.length) return;
     let alive = true;
     void (async () => {
-      for (let i = 0; i < playlists.length; i += 4) {
-        const chunk = playlists.slice(i, i + 4);
+      for (let i = 0; i < missing.length; i += 4) {
+        const chunk = missing.slice(i, i + 4);
         const counts = await Promise.all(
           chunk.map(async (p) => [p.Id, (await c.getPlaylistMembership(p.Id).catch(() => [])).filter((e) => ids.has(e.Id)).length] as const),
         );
         if (!alive) return;
-        setHave((h) => ({ ...h, ...Object.fromEntries(counts) }));
+        setFetched((h) => ({ ...h, ...Object.fromEntries(counts) }));
       }
     })();
     return () => {
@@ -59,6 +77,7 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
     if (!c) return;
     setSaving(true);
     let added = 0;
+    const changed: string[] = [];
     try {
       for (const p of playlists) {
         const on = changes[p.Id];
@@ -69,14 +88,17 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
           const missing = songs.filter((s) => !present.has(s.Id)).map((s) => s.Id);
           if (missing.length) {
             await c.addToPlaylist(p.Id, missing);
+            changed.push(p.Id);
             added++;
           }
         } else if (entries.length) {
           await c.removeFromPlaylist(p.Id, entries.map((e) => e.PlaylistItemId!).filter(Boolean));
+          changed.push(p.Id);
         }
       }
       if (single && changes[LIKED] !== undefined && changes[LIKED] !== wasIn(LIKED)) await setLiked([single], changes[LIKED]);
       void queryClient.invalidateQueries({ predicate: (q) => ['playlists', 'playlistItems'].includes(q.queryKey[0] as string) });
+      if (changed.length) emitPlaylistsChanged(changed);
       if (added) toast(added === 1 ? 'Added to playlist' : `Added to ${added} playlists`);
       closeDialog();
     } catch (e) {
