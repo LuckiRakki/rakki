@@ -182,17 +182,24 @@ impl Mpv {
     }
 }
 
-/// mpv next to the app (bundled on Windows), else RAKKI_MPV, else whatever `mpv` is on PATH
-/// (Linux: the system's mpv package).
+/// RAKKI_MPV, else mpv next to the app (bundled on Windows), else a usual Windows install
+/// folder, else whatever `mpv` is on PATH (Linux: the system's mpv package).
 fn find_binary(app: &AppHandle) -> PathBuf {
     if let Ok(custom) = std::env::var("RAKKI_MPV") {
         return PathBuf::from(custom);
     }
     let name = if cfg!(windows) { "mpv.exe" } else { "mpv" };
-    let candidates = [
+    let mut candidates = vec![
         app.path().resource_dir().ok().map(|d| d.join("mpv").join(name)),
         std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.join("mpv").join(name))),
     ];
+    // Where Windows installers put it when they don't add it to the PATH (winget's shinchiro.mpv:
+    // "MPV Player").
+    if cfg!(windows) {
+        for folder in ["MPV Player", "mpv"] {
+            candidates.push(std::env::var_os("ProgramFiles").map(|p| PathBuf::from(p).join(folder).join(name)));
+        }
+    }
     for c in candidates.into_iter().flatten() {
         if c.exists() {
             return c;
