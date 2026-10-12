@@ -40,6 +40,7 @@ import {
   useTopArtists,
   useTopTracks,
 } from '~/queries';
+import { Settings } from '~/pages/Settings';
 import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, Shelf, Spinner, totalLength, TrackTable } from '~/ui/parts';
 
 // ---- Home ----
@@ -583,5 +584,7 @@ export function Page() {
       return <Playlist key={route.id} id={route.id} />;
     case 'search':
       return <SearchPage term={route.term ?? ''} />;
+    case 'settings':
+      return <Settings />;
   }
 }

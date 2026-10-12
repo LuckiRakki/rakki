@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { buildSmartQueue } from '@/player/smartQueue';
 import { useSettings } from '@/settings/store';
 import { client } from '~/auth/session';
 import { engine, listenEngine } from '~/player/engine';
@@ -128,6 +129,10 @@ function songStarted(item: BaseItem | undefined) {
     void engine.nowPlaying(null);
     return;
   }
+  // Normalization: Jellyfin's loudness gain for the song (dB), through mpv's volume-gain.
+  const gain = useSettings.getState().normalize ? (item.NormalizationGain ?? 0) : 0;
+  void engine.set('volume-gain', Math.max(-20, Math.min(12, gain))).catch(() => {});
+  setTimeout(() => void maybeExtend(), 4000);
   reportStart(item);
   const c = client();
   void engine.nowPlaying({
@@ -137,6 +142,34 @@ function songStarted(item: BaseItem | undefined) {
     artwork: c?.imageUrl(item, 600),
     duration: item.RunTimeTicks ? item.RunTimeTicks / TICKS_PER_SECOND : undefined,
   });
+}
+
+// ---- Autoplay ----
+
+let extending = false;
+
+/**
+ * Autoplay: when the last song or two of the queue is on, add songs like the recent ones (the
+ * phone app's smart queue: Last.fm's similar songs, the artists listeners like next, your likes,
+ * Jellyfin's instant mix). Repeat all/one never needs it.
+ */
+async function maybeExtend() {
+  const s = usePlayer.getState();
+  const c = client();
+  if (!c || extending || !useSettings.getState().autoplay || s.repeat !== 'off') return;
+  if (s.queue.length - s.index > 2) return;
+  extending = true;
+  try {
+    const seeds = s.queue.slice(Math.max(0, s.index - 2), s.index + 1);
+    const exclude = new Set(s.queue.map((t) => t.Id));
+    const result = await buildSmartQueue(c, seeds, { exclude, count: 25 });
+    const songs = result.items.length ? result.items : (await c.getInstantMix(seeds[seeds.length - 1].Id, 25)).filter((t) => !exclude.has(t.Id));
+    if (songs.length) usePlayer.getState().addToQueue(songs);
+  } catch {
+    // Try again with the next song.
+  } finally {
+    extending = false;
+  }
 }
 
 // ---- The store ----

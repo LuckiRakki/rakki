@@ -32,35 +32,37 @@ the architecture. The interface shares the phone app's TypeScript wherever it's 
 
 ## Feature checklist
 
+[x] done, [~] partly (see notes), [ ] not yet.
+
 Phone app features, and where the desktop is.
 
 ### Wave 1: the frame and the essentials
-- [ ] Sign-in screen with a real title bar (drag, window buttons) and the phone's look.
-- [ ] Design system: accent (custom or Lucid), fonts, buttons, chips, menus, tooltips, toasts.
-- [ ] Library header + action bar on album, artist, playlist, genre, Liked Songs.
-- [ ] Song table: number/play on hover, title + artists, album, plays, length, like; double-click
+- [x] Sign-in screen with a real title bar (drag, window buttons) and the phone's look.
+- [~] Design system: accent (custom or Lucid), fonts, buttons, chips, menus, tooltips, toasts.
+- [x] Library header + action bar on album, artist, playlist, genre, Liked Songs.
+- [x] Song table: number/play on hover, title + artists, album, plays, length, like; double-click
       plays; right-click menu; Shift/Ctrl selection.
-- [ ] Right-click menus: Play, Play next, Add to queue, Add to playlist, Like, Go to album,
+- [x] Right-click menus: Play, Play next, Add to queue, Add to playlist, Like, Go to album,
       Go to artist, Song/Album/Artist radio, Remove from playlist/queue, Rename/Delete playlist.
-- [ ] Add to playlist dialog (marks where a song already is, New playlist).
-- [ ] Player bar: like, lyrics, queue, sleep timer, volume with scroll, artwork opens Now Playing.
-- [ ] Now Playing view with Up next / Lyrics / Related.
-- [ ] Regular lyrics (line by line, synced).
+- [x] Add to playlist dialog (marks where a song already is, New playlist).
+- [x] Player bar: like, lyrics, queue, sleep timer, volume with scroll, artwork opens Now Playing.
+- [x] Now Playing view with Up next / Lyrics / Related.
+- [x] Regular lyrics (line by line, synced).
 
 ### Wave 2: library and pages
-- [ ] Library tabs with sort, grid/list and find: Playlists, Mixes, Albums, Songs, Artists,
+- [x] Library tabs with sort, grid/list and find: Playlists, Mixes, Albums, Songs, Artists,
       Genres.
-- [ ] Album page: Last.fm plays per song, total length, other albums by the artist.
-- [ ] Artist page: Popular (Last.fm or yours), Discography, Singles and EPs, Music videos,
+- [x] Album page: Last.fm plays per song, total length, other albums by the artist.
+- [x] Artist page: Popular (Last.fm or yours), Discography, Singles and EPs, Music videos,
       Appears on, Fans also like.
-- [ ] Genre page; Playlist page with sort, find, reorder, remove, rename, cover.
-- [ ] Home like the phone's: quick picks, shelves, reorder and hide.
+- [~] Genre page; Playlist page with sort, find, reorder, remove, rename, cover.
+- [~] Home like the phone's: quick picks, shelves, reorder and hide.
 
 ### Wave 3: the rest of the phone app
 - [ ] Spicy lyrics (port of the web mod's renderer), lyrics style, offset.
 - [ ] Search: on-device fuzzy index, lyrics search, filters, recent searches, Browse all.
-- [ ] Smart queue / autoplay, song and artist radio (shared smartQueue).
-- [ ] Settings: accounts, appearance (accent, Lucid, fonts, size, density), playback (quality,
+- [x] Smart queue / autoplay, song and artist radio (shared smartQueue).
+- [x] Settings: accounts, appearance (accent, Lucid, fonts, size, density), playback (quality,
       normalization, autoplay, gapless), Last.fm, about.
 - [ ] Music videos (mpv can show video), internet radio and SUB/WAVE.
 - [ ] Liked songs and playlist cache (the heart for "in a playlist").

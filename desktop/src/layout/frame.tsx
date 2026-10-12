@@ -9,6 +9,7 @@ import {
   Heart,
   Home as HomeIcon,
   Library,
+  LogOut,
   ListMusic,
   Maximize2,
   MicVocal,
@@ -20,6 +21,7 @@ import {
   Repeat,
   Repeat1,
   Search as SearchIcon,
+  Settings2,
   Shapes,
   Shuffle,
   SkipBack,
@@ -37,6 +39,7 @@ import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { displayName } from '@/lib/mixes';
+import { useAuth } from '~/auth/session';
 import { setLiked } from '~/library/actions';
 import { collectionMenu, songMenu } from '~/library/menus';
 import { inTauri } from '~/lib/tauri';
@@ -99,6 +102,33 @@ export function WindowButtons() {
   );
 }
 
+/** Your picture in the title bar: Settings and Sign out. */
+function UserButton() {
+  const session = useAuth((s) => s.session);
+  const client = useAuth((s) => s.client);
+  const [failed, setFailed] = useState(false);
+  if (!session) return null;
+  const src = client?.userImageUrl({ Id: session.userId }, 80);
+  return (
+    <button
+      className="avatar"
+      title={session.userName}
+      onClick={(e) =>
+        openMenu(
+          e,
+          [
+            { label: 'Settings', icon: Settings2, run: () => go({ name: 'settings' }) },
+            { label: 'Sign out', icon: LogOut, run: () => useAuth.getState().signOut(), divider: true },
+          ],
+          `${session.userName} · ${session.serverName}`,
+        )
+      }>
+      {src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} /> : null}
+      <span>{session.userName.slice(0, 1).toUpperCase()}</span>
+    </button>
+  );
+}
+
 export function TitleBar() {
   const { at, stack, route } = useNav();
   const [term, setTerm] = useState(route.name === 'search' ? (route.term ?? '') : '');
@@ -157,6 +187,7 @@ export function TitleBar() {
         </label>
       </div>
       <div className="tb-right" data-tauri-drag-region>
+        <UserButton />
         <WindowButtons />
       </div>
     </div>
