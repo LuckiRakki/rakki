@@ -4,6 +4,7 @@
 // music keeps playing with the interface asleep.
 
 mod media;
+mod memory;
 mod mpv;
 
 use media::{Media, NowPlaying};
@@ -76,7 +77,7 @@ fn show_window(app: &AppHandle) {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
-        let _ = app.emit("window://shown", ());
+        memory::set_away(app, false);
     }
 }
 
@@ -128,11 +129,21 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Closing hides to the tray; music keeps playing. Quit from the tray menu.
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
-                let _ = window.app_handle().emit("window://hidden", ());
+            match event {
+                // Closing hides to the tray; music keeps playing. Quit from the tray menu.
+                WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    memory::set_away(window.app_handle(), true);
+                }
+                // Minimized counts as out of sight too; restoring it wakes the interface.
+                WindowEvent::Resized(_) => {
+                    let minimized = window.is_minimized().unwrap_or(false);
+                    if minimized || window.is_visible().unwrap_or(false) {
+                        memory::set_away(window.app_handle(), minimized);
+                    }
+                }
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![

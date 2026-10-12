@@ -81,7 +81,8 @@ Phone app features, and where the desktop is.
 ### Wave 4: desktop extras
 - [x] App icon (Rakki's, rounded).
 - [x] Full screen: F11 or the button in the full player; Esc steps back out.
-- [ ] Hidden to the tray: WebView2 low-memory mode; nothing redraws.
+- [x] Out of sight (tray or minimized): the page sleeps, WebView2 stops rendering and drops to
+      its low memory target.
 - [ ] Discord presence; mini player; keyboard shortcuts; start with the computer.
 - [ ] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb; GitHub Actions builds;
       auto-update.

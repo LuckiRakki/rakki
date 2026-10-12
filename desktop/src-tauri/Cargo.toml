@@ -26,6 +26,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io
 # System media controls: Windows' media overlay (SMTC) and Linux's MPRIS.
 souvlaki = { version = "0.8", default-features = false, features = ["use_zbus"] }
 
+# Windows: WebView2's own settings (memory.rs); the same versions Tauri's webview already uses.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+windows-core = "0.62"
+
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]
