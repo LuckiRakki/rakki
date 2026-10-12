@@ -20,14 +20,17 @@ the architecture. The interface shares the phone app's TypeScript wherever it's 
 - **Title bar** (the window is borderless): back/forward, search, window buttons. Draggable.
   Same on the sign-in screen.
 - **Sidebar**: Home, Search; Library (Playlists, Mixes, Albums, Songs, Artists, Genres, Radio,
-  Videos); Liked Songs and your playlists. Collapsible.
+  Videos); Liked Songs and your playlists. Drag its edge to resize (double-click resets).
 - **Main**: pages with a **library header** (artwork, type, title, details, over the item's
   colour) and an **action bar** (play, shuffle, like, more, then find/sort/view on the right).
-- **Queue / Lyrics panel** on the right (toggle).
+- **Right sidebar** (Spotify's Now Playing view): artwork, song, a lyrics card following the
+  song (click for the full player's lyrics), About the artist, Credits (artists, writers,
+  producers; album, year, genre, format), Next in queue; or the whole queue. Resizable.
 - **Player bar**: artwork (opens Now Playing), title, artists, like; controls and seek; lyrics,
   queue, sleep timer, volume (scroll to change).
-- **Now Playing** (full window): blurred artwork backdrop, big artwork, tabs Up next / Lyrics /
-  Related; controls fade in on mouse move.
+- **Full player** (after Feishin's): over everything but the player bar, which stays; blurred
+  artwork behind; big artwork with title, artists, album and badges; queue table / related /
+  big fading lyrics, picked with icons bottom right; a button to fill the screen.
 - **Right-click menus** on every song, album, artist, playlist and queue entry.
 
 ## Feature checklist
@@ -46,7 +49,9 @@ Phone app features, and where the desktop is.
       Go to artist, Song/Album/Artist radio, Remove from playlist/queue, Rename/Delete playlist.
 - [x] Add to playlist dialog (marks where a song already is, New playlist).
 - [x] Player bar: like, lyrics, queue, sleep timer, volume with scroll, artwork opens Now Playing.
-- [x] Now Playing view with Up next / Lyrics / Related.
+- [x] Right sidebar like Spotify's Now Playing view (lyrics card, about, credits, next up) and
+      the queue; both sidebars resizable.
+- [x] Full player like Feishin's: queue table, related, big lyrics; player bar stays.
 - [x] Regular lyrics (line by line, synced).
 
 ### Wave 2: library and pages
@@ -73,7 +78,7 @@ Phone app features, and where the desktop is.
 
 ### Wave 4: desktop extras
 - [x] App icon (Rakki's, rounded).
-- [x] Full-screen player: F11 or the button in Now Playing; Esc steps back out.
+- [x] Full screen: F11 or the button in the full player; Esc steps back out.
 - [ ] Hidden to the tray: WebView2 low-memory mode; nothing redraws.
 - [ ] Discord presence; mini player; keyboard shortcuts; start with the computer.
 - [ ] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb; GitHub Actions builds;

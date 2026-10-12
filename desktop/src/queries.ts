@@ -36,7 +36,7 @@ export const useAllArtists = () =>
   useClientQuery(['allArtists'], (c) => c.getAlbumArtists({ sortBy: 'SortName', sortOrder: 'Ascending', limit: 10000 }).then((r) => r.Items));
 export const useLiked = () => useClientQuery(['liked'], (c) => c.getFavoriteTracks({ limit: 5000 }).then((r) => r.Items));
 
-export const useItem = (id: string) => useClientQuery(['item', id], (c) => c.getItem(id));
+export const useItem = (id?: string) => useClientQuery(['item', id], (c) => c.getItem(id!), !!id);
 export const useAlbumTracks = (id: string) => useClientQuery(['albumTracks', id], (c) => c.getAlbumTracks(id).then((r) => r.Items));
 export const usePlaylistTracks = (id: string) => useClientQuery(['playlistItems', id], (c) => c.getPlaylistItems(id).then((r) => r.Items));
 export const useArtistAlbums = (id: string) => useClientQuery(['artistAlbums', id], (c) => c.getArtistAlbums(id).then((r) => r.Items));

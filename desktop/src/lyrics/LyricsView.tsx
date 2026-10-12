@@ -1,14 +1,17 @@
 // Lyrics, line by line ("Regular" in the phone app): the sung line lit, the view following it,
 // click a line to jump there. Uses the phone app's loader (word-timed TTML from the Rakki plugin,
 // else Jellyfin's own lyrics) and its credits. Spicy mode (word by word) comes next.
-import { useEffect, useRef, useState } from 'react';
+//
+// Three sizes: `card` (the lyrics card in the Now Playing sidebar), `panel`, and `big` (the full
+// player: big, left-aligned, lines further from the sung one dimmer and softer, like Feishin).
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { creditRows, useLyrics } from '@/lyrics/fetch';
 import type { Lyrics } from '@/lyrics/types';
 import { currentPosition, usePlayer } from '~/player/store';
 import { Spinner } from '~/ui/parts';
 
-function pick(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } | undefined): Lyrics | null {
+export function pickLyrics(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } | undefined): Lyrics | null {
   if (!bundle) return null;
   const { ttml, lrc } = bundle;
   // A synced source beats an unsynced one; TTML first otherwise.
@@ -27,12 +30,12 @@ function lineAt(lyrics: Lyrics, ms: number): number {
   return at;
 }
 
-export function LyricsView({ big = false }: { big?: boolean }) {
+export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 'big' | 'card'; onOpen?(): void }) {
   const item = usePlayer((s) => s.queue[s.index]);
   const playing = usePlayer((s) => s.playing);
   const hidden = usePlayer((s) => s.hidden);
   const q = useLyrics(item?.Id);
-  const lyrics = pick(q.data);
+  const lyrics = pickLyrics(q.data);
   const [current, setCurrent] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
   const userScrolled = useRef(0);
@@ -48,35 +51,52 @@ export function LyricsView({ big = false }: { big?: boolean }) {
   }, [lyrics, playing, hidden]);
   usePlayer((s) => s.position); // a seek updates the line at once
 
-  // Keep the sung line in view (unless you've just scrolled yourself).
+  // Keep the sung line in view (unless you've just scrolled yourself). Scrolls this box only,
+  // never the page or sidebar around it.
   useEffect(() => {
-    if (current < 0 || Date.now() - userScrolled.current < 3000) return;
-    const el = box.current?.querySelector<HTMLElement>(`[data-line="${current}"]`);
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [current]);
+    const b = box.current;
+    const el = b?.querySelector<HTMLElement>(`[data-line="${Math.max(0, current)}"]`);
+    if (!b || !el || Date.now() - userScrolled.current < 3000) return;
+    const top = el.offsetTop - b.clientHeight * (variant === 'big' ? 0.4 : 0.35) + el.offsetHeight / 2;
+    b.scrollTo({ top: Math.max(0, top), behavior: current < 0 ? 'auto' : 'smooth' });
+  }, [current, variant, lyrics]);
 
   if (!item) return <div className="lyrics-empty">Play something to see its lyrics.</div>;
   if (q.isLoading) return <Spinner />;
   if (!lyrics) return <div className="lyrics-empty">No lyrics for this song.</div>;
 
   return (
-    <div className={`lyrics${big ? ' big' : ''}${lyrics.isSynced ? '' : ' unsynced'}`} ref={box} onWheel={() => (userScrolled.current = Date.now())}>
+    <div
+      className={`lyrics ${variant}${lyrics.isSynced ? '' : ' unsynced'}`}
+      ref={box}
+      onWheel={() => (userScrolled.current = Date.now())}
+      onClick={variant === 'card' ? onOpen : undefined}>
       {lyrics.lines.map((line, i) => (
         <p
           key={i}
           data-line={i}
           className={i === current ? 'on' : i < current ? 'past' : undefined}
-          onClick={lyrics.isSynced ? () => usePlayer.getState().seek(line.startMs / 1000) : undefined}>
-          {line.text || ' '}
+          style={variant === 'big' && lyrics.isSynced ? ({ '--d': Math.min(4, Math.abs(i - Math.max(0, current))) } as CSSProperties) : undefined}
+          onClick={
+            lyrics.isSynced && variant !== 'card'
+              ? () => {
+                  userScrolled.current = 0;
+                  usePlayer.getState().seek(line.startMs / 1000);
+                }
+              : undefined
+          }>
+          {line.text || ' '}
         </p>
       ))}
-      <div className="lyrics-credits">
-        {creditRows(lyrics).map((row, i) => (
-          <div key={i} className={row.small ? 'small' : undefined}>
-            {row.text}
-          </div>
-        ))}
-      </div>
+      {variant === 'card' ? null : (
+        <div className="lyrics-credits">
+          {creditRows(lyrics).map((row, i) => (
+            <div key={i} className={row.small ? 'small' : undefined}>
+              {row.text}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

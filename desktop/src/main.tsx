@@ -8,7 +8,9 @@ import { createRoot } from 'react-dom/client';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
-import { PlayerBar, RightPanel, Sidebar, TitleBar, useLayout } from '~/layout/frame';
+import { PlayerBar, Resizer, Sidebar, TitleBar } from '~/layout/frame';
+import { useLayout } from '~/layout/layout';
+import { NowPlayingPanel } from '~/layout/NowPlayingPanel';
 import { useNav } from '~/nav';
 import { Page } from '~/pages/pages';
 import { NowPlaying } from '~/player/NowPlaying';
@@ -26,6 +28,7 @@ function onKey(e: KeyboardEvent) {
     const l = useLayout.getState();
     return l.setFullscreen(!l.fullscreen);
   }
+  if (e.key === 'Escape' && !useLayout.getState().nowPlaying && useLayout.getState().fullscreen) return useLayout.getState().setFullscreen(false);
   if (e.altKey && e.key === 'ArrowLeft') return useNav.getState().back();
   if (e.altKey && e.key === 'ArrowRight') return useNav.getState().forward();
   if (typing) return;
@@ -42,7 +45,7 @@ function onKey(e: KeyboardEvent) {
 
 function App() {
   const signedIn = useAuth((s) => !!s.client);
-  const panel = useLayout((s) => s.panel);
+  const { panel, sidebarWidth, panelWidth, nowPlaying } = useLayout();
   useApplyTheme();
 
   useEffect(() => {
@@ -74,13 +77,17 @@ function App() {
   return (
     <>
       {signedIn ? (
-        <div className={`app${panel ? '' : ' no-panel'}`}>
+        <div
+          className={`app${panel ? '' : ' no-panel'}${nowPlaying ? ' np-open' : ''}`}
+          style={{ ['--sidebar' as string]: `${sidebarWidth}px`, ['--panel' as string]: `${panelWidth}px` }}>
           <TitleBar />
           <Sidebar />
+          <Resizer which="sidebar" />
           <main className="panel main" id="main">
             <Page />
           </main>
-          <RightPanel />
+          {panel ? <Resizer which="panel" /> : null}
+          <NowPlayingPanel />
           <PlayerBar />
           <NowPlaying />
         </div>

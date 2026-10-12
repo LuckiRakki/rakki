@@ -126,13 +126,13 @@ export function totalLength(tracks: BaseItem[]): string {
   return h ? `${h} hr ${m} min` : `${m} min`;
 }
 
-export function ArtistLinks({ item }: { item: BaseItem }) {
-  if (!item.ArtistItems?.length) return <>{item.Artists?.join(', ') || item.AlbumArtist}</>;
+export function ArtistLinks({ item, sep = ', ' }: { item: BaseItem; sep?: string }) {
+  if (!item.ArtistItems?.length) return <>{item.Artists?.join(sep) || item.AlbumArtist}</>;
   return (
     <>
       {item.ArtistItems.map((a, i) => (
         <span key={a.Id}>
-          {i ? ', ' : ''}
+          {i ? sep : ''}
           <span
             className="linkish"
             onClick={(e) => {

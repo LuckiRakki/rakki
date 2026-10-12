@@ -1,6 +1,5 @@
-// The window's frame: Rakki's own title bar (the window has no system frame), the sidebar, the
-// panel on the right (queue or lyrics) and the player bar along the bottom.
-import { getCurrentWindow } from '@tauri-apps/api/window';
+// The window's frame: Rakki's own title bar (the window has no system frame), the sidebar and
+// the player bar along the bottom. The right sidebar is layout/NowPlayingPanel.tsx.
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,9 +11,11 @@ import {
   LogOut,
   ListMusic,
   Maximize2,
+  Minimize2,
   MicVocal,
   Minus,
   Moon,
+  PanelRight,
   Music,
   Pause,
   Play,
@@ -35,15 +36,11 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { create } from 'zustand';
-
-import type { BaseItem } from '@/api/jellyfin';
 import { displayName } from '@/lib/mixes';
 import { useAuth } from '~/auth/session';
 import { setLiked } from '~/library/actions';
 import { collectionMenu, songMenu } from '~/library/menus';
-import { inTauri } from '~/lib/tauri';
-import { LyricsView } from '~/lyrics/LyricsView';
+import { PANEL, SIDEBAR, useLayout, win } from '~/layout/layout';
 import { go, useNav, type Route } from '~/nav';
 import { useSleep } from '~/player/sleep';
 import { currentPosition, usePlayer } from '~/player/store';
@@ -51,62 +48,29 @@ import { useDailyMixes, usePlaylists } from '~/queries';
 import { openMenu } from '~/ui/overlays';
 import { ArtistLinks, Artwork, formatTime } from '~/ui/parts';
 
-const win = inTauri ? getCurrentWindow() : null;
-
-/** What's open around the main area (remembered between launches). */
-export const useLayout = create<{
-  panel: 'queue' | 'lyrics' | null;
-  nowPlaying: boolean;
-  setPanel(p: 'queue' | 'lyrics' | null): void;
-  togglePanel(p: 'queue' | 'lyrics'): void;
-  setNowPlaying(open: boolean): void;
-  /** The window filling the screen (Now Playing as a full-screen player). */
-  fullscreen: boolean;
-  setFullscreen(on: boolean): void;
-}>((set, get) => ({
-  fullscreen: false,
-  setFullscreen(on) {
-    set({ fullscreen: on });
-    if (on) set({ nowPlaying: true });
-    void win?.setFullscreen(on);
-  },
-  panel: (localStorage.getItem('rakki.panel') as 'queue' | 'lyrics' | null) ?? 'queue',
-  nowPlaying: false,
-  setPanel(panel) {
-    if (panel) localStorage.setItem('rakki.panel', panel);
-    else localStorage.removeItem('rakki.panel');
-    set({ panel });
-  },
-  togglePanel(p) {
-    get().setPanel(get().panel === p ? null : p);
-  },
-  setNowPlaying(nowPlaying) {
-    set({ nowPlaying });
-    // Leaving the player leaves full screen too.
-    if (!nowPlaying && get().fullscreen) get().setFullscreen(false);
-  },
-}));
+export { useLayout } from '~/layout/layout';
 
 // ---- Title bar ----
 
 export function WindowButtons() {
   const [max, setMax] = useState(false);
+  const w = win;
   useEffect(() => {
-    if (!win) return;
-    void win.isMaximized().then(setMax);
-    const un = win.onResized(() => void win.isMaximized().then(setMax));
+    if (!w) return;
+    void w.isMaximized().then(setMax);
+    const un = w.onResized(() => void w.isMaximized().then(setMax));
     return () => void un.then((f) => f());
   }, []);
-  if (!win) return null;
+  if (!w) return null;
   return (
     <div className="winbtns">
-      <button className="win" aria-label="Minimize" title="Minimize" onClick={() => void win.minimize()}>
+      <button className="win" aria-label="Minimize" title="Minimize" onClick={() => void w.minimize()}>
         <Minus size={16} />
       </button>
-      <button className="win" aria-label={max ? 'Restore' : 'Maximize'} title={max ? 'Restore' : 'Maximize'} onClick={() => void win.toggleMaximize()}>
+      <button className="win" aria-label={max ? 'Restore' : 'Maximize'} title={max ? 'Restore' : 'Maximize'} onClick={() => void w.toggleMaximize()}>
         {max ? <Copy size={13} style={{ transform: 'scaleX(-1)' }} /> : <Square size={13} />}
       </button>
-      <button className="win close" aria-label="Close" title="Close (Rakki keeps playing in the tray)" onClick={() => void win.close()}>
+      <button className="win close" aria-label="Close" title="Close (Rakki keeps playing in the tray)" onClick={() => void w.close()}>
         <X size={17} />
       </button>
     </div>
@@ -264,63 +228,29 @@ export function Sidebar() {
   );
 }
 
-// ---- Right panel ----
+// ---- Resizing the sidebars ----
 
-function QueueList() {
-  const { queue, index } = usePlayer();
-  const now = queue[index];
-  const upcoming = queue.slice(index + 1, index + 201);
-  const row = (t: BaseItem, i: number, isNow = false) => (
-    <button
-      key={`${t.Id}-${i}`}
-      className={`qrow${isNow ? ' now' : ''}`}
-      onDoubleClick={() => !isNow && usePlayer.getState().playAt(i)}
-      onContextMenu={(e) => openMenu(e, songMenu([t], isNow ? {} : { queueIndex: i }))}>
-      <Artwork item={t} size={80} className="thumb" />
-      <div className="t">
-        <div className="name">{t.Name}</div>
-        <div className="sub">
-          <ArtistLinks item={t} />
-        </div>
-      </div>
-    </button>
-  );
+/**
+ * The handle in the gap beside a sidebar: drag to resize (remembered), double-click for the
+ * default width. Lives in the gap so it never covers anything.
+ */
+export function Resizer({ which }: { which: 'sidebar' | 'panel' }) {
+  const [dragging, setDragging] = useState(false);
+  const width = (e: ReactPointerEvent) => (which === 'sidebar' ? e.clientX - 12 : window.innerWidth - e.clientX - 12);
   return (
-    <div className="panel-body">
-      {now ? (
-        <>
-          <div className="label">Now playing</div>
-          {row(now, index, true)}
-        </>
-      ) : (
-        <p className="muted pad">Nothing playing yet. Double-click a song, or press play on an album.</p>
-      )}
-      {upcoming.length ? <div className="label">Next up</div> : null}
-      {upcoming.map((t, i) => row(t, index + 1 + i))}
-      {queue.length - index - 1 > upcoming.length ? <p className="muted pad">and {queue.length - index - 1 - upcoming.length} more</p> : null}
-    </div>
-  );
-}
-
-export function RightPanel() {
-  const panel = useLayout((s) => s.panel);
-  if (!panel) return null;
-  return (
-    <aside className="rightpanel panel">
-      <header className="tabs">
-        <button className={panel === 'queue' ? 'on' : ''} onClick={() => useLayout.getState().setPanel('queue')}>
-          Queue
-        </button>
-        <button className={panel === 'lyrics' ? 'on' : ''} onClick={() => useLayout.getState().setPanel('lyrics')}>
-          Lyrics
-        </button>
-        <div style={{ flex: 1 }} />
-        <button className="iconbtn" aria-label="Close panel" title="Close" onClick={() => useLayout.getState().setPanel(null)}>
-          <X size={16} />
-        </button>
-      </header>
-      {panel === 'queue' ? <QueueList /> : <LyricsView />}
-    </aside>
+    <div
+      className={`resizer ${which}${dragging ? ' dragging' : ''}`}
+      role="separator"
+      aria-orientation="vertical"
+      title="Drag to resize, double-click to reset"
+      onPointerDown={(e) => {
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        setDragging(true);
+      }}
+      onPointerMove={(e) => dragging && useLayout.getState().setWidth(which, width(e))}
+      onPointerUp={() => setDragging(false)}
+      onDoubleClick={() => useLayout.getState().setWidth(which, (which === 'sidebar' ? SIDEBAR : PANEL).default)}
+    />
   );
 }
 
@@ -479,13 +409,16 @@ export function PlayerBar() {
   const now = usePlayer((s) => s.queue[s.index]);
   const error = usePlayer((s) => s.error);
   const panel = useLayout((s) => s.panel);
+  const open = useLayout((s) => s.nowPlaying);
+  const tab = useLayout((s) => s.playerTab);
+  const l = useLayout.getState();
   const liked = !!now?.UserData?.IsFavorite;
   return (
     <footer className="playerbar">
       <div className="np">
         {now ? (
           <>
-            <button className="np-art" title="Now Playing" onClick={() => useLayout.getState().setNowPlaying(true)}>
+            <button className="np-art" title={open ? 'Close full player' : 'Full player'} onClick={() => l.setNowPlaying(!open)}>
               <Artwork item={now} size={160} className="thumb" />
               <span className="expand">
                 <Maximize2 size={14} />
@@ -511,16 +444,37 @@ export function PlayerBar() {
         {error ? <div className="error small">{error}</div> : null}
       </div>
       <div className="right">
-        <button className={`iconbtn${panel === 'lyrics' ? ' on dot' : ''}`} aria-label="Lyrics" title="Lyrics" onClick={() => useLayout.getState().togglePanel('lyrics')}>
+        <button
+          className={`iconbtn${panel === 'now' ? ' on dot' : ''}`}
+          aria-label="Now playing view"
+          title="Now playing view"
+          onClick={() => l.togglePanel('now')}>
+          <PanelRight size={18} />
+        </button>
+        <button
+          className={`iconbtn${open && tab === 'lyrics' ? ' on dot' : ''}`}
+          aria-label="Lyrics"
+          title="Lyrics"
+          disabled={!now}
+          onClick={() => (open && tab === 'lyrics' ? l.setNowPlaying(false) : l.setNowPlaying(true, 'lyrics'))}>
           <MicVocal size={18} />
         </button>
-        <button className={`iconbtn${panel === 'queue' ? ' on dot' : ''}`} aria-label="Queue" title="Queue" onClick={() => useLayout.getState().togglePanel('queue')}>
+        <button
+          className={`iconbtn${(open ? tab === 'queue' : panel === 'queue') ? ' on dot' : ''}`}
+          aria-label="Queue"
+          title="Queue"
+          onClick={() => (open ? l.setPlayerTab('queue') : l.togglePanel('queue'))}>
           <ListMusic size={18} />
         </button>
         <SleepButton />
         <VolumeControl />
-        <button className="iconbtn" aria-label="Now Playing" title="Now Playing" disabled={!now} onClick={() => useLayout.getState().setNowPlaying(true)}>
-          <Maximize2 size={17} />
+        <button
+          className={`iconbtn${open ? ' on' : ''}`}
+          aria-label={open ? 'Close full player' : 'Full player'}
+          title={open ? 'Close full player (Esc)' : 'Full player'}
+          disabled={!now}
+          onClick={() => l.setNowPlaying(!open)}>
+          {open ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
         </button>
       </div>
     </footer>
