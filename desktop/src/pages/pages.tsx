@@ -35,11 +35,11 @@ import {
   useRecentlyAdded,
   useRecentlyPlayed,
   useRediscover,
-  useSearch,
   useSimilarArtists,
   useTopArtists,
   useTopTracks,
 } from '~/queries';
+import { SearchPage } from '~/pages/Search';
 import { Settings } from '~/pages/Settings';
 import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, Shelf, Spinner, totalLength, TrackTable } from '~/ui/parts';
 
@@ -496,64 +496,6 @@ export function Artist({ id }: { id: string }) {
 }
 
 // ---- Search ----
-
-export function SearchPage({ term }: { term: string }) {
-  const q = useSearch(term);
-  const r = q.data;
-  const genres = useGenres().data;
-  const client = useAuth((s) => s.client);
-  if (term.trim().length < 2) {
-    return (
-      <div className="page">
-        <h1>Browse all</h1>
-        <div className="genre-grid">
-          {genres?.map((g) => {
-            const rgb = g.album && client ? blurhashAverage(client.blurhash(g.album)) : null;
-            return (
-              <button key={g.name} className="genre-tile" style={{ background: tileColor(rgb, g.name) }} onClick={() => go({ name: 'genre', id: g.name })}>
-                <span>{g.name}</span>
-                {g.album ? <Artwork item={g.album} size={160} className="genre-art" /> : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-  const top = r?.artists[0] ?? r?.albums[0] ?? r?.songs[0];
-  const nothing = r && !r.songs.length && !r.albums.length && !r.artists.length && !r.playlists.length;
-  return (
-    <div>
-      <div className="page" style={{ paddingBottom: 0 }}>
-        {q.isLoading ? <Spinner /> : null}
-        {nothing ? <p className="empty-note">Nothing found for “{term}”.</p> : null}
-        {top ? (
-          <div className="search-top">
-            <section>
-              <h2>Top result</h2>
-              <button className="top-result" onClick={() => (top.Type === 'Audio' ? usePlayer.getState().playQueue([top], 0) : useNav.getState().go(top.Type === 'MusicArtist' ? { name: 'artist', id: top.Id } : { name: 'album', id: top.Id }))}>
-                <Artwork item={top} size={200} round={top.Type === 'MusicArtist'} className="top-art" />
-                <div className="top-name">{top.Name}</div>
-                <div className="muted">{top.Type === 'MusicArtist' ? 'Artist' : top.Type === 'MusicAlbum' ? `Album · ${top.AlbumArtist ?? ''}` : `Song · ${top.Artists?.join(', ') ?? ''}`}</div>
-              </button>
-            </section>
-            {r?.songs.length ? (
-              <section style={{ minWidth: 0 }}>
-                <h2>Songs</h2>
-                <TrackTable tracks={r.songs.slice(0, 5)} album={false} />
-              </section>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-      <div className="page" style={{ paddingTop: 0 }}>
-        <Shelf title="Artists" items={r?.artists} />
-        <Shelf title="Albums" items={r?.albums} />
-        <Shelf title="Playlists" items={r?.playlists} />
-      </div>
-    </div>
-  );
-}
 
 export function Page() {
   const route = useNav((s) => s.route);

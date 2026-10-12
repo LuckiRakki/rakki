@@ -272,6 +272,27 @@ h1, h2, h3, p { margin: 0; }
 .genre-tile span { position: relative; z-index: 1; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3); }
 .genre-tile small { display: block; position: relative; z-index: 1; font-size: 12px; font-weight: 600; opacity: 0.8; margin-top: 4px; }
 .genre-art { position: absolute !important; width: 82px !important; right: -14px; bottom: -6px; transform: rotate(24deg); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 22px; }
+.filters button { padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; background: var(--surface-3); color: var(--text); transition: background 0.15s; }
+.filters button:hover { background: var(--surface-4); }
+.filters button.on { background: var(--text); color: #000; }
+.browse-title { font-size: 24px; margin: 6px 0 16px; }
+.recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin-bottom: 28px; }
+.recent { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; background: var(--surface-2); cursor: pointer; transition: background 0.15s; min-width: 0; }
+.recent:hover { background: var(--surface-3); }
+.recent .thumb { width: 48px; flex: none; }
+.recent .t { flex: 1; min-width: 0; }
+.recent .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent .sub { font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.recent .iconbtn { opacity: 0; color: var(--text-3); }
+.recent:hover .iconbtn { opacity: 1; }
+.lyric-hits { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; margin-bottom: 28px; }
+.lyric-hit { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; background: var(--surface-2); text-align: left; transition: background 0.15s; min-width: 0; }
+.lyric-hit:hover { background: var(--surface-3); }
+.lyric-hit .thumb { width: 52px; flex: none; }
+.lyric-hit .t { min-width: 0; }
+.lyric-hit .line { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lyric-hit .sub { font-size: 12px; color: var(--text-3); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-top { display: grid; grid-template-columns: minmax(280px, 2fr) 3fr; gap: 24px; margin-bottom: 28px; }
 .search-top h2 { margin-bottom: 12px; }
 .search-top .tracktable { padding: 0; }

@@ -53,7 +53,4 @@ export const useRandomAlbums = () => useClientQuery(['randomAlbums'], (c) => c.g
 export const useAppearsOn = (id: string) => useClientQuery(['appearsOn', id], (c) => c.getAppearsOn(id));
 export const useArtistTracks = (id: string) => useClientQuery(['artistTracks', id], (c) => c.getArtistTracks(id));
 
-export const useSearch = (term: string) =>
-  useClientQuery(['search', term], (c) => c.search(term, 20), term.trim().length > 1);
-
 export type { BaseItem };

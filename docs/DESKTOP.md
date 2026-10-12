@@ -65,7 +65,8 @@ Phone app features, and where the desktop is.
 
 ### Wave 3: the rest of the phone app
 - [ ] Spicy lyrics (port of the web mod's renderer), lyrics style, offset.
-- [ ] Search: on-device fuzzy index, lyrics search, filters, recent searches, Browse all.
+- [x] Search: on-device fuzzy index (shared with the phone), lyrics search, filters, recent
+      searches, Browse all.
 - [x] Smart queue / autoplay, song and artist radio (shared smartQueue).
 - [x] Settings: accounts, appearance (accent, Lucid, fonts, size, density), playback (quality,
       normalization, autoplay, gapless), Last.fm, about.
