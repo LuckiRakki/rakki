@@ -184,7 +184,7 @@ impl Mpv {
 
 /// RAKKI_MPV, else mpv next to the app (bundled on Windows), else a usual Windows install
 /// folder, else whatever `mpv` is on PATH (Linux: the system's mpv package).
-pub fn find_binary(app: &AppHandle) -> PathBuf {
+fn find_binary(app: &AppHandle) -> PathBuf {
     if let Ok(custom) = std::env::var("RAKKI_MPV") {
         return PathBuf::from(custom);
     }

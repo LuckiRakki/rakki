@@ -17,6 +17,7 @@ import { NowPlayingPanel } from '~/layout/NowPlayingPanel';
 import { useNav } from '~/nav';
 import { Page } from '~/pages/pages';
 import { NowPlaying } from '~/player/NowPlaying';
+import { VideoPlayer } from '~/player/VideoPlayer';
 import { startUpdateCheck } from '~/lib/updateCheck';
 import { startDiscord } from '~/player/discord';
 import { startRadioWatch } from '~/radio/radio';
@@ -108,6 +109,7 @@ function App() {
           <NowPlayingPanel />
           <PlayerBar />
           <NowPlaying />
+          <VideoPlayer />
         </div>
       ) : (
         <SignIn />
