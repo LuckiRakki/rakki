@@ -66,7 +66,10 @@ function DiscordSection() {
           </button>
         </form>
         {d.error ? <div className="setting-detail error">{d.error}</div> : null}
-        <div className="setting-detail">Covers come from Apple's public iTunes search (by artist and album name), since Discord can't see your server.</div>
+        <div className="setting-detail">
+          Discord only shows pictures from public addresses its servers can download, so covers come from Apple's public iTunes search (by artist and album
+          name), else Last.fm with your key.
+        </div>
       </div>
     </Section>
   );

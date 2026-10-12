@@ -3,13 +3,15 @@
 // Updates only when the song changes, playback pauses or resumes, or you seek (Discord allows
 // about five updates in 20 seconds).
 //
-// Discord can't load pictures from your own server (it's private), so the cover comes from
-// Apple's public iTunes search by artist and album (only while this is on), else the
-// application's own "rakki" picture if you uploaded one in Discord's developer portal.
+// Discord shows pictures only from public addresses its servers download (the local connection
+// takes no images, and your own server is private), so the cover comes from Apple's public
+// iTunes search by artist and album, else Last.fm (with your key), else the application's own
+// "rakki" picture if you uploaded one in Discord's developer portal. Only while this is on.
 import { invoke } from '@tauri-apps/api/core';
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { useSettings } from '@/settings/store';
 import { inTauri } from '~/lib/tauri';
 import { currentPosition, usePlayer } from '~/player/store';
 
@@ -41,18 +43,37 @@ export const useDiscord = create<DiscordPrefs & { error: string | null; set(p: P
 
 const covers = new Map<string, Promise<string | null>>();
 
-/** A public picture of the album (iTunes search), or null. */
+/** Apple's public iTunes search, by artist and album. */
+async function itunesCover(artist: string, album: string): Promise<string | null> {
+  const term = encodeURIComponent(`${artist} ${album}`.slice(0, 120));
+  const j = (await fetch(`https://itunes.apple.com/search?term=${term}&entity=album&limit=1`).then((r) => r.json())) as { results?: { artworkUrl100?: string }[] };
+  return j.results?.[0]?.artworkUrl100?.replace('100x100bb', '512x512bb') ?? null;
+}
+
+/** Last.fm's album picture (with your Last.fm key, when iTunes doesn't know the album). */
+async function lastfmCover(artist: string, album: string): Promise<string | null> {
+  const key = useSettings.getState().lastfmApiKey;
+  if (!key) return null;
+  const q = new URLSearchParams({ method: 'album.getinfo', artist, album, api_key: key, format: 'json', autocorrect: '1' });
+  const j = (await fetch(`https://ws.audioscrobbler.com/2.0/?${q}`).then((r) => r.json())) as { album?: { image?: { '#text': string; size: string }[] } };
+  const images = j.album?.image ?? [];
+  const best = images.find((i) => i.size === 'mega') ?? images.find((i) => i.size === 'extralarge');
+  return best?.['#text'] || null;
+}
+
+/**
+ * A public picture of the album, which Discord's servers can download (they can't reach your
+ * own server, and the local connection to Discord only takes addresses, not pictures).
+ */
 function coverFor(item: BaseItem): Promise<string | null> {
   const artist = item.AlbumArtist ?? item.Artists?.[0] ?? '';
   const album = item.Album ?? item.Name;
   const key = `${artist}|${album}`.toLowerCase();
   let found = covers.get(key);
   if (!found) {
-    const term = encodeURIComponent(`${artist} ${album}`.slice(0, 120));
-    found = fetch(`https://itunes.apple.com/search?term=${term}&entity=album&limit=1`)
-      .then((r) => r.json())
-      .then((j: { results?: { artworkUrl100?: string }[] }) => j.results?.[0]?.artworkUrl100?.replace('100x100bb', '512x512bb') ?? null)
-      .catch(() => null);
+    found = itunesCover(artist, album)
+      .catch(() => null)
+      .then(async (url) => url ?? (await lastfmCover(artist, album).catch(() => null)));
     covers.set(key, found);
   }
   return found;
