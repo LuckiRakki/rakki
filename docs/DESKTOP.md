@@ -84,6 +84,7 @@ Phone app features, and where the desktop is.
 - [x] Out of sight (tray or minimized): the page sleeps, WebView2 stops rendering and drops to
       its low memory target.
 - [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
-- [ ] Discord presence; start with the computer.
+- [x] Discord presence ("Listening to"): set up in Settings with your own Discord application.
+- [ ] Start with the computer.
 - [ ] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb; GitHub Actions builds;
       auto-update.

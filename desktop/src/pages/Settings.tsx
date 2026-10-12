@@ -7,6 +7,7 @@ import { checkLastfmKey, LastfmError } from '@/lib/lastfm';
 import { SWATCHES } from '@/appearance/presets';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { useAuth } from '~/auth/session';
+import { useDiscord } from '~/player/discord';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
 import pkg from '../../package.json';
 
@@ -30,6 +31,43 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2>{title}</h2>
       <div className="settings-card">{children}</div>
     </section>
+  );
+}
+
+function DiscordSection() {
+  const d = useDiscord();
+  const [id, setId] = useState(d.appId);
+  const valid = /^\d{15,22}$/.test(id.trim());
+  return (
+    <Section title="Discord">
+      <Toggle
+        on={d.enabled}
+        onChange={(v) => d.set({ enabled: v })}
+        label="Show what you're listening to"
+        detail="Your Discord profile shows the song, artists and a time bar while Rakki plays (the Discord app must be open on this computer)."
+      />
+      <div className="setting column">
+        <div className="setting-label">Application ID</div>
+        <div className="setting-detail">
+          Discord shows the name of an application you make, once: open discord.com/developers/applications, choose New Application, name it Rakki (that's the
+          name people see), and copy its Application ID here. For a picture when Discord can't find the album's cover, upload Rakki's icon under Rich Presence, Art
+          Assets, named rakki.
+        </div>
+        <form
+          className="row-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            d.set({ appId: id.trim() });
+          }}>
+          <input className="field" value={id} onChange={(e) => setId(e.target.value)} placeholder="e.g. 1234567890123456789" spellCheck={false} inputMode="numeric" />
+          <button className="secondary small" disabled={!valid || id.trim() === d.appId}>
+            Save
+          </button>
+        </form>
+        {d.error ? <div className="setting-detail error">{d.error}</div> : null}
+        <div className="setting-detail">Covers come from Apple's public iTunes search (by artist and album name), since Discord can't see your server.</div>
+      </div>
+    </Section>
   );
 }
 
@@ -133,6 +171,8 @@ export function Settings() {
         <Toggle on={s.lastfmAlbumPlays} onChange={(v) => s.set('lastfmAlbumPlays', v)} label="Plays on album pages" detail="Each song's worldwide plays from Last.fm." />
         <Toggle on={s.popularSort === 'lastfm'} onChange={(v) => s.set('popularSort', v ? 'lastfm' : 'mine')} label="Popular by worldwide plays" detail="Artist pages' Popular by Last.fm (off: by your own plays)." />
       </Section>
+
+      <DiscordSection />
 
       <Section title="About">
         <div className="setting">

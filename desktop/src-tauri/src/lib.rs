@@ -3,10 +3,12 @@
 // (media.rs) and a tray icon sit alongside. Closing the window only hides it to the tray, where
 // music keeps playing with the interface asleep.
 
+mod discord;
 mod media;
 mod memory;
 mod mpv;
 
+use discord::Discord;
 use media::{Media, NowPlaying};
 use mpv::Mpv;
 use serde_json::{json, Value};
@@ -72,6 +74,12 @@ fn media_playback(media: State<'_, Media>, playing: bool, position: f64) {
     media.set_playback(playing, position);
 }
 
+/// Discord's "Listening to" (discord.rs); None clears it.
+#[tauri::command]
+async fn discord_set(discord: State<'_, Discord>, app_id: String, activity: Option<Value>) -> Result<(), String> {
+    discord.set(&app_id, activity).await
+}
+
 fn show_window(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.unminimize();
@@ -121,6 +129,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Player::default())
+        .manage(Discord::default())
         .setup(|app| {
             let handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("main window");
@@ -153,7 +162,8 @@ pub fn run() {
             player_seek,
             player_stop,
             media_now_playing,
-            media_playback
+            media_playback,
+            discord_set
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

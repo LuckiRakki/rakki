@@ -16,6 +16,7 @@ import { NowPlayingPanel } from '~/layout/NowPlayingPanel';
 import { useNav } from '~/nav';
 import { Page } from '~/pages/pages';
 import { NowPlaying } from '~/player/NowPlaying';
+import { startDiscord } from '~/player/discord';
 import { currentPosition, startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
 import { Overlays } from '~/ui/overlays';
@@ -52,6 +53,7 @@ function App() {
 
   useEffect(() => {
     startPlayer();
+    startDiscord();
     // The mouse's back and forward buttons.
     const onMouse = (e: MouseEvent) => {
       if (e.button === 3) useNav.getState().back();
