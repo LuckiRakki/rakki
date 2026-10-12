@@ -33,6 +33,13 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             new TaskTriggerInfo { Type = TaskTriggerInfoType.DailyTrigger, TimeOfDayTicks = TimeSpan.Zero.Ticks },
         };
 
+        /// <summary>
+        /// The day a run builds for. Jellyfin's daily trigger can fire a moment before midnight
+        /// (11:59:59.9), which read as the old day (already published) and skipped the night;
+        /// a few minutes' slack makes that run build the new day.
+        /// </summary>
+        public static DateOnly DayFor(DateTime now) => DateOnly.FromDateTime(now.AddMinutes(10));
+
         public async Task ExecuteAsync(IProgress<double> progress, CancellationToken ct)
         {
             if (!Guid.TryParse(Plugin.Instance?.Configuration.MixUserId, out var user))
@@ -40,7 +47,7 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
                 _logger.LogWarning("Rakki: no user for Daily Mixes yet; open the preview on the plugin's page once, or set one there");
                 return;
             }
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = DayFor(DateTime.Now);
             var key = today.ToString("yyyy-MM-dd");
             if (MixHistory.Load(user).Days.Any(d => d.Date == key && d.Published))
             {
