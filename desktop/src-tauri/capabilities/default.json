@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The main window: Rakki's own title bar (move, minimize, maximize, hide to tray) and opening links in the browser.",
+  "description": "The main window: Rakki's own title bar (move, minimize, maximize, hide to tray), full screen, the mini player (resize, keep on top), and opening links in the browser.",
   "windows": [
     "main"
   ],
@@ -15,6 +15,11 @@
     "core:window:allow-start-dragging",
     "core:window:allow-set-fullscreen",
     "core:window:allow-is-fullscreen",
+    "core:window:allow-set-size",
+    "core:window:allow-set-min-size",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-set-resizable",
+    "core:window:allow-unmaximize",
     "opener:default"
   ]
 }

@@ -460,6 +460,24 @@ h1, h2, h3, p { margin: 0; }
 .np-tabs .iconbtn.on { color: #000; background: #fff; }
 .nowplaying.idle .np-top, .nowplaying.idle .np-tabs { opacity: 0.12; }
 
+/* ---- Mini player (layout/MiniPlayer.tsx): the whole window ---- */
+
+.mini { height: 100vh; display: flex; gap: 12px; padding: 8px; background: color-mix(in srgb, var(--tint) 35%, #0b0b0d); overflow: hidden; }
+.mini-art { width: auto !important; height: 100%; flex: none; border-radius: 6px !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; }
+.mini-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+.mini-top { display: flex; align-items: flex-start; gap: 2px; }
+.mini-text { flex: 1; min-width: 0; padding-top: 2px; }
+.mini-title { font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-by { color: var(--text-2); font-size: 12px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-top .iconbtn { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); opacity: 0; transition: opacity 0.15s; }
+.mini.hover .mini-top .iconbtn, .mini-top .iconbtn.on { opacity: 1; }
+.mini-top .iconbtn:hover { background: rgba(255, 255, 255, 0.12); color: var(--text); }
+.mini-controls { display: grid; grid-template-columns: 1fr auto auto auto 1fr; align-items: center; gap: 14px; }
+.mini-controls .pp { width: 32px; height: 32px; }
+.mini-controls .iconbtn { color: var(--text-2); }
+.mini-controls .iconbtn:hover { color: var(--text); }
+.mini-seek .range { height: 12px; }
+
 /* Song table in the full player: queue and related. */
 .songtable { overflow-y: auto; padding-right: 6px; }
 .st-row { display: grid; grid-template-columns: 36px minmax(0, 2.4fr) minmax(0, 1.4fr) minmax(0, 0.9fr) 52px 58px 34px; align-items: center; gap: 12px; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: rgba(255, 255, 255, 0.7); }

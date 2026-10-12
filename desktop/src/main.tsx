@@ -11,6 +11,7 @@ import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
 import { PlayerBar, Resizer, Sidebar, TitleBar } from '~/layout/frame';
 import { useLayout } from '~/layout/layout';
+import { MiniPlayer } from '~/layout/MiniPlayer';
 import { NowPlayingPanel } from '~/layout/NowPlayingPanel';
 import { useNav } from '~/nav';
 import { Page } from '~/pages/pages';
@@ -46,7 +47,7 @@ function onKey(e: KeyboardEvent) {
 
 function App() {
   const signedIn = useAuth((s) => !!s.client);
-  const { panel, sidebarWidth, panelWidth, nowPlaying } = useLayout();
+  const { panel, sidebarWidth, panelWidth, nowPlaying, mini } = useLayout();
   useApplyTheme();
 
   useEffect(() => {
@@ -81,7 +82,9 @@ function App() {
 
   return (
     <>
-      {signedIn ? (
+      {signedIn && mini ? (
+        <MiniPlayer />
+      ) : signedIn ? (
         <div
           className={`app${panel ? '' : ' no-panel'}${nowPlaying ? ' np-open' : ''}`}
           style={{ ['--sidebar' as string]: `${sidebarWidth}px`, ['--panel' as string]: `${panelWidth}px` }}>

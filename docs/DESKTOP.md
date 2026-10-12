@@ -83,6 +83,7 @@ Phone app features, and where the desktop is.
 - [x] Full screen: F11 or the button in the full player; Esc steps back out.
 - [x] Out of sight (tray or minimized): the page sleeps, WebView2 stops rendering and drops to
       its low memory target.
-- [ ] Discord presence; mini player; keyboard shortcuts; start with the computer.
+- [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
+- [ ] Discord presence; start with the computer.
 - [ ] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb; GitHub Actions builds;
       auto-update.

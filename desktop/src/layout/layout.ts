@@ -32,12 +32,16 @@ interface LayoutState {
   playerTab: PlayerTab;
   /** The window filling the screen. */
   fullscreen: boolean;
+  /** The window shrunk to the mini player (layout/MiniPlayer.tsx). */
+  mini: boolean;
+  miniOnTop: boolean;
   setPanel(p: Panel | null): void;
   togglePanel(p: Panel): void;
   setWidth(which: 'sidebar' | 'panel', px: number): void;
   setNowPlaying(open: boolean, tab?: PlayerTab): void;
   setPlayerTab(tab: PlayerTab): void;
   setFullscreen(on: boolean): void;
+  setMiniOnTop(on: boolean): void;
 }
 
 export const useLayout = create<LayoutState>((set, get) => ({
@@ -47,6 +51,8 @@ export const useLayout = create<LayoutState>((set, get) => ({
   nowPlaying: false,
   playerTab: read<PlayerTab>('rakki.playerTab', 'lyrics'),
   fullscreen: false,
+  mini: false,
+  miniOnTop: read('rakki.miniOnTop', true),
   setPanel(panel) {
     save('rakki.panel2', panel);
     set({ panel });
@@ -78,5 +84,9 @@ export const useLayout = create<LayoutState>((set, get) => ({
   setFullscreen(on) {
     set({ fullscreen: on });
     void win?.setFullscreen(on);
+  },
+  setMiniOnTop(miniOnTop) {
+    save('rakki.miniOnTop', miniOnTop);
+    set({ miniOnTop });
   },
 }));

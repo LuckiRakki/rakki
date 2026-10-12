@@ -16,6 +16,7 @@ import {
   Minus,
   Moon,
   PanelRight,
+  PictureInPicture2,
   Music,
   Pause,
   Play,
@@ -41,6 +42,7 @@ import { useAuth } from '~/auth/session';
 import { setLiked } from '~/library/actions';
 import { collectionMenu, songMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout, win } from '~/layout/layout';
+import { setMini } from '~/layout/MiniPlayer';
 import { go, useNav, type Route } from '~/nav';
 import { useSleep } from '~/player/sleep';
 import { currentPosition, usePlayer } from '~/player/store';
@@ -265,6 +267,7 @@ export function Range({ value, max, onSet, onWheelStep }: { value: number; max: 
     return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * max;
   };
   const shown = drag ?? value;
+  const pct = max > 0 ? Math.max(0, Math.min(100, (shown / max) * 100)) || 0 : 0;
   return (
     <div
       className={`range${drag !== null ? ' dragging' : ''}`}
@@ -280,9 +283,9 @@ export function Range({ value, max, onSet, onWheelStep }: { value: number; max: 
       }}
       onWheel={onWheelStep ? (e) => onSet(Math.max(0, Math.min(max, value + (e.deltaY < 0 ? onWheelStep : -onWheelStep)))) : undefined}>
       <div className="bar">
-        <div className="fill" style={{ width: `${max > 0 ? (shown / max) * 100 : 0}%` }} />
+        <div className="fill" style={{ width: `${pct}%` }} />
       </div>
-      <div className="knob" style={{ left: `${max > 0 ? (shown / max) * 100 : 0}%` }} />
+      <div className="knob" style={{ left: `${pct}%` }} />
     </div>
   );
 }
@@ -465,6 +468,9 @@ export function PlayerBar() {
         </button>
         <SleepButton />
         <VolumeControl />
+        <button className="iconbtn" aria-label="Mini player" title="Mini player" onClick={() => void setMini(true)}>
+          <PictureInPicture2 size={17} />
+        </button>
         <button
           className={`iconbtn${open ? ' on' : ''}`}
           aria-label={open ? 'Close full player' : 'Full player'}
