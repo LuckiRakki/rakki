@@ -4,7 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleArrowDown,
-  Clapperboard,
+  MonitorPlay,
   Copy,
   Disc3,
   Heart,
@@ -19,7 +19,7 @@ import {
   Moon,
   PanelRight,
   PictureInPicture2,
-  RadioTower,
+  Radio,
   Music,
   Pause,
   Play,
@@ -27,13 +27,13 @@ import {
   Repeat1,
   Search as SearchIcon,
   Settings2,
-  Shapes,
+  Tags,
   Shuffle,
   SkipBack,
   SkipForward,
-  Sparkles,
+  Blend,
   Square,
-  Users,
+  UserRound,
   Volume1,
   Volume2,
   VolumeX,
@@ -195,8 +195,8 @@ function NavLink({ to, icon, label }: { to: Route; icon: ReactNode; label: strin
   const on = useNav((s) => s.route.name === to.name);
   return (
     <button className={`link${on ? ' on' : ''}`} onClick={() => go(to)}>
-      {icon}
-      <span>{label}</span>
+      <span className="link-icon">{icon}</span>
+      <span className="link-label">{label}</span>
     </button>
   );
 }
@@ -213,14 +213,14 @@ export function Sidebar() {
         <span>Your Library</span>
       </div>
       <nav className="side-links">
-        <NavLink to={{ name: 'playlists' }} icon={<ListMusic size={18} />} label="Playlists" />
-        <NavLink to={{ name: 'mixes' }} icon={<Sparkles size={18} />} label="Daily Mixes" />
-        <NavLink to={{ name: 'albums' }} icon={<Disc3 size={18} />} label="Albums" />
-        <NavLink to={{ name: 'songs' }} icon={<Music size={18} />} label="Songs" />
-        <NavLink to={{ name: 'artists' }} icon={<Users size={18} />} label="Artists" />
-        <NavLink to={{ name: 'genres' }} icon={<Shapes size={18} />} label="Genres" />
-        <NavLink to={{ name: 'radio' }} icon={<RadioTower size={18} />} label="Radio" />
-        <NavLink to={{ name: 'videos' }} icon={<Clapperboard size={18} />} label="Videos" />
+        <NavLink to={{ name: 'playlists' }} icon={<ListMusic size={17} />} label="Playlists" />
+        <NavLink to={{ name: 'mixes' }} icon={<Blend size={17} />} label="Daily Mixes" />
+        <NavLink to={{ name: 'albums' }} icon={<Disc3 size={17} />} label="Albums" />
+        <NavLink to={{ name: 'songs' }} icon={<Music size={17} />} label="Songs" />
+        <NavLink to={{ name: 'artists' }} icon={<UserRound size={17} />} label="Artists" />
+        <NavLink to={{ name: 'genres' }} icon={<Tags size={17} />} label="Genres" />
+        <NavLink to={{ name: 'radio' }} icon={<Radio size={17} />} label="Radio" />
+        <NavLink to={{ name: 'videos' }} icon={<MonitorPlay size={17} />} label="Videos" />
       </nav>
       <div className="side-lists">
         <button className={`row${route.name === 'liked' ? ' on' : ''}`} onClick={() => go({ name: 'liked' })}>
