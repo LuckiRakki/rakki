@@ -440,3 +440,4 @@ h1, h2, h3, p { margin: 0; }
 .hex .field { width: 120px; height: 34px; }
 .row-form { display: flex; gap: 10px; }
 .row-form .field { flex: 1; height: 38px; }
+.np-fs { margin-right: 12px; color: rgba(255, 255, 255, 0.75); }

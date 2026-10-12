@@ -60,7 +60,16 @@ export const useLayout = create<{
   setPanel(p: 'queue' | 'lyrics' | null): void;
   togglePanel(p: 'queue' | 'lyrics'): void;
   setNowPlaying(open: boolean): void;
+  /** The window filling the screen (Now Playing as a full-screen player). */
+  fullscreen: boolean;
+  setFullscreen(on: boolean): void;
 }>((set, get) => ({
+  fullscreen: false,
+  setFullscreen(on) {
+    set({ fullscreen: on });
+    if (on) set({ nowPlaying: true });
+    void win?.setFullscreen(on);
+  },
   panel: (localStorage.getItem('rakki.panel') as 'queue' | 'lyrics' | null) ?? 'queue',
   nowPlaying: false,
   setPanel(panel) {
@@ -73,6 +82,8 @@ export const useLayout = create<{
   },
   setNowPlaying(nowPlaying) {
     set({ nowPlaying });
+    // Leaving the player leaves full screen too.
+    if (!nowPlaying && get().fullscreen) get().setFullscreen(false);
   },
 }));
 

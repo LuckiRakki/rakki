@@ -21,6 +21,11 @@ import { useApplyTheme } from '~/ui/theme';
 function onKey(e: KeyboardEvent) {
   const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
   const p = usePlayer.getState();
+  if (e.key === 'F11') {
+    e.preventDefault();
+    const l = useLayout.getState();
+    return l.setFullscreen(!l.fullscreen);
+  }
   if (e.altKey && e.key === 'ArrowLeft') return useNav.getState().back();
   if (e.altKey && e.key === 'ArrowRight') return useNav.getState().forward();
   if (typing) return;

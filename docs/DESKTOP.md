@@ -67,7 +67,13 @@ Phone app features, and where the desktop is.
 - [ ] Music videos (mpv can show video), internet radio and SUB/WAVE.
 - [ ] Liked songs and playlist cache (the heart for "in a playlist").
 
+### Playing across devices
+- [ ] Like Spotify Connect: see what your other Rakki apps play, control them, move playback
+      between desktop and phone. Framework in [REMOTE_PLAYBACK.md](REMOTE_PLAYBACK.md).
+
 ### Wave 4: desktop extras
+- [x] App icon (Rakki's, rounded).
+- [x] Full-screen player: F11 or the button in Now Playing; Esc steps back out.
 - [ ] Hidden to the tray: WebView2 low-memory mode; nothing redraws.
 - [ ] Discord presence; mini player; keyboard shortcuts; start with the computer.
 - [ ] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb; GitHub Actions builds;
