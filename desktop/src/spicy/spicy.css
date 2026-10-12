@@ -1,0 +1,398 @@
+/*
+ * Spicy lyrics (word by word) for Rakki desktop: the lyric part of the Spicy Lyrics web mod's
+ * stylesheet (SpicyLyrics-Jellyfin/src/spicy-lyrics.css), whose styling was adapted from
+ * Spicy Lyrics (github.com/Spikerko/spicy-lyrics). Driven by LyricsAnimator.ts.
+ */
+
+#spicy-lyrics-mount,
+.sl-root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    /* Spicy Lyrics sets lyrics in Apple's San Francisco; Rakki uses Inter everywhere. */
+    font-family: 'Inter Variable', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    /* The web mod's settings at their defaults (it sets these from its settings panel). */
+    --sl-sweep-band: 20%;
+    --sl-lrc-band: 20%;
+    --sl-pop-mul: 1;
+    --sl-lift-mul: 1;
+    --sl-letter-mul: 1;
+    --sl-unsynced-size: 1;
+    --sl-line-glow: 0.18;
+    --sl-sung:        rgba(255, 255, 255, 0.85);
+    --sl-unsung:      rgba(255, 255, 255, 0.5);
+    --sl-line-unsung: rgba(255, 255, 255, 0.35);   /* line-by-line lyrics */
+    --sl-text-active:   #fff;                       /* dots, placeholder */
+    --sl-text-inactive: rgba(255, 255, 255, 0.30);
+    /* Big, screen-filling lyrics (× user lyric-size setting) */
+    --sl-font-size:   calc(clamp(2rem, 5vw, 4rem) * var(--sl-lyric-scale, 1));
+    --sl-line-gap:    calc(var(--sl-font-size) * 0.2);
+}
+
+.sl-font-jakarta .sl-root {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ── Scroller ─────────────────────────────────────────────────────────────── */
+
+/* The whole track is translated (not scrolled) so the active line glides to
+   centre with one continuous, smooth transition — no per-line scroll jump. */
+.sl-scroller {
+    position: relative;
+    padding: 38vh 2.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sl-line-gap);
+    transform: translateY(0);
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+/* ── Lyrics lines ─────────────────────────────────────────────────────────── */
+
+/*
+ * A synced line is always in one of three phases, set by LyricsAnimator from
+ * its own time range: --notsung, --active (being sung right now) or --sung.
+ * Several lines can be active at once (overlapping duet / background lines).
+ *
+ * Glyphs are never painted with `color`. The active line's words paint through
+ * their colour-sweep gradient; every other line paints through text-shadow on
+ * transparent text — the shadow IS the text, and its blur radius (--sl-lb, set
+ * per line from its distance to the lit one) is the depth-of-field blur.
+ */
+.sl-line {
+    position: relative;
+    isolation: isolate;          /* keeps the hover pill behind the words */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding-right: 5%;
+    font-size: var(--sl-font-size);
+    font-weight: 700;
+    line-height: 1.18;
+    cursor: pointer;
+    transition: opacity 0.2s cubic-bezier(0.61, 1, 0.88, 1);
+}
+
+.sl-line--notsung,
+.sl-line--active,
+.sl-line--sung {
+    -webkit-text-fill-color: transparent;
+}
+
+.sl-line--notsung { opacity: 0.51;  --sl-glyph: var(--sl-unsung); }
+.sl-line--sung    { opacity: 0.497; --sl-glyph: var(--sl-sung); }
+.sl-line--active  { opacity: 1; }
+
+.sl-line--notsung,
+.sl-line--sung {
+    text-shadow: 0 0 var(--sl-lb, 0px) var(--sl-glyph);
+}
+
+/* The faint always-on halo (a user setting) — only near the lit line, since a
+   blurred per-glyph shadow on every line of the song is wasted paint. */
+.sl-line--near.sl-line--notsung,
+.sl-line--near.sl-line--sung {
+    text-shadow:
+        0 0 var(--sl-lb, 0px) var(--sl-glyph),
+        0 0 0.1em rgba(255, 255, 255, calc(0.6 * var(--sl-line-glow, 0)));
+}
+
+/* Hovering an unlit line (or scrolling by hand) shows it sharp and bright. */
+.sl-line--notsung:hover,
+.sl-line--sung:hover {
+    opacity: 1;
+    --sl-lb: 0px !important;
+}
+.sl-manual .sl-line {
+    --sl-lb: 0px !important;
+}
+
+/* Hover pill behind a line, as in Spicy Lyrics. */
+.sl-line:not(.sl-line--unsynced)::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -0.12em -0.2em;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.25s ease, transform 0.4s linear(0, 0.013 1%, 0.051 2.2%, 0.404 9.8%, 0.51 12.6%, 0.602 15.5%, 0.683 18.7%, 0.754 22.2%, 0.813 26%, 0.861 30.2%, 0.9 34.8%, 0.931 40%, 0.972 52.7%, 0.992 70.2%, 1);
+}
+.sl-line:not(.sl-line--unsynced):hover::before {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* Duet — the secondary singer's lines are aligned to the right */
+.sl-line--right {
+    justify-content: flex-end;
+    text-align: right;
+    padding-right: 0;
+    padding-left: 5%;
+}
+
+.sl-line--rtl {
+    direction: rtl;
+    --sl-sweep-dir: -90deg;
+}
+
+/* Line-level lyrics (LRC) + the end-of-song credit: the lit line grows a
+   touch and fills top→bottom (--gp, set per frame) with a whole-line glow. */
+.sl-line--plain {
+    transform-origin: left center;
+    transition:
+        opacity 0.2s cubic-bezier(0.61, 1, 0.88, 1),
+        transform 0.2s cubic-bezier(0.37, 0, 0.63, 1);
+}
+.sl-line--plain.sl-line--right { transform-origin: right center; }
+.sl-line--plain.sl-line--notsung { --sl-glyph: var(--sl-line-unsung); }
+
+.sl-line--plain.sl-line--active {
+    transform: scale(1.05);
+    background-image: linear-gradient(
+        180deg,
+        var(--sl-sung) var(--gp, 0%),
+        var(--sl-line-unsung) calc(var(--gp, 0%) + var(--sl-lrc-band, 20%))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow:
+        0 0 var(--gb, 4px) rgba(255, 255, 255, var(--ga, 0)),
+        0 0 0.1em rgba(255, 255, 255, calc(0.6 * var(--sl-line-glow, 0)));
+}
+
+/* Unsynced lyrics (.txt / embedded with no timing): a static, readable list. */
+.sl-line--unsynced {
+    display: block;
+    padding-right: 0;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: default;
+    font-size: calc(var(--sl-font-size) * var(--sl-unsynced-size, 1));
+}
+
+.sl-unsynced .sl-scroller {
+    padding-top: 12vh;
+    padding-bottom: 20vh;
+}
+
+/* End-of-lyrics "Written by:" credit — smaller; glows once it's reached. */
+.sl-credits {
+    font-size: clamp(1rem, 1.5vw, 1.7rem);
+    margin-top: 0.6em;
+}
+
+/* ── Words ────────────────────────────────────────────────────────────────── */
+/*
+ * A word's resting pose is set here in CSS; LyricsAnimator only writes inline
+ * styles while a word is actually moving, then hands it back. Unsung words wait
+ * at 95% and a hair low; sung words (.sl-w-sung) sit at full size. The
+ * multipliers come from the settings, so rest matches where the springs settle.
+ *
+ * NOTE: deliberately NO `will-change` on words or letters. A song has hundreds
+ * of words; a persistent will-change gives each its own compositor layer and
+ * exhausts GPU memory (catastrophic on weak head-unit GPUs). A moving word gets
+ * a translate3d() only while it moves.
+ */
+.sl-word {
+    display: inline-block;
+    white-space: pre;
+    transform-origin: center center;
+    transform:
+        translateY(calc(var(--sl-font-size) * 0.01 * var(--sl-lift-mul, 1)))
+        scale(calc(1 - 0.05 * var(--sl-pop-mul, 1)));
+}
+
+.sl-word.sl-w-sung,
+.sl-letter.sl-w-sung {
+    transform: none;
+    --gp: 100%;
+}
+
+/* Syllables of one word stay together and grow away from their seams. */
+.sl-word-group { display: inline-flex; white-space: nowrap; }
+.sl-word.sl-o-r { transform-origin: right center; }
+.sl-word.sl-o-l { transform-origin: left center; }
+
+/* The gap between words (spaces are trimmed from the word text). */
+.sl-word.sl-gap { margin-right: 0.32ch; }
+
+/* A held word: the box moves as one, its letters paint and pop in turn. */
+.sl-word--spelled { display: inline-flex; }
+
+.sl-letter {
+    display: inline-block;
+    white-space: pre;
+    transform-origin: center center;
+    transform:
+        translateY(calc(var(--sl-font-size) * 0.02 * var(--sl-letter-mul, 1)))
+        scale(calc(1 - 0.05 * var(--sl-letter-mul, 1)));
+}
+.sl-letter--space { min-width: 0.3ch; }
+
+/*
+ * The colour sweep: a soft-edged gradient whose sung edge (--gp, per frame)
+ * runs from 20% before the word to its end. Each word — or each letter of a
+ * held word — carries its own. The glow is a white text-shadow (--gb blur,
+ * --ga alpha) that lightens the word from within as it is sung.
+ */
+.sl-line--active .sl-word:not(.sl-word--spelled),
+.sl-line--active .sl-letter {
+    background-image: linear-gradient(
+        var(--sl-sweep-dir, 90deg),
+        var(--sl-sung) var(--gp, -20%),
+        var(--sl-unsung) calc(var(--gp, -20%) + var(--sl-sweep-band, 20%))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow:
+        0 0 var(--gb, 4px) rgba(255, 255, 255, var(--ga, 0)),
+        0 0 0.1em rgba(255, 255, 255, calc(0.6 * var(--sl-line-glow, 0)));
+}
+
+/* ── Background vocals (their own smaller line under the lead) ────────────── */
+
+.sl-line--bg {
+    font-size: calc(var(--sl-font-size) * 0.75);
+    font-weight: 600;
+    margin-top: calc(var(--sl-line-gap) * -0.8);
+    --sl-sung: rgba(255, 255, 255, 0.6);
+    --sl-unsung: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Interlude dots (long instrumental gaps) ──────────────────────────────── */
+
+/* The dots are inserted as a line in the lyric flow, under the last line. */
+#spicy-lyrics-dots {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    align-self: flex-start;      /* align under a left line… */
+    margin: 0.7rem 0;            /* extra breathing room from the lyric lines */
+    padding: 0.15em 0;
+    pointer-events: none;
+    /* Fixed font-size so the dots' em-based motion is predictable, not tied
+       to the (huge) lyric font. The animator sets transform/opacity per frame. */
+    font-size: 1.5rem;
+}
+
+#spicy-lyrics-dots.sl-dots--right {
+    align-self: flex-end;        /* …or under a right (duet) line */
+}
+
+.sl-dot {
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+    background: var(--sl-text-active);
+    /* Glow — fades with the dot's per-frame opacity */
+    box-shadow: 0 0 0.55em 0.04em rgba(255, 255, 255, 0.6);
+    transform-origin: center bottom;
+    will-change: transform, opacity;
+}
+
+/* ── Placeholder / no-lyrics state ───────────────────────────────────────── */
+
+.sl-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--sl-text-inactive);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 2rem;
+    opacity: 0.7;
+}
+
+/* ── "Next up" card (fades up under the credits when the lyrics are over) ──── */
+
+.sl-nextup {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 1.4em;
+    max-width: 90%;
+    cursor: pointer;
+    /* Start slightly low and transparent; .sl-nextup--show floats it up — the
+       same "fade up" feel as the interlude dots. */
+    opacity: 0;
+    transform: translateY(1.4em);
+    transition:
+        opacity 0.6s ease,
+        transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
+
+.sl-nextup--right {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.sl-nextup--show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.sl-nextup-art {
+    flex: 0 0 auto;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 7px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.sl-nextup-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sl-nextup-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+}
+
+.sl-nextup-title {
+    font-size: clamp(1rem, 1.6vw, 1.5rem);
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sl-nextup-artist {
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    font-weight: 500;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Reduced-motion respect ───────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .sl-line,
+    .sl-word,
+    .sl-letter,
+    .sl-scroller {
+        transition: none !important;
+        animation:  none !important;
+    }
+}

@@ -15,7 +15,10 @@ import { songMenu } from '~/library/menus';
 import { WindowButtons } from '~/layout/frame';
 import { useLayout, type PlayerTab } from '~/layout/layout';
 import { formatOf } from '~/layout/NowPlayingPanel';
-import { LyricsView } from '~/lyrics/LyricsView';
+import { useLyrics } from '@/lyrics/fetch';
+import { useSettings } from '@/settings/store';
+import { LyricsView, pickLyrics } from '~/lyrics/LyricsView';
+import { SpicyView } from '~/spicy/SpicyView';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
@@ -121,6 +124,30 @@ function RelatedTab({ item }: { item: BaseItem }) {
   return <SongTable songs={songs} first={0} onPlay={(i) => usePlayer.getState().playQueue(songs, i, { shuffle: false })} />;
 }
 
+/** The lyrics tab: Spicy (word by word, the web mod's engine) or Regular (line by line), the
+ *  same choice as the phone app's Lyrics style. */
+function PlayerLyrics() {
+  const mode = useSettings((s) => s.lyricsMode);
+  const item = usePlayer((s) => s.queue[s.index]);
+  const q = useLyrics(item?.Radio ? undefined : item?.Id);
+  const lyrics = pickLyrics(q.data);
+  if (mode === 'spicy' && lyrics) return <SpicyView key={item?.Id} lyrics={lyrics} />;
+  return <LyricsView variant="big" />;
+}
+
+function LyricsStyle() {
+  const mode = useSettings((s) => s.lyricsMode);
+  return (
+    <div className="seg" role="group" aria-label="Lyrics style">
+      {(['spicy', 'regular'] as const).map((m) => (
+        <button key={m} className={mode === m ? 'on' : ''} title={m === 'spicy' ? 'Word by word' : 'Line by line'} onClick={() => useSettings.getState().set('lyricsMode', m)}>
+          {m === 'spicy' ? 'Spicy' : 'Regular'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const TABS: { tab: PlayerTab; label: string; icon: typeof ListMusic }[] = [
   { tab: 'queue', label: 'Queue', icon: ListMusic },
   { tab: 'related', label: 'Related', icon: Radio },
@@ -186,6 +213,7 @@ export function NowPlaying() {
           <Ellipsis size={20} />
         </button>
         <div style={{ flex: 1 }} data-tauri-drag-region />
+        {tab === 'lyrics' ? <LyricsStyle /> : null}
         <button
           className="iconbtn np-fs"
           aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
@@ -225,7 +253,7 @@ export function NowPlaying() {
           </div>
         </div>
         <div className="np-right">
-          {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <LyricsView variant="big" /> : <RelatedTab item={item} />}
+          {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : <RelatedTab item={item} />}
         </div>
       </div>
       <div className="np-tabs">

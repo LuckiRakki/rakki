@@ -520,6 +520,14 @@ h1, h2, h3, p { margin: 0; }
 .mini-controls .iconbtn:hover { color: var(--text); }
 .mini-seek .range { height: 12px; }
 
+/* Spicy lyrics in the full player (spicy/SpicyView.tsx; the engine's own styles: spicy/spicy.css). */
+.spicy-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.spicy-mount { flex: 1; min-height: 0; position: relative; --sl-lyric-scale: 0.72; }
+.spicy-credit { flex: none; text-align: left; padding: 8px 0 0; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.5); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0, 0, 0, 0.25); margin-right: 8px; }
+.seg button { padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; color: rgba(255, 255, 255, 0.7); }
+.seg button.on { background: #fff; color: #000; }
+
 /* Song table in the full player: queue and related. */
 .songtable { overflow-y: auto; padding-right: 6px; }
 .st-row { display: grid; grid-template-columns: 36px minmax(0, 2.4fr) minmax(0, 1.4fr) minmax(0, 0.9fr) 52px 58px 34px; align-items: center; gap: 12px; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: rgba(255, 255, 255, 0.7); }

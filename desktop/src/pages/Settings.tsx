@@ -144,6 +144,21 @@ export function Settings() {
         <Toggle on={s.autoplay} onChange={(v) => s.set('autoplay', v)} label="Autoplay" detail="When the queue ends, keep going with similar songs." />
       </Section>
 
+      <Section title="Lyrics">
+        <div className="setting">
+          <div className="setting-text">
+            <div className="setting-label">Lyrics style</div>
+            <div className="setting-detail">Spicy: word by word, as on the phone (the full player's lyrics). Regular: line by line. Also switchable in the full player.</div>
+          </div>
+          <label className="select">
+            <select value={s.lyricsMode} onChange={(e) => s.set('lyricsMode', e.target.value as 'spicy' | 'regular')}>
+              <option value="spicy">Spicy</option>
+              <option value="regular">Regular</option>
+            </select>
+          </label>
+        </div>
+      </Section>
+
       <Section title="Last.fm">
         <div className="setting column">
           <div className="setting-label">API key</div>

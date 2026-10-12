@@ -64,7 +64,8 @@ Phone app features, and where the desktop is.
 - [x] Home: quick picks and shelves; Customize reorders and hides sections.
 
 ### Wave 3: the rest of the phone app
-- [ ] Spicy lyrics (port of the web mod's renderer), lyrics style, offset.
+- [x] Spicy lyrics (the web mod's engine) in the full player, with the Spicy / Regular style.
+- [ ] Lyrics offset.
 - [x] Search: on-device fuzzy index (shared with the phone), lyrics search, filters, recent
       searches, Browse all.
 - [x] Smart queue / autoplay, song and artist radio (shared smartQueue).
