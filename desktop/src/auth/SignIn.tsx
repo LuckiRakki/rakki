@@ -12,6 +12,7 @@ import {
   quickConnectState,
 } from '@/api/jellyfin';
 import { deviceId, useAuth } from '~/auth/session';
+import { WindowButtons } from '~/layout/frame';
 
 export function SignIn() {
   const [server, setServer] = useState(localStorage.getItem('rakki.lastServer') ?? '');
@@ -83,48 +84,60 @@ export function SignIn() {
 
   return (
     <div className="signin">
-      {!found ? (
-        <form onSubmit={connect}>
-          <h1>
+      <div className="titlebar" data-tauri-drag-region>
+        <div style={{ flex: 1 }} data-tauri-drag-region />
+        <WindowButtons />
+      </div>
+      <div className="signin-body" data-tauri-drag-region>
+        <div className="signin-card">
+          <div className="wordmark">
             Rakki<b>.</b>
-          </h1>
-          <p>Your Jellyfin music, word by word.</p>
-          <input className="field" placeholder="Server address, e.g. 192.168.1.20:8096" value={server} onChange={(e) => setServer(e.target.value)} autoFocus />
-          {error ? <div className="error">{error}</div> : null}
-          <button className="primary" disabled={busy || !server.trim()}>
-            {busy ? 'Connecting...' : 'Continue'}
-          </button>
-        </form>
-      ) : code ? (
-        <form onSubmit={(e) => e.preventDefault()}>
-          <h1>Quick Connect</h1>
-          <p>In another Jellyfin app that's signed in (the web app, or Rakki on your phone), approve this code:</p>
-          <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '0.2em', textAlign: 'center', padding: '10px 0' }}>{code.code}</div>
-          <p className="muted">Waiting for approval...</p>
-          <button type="button" className="secondary" onClick={() => setCode(null)}>
-            Back
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={signIn}>
-          <h1>Sign in</h1>
-          <p>to {found.name}</p>
-          <input className="field" placeholder="Username" value={user} onChange={(e) => setUser(e.target.value)} autoFocus />
-          <input className="field" placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          {error ? <div className="error">{error}</div> : null}
-          <button className="primary" disabled={busy || !user.trim()}>
-            {busy ? 'Signing in...' : 'Sign in'}
-          </button>
-          {found.quick ? (
-            <button type="button" className="secondary" onClick={() => void startQuickConnect()}>
-              Use Quick Connect
-            </button>
-          ) : null}
-          <button type="button" className="secondary" onClick={() => setFound(null)}>
-            Different server
-          </button>
-        </form>
-      )}
+          </div>
+          {!found ? (
+            <form onSubmit={connect}>
+              <h1>Welcome</h1>
+              <p className="muted">Your Jellyfin music, word by word. Enter your server's address to start.</p>
+              <label className="field-label">Server address</label>
+              <input className="field" placeholder="e.g. 192.168.1.20:8096 or https://music.example.com" value={server} onChange={(e) => setServer(e.target.value)} autoFocus />
+              {error ? <div className="error">{error}</div> : null}
+              <button className="primary" disabled={busy || !server.trim()}>
+                {busy ? 'Connecting...' : 'Continue'}
+              </button>
+            </form>
+          ) : code ? (
+            <form onSubmit={(e) => e.preventDefault()}>
+              <h1>Quick Connect</h1>
+              <p className="muted">In another Jellyfin app that's signed in (the web app, or Rakki on your phone), approve this code:</p>
+              <div className="qc-code">{code.code}</div>
+              <p className="muted center">Waiting for approval...</p>
+              <button type="button" className="secondary" onClick={() => setCode(null)}>
+                Back
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={signIn}>
+              <h1>Sign in</h1>
+              <p className="muted">to {found.name}</p>
+              <label className="field-label">Username</label>
+              <input className="field" value={user} onChange={(e) => setUser(e.target.value)} autoFocus />
+              <label className="field-label">Password</label>
+              <input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              {error ? <div className="error">{error}</div> : null}
+              <button className="primary" disabled={busy || !user.trim()}>
+                {busy ? 'Signing in...' : 'Sign in'}
+              </button>
+              {found.quick ? (
+                <button type="button" className="secondary" onClick={() => void startQuickConnect()}>
+                  Use Quick Connect
+                </button>
+              ) : null}
+              <button type="button" className="textbtn center" onClick={() => setFound(null)}>
+                Use a different server
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

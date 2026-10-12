@@ -43,6 +43,16 @@ export const useArtistAlbums = (id: string) => useClientQuery(['artistAlbums', i
 export const useTopTracks = (id: string) => useClientQuery(['topTracks', id], (c) => c.getTopTracks(id, 10));
 export const useSimilarArtists = (id: string) => useClientQuery(['similar', id], (c) => c.getSimilar(id, 12));
 
+export const useAllSongs = () =>
+  useClientQuery(['allSongs'], (c) => c.getTracks({ sortBy: 'Album,ParentIndexNumber,IndexNumber', sortOrder: 'Ascending', limit: 20000 }).then((r) => r.Items));
+export const useGenres = () => useClientQuery(['genres'], (c) => c.getGenreCounts());
+export const useGenreAlbums = (genre: string) => useClientQuery(['genreAlbums', genre], (c) => c.getGenreAlbums(genre).then((r) => r.Items));
+export const useGenreTopSongs = (genre: string) => useClientQuery(['genreTop', genre], (c) => c.getGenreTracks(genre, { mostPlayed: true, limit: 20 }).then((r) => r.Items));
+export const useRediscover = () => useClientQuery(['rediscover'], (c) => c.getRediscoverAlbums(16));
+export const useRandomAlbums = () => useClientQuery(['randomAlbums'], (c) => c.getRandomAlbums(16));
+export const useAppearsOn = (id: string) => useClientQuery(['appearsOn', id], (c) => c.getAppearsOn(id));
+export const useArtistTracks = (id: string) => useClientQuery(['artistTracks', id], (c) => c.getArtistTracks(id));
+
 export const useSearch = (term: string) =>
   useClientQuery(['search', term], (c) => c.search(term, 20), term.trim().length > 1);
 

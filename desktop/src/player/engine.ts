@@ -1,6 +1,13 @@
 // The bridge to the native side (src-tauri): mpv playback and the system's media controls.
-import { invoke } from '@tauri-apps/api/core';
+import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+
+import { inTauri } from '~/lib/tauri';
+
+/** Native calls; in a plain browser tab (testing the interface) they do nothing. */
+function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  return inTauri ? tauriInvoke<T>(cmd, args) : Promise.resolve(undefined as T);
+}
 
 export interface NowPlaying {
   title: string;
@@ -35,6 +42,7 @@ export interface EngineEvents {
 }
 
 export async function listenEngine(h: EngineEvents): Promise<UnlistenFn> {
+  if (!inTauri) return () => {};
   const subs = await Promise.all([
     listen<{ name: string; value: unknown }>('player://prop', (e) => h.onProp(e.payload.name, e.payload.value)),
     listen('player://advanced', () => h.onAdvanced()),

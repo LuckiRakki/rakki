@@ -5,7 +5,10 @@ export type Route =
   | { name: 'home' }
   | { name: 'search'; term?: string }
   | { name: 'albums' }
+  | { name: 'songs' }
   | { name: 'artists' }
+  | { name: 'genres' }
+  | { name: 'genre'; id: string }
   | { name: 'playlists' }
   | { name: 'mixes' }
   | { name: 'liked' }
@@ -45,8 +48,9 @@ export const useNav = create<NavState>((set, get) => ({
 export const go = (route: Route) => useNav.getState().go(route);
 
 /** Open an item: album, artist or playlist page; a song plays. */
-export function openItem(item: { Id: string; Type: string }) {
+export function openItem(item: { Id: string; Type: string; Name?: string }) {
   if (item.Type === 'MusicAlbum') go({ name: 'album', id: item.Id });
   else if (item.Type === 'MusicArtist') go({ name: 'artist', id: item.Id });
   else if (item.Type === 'Playlist') go({ name: 'playlist', id: item.Id });
+  else if (item.Type === 'MusicGenre' || item.Type === 'Genre') go({ name: 'genre', id: item.Name ?? item.Id });
 }

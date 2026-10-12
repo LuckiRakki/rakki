@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { useSettings } from '@/settings/store';
 import { client } from '~/auth/session';
 import { engine, listenEngine } from '~/player/engine';
 
@@ -70,9 +71,18 @@ function nextIndex(s: Pick<PlayerState, 'queue' | 'index' | 'repeat'>): number |
   return s.repeat === 'all' ? 0 : null;
 }
 
+/**
+ * The song's file as it is (mpv plays every format, so nothing needs converting), unless a
+ * streaming quality is set in Settings, then the server converts it to AAC at that bitrate.
+ */
 function url(item: BaseItem | undefined): string | null {
   const c = client();
-  return item && c ? c.streamUrl(item.Id) : null;
+  if (!item || !c) return null;
+  const kbps = useSettings.getState().wifiBitrate;
+  if (kbps > 0) return c.streamUrl(item.Id, kbps);
+  const { serverUrl, deviceId, token } = c.session;
+  const q = new URLSearchParams({ static: 'true', deviceId, api_key: token });
+  return `${serverUrl}/Audio/${item.Id}/stream?${q}`;
 }
 
 // ---- Reporting to Jellyfin ----
