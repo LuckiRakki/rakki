@@ -61,7 +61,7 @@ Phone app features, and where the desktop is.
 - [x] Artist page: Popular (Last.fm or yours), Discography, Singles and EPs, Music videos,
       Appears on, Fans also like.
 - [x] Genre page; Playlist page with sort, find, drag to reorder, remove, rename, cover picture.
-- [~] Home like the phone's: quick picks, shelves, reorder and hide.
+- [x] Home: quick picks and shelves; Customize reorders and hides sections.
 
 ### Wave 3: the rest of the phone app
 - [ ] Spicy lyrics (port of the web mod's renderer), lyrics style, offset.

@@ -1,6 +1,6 @@
 // The main area's screens.
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownAZ, Heart, ImagePlus, Search } from 'lucide-react';
+import { ArrowDownAZ, Heart, ImagePlus, Search, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -39,6 +39,7 @@ import {
   useTopArtists,
   useTopTracks,
 } from '~/queries';
+import { openCustomizeHome, SECTION_LABEL, useHomeLayout, type HomeSection } from '~/pages/homeLayout';
 import { SearchPage } from '~/pages/Search';
 import { Settings } from '~/pages/Settings';
 import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, Shelf, Spinner, totalLength, TrackTable } from '~/ui/parts';
@@ -74,28 +75,41 @@ function QuickPicks({ recent }: { recent?: BaseItem[] }) {
   );
 }
 
+// Each section fetches its own shelf, so hidden ones cost nothing.
+const HOME_SECTIONS: Record<HomeSection, () => React.ReactNode> = {
+  quick: () => <QuickPicks recent={useRecentlyPlayed().data} />,
+  mixes: () => <Shelf title={SECTION_LABEL.mixes} items={useDailyMixes().data} onShowAll={() => go({ name: 'mixes' })} />,
+  jump: () => <Shelf title={SECTION_LABEL.jump} items={useRecentlyPlayed().data?.slice(7)} />,
+  added: () => <Shelf title={SECTION_LABEL.added} items={useRecentlyAdded().data} onShowAll={() => go({ name: 'albums' })} />,
+  playlists: () => <Shelf title={SECTION_LABEL.playlists} items={usePlaylists().data} onShowAll={() => go({ name: 'playlists' })} />,
+  artists: () => <Shelf title={SECTION_LABEL.artists} items={useTopArtists().data} onShowAll={() => go({ name: 'artists' })} />,
+  most: () => <Shelf title={SECTION_LABEL.most} items={useMostPlayed().data} />,
+  rediscover: () => <Shelf title={SECTION_LABEL.rediscover} items={useRediscover().data} />,
+  random: () => <Shelf title={SECTION_LABEL.random} items={useRandomAlbums().data} />,
+};
+
+function HomeSectionView({ id }: { id: HomeSection }) {
+  return <>{HOME_SECTIONS[id]()}</>;
+}
+
 export function Home() {
-  const recent = useRecentlyPlayed();
-  const mixes = useDailyMixes();
-  const added = useRecentlyAdded();
-  const most = useMostPlayed();
-  const rediscover = useRediscover();
-  const random = useRandomAlbums();
-  const artists = useTopArtists();
-  const playlists = usePlaylists();
+  const { order, hidden } = useHomeLayout();
+  const loading = useRecentlyPlayed().isLoading;
   return (
     <div className="page home">
-      <h1>{greeting()}</h1>
-      <QuickPicks recent={recent.data} />
-      <Shelf title="Your Daily Mixes" items={mixes.data} onShowAll={() => go({ name: 'mixes' })} />
-      <Shelf title="Jump back in" items={recent.data?.slice(7)} />
-      <Shelf title="Recently added" items={added.data} onShowAll={() => go({ name: 'albums' })} />
-      <Shelf title="Your playlists" items={playlists.data} onShowAll={() => go({ name: 'playlists' })} />
-      <Shelf title="Artists you play" items={artists.data} onShowAll={() => go({ name: 'artists' })} />
-      <Shelf title="Most played" items={most.data} />
-      <Shelf title="Rediscover" items={rediscover.data} />
-      <Shelf title="Random picks" items={random.data} />
-      {recent.isLoading ? <Spinner /> : null}
+      <div className="home-head">
+        <h1>{greeting()}</h1>
+        <button className="pill-btn" onClick={openCustomizeHome} title="Reorder or hide Home's sections">
+          <SlidersHorizontal size={15} />
+          Customize
+        </button>
+      </div>
+      {order
+        .filter((id) => !hidden.includes(id))
+        .map((id) => (
+          <HomeSectionView key={id} id={id} />
+        ))}
+      {loading ? <Spinner /> : null}
     </div>
   );
 }

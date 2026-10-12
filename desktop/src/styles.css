@@ -244,6 +244,18 @@ h1, h2, h3, p { margin: 0; }
 .tracktable.dragging .tt-row:hover { background: none; }
 .tt-row.lifted { opacity: 0.45; }
 .tt-drop { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--accent); border-radius: 2px; z-index: 2; pointer-events: none; }
+.home-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.page.home .home-head h1 { margin-bottom: 0; }
+.pill-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); font-weight: 700; font-size: 13px; transition: background 0.15s, color 0.15s; }
+.pill-btn:hover { background: var(--surface-4); color: var(--text); }
+.home-sections { position: relative; margin: 6px 0 4px; }
+.home-section { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 6px; border-radius: 8px; }
+.home-section:hover { background: var(--surface-3); }
+.home-section .grip { color: var(--text-3); cursor: grab; display: grid; place-items: center; padding: 4px; touch-action: none; }
+.home-sections.dragging, .home-sections.dragging .grip { cursor: grabbing; }
+.home-section .label { flex: 1; font-weight: 700; }
+.home-section.off .label { color: var(--text-3); text-decoration: line-through; }
+.home-section.lifted { opacity: 0.45; }
 .cover-edit { position: relative; display: block; width: 100%; border-radius: inherit; }
 .cover-edit > span { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-weight: 700; background: rgba(0, 0, 0, 0.6); border-radius: var(--radius-art); opacity: 0; transition: opacity 0.15s; }
 .cover-edit:hover > span { opacity: 1; }
