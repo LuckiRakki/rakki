@@ -20,6 +20,7 @@ on:
       - '**/*.md'
       - '.github/workflows/ios.yml'
       - 'server/**'
+      - 'desktop/**'
   workflow_dispatch:
 
 concurrency:
