@@ -91,6 +91,11 @@ Incelcore, Shoegaze with Dream Pop.
    become per-mix rules on top of this.
 2. **Neighbourhood.** The lead plus artists you have that Last.fm calls similar (match ≥ 0.25)
    *and* that sit in the same tag group.
+   If that can't fill the mix (counting what each artist can really give: at most
+   `MaxPerAlbum` songs per album and 15% of the mix per artist, the lead 25%), the group's
+   artists whose tags are most like the lead's are added, loosening step by step; if the whole
+   group is too small (a soundtrack, a niche scene), artists are borrowed from the closest
+   neighbouring groups (tag overlap of 0.05 or more), closest-sounding first.
 3. **Three pools** from the neighbourhood's songs, each ranked a different way:
    - *Popular* (40): highest **Last.fm** playcount, songs the world plays most;
    - *Yours* (40): highest **local** play counts lately (and liked songs);

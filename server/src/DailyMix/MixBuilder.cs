@@ -24,6 +24,8 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
     public sealed class MixBuilder
     {
         private const double MinSimilar = 0.25;
+        /// <summary>How alike two tag groups must be for a too-small one to borrow from the other.</summary>
+        private const double MinGroupLink = 0.05;
         private const int MinGroupSongs = 60;
         private const int MinLeadSongs = 3;
         private const int TopTrackArtists = 40;
@@ -163,23 +165,76 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             var sideGroup = sideGroups.Count > 0 ? sideGroups.OrderByDescending(kv => kv.Value).First().Key : -1;
             side = side.Where(kv => _groups.ArtistGroupOf[kv.Key] == sideGroup).ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal);
 
-            bool InMix(Song s) => _groups.GroupOfSong(s) is int g && (g == group || (g == sideGroup && side.ContainsKey(s.ArtistKey)));
+            // Groups a too-small group borrows artists from (only those artists' songs come along).
+            var borrowedGroups = new HashSet<int>();
+            bool InMix(Song s) => _groups.GroupOfSong(s) is int g
+                && (g == group
+                    || (g == sideGroup && side.ContainsKey(s.ArtistKey))
+                    || (borrowedGroups.Contains(g) && like.ContainsKey(s.ArtistKey)));
             int SongsIn(IEnumerable<string> keys) => keys.Sum(k => _lib.Artists[k].Songs.Count(InMix));
 
-            // Not enough similar artists in the library: add the group's artists whose tags are most like the lead's.
-            if (SongsIn(like.Keys) < size * 2 && _groups.Profiles.TryGetValue(lead.Artist.Key, out var leadProfile))
+            // What an artist can really give the mix: their songs here, at most MaxPerAlbum from one
+            // album, and no more than the artist's share of the mix (15%; the lead 25%). Raw song
+            // counts overstate it (a soundtrack artist is one album: 3 songs, not 30).
+            var albumCap = Math.Max(1, _cfg.MaxPerAlbum);
+            int Usable(string k)
             {
-                var more = _groups.Groups[group].Artists
+                var own = _lib.Artists[k].Songs.Where(InMix).ToList();
+                var byAlbum = own.Where(x => x.AlbumKey.Length > 0).GroupBy(x => x.AlbumKey).Sum(g => Math.Min(g.Count(), albumCap));
+                var loose = own.Count(x => x.AlbumKey.Length == 0);
+                var share = (int)Math.Ceiling(size * (k == lead.Artist.Key ? 0.25 : 0.15));
+                return Math.Min(share, byAlbum + loose);
+            }
+
+            // Not enough to fill the mix (with room to choose): add the group's artists whose tags
+            // are most like the lead's, closest first, loosening how close they must be, but never
+            // leaving the group.
+            var target = (int)Math.Ceiling(size * 1.6);
+            var have = like.Keys.Sum(Usable);
+            if (have < target && _groups.Profiles.TryGetValue(lead.Artist.Key, out var leadProfile))
+            {
+                var candidates = _groups.Groups[group].Artists
                     .Where(k => !like.ContainsKey(k) && _lib.Artists.ContainsKey(k) && _groups.Profiles.ContainsKey(k))
                     .Select(k => (k, cos: TagGroups.Cosine(leadProfile, _groups.Profiles[k])))
-                    .Where(x => x.cos >= 0.3)
-                    .OrderByDescending(x => x.cos);
-                var have = SongsIn(like.Keys);
-                foreach (var (k, cos) in more)
+                    .OrderByDescending(x => x.cos)
+                    .ToList();
+                foreach (var floor in new[] { 0.3, 0.15, 0.0 })
                 {
-                    if (have >= size * 3) break;
-                    like[k] = 0.15 + 0.35 * cos;
-                    have += _lib.Artists[k].Songs.Count(InMix);
+                    foreach (var (k, cos) in candidates)
+                    {
+                        if (have >= target) break;
+                        if (cos < floor || like.ContainsKey(k)) continue;
+                        like[k] = 0.1 + 0.4 * cos;
+                        have += Usable(k);
+                    }
+                    if (have >= target) break;
+                }
+
+                // The whole group is too small (a soundtrack, a niche scene): borrow from the
+                // neighbouring groups (those whose tags overlap this one's), closest first.
+                if (have < target)
+                {
+                    var neighbours = _groups.Groups
+                        .Where(g => g.Id != group && _groups.Link(group, g.Id) >= MinGroupLink)
+                        .OrderByDescending(g => _groups.Link(group, g.Id))
+                        .ToList();
+                    foreach (var g in neighbours)
+                    {
+                        var link = _groups.Link(group, g.Id);
+                        var borrowed = g.Artists
+                            .Where(k => !like.ContainsKey(k) && _lib.Artists.ContainsKey(k) && _groups.Profiles.ContainsKey(k))
+                            .Select(k => (k, cos: TagGroups.Cosine(leadProfile, _groups.Profiles[k])))
+                            .Where(x => x.cos > 0)
+                            .OrderByDescending(x => x.cos);
+                        foreach (var (k, cos) in borrowed)
+                        {
+                            if (have >= target) break;
+                            like[k] = 0.05 + 0.3 * cos * link;
+                            borrowedGroups.Add(g.Id);
+                            have += Usable(k);
+                        }
+                        if (have >= target) break;
+                    }
                 }
             }
             foreach (var (k, v) in side) like.TryAdd(k, v);
@@ -203,7 +258,6 @@ namespace Jellyfin.Plugin.Rakki.DailyMix
             var claimed = new HashSet<Guid>();
             var perArtist = new Dictionary<string, int>(StringComparer.Ordinal);
             var perAlbum = new Dictionary<string, int>(StringComparer.Ordinal);
-            var albumCap = Math.Max(1, _cfg.MaxPerAlbum);
             var artistCap = (int)Math.Ceiling(size * 0.15);
             var leadCap = (int)Math.Ceiling(size * 0.25);
             var sideCap = (int)Math.Ceiling(size * 0.15);
