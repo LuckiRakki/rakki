@@ -3,7 +3,8 @@
 The user's request (2026-10-12): Rakki on the desktop and Rakki on the phone know about each
 other. You can see what the other one is playing, control it, and move playback from one to
 the other ("play on my phone" / "play here"), picking up the same queue at the same moment.
-Framework only; nothing is built yet.
+Phase 1 is built (2026-10-12): both apps send capabilities and their queue, and the desktop's
+Devices button lists your other Rakki apps with what they play. Phases 2 to 4 are next.
 
 ## What Jellyfin already gives us
 

@@ -246,6 +246,25 @@ h1, h2, h3, p { margin: 0; }
 .tt-drop { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--accent); border-radius: 2px; z-index: 2; pointer-events: none; }
 .update-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; margin-right: 8px; border-radius: 999px; background: var(--accent); color: #000; font-weight: 800; font-size: 13px; transition: filter 0.15s; }
 .update-btn:hover { filter: brightness(1.1); }
+.devices { position: relative; }
+.devices-pop { text-align: left; position: absolute; right: -60px; bottom: calc(100% + 14px); width: 340px; max-height: 60vh; overflow-y: auto; z-index: 60; padding: 14px; border-radius: 12px; background: #282829; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
+.devices-pop h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.devices-pop .pad { padding: 8px 4px; }
+.device { display: flex; gap: 12px; padding: 10px 4px; border-top: 1px solid var(--line); }
+.device:first-of-type { border-top: 0; }
+.device .device-icon { flex: none; margin-top: 2px; color: var(--text-2); }
+.device.current .device-icon, .device.current .name { color: var(--accent); }
+.device.playing .device-icon { color: var(--accent); }
+.device .t { min-width: 0; flex: 1; }
+.device .name { font-weight: 700; }
+.device .sub, .devices-pop .sub { font-size: 12px; color: var(--text-3); }
+.device-song { display: flex; align-items: center; gap: 10px; margin-top: 8px; width: 100%; text-align: left; padding: 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
+.device-song:hover { background: rgba(255, 255, 255, 0.1); }
+.device-song .thumb { width: 40px; flex: none; border-radius: 4px; }
+.device-song .t { display: flex; flex-direction: column; min-width: 0; }
+.device-song .song { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device-song .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.devices-note { margin-top: 10px; font-size: 12px; color: var(--text-3); }
 .home-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .page.home .home-head h1 { margin-bottom: 0; }
 .pill-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); font-weight: 700; font-size: 13px; transition: background 0.15s, color 0.15s; }

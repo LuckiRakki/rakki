@@ -4,7 +4,8 @@
 // controls follow along.
 import { create } from 'zustand';
 
-import type { BaseItem } from '@/api/jellyfin';
+import type { BaseItem, PlaybackInfo } from '@/api/jellyfin';
+import { queueReport } from '@/remote/devices';
 import { buildSmartQueue } from '@/player/smartQueue';
 import { useSettings } from '@/settings/store';
 import { client } from '~/auth/session';
@@ -91,27 +92,40 @@ function url(item: BaseItem | undefined): string | null {
 let session: { itemId: string; playSessionId: string } | null = null;
 let reportTimer: ReturnType<typeof setInterval> | null = null;
 
+/** What every report carries besides the position: repeat, shuffle and the queue around the
+ *  song (so your other Rakki apps can see it; remote/devices.ts). */
+function reportContext(s: PlayerState): Partial<PlaybackInfo> {
+  return {
+    CanSeek: true,
+    PlayMethod: 'DirectStream',
+    RepeatMode: s.repeat === 'one' ? 'RepeatOne' : s.repeat === 'all' ? 'RepeatAll' : 'RepeatNone',
+    PlaybackOrder: s.shuffle ? 'Shuffle' : 'Default',
+    ...queueReport(s.queue, s.index),
+  };
+}
+
+function reportProgress(event: 'TimeUpdate' | 'Pause' | 'Unpause') {
+  const s = usePlayer.getState();
+  const c = client();
+  if (!session || !c) return;
+  void c
+    .reportPlaybackProgress({
+      ItemId: session.itemId,
+      PlaySessionId: session.playSessionId,
+      PositionTicks: Math.round(currentPosition(s) * TICKS_PER_SECOND),
+      IsPaused: !s.playing,
+      EventName: event,
+      ...reportContext(s),
+    })
+    .catch(() => {});
+}
+
 function reportStart(item: BaseItem) {
   const c = client();
   if (!c) return;
   session = { itemId: item.Id, playSessionId: crypto.randomUUID().replace(/-/g, '') };
-  void c.reportPlaybackStart({ ItemId: item.Id, PlaySessionId: session.playSessionId, PositionTicks: 0, CanSeek: true, PlayMethod: 'DirectStream' }).catch(() => {});
-  if (!reportTimer) {
-    reportTimer = setInterval(() => {
-      const s = usePlayer.getState();
-      const c2 = client();
-      if (!session || !c2) return;
-      void c2
-        .reportPlaybackProgress({
-          ItemId: session.itemId,
-          PlaySessionId: session.playSessionId,
-          PositionTicks: Math.round(currentPosition(s) * TICKS_PER_SECOND),
-          IsPaused: !s.playing,
-          EventName: 'TimeUpdate',
-        })
-        .catch(() => {});
-    }, REPORT_EVERY_MS);
-  }
+  void c.reportPlaybackStart({ ItemId: item.Id, PlaySessionId: session.playSessionId, PositionTicks: 0, ...reportContext(usePlayer.getState()) }).catch(() => {});
+  if (!reportTimer) reportTimer = setInterval(() => reportProgress('TimeUpdate'), REPORT_EVERY_MS);
 }
 
 function reportStopped(position: number) {
@@ -318,6 +332,10 @@ export function startPlayer() {
   if (started) return;
   started = true;
   void engine.set('volume', usePlayer.getState().volume).catch(() => {});
+  // Pausing and resuming are reported at once (your other devices show it), not at the next tick.
+  usePlayer.subscribe((s, prev) => {
+    if (s.playing !== prev.playing && s.queue[s.index]?.Id === session?.itemId) reportProgress(s.playing ? 'Unpause' : 'Pause');
+  });
   void listenEngine({
     onProp(name, value) {
       const now = performance.now();

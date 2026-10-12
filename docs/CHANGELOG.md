@@ -6,6 +6,12 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.15.1 (2026-10-12)
+- Rakki now tells your server what it can play and sends the queue around the song with its
+  playback reports, so **Rakki on your computer can see what your phone is playing** (its
+  Devices button). The first step of playing across devices (docs/REMOTE_PLAYBACK.md); nothing
+  changes on the phone itself yet.
+
 ## 1.15.0, native build (2026-10-11)
 A new `.ipa` (runtime 1.15.0): install it with SideStore. Older installs stay on 1.14.2.
 - **About half the size.** App icons were 92 of its 181 MB, so the app now carries Classic,

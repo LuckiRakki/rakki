@@ -415,6 +415,10 @@ reporter.bind({
   playing: () => usePlayer.getState().playing,
   repeat: () => usePlayer.getState().repeat,
   shuffle: () => usePlayer.getState().shuffle,
+  queue: () => {
+    const s = usePlayer.getState();
+    return { items: s.queue.map((e) => e.item), index: s.index };
+  },
 });
 
 engine.subscribe({

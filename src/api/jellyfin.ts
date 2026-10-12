@@ -113,6 +113,39 @@ export interface PlaybackInfo {
   RepeatMode?: 'RepeatNone' | 'RepeatAll' | 'RepeatOne';
   PlaybackOrder?: 'Default' | 'Shuffle';
   PlaybackStartTimeTicks?: number;
+  /** The queue around the song (remote/devices.ts), so other Rakki apps can see it. */
+  NowPlayingQueue?: QueueItem[];
+  /** The playing song's entry in NowPlayingQueue. */
+  PlaylistItemId?: string;
+}
+
+/** One place in a reported queue. */
+export interface QueueItem {
+  Id: string;
+  PlaylistItemId: string;
+}
+
+/** An app signed in to the server (GET /Sessions): what it plays, and where. */
+export interface SessionInfo {
+  Id: string;
+  Client?: string;
+  DeviceName?: string;
+  DeviceId?: string;
+  ApplicationVersion?: string;
+  UserId?: string;
+  LastActivityDate?: string;
+  LastPlaybackCheckIn?: string;
+  NowPlayingItem?: BaseItem;
+  PlayState?: { PositionTicks?: number; IsPaused?: boolean; RepeatMode?: string; PlaybackOrder?: string };
+  NowPlayingQueue?: QueueItem[];
+  SupportsRemoteControl?: boolean;
+}
+
+/** What this app can do when another app controls it (POST /Sessions/Capabilities/Full). */
+export interface ClientCapabilities {
+  PlayableMediaTypes: string[];
+  SupportedCommands: string[];
+  SupportsMediaControl: boolean;
 }
 
 interface AuthResult {
@@ -324,6 +357,16 @@ export class JellyfinClient {
 
   reportPlaybackStopped(info: PlaybackInfo) {
     return this.send('POST', '/Sessions/Playing/Stopped', info);
+  }
+
+  /** Every app signed in as you that's been active in the last `withinSeconds`. */
+  getSessions(withinSeconds = 960) {
+    return this.get<SessionInfo[]>('/Sessions', { ControllableByUserId: this.session.userId, ActiveWithinSeconds: withinSeconds });
+  }
+
+  /** Tell the server what this app can do (it shows other apps and the dashboard). */
+  postCapabilities(capabilities: ClientCapabilities) {
+    return this.send('POST', '/Sessions/Capabilities/Full', capabilities);
   }
 
   /**

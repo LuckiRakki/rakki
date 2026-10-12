@@ -43,6 +43,7 @@ import { useAuth } from '~/auth/session';
 import { setLiked } from '~/library/actions';
 import { collectionMenu, songMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout, win } from '~/layout/layout';
+import { DevicesButton } from '~/layout/Devices';
 import { setMini } from '~/layout/MiniPlayer';
 import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav, type Route } from '~/nav';
@@ -482,6 +483,7 @@ export function PlayerBar() {
           <ListMusic size={18} />
         </button>
         <SleepButton />
+        <DevicesButton />
         <VolumeControl />
         <button className="iconbtn" aria-label="Mini player" title="Mini player" onClick={() => void setMini(true)}>
           <PictureInPicture2 size={17} />

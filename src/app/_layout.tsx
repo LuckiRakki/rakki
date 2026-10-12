@@ -31,6 +31,7 @@ import { logErrorNow, startPerfLog } from '@/perf/log';
 import { startMemoryCare } from '@/lib/memory';
 import { lockPortrait } from '@/lib/orientation';
 import { startPlaylistCache } from '@/library/playlistCache';
+import { announceCapabilities } from '@/remote/devices';
 import { startCompanionSync, syncLastfmKey } from '@/lib/companion';
 
 SplashScreen.preventAutoHideAsync();
@@ -155,6 +156,9 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     startPlaylistCache();
     // The Last.fm key, shared with the Rakki plugin on the server (lib/companion.ts).
     void syncLastfmKey();
+    // Let your other Rakki apps (the desktop) see this one (remote/devices.ts).
+    const client = useAuth.getState().client;
+    if (client) void announceCapabilities(client);
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);

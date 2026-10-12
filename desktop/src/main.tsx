@@ -6,6 +6,7 @@ import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { startPlaylistCache } from '@/library/playlistCache';
+import { announceCapabilities } from '@/remote/devices';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
@@ -82,6 +83,9 @@ function App() {
     if (!signedIn) return;
     void syncLastfmKey();
     startPlaylistCache();
+    // Let your other Rakki apps see this one (remote/devices.ts).
+    const c = useAuth.getState().client;
+    if (c) void announceCapabilities(c);
   }, [signedIn, userId]);
 
   return (

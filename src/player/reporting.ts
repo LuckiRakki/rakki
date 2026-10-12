@@ -11,6 +11,7 @@ import type { BaseItem, PlaybackInfo } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { ticksToSeconds } from '@/lib/format';
 import { countsAsPlayed, keepListen } from '@/player/offlineListens';
+import { queueReport } from '@/remote/devices';
 
 const TICKS_PER_SECOND = 10_000_000;
 const REPORT_EVERY_MS = 10_000;
@@ -29,6 +30,8 @@ interface Context {
   playing(): boolean;
   repeat(): 'off' | 'all' | 'one';
   shuffle(): boolean;
+  /** The queue and the playing song's place in it (sent so your other Rakki apps see it). */
+  queue?(): { items: BaseItem[]; index: number };
 }
 
 let ctx: Context | null = null;
@@ -68,6 +71,7 @@ function info(c: Current, position: number, extra: Partial<PlaybackInfo> = {}): 
     RepeatMode: repeat === 'one' ? 'RepeatOne' : repeat === 'all' ? 'RepeatAll' : 'RepeatNone',
     PlaybackOrder: ctx?.shuffle() ? 'Shuffle' : 'Default',
     IsPaused: !(ctx?.playing() ?? false),
+    ...(ctx?.queue ? queueReport(ctx.queue().items, ctx.queue().index) : {}),
     ...extra,
   };
 }
