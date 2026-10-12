@@ -2,6 +2,7 @@
 // desktop expects). `items` is the selection when several songs are selected.
 import {
   Disc3,
+  ImagePlus,
   Heart,
   HeartOff,
   ListEnd,
@@ -22,6 +23,7 @@ import { isMix } from '@/lib/mixes';
 import { openAddToPlaylist } from '~/library/AddToPlaylist';
 import {
   addToQueue,
+  changePlaylistPicture,
   deletePlaylist,
   goToAlbum,
   goToArtist,
@@ -97,6 +99,7 @@ export function collectionMenu(item: BaseItem): MenuItem[] {
     if (!isMix(item)) {
       menu.push(
         { label: 'Rename', icon: Pencil, run: () => void renamePlaylist(item) },
+        { label: 'Change picture', icon: ImagePlus, run: () => changePlaylistPicture(item) },
         { label: 'Delete playlist', icon: Trash2, danger: true, run: () => void deletePlaylist(item) },
       );
     }

@@ -1,6 +1,6 @@
 // The main area's screens.
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownAZ, Heart, Search } from 'lucide-react';
+import { ArrowDownAZ, Heart, ImagePlus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -11,7 +11,7 @@ import { blurhashAverage } from '@/lib/blurhash';
 import { isMix } from '@/lib/mixes';
 import { useSettings } from '@/settings/store';
 import { useAuth } from '~/auth/session';
-import { playItem, setLiked } from '~/library/actions';
+import { changePlaylistPicture, movePlaylistSong, playItem, setLiked } from '~/library/actions';
 import { go, useNav } from '~/nav';
 import { usePlayer } from '~/player/store';
 import {
@@ -358,6 +358,17 @@ export function Playlist({ id }: { id: string }) {
       <LibraryHeader
         item={item}
         kind={mix ? 'Daily Mix' : 'Playlist'}
+        art={
+          item && !mix ? (
+            <button className="cover-edit" title="Change picture" onClick={() => changePlaylistPicture(item)}>
+              <Artwork item={item} size={500} />
+              <span>
+                <ImagePlus size={34} />
+                Choose picture
+              </span>
+            </button>
+          ) : undefined
+        }
         meta={
           <>
             {item?.Overview && mix ? <div className="overview-line">{item.Overview.split('. ')[0]}</div> : null}
@@ -383,7 +394,11 @@ export function Playlist({ id }: { id: string }) {
           </label>
         }
       />
-      <TrackTable tracks={shown} menu={mix ? undefined : { playlistId: id }} />
+      <TrackTable
+        tracks={shown}
+        menu={mix ? undefined : { playlistId: id }}
+        onMove={!mix && sort === 'custom' && !find ? (from, to) => void movePlaylistSong(id, from, to) : undefined}
+      />
     </div>
   );
 }

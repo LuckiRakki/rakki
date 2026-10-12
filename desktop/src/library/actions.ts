@@ -131,6 +131,58 @@ export async function renamePlaylist(playlist: BaseItem) {
   playlistsChanged([playlist.Id]);
 }
 
+/** Pick a picture on this computer and make it the playlist's cover. */
+export function changePlaylistPicture(playlist: BaseItem) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/jpeg,image/png,image/webp';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    const c = client();
+    if (!file || !c) return;
+    if (file.size > 15 * 1024 * 1024) return toast('That picture is too big: pick one under 15 MB');
+    const reader = new FileReader();
+    reader.onload = async () => {
+      // "data:image/png;base64,AAAA" -> the base64 part, which is what Jellyfin takes.
+      const base64 = String(reader.result).split(',')[1] ?? '';
+      toast('Uploading the picture…');
+      try {
+        await c.uploadItemImage(playlist.Id, base64, file.type || 'image/jpeg');
+        // The new picture has a new tag, so every view loads it.
+        playlistsChanged([playlist.Id]);
+        toast('Playlist picture updated');
+      } catch (e) {
+        toast(`Couldn’t change the picture: ${e instanceof Error ? e.message : 'try again'}`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+/**
+ * Move a song within a playlist (drag and drop). The list changes at once; if the server
+ * says no, it's reloaded.
+ */
+export async function movePlaylistSong(playlistId: string, from: number, to: number) {
+  const c = client();
+  if (!c || from === to) return;
+  const key = ['playlistItems', c.session.userId, playlistId];
+  const songs = queryClient.getQueryData<BaseItem[]>(key);
+  const entry = songs?.[from]?.PlaylistItemId;
+  if (!songs || !entry) return;
+  const next = [...songs];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  queryClient.setQueryData(key, next);
+  try {
+    await c.movePlaylistItem(playlistId, entry, to);
+  } catch {
+    toast('Couldn’t move the song');
+    void queryClient.invalidateQueries({ queryKey: key });
+  }
+}
+
 export async function deletePlaylist(playlist: BaseItem) {
   const c = client();
   if (!c) return;

@@ -170,6 +170,8 @@ export interface TrackTableProps {
   menu?: MenuContext;
   /** Extra numbers shown in the plays column (Last.fm plays), by song id. */
   playsOf?: (t: BaseItem) => number | undefined;
+  /** Drag rows to reorder (a playlist in its own order): called with the old and new index. */
+  onMove?: (from: number, to: number) => void;
 }
 
 /**
@@ -177,8 +179,13 @@ export interface TrackTableProps {
  * or Enter plays, right-click opens the menu for what's selected. Only the rows on screen are
  * drawn, so a 5,000-song list costs the same as a 20-song one.
  */
-export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, menu, playsOf }: TrackTableProps) {
+const ROW_H = 56;
+
+export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, menu, playsOf, onMove }: TrackTableProps) {
   const parent = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  // Dragging a row: which one, and the gap it would drop into (0..length).
+  const [drag, setDrag] = useState<{ from: number; gap: number } | null>(null);
   const nowId = usePlayer((s) => s.queue[s.index]?.Id);
   const playing = usePlayer((s) => s.playing);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -192,7 +199,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
   const rows = useVirtualizer({
     count: tracks.length,
     getScrollElement: () => document.getElementById('main'),
-    estimateSize: () => 56,
+    estimateSize: () => ROW_H,
     overscan: 10,
     scrollMargin: margin,
   });
@@ -214,12 +221,43 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
     }
   };
 
+  /** Press on a row: past a few pixels of movement it becomes a drag (reorder). */
+  const startDrag = (from: number, e: React.PointerEvent) => {
+    if (!onMove || e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey) return;
+    if ((e.target as HTMLElement).closest('button, .linkish')) return;
+    const y0 = e.clientY;
+    let gap = -1;
+    const main = document.getElementById('main');
+    const move = (ev: PointerEvent) => {
+      if (gap < 0 && Math.abs(ev.clientY - y0) < 6) return;
+      const top = body.current?.getBoundingClientRect().top ?? 0;
+      gap = Math.max(0, Math.min(tracks.length, Math.round((ev.clientY - top) / ROW_H)));
+      setDrag({ from, gap });
+      // Near the top or bottom of the page: scroll along.
+      const r = main?.getBoundingClientRect();
+      if (main && r) {
+        if (ev.clientY < r.top + 60) main.scrollBy(0, -18);
+        else if (ev.clientY > r.bottom - 60) main.scrollBy(0, 18);
+      }
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      setDrag(null);
+      if (gap < 0) return;
+      const to = gap > from ? gap - 1 : gap;
+      if (to !== from) onMove(from, to);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
   const cols = ['num', 'title', ...(album ? ['album'] : []), ...(plays ? ['plays'] : []), 'like', 'len'];
   const grid = cols.map((c) => ({ num: '40px', title: 'minmax(0, 5fr)', album: 'minmax(0, 3fr)', plays: '110px', like: '36px', len: '56px' })[c]).join(' ');
 
   return (
     <div
-      className="tracktable"
+      className={`tracktable${drag ? ' dragging' : ''}${onMove ? ' movable' : ''}`}
       ref={parent}
       tabIndex={-1}
       onKeyDown={(e) => {
@@ -239,7 +277,8 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
           <Clock3 size={15} />
         </div>
       </div>
-      <div style={{ height: rows.getTotalSize(), position: 'relative' }}>
+      <div ref={body} style={{ height: rows.getTotalSize(), position: 'relative' }}>
+        {drag ? <div className="tt-drop" style={{ top: drag.gap * ROW_H - 1 }} /> : null}
         {rows.getVirtualItems().map((row) => {
           const t = tracks[row.index];
           const now = t.Id === nowId;
@@ -248,8 +287,9 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
           return (
             <div
               key={row.key}
-              className={`tt-row${selected.has(row.index) ? ' sel' : ''}${now ? ' now' : ''}`}
+              className={`tt-row${selected.has(row.index) ? ' sel' : ''}${now ? ' now' : ''}${drag?.from === row.index ? ' lifted' : ''}`}
               style={{ gridTemplateColumns: grid, transform: `translateY(${row.start - margin}px)` }}
+              onPointerDown={(e) => startDrag(row.index, e)}
               onClick={(e) => pick(row.index, e)}
               onDoubleClick={() => play(row.index)}
               onContextMenu={(e) => {

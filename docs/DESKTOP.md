@@ -60,7 +60,7 @@ Phone app features, and where the desktop is.
 - [x] Album page: Last.fm plays per song, total length, other albums by the artist.
 - [x] Artist page: Popular (Last.fm or yours), Discography, Singles and EPs, Music videos,
       Appears on, Fans also like.
-- [~] Genre page; Playlist page with sort, find, reorder, remove, rename, cover.
+- [x] Genre page; Playlist page with sort, find, drag to reorder, remove, rename, cover picture.
 - [~] Home like the phone's: quick picks, shelves, reorder and hide.
 
 ### Wave 3: the rest of the phone app

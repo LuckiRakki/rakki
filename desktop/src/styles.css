@@ -239,6 +239,14 @@ h1, h2, h3, p { margin: 0; }
 .tt-head > div { display: flex; align-items: center; }
 .tt-row { position: absolute; left: 0; right: 0; height: 56px; border-radius: 6px; color: var(--text-3); margin: 0 20px; }
 .tt-row:hover { background: rgba(255, 255, 255, 0.08); }
+.tracktable.movable .tt-row { cursor: grab; }
+.tracktable.dragging, .tracktable.dragging .tt-row { cursor: grabbing; }
+.tracktable.dragging .tt-row:hover { background: none; }
+.tt-row.lifted { opacity: 0.45; }
+.tt-drop { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--accent); border-radius: 2px; z-index: 2; pointer-events: none; }
+.cover-edit { position: relative; display: block; width: 100%; border-radius: inherit; }
+.cover-edit > span { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-weight: 700; background: rgba(0, 0, 0, 0.6); border-radius: var(--radius-art); opacity: 0; transition: opacity 0.15s; }
+.cover-edit:hover > span { opacity: 1; }
 .tt-row.sel { background: rgba(255, 255, 255, 0.16); }
 .tt-row .num { display: flex; justify-content: flex-end; position: relative; font-variant-numeric: tabular-nums; }
 .tt-row .num .hoverplay { position: absolute; right: -2px; display: none; color: var(--text); }
