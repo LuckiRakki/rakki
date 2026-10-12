@@ -19,6 +19,7 @@ import { Page } from '~/pages/pages';
 import { NowPlaying } from '~/player/NowPlaying';
 import { startUpdateCheck } from '~/lib/updateCheck';
 import { startDiscord } from '~/player/discord';
+import { startRadioWatch } from '~/radio/radio';
 import { currentPosition, startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
 import { Overlays } from '~/ui/overlays';
@@ -56,6 +57,7 @@ function App() {
   useEffect(() => {
     startPlayer();
     startDiscord();
+    startRadioWatch();
     startUpdateCheck();
     // The mouse's back and forward buttons.
     const onMouse = (e: MouseEvent) => {

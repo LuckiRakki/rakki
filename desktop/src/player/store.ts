@@ -78,6 +78,8 @@ function nextIndex(s: Pick<PlayerState, 'queue' | 'index' | 'repeat'>): number |
  * streaming quality is set in Settings, then the server converts it to AAC at that bitrate.
  */
 function url(item: BaseItem | undefined): string | null {
+  // A radio station: its stream (radio/radio.ts).
+  if (item?.Radio) return item.Radio.streamUrl;
   const c = client();
   if (!item || !c) return null;
   const kbps = useSettings.getState().wifiBitrate;
@@ -146,14 +148,17 @@ function songStarted(item: BaseItem | undefined) {
   // Normalization: Jellyfin's loudness gain for the song (dB), through mpv's volume-gain.
   const gain = useSettings.getState().normalize ? (item.NormalizationGain ?? 0) : 0;
   void engine.set('volume-gain', Math.max(-20, Math.min(12, gain))).catch(() => {});
-  setTimeout(() => void maybeExtend(), 4000);
-  reportStart(item);
+  // Radio isn't a Jellyfin item: nothing to report, and no autoplay after it (it never ends).
+  if (!item.Radio) {
+    setTimeout(() => void maybeExtend(), 4000);
+    reportStart(item);
+  }
   const c = client();
   void engine.nowPlaying({
     title: item.Name,
     artist: item.Artists?.join(', ') || item.AlbumArtist || '',
     album: item.Album ?? '',
-    artwork: c?.imageUrl(item, 600),
+    artwork: item.Radio ? item.Radio.coverUrl : c?.imageUrl(item, 600),
     duration: item.RunTimeTicks ? item.RunTimeTicks / TICKS_PER_SECOND : undefined,
   });
 }

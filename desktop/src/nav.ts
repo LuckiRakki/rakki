@@ -11,6 +11,8 @@ export type Route =
   | { name: 'genre'; id: string }
   | { name: 'playlists' }
   | { name: 'mixes' }
+  | { name: 'radio' }
+  | { name: 'videos' }
   | { name: 'liked' }
   | { name: 'settings' }
   | { name: 'album'; id: string }

@@ -40,6 +40,7 @@ import {
   useTopTracks,
 } from '~/queries';
 import { openCustomizeHome, SECTION_LABEL, useHomeLayout, type HomeSection } from '~/pages/homeLayout';
+import { Radio, Videos } from '~/pages/RadioVideos';
 import { SearchPage } from '~/pages/Search';
 import { Settings } from '~/pages/Settings';
 import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, Shelf, Spinner, totalLength, TrackTable } from '~/ui/parts';
@@ -543,6 +544,10 @@ export function Page() {
       return <Genre key={route.id} name={route.id} />;
     case 'playlists':
       return <Playlists />;
+    case 'radio':
+      return <Radio />;
+    case 'videos':
+      return <Videos />;
     case 'mixes':
       return <Mixes />;
     case 'liked':

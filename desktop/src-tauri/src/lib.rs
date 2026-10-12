@@ -7,10 +7,12 @@ mod discord;
 mod media;
 mod memory;
 mod mpv;
+mod video;
 
 use discord::Discord;
 use media::{Media, NowPlaying};
 use mpv::Mpv;
+use video::Video;
 use serde_json::{json, Value};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -74,6 +76,18 @@ fn media_playback(media: State<'_, Media>, playing: bool, position: f64) {
     media.set_playback(playing, position);
 }
 
+/// A music video in its own mpv window (video.rs).
+#[tauri::command]
+async fn video_play(app: AppHandle, video: State<'_, Video>, url: String, title: String, volume: f64) -> Result<(), String> {
+    video.play(&app, &url, &title, volume).await
+}
+
+#[tauri::command]
+async fn video_stop(video: State<'_, Video>) -> Result<(), String> {
+    video.stop().await;
+    Ok(())
+}
+
 /// Discord's "Listening to" (discord.rs); None clears it.
 #[tauri::command]
 async fn discord_set(discord: State<'_, Discord>, app_id: String, activity: Option<Value>) -> Result<(), String> {
@@ -109,6 +123,7 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
                 if let Some(mpv) = app.state::<Player>().0.get() {
                     mpv.quit();
                 }
+                tauri::async_runtime::block_on(app.state::<Video>().stop());
                 app.exit(0);
             }
             other => {
@@ -130,6 +145,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(Player::default())
         .manage(Discord::default())
+        .manage(Video::default())
         .setup(|app| {
             let handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("main window");
@@ -163,7 +179,9 @@ pub fn run() {
             player_stop,
             media_now_playing,
             media_playback,
-            discord_set
+            discord_set,
+            video_play,
+            video_stop
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

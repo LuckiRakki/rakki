@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleArrowDown,
+  Clapperboard,
   Copy,
   Disc3,
   Heart,
@@ -18,6 +19,7 @@ import {
   Moon,
   PanelRight,
   PictureInPicture2,
+  RadioTower,
   Music,
   Pause,
   Play,
@@ -217,6 +219,8 @@ export function Sidebar() {
         <NavLink to={{ name: 'songs' }} icon={<Music size={18} />} label="Songs" />
         <NavLink to={{ name: 'artists' }} icon={<Users size={18} />} label="Artists" />
         <NavLink to={{ name: 'genres' }} icon={<Shapes size={18} />} label="Genres" />
+        <NavLink to={{ name: 'radio' }} icon={<RadioTower size={18} />} label="Radio" />
+        <NavLink to={{ name: 'videos' }} icon={<Clapperboard size={18} />} label="Videos" />
       </nav>
       <div className="side-lists">
         <button className={`row${route.name === 'liked' ? ' on' : ''}`} onClick={() => go({ name: 'liked' })}>
@@ -351,7 +355,15 @@ export function Transport({ size = 'normal' }: { size?: 'normal' | 'big' }) {
 
 export function SeekBar() {
   const duration = usePlayer((s) => s.duration);
+  const live = usePlayer((s) => !!s.queue[s.index]?.Radio);
   const position = useLivePosition();
+  if (live) {
+    return (
+      <div className="seek live">
+        <span className="live-pill">Live</span>
+      </div>
+    );
+  }
   return (
     <div className="seek">
       <span>{formatTime(position)}</span>
@@ -442,7 +454,7 @@ export function PlayerBar() {
                 <Maximize2 size={14} />
               </span>
             </button>
-            <div className="t" onContextMenu={(e) => openMenu(e, songMenu([now]))}>
+            <div className="t" onContextMenu={now.Radio ? undefined : (e) => openMenu(e, songMenu([now]))}>
               <div className="name linkish" onClick={() => now.AlbumId && go({ name: 'album', id: now.AlbumId })}>
                 {now.Name}
               </div>

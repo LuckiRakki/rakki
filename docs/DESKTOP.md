@@ -70,7 +70,8 @@ Phone app features, and where the desktop is.
 - [x] Smart queue / autoplay, song and artist radio (shared smartQueue).
 - [x] Settings: accounts, appearance (accent, Lucid, fonts, size, density), playback (quality,
       normalization, autoplay, gapless), Last.fm, about.
-- [ ] Music videos (mpv can show video), internet radio and SUB/WAVE.
+- [x] Music videos (Library, Videos: each opens in its own mpv window, any format), internet
+      radio and SUB/WAVE (Library, Radio: add by address; what's on air for SUB/WAVE).
 - [x] Playlist cache (shared with the phone): the heart is filled when a song is liked or in any
       playlist; Add to playlist ticks show at once.
 

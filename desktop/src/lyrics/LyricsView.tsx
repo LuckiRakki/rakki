@@ -34,7 +34,8 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
   const item = usePlayer((s) => s.queue[s.index]);
   const playing = usePlayer((s) => s.playing);
   const hidden = usePlayer((s) => s.hidden);
-  const q = useLyrics(item?.Id);
+  // A radio station has no lyrics here.
+  const q = useLyrics(item?.Radio ? undefined : item?.Id);
   const lyrics = pickLyrics(q.data);
   const [current, setCurrent] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
@@ -62,6 +63,7 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
   }, [current, variant, lyrics]);
 
   if (!item) return <div className="lyrics-empty">Play something to see its lyrics.</div>;
+  if (item.Radio) return <div className="lyrics-empty">No lyrics for radio.</div>;
   if (q.isLoading) return <Spinner />;
   if (!lyrics) return <div className="lyrics-empty">No lyrics for this song.</div>;
 

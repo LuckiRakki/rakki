@@ -80,7 +80,8 @@ function AboutArtist({ id }: { id: string }) {
 
 function NowView({ item }: { item: BaseItem }) {
   const client = useAuth((s) => s.client);
-  const full = useItem(item.Id).data;
+  const radio = !!item.Radio;
+  const full = useItem(radio ? undefined : item.Id).data;
   const { queue, index } = usePlayer();
   const next = queue[index + 1];
   const song = { ...item, ...full, UserData: item.UserData };
@@ -93,7 +94,7 @@ function NowView({ item }: { item: BaseItem }) {
   return (
     <div className="panel-body np-view">
       <Artwork item={item} size={700} className="np-view-cover" />
-      <div className="np-view-head" onContextMenu={(e) => openMenu(e, songMenu([item]))}>
+      <div className="np-view-head" onContextMenu={radio ? undefined : (e) => openMenu(e, songMenu([item]))}>
         <div className="t">
           <div className="np-view-title linkish" onClick={() => item.AlbumId && go({ name: 'album', id: item.AlbumId })}>
             {item.Name}
@@ -102,9 +103,11 @@ function NowView({ item }: { item: BaseItem }) {
             <ArtistLinks item={item} />
           </div>
         </div>
-        <button className="iconbtn" aria-label="More" title="More" onClick={(e) => openMenu(e, songMenu([item]))}>
-          <Ellipsis size={18} />
-        </button>
+        {radio ? null : (
+          <button className="iconbtn" aria-label="More" title="More" onClick={(e) => openMenu(e, songMenu([item]))}>
+            <Ellipsis size={18} />
+          </button>
+        )}
         <SaveButton item={item} size={19} />
       </div>
       <div className="np-tags">
@@ -117,88 +120,92 @@ function NowView({ item }: { item: BaseItem }) {
         {format[0] ? <span>{format[0]}</span> : null}
       </div>
 
-      <Card
-        title="Lyrics"
-        className="lyrics-card"
-        style={{ ['--tint' as string]: tint }}
-        action={
-          <button className="iconbtn" aria-label="Open lyrics" title="Open lyrics" onClick={() => useLayout.getState().setNowPlaying(true, 'lyrics')}>
-            <Maximize2 size={15} />
-          </button>
-        }>
-        <LyricsView variant="card" onOpen={() => useLayout.getState().setNowPlaying(true, 'lyrics')} />
-      </Card>
+      {radio ? null : (
+        <Card
+          title="Lyrics"
+          className="lyrics-card"
+          style={{ ['--tint' as string]: tint }}
+          action={
+            <button className="iconbtn" aria-label="Open lyrics" title="Open lyrics" onClick={() => useLayout.getState().setNowPlaying(true, 'lyrics')}>
+              <Maximize2 size={15} />
+            </button>
+          }>
+          <LyricsView variant="card" onOpen={() => useLayout.getState().setNowPlaying(true, 'lyrics')} />
+        </Card>
+      )}
 
-      {artistId ? <AboutArtist id={artistId} /> : null}
+      {artistId && !radio ? <AboutArtist id={artistId} /> : null}
 
-      <Card title="Credits">
-        {credits.map((c) => (
-          <div key={c.name} className="credit">
-            <div className={`credit-name${c.artistId ? ' linkish' : ''}`} onClick={() => c.artistId && go({ name: 'artist', id: c.artistId })}>
-              {c.name}
+        {radio ? null : (
+        <Card title="Credits">
+          {credits.map((c) => (
+            <div key={c.name} className="credit">
+              <div className={`credit-name${c.artistId ? ' linkish' : ''}`} onClick={() => c.artistId && go({ name: 'artist', id: c.artistId })}>
+                {c.name}
+              </div>
+              <div className="credit-role">{c.roles}</div>
             </div>
-            <div className="credit-role">{c.roles}</div>
-          </div>
-        ))}
-        <dl className="details">
-          {song.Album ? (
-            <>
-              <dt>Album</dt>
-              <dd className="linkish" onClick={() => song.AlbumId && go({ name: 'album', id: song.AlbumId })}>
-                {song.Album}
-              </dd>
-            </>
-          ) : null}
-          {year ? (
-            <>
-              <dt>Released</dt>
-              <dd>{year}</dd>
-            </>
-          ) : null}
-          {song.Genres?.length ? (
-            <>
-              <dt>Genre</dt>
-              <dd>
-                {song.Genres.map((g, i) => (
-                  <span key={g}>
-                    {i ? ', ' : ''}
-                    <span className="linkish" onClick={() => go({ name: 'genre', id: g })}>
-                      {g}
+          ))}
+          <dl className="details">
+            {song.Album ? (
+              <>
+                <dt>Album</dt>
+                <dd className="linkish" onClick={() => song.AlbumId && go({ name: 'album', id: song.AlbumId })}>
+                  {song.Album}
+                </dd>
+              </>
+            ) : null}
+            {year ? (
+              <>
+                <dt>Released</dt>
+                <dd>{year}</dd>
+              </>
+            ) : null}
+            {song.Genres?.length ? (
+              <>
+                <dt>Genre</dt>
+                <dd>
+                  {song.Genres.map((g, i) => (
+                    <span key={g}>
+                      {i ? ', ' : ''}
+                      <span className="linkish" onClick={() => go({ name: 'genre', id: g })}>
+                        {g}
+                      </span>
                     </span>
-                  </span>
-                ))}
-              </dd>
-            </>
-          ) : null}
-          {song.IndexNumber ? (
-            <>
-              <dt>Track</dt>
-              <dd>
-                {song.ParentIndexNumber && song.ParentIndexNumber > 1 ? `Disc ${song.ParentIndexNumber} · ` : ''}
-                {song.IndexNumber}
-              </dd>
-            </>
-          ) : null}
-          {song.RunTimeTicks ? (
-            <>
-              <dt>Length</dt>
-              <dd>{formatTime(ticksToSeconds(song.RunTimeTicks))}</dd>
-            </>
-          ) : null}
-          {format.length ? (
-            <>
-              <dt>Format</dt>
-              <dd>{format.join(' · ')}</dd>
-            </>
-          ) : null}
-          {song.UserData?.PlayCount || full?.UserData?.PlayCount ? (
-            <>
-              <dt>Your plays</dt>
-              <dd>{(full?.UserData?.PlayCount ?? song.UserData?.PlayCount ?? 0).toLocaleString()}</dd>
-            </>
-          ) : null}
-        </dl>
-      </Card>
+                  ))}
+                </dd>
+              </>
+            ) : null}
+            {song.IndexNumber ? (
+              <>
+                <dt>Track</dt>
+                <dd>
+                  {song.ParentIndexNumber && song.ParentIndexNumber > 1 ? `Disc ${song.ParentIndexNumber} · ` : ''}
+                  {song.IndexNumber}
+                </dd>
+              </>
+            ) : null}
+            {song.RunTimeTicks ? (
+              <>
+                <dt>Length</dt>
+                <dd>{formatTime(ticksToSeconds(song.RunTimeTicks))}</dd>
+              </>
+            ) : null}
+            {format.length ? (
+              <>
+                <dt>Format</dt>
+                <dd>{format.join(' · ')}</dd>
+              </>
+            ) : null}
+            {song.UserData?.PlayCount || full?.UserData?.PlayCount ? (
+              <>
+                <dt>Your plays</dt>
+                <dd>{(full?.UserData?.PlayCount ?? song.UserData?.PlayCount ?? 0).toLocaleString()}</dd>
+              </>
+            ) : null}
+          </dl>
+        </Card>
+      )}
 
       <Card
         title="Next in queue"

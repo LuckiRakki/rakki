@@ -18,7 +18,8 @@ import { openMenu } from '~/ui/overlays';
 
 export function Artwork({ item, size = 300, round, className }: { item?: BaseItem; size?: number; round?: boolean; className?: string }) {
   const client = useAuth((s) => s.client);
-  const src = item ? client?.imageUrl(item, size) : undefined;
+  // A radio station's picture is what's on air (SUB/WAVE), not a Jellyfin image.
+  const src = item?.Radio ? item.Radio.coverUrl : item ? client?.imageUrl(item, size) : undefined;
   const [failed, setFailed] = useState(false);
   const bg = item && client ? artColor(client.blurhash(item), '#2a2a2e') : undefined;
   return (
@@ -157,6 +158,8 @@ export function SaveButton({ item, size = 16, className = '' }: { item: BaseItem
   const inPlaylist = useInAnyPlaylist(item.Id);
   const liked = !!item.UserData?.IsFavorite;
   const saved = liked || inPlaylist;
+  // A radio station isn't a Jellyfin item: nothing to save.
+  if (item.Radio) return null;
   const title = liked ? 'In Liked Songs: change where it’s saved' : inPlaylist ? 'In your playlists: change where it’s saved' : 'Add to Liked Songs';
   return (
     <button
