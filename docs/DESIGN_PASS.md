@@ -22,6 +22,14 @@ the user before starting.
 7. **Plain, honest wording:** say what a thing does, in normal sentences; no hype, no filler.
 8. **Your music stays yours:** no server addresses or keys in the code; nothing about the
    library made public.
+9. **No loading screens; actions never hang** (user, 2026-10-13): an action finishes on screen
+   at once (the dialog closes, the screen moves on, the change shows) and its result comes after
+   as a short message ("Added to Wednesday" / "Couldn't add to Wednesday"), undone if it failed.
+   Spinners only where there is truly nothing to show yet (a page's first load), and even then
+   keep what was there before. Known to fix: Add to playlist waits on "Saving" before closing;
+   Save to server in Lyrics timing; Play here / Play on wait with a busy note; playlist
+   rename / picture / delete; the Last.fm key check; the sign-in screen (needs the server's
+   answer, so it stays but never freezes).
 
 ## Asked for specifically (on top of the overall pass)
 
