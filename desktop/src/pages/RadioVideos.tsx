@@ -118,18 +118,18 @@ export function Videos() {
       {q.data && !q.data.length ? <p className="empty-note">No music videos on your server (a Music Videos library in Jellyfin).</p> : null}
       <div className="video-grid">
         {shown.map((v) => (
-          <VideoCard key={v.Id} video={v} />
+          <VideoCard key={v.Id} video={v} from={shown} />
         ))}
       </div>
     </div>
   );
 }
 
-export function VideoCard({ video }: { video: BaseItem }) {
+export function VideoCard({ video, from }: { video: BaseItem; from?: BaseItem[] }) {
   const client = useAuth((s) => s.client);
   const thumb = client?.videoThumbUrl(video, 480);
   return (
-    <button className="video-card" onClick={() => void playVideo(video)} title={`Play ${video.Name}`}>
+    <button className="video-card" onClick={() => playVideo(video, from)} title={`Play ${video.Name}`}>
       <div className="video-thumb">
         {thumb ? <img src={thumb} alt="" loading="lazy" /> : null}
         <span className="video-play">

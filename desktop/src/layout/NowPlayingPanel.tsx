@@ -14,6 +14,7 @@ import { useLayout } from '~/layout/layout';
 import { LyricsView } from '~/lyrics/LyricsView';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
+import { MiniVideoCard } from '~/player/VideoHost';
 import { useItem } from '~/queries';
 import { openMenu } from '~/ui/overlays';
 import { ArtistLinks, Artwork, formatTime, SaveButton, ticksToSeconds } from '~/ui/parts';
@@ -293,6 +294,7 @@ export function NowPlayingPanel() {
           <X size={17} />
         </button>
       </header>
+      <MiniVideoCard />
       {queue ? <QueueView /> : item ? <NowView item={item} /> : <p className="muted pad">Nothing playing yet. Double-click a song, or press play on an album.</p>}
     </aside>
   );

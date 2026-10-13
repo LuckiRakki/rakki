@@ -14,7 +14,8 @@ background (while gaming, on a laptop). What it does so far: docs/DESKTOP.md.
   (`src-tauri/src/media.rs`, souvlaki), and a tray menu.
 - **Out of sight** (tray or minimized): the page sleeps and WebView2 stops rendering and keeps
   its memory low (`src-tauri/src/memory.rs`).
-- **Music videos** play in the window (`src/player/VideoPlayer.tsx`): straight from the file
+- **Music videos** play in the window (`src/player/VideoHost.tsx`, one video element moved
+  between the sidebar, theater and full screen): straight from the file
   when the webview can, else converted by the server over HLS (hls.js).
 - **Discord** "Listening to" through the Discord app's local IPC (`src-tauri/src/discord.rs`).
 

@@ -1,13 +1,23 @@
-// Music videos, played inside Rakki (player/VideoPlayer.tsx). Formats the webview plays itself
-// (MP4/MOV/WebM with H.264, VP8/VP9 or AV1, and AAC/MP3/Opus/Vorbis/FLAC sound) stream straight
-// from the file; anything else is converted by the server to H.264/AAC over HLS (at most 720p,
-// like the phone), played with hls.js. The music pauses while a video is open and picks up
-// again when it closes, if it was playing.
+// Music videos, played inside Rakki (player/VideoHost.tsx), in three sizes like the phone app:
+//   - mini: in the right sidebar (or a small card when it's closed), music-player style;
+//   - theater: over the window with the video's colours behind it, what it is (title,
+//     artists, the album, quality), a visualizer graph, and Up next (the phone's video screen);
+//   - full: the video alone, filling the screen.
+// Formats the webview plays itself (MP4/MOV/WebM with H.264, VP8/VP9 or AV1, and AAC/MP3/Opus/
+// Vorbis/FLAC sound) stream straight from the file; anything else is converted by the server to
+// H.264/AAC over HLS (at most 720p, like the phone). The music pauses while a video plays and
+// picks up again when the video is closed, if it was playing.
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { matchKey } from '@/lib/lastfm';
+import { videosByArtist, videoTitle } from '@/video/titles';
 import { client } from '~/auth/session';
+import { useLayout } from '~/layout/layout';
 import { usePlayer } from '~/player/store';
+import { queryClient } from '~/queries';
+
+export type VideoMode = 'mini' | 'theater' | 'full';
 
 export interface VideoSource {
   url: string;
@@ -18,6 +28,7 @@ export interface VideoSource {
 const CONTAINERS = ['mp4', 'm4v', 'mov', 'webm'];
 const VIDEO_CODECS = ['h264', 'vp8', 'vp9', 'av1'];
 const AUDIO_CODECS = ['aac', 'mp3', 'opus', 'vorbis', 'flac'];
+const UP_NEXT = 12;
 
 export function videoSource(video: BaseItem): VideoSource | null {
   const c = client();
@@ -53,28 +64,101 @@ export function videoSource(video: BaseItem): VideoSource | null {
   return { url: `${serverUrl}/Videos/${video.Id}/master.m3u8?${q}`, hls: true, playSessionId };
 }
 
+/** Every music video (cached with the Videos page's query). */
+export function allVideos(): Promise<BaseItem[]> {
+  const c = client();
+  if (!c) return Promise.resolve([]);
+  return queryClient.fetchQuery({ queryKey: ['musicVideos', c.session.userId], queryFn: () => c.getMusicVideos(), staleTime: 10 * 60_000 });
+}
+
+/** What follows a video: the artist's other videos, then the rest of the list it came from. */
+function upNextFor(video: BaseItem, from: BaseItem[], played: Set<string>): BaseItem[] {
+  const artist = video.Artists?.[0] ?? video.AlbumArtist;
+  const byArtist = videosByArtist(artist, from);
+  const start = from.findIndex((v) => v.Id === video.Id);
+  const after = start >= 0 ? [...from.slice(start + 1), ...from.slice(0, start)] : from;
+  const out: BaseItem[] = [];
+  const seen = new Set<string>([video.Id, ...played]);
+  for (const v of [...byArtist, ...after]) {
+    if (seen.has(v.Id)) continue;
+    seen.add(v.Id);
+    out.push(v);
+    if (out.length >= UP_NEXT) break;
+  }
+  return out;
+}
+
 interface VideoState {
   video: BaseItem | null;
-  /** The music was playing when the video opened (it resumes after). */
+  mode: VideoMode;
+  upNext: BaseItem[];
+  played: string[];
+  /** Seconds until the next video starts after one ends (null: not counting). */
+  countdown: number | null;
+  /** The music was playing when the first video opened (it resumes when they close). */
   resume: boolean;
-  open(video: BaseItem): void;
+  open(video: BaseItem, from?: BaseItem[]): void;
+  next(): void;
+  setMode(mode: VideoMode): void;
   close(): void;
 }
 
+let fromList: BaseItem[] = [];
+
 export const useVideo = create<VideoState>((set, get) => ({
   video: null,
+  mode: 'theater',
+  upNext: [],
+  played: [],
+  countdown: null,
   resume: false,
-  open(video) {
+  open(video, from) {
     const p = usePlayer.getState();
-    const resume = get().video ? get().resume : p.playing;
+    const s = get();
+    const resume = s.video ? s.resume : p.playing;
     if (p.playing) p.toggle();
-    set({ video, resume });
+    const played = s.video ? [...s.played, s.video.Id] : [];
+    set({ video, resume, played, countdown: null, mode: s.video ? s.mode : 'theater' });
+    // Up next from the list it was started from, else every video.
+    const fill = (list: BaseItem[]) => get().video?.Id === video.Id && set({ upNext: upNextFor(video, list, new Set(played)) });
+    if (from?.length) {
+      fromList = from;
+      fill(from);
+    } else if (fromList.length) fill(fromList);
+    else void allVideos().then((list) => ((fromList = list), fill(list)));
+  },
+  next() {
+    const [first] = get().upNext;
+    if (first) get().open(first);
+    else set({ countdown: null });
+  },
+  setMode(mode) {
+    const was = get().mode;
+    set({ mode });
+    const l = useLayout.getState();
+    if (mode === 'full' && !l.fullscreen) l.setFullscreen(true);
+    if (was === 'full' && mode !== 'full' && l.fullscreen) l.setFullscreen(false);
+    // The mini player lives in the right sidebar: open it if it's closed.
+    if (mode === 'mini' && !l.panel) l.setPanel('now');
   },
   close() {
-    const { resume } = get();
-    set({ video: null, resume: false });
+    const { resume, mode } = get();
+    if (mode === 'full' && useLayout.getState().fullscreen) useLayout.getState().setFullscreen(false);
+    fromList = [];
+    set({ video: null, upNext: [], played: [], countdown: null, resume: false, mode: 'theater' });
     if (resume && !usePlayer.getState().playing) usePlayer.getState().toggle();
   },
 }));
 
-export const playVideo = (video: BaseItem) => useVideo.getState().open(video);
+export const playVideo = (video: BaseItem, from?: BaseItem[]) => useVideo.getState().open(video, from);
+
+/** The library song a video is of (for its album), matched by artist and title. */
+export async function songForVideo(video: BaseItem): Promise<BaseItem | null> {
+  const c = client();
+  if (!c) return null;
+  const title = videoTitle(video.Name, video.Artists ?? []);
+  if (!title) return null;
+  const artists = new Set((video.Artists ?? [video.AlbumArtist ?? '']).map(matchKey));
+  const { songs } = await c.search(title, 25, ['songs']);
+  return songs.find((s) => matchKey(s.Name) === matchKey(title) && [...(s.Artists ?? []), s.AlbumArtist ?? ''].some((a) => artists.has(matchKey(a)))) ?? null;
+}

@@ -145,6 +145,7 @@ export function Settings() {
         </div>
         <Toggle on={s.normalize} onChange={(v) => s.set('normalize', v)} label="Volume normalization" detail="Songs play at the same loudness (Jellyfin's loudness measurement)." />
         <Toggle on={s.autoplay} onChange={(v) => s.set('autoplay', v)} label="Autoplay" detail="When the queue ends, keep going with similar songs." />
+        <Toggle on={s.videoAutoplay} onChange={(v) => s.set('videoAutoplay', v)} label="Autoplay music videos" detail="When a video ends, the next in Up next follows after a short countdown." />
       </Section>
 
       <Section title="Lyrics">
