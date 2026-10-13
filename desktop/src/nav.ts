@@ -14,7 +14,7 @@ export type Route =
   | { name: 'radio' }
   | { name: 'videos' }
   | { name: 'liked' }
-  | { name: 'settings' }
+  | { name: 'settings'; section?: string }
   | { name: 'album'; id: string }
   | { name: 'artist'; id: string }
   | { name: 'playlist'; id: string };

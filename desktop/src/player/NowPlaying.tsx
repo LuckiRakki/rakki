@@ -5,7 +5,7 @@
 // expand button (or F11) makes the window fill the screen. The top fades while the mouse is
 // still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink } from '~/ui/icons';
+import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, Visualizer as VisualizerIcon } from '~/ui/icons';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -23,6 +23,8 @@ import { LyricsTiming } from '~/lyrics/LyricsTiming';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
+import { Visualizer } from '~/audio/Visualizer';
+import { DynamicBackground } from '~/ui/DynamicBackground';
 import { usePresence } from '~/ui/motion';
 import { Loading } from '~/ui/states';
 import { openMenu } from '~/ui/overlays';
@@ -154,8 +156,14 @@ function LyricsStyle() {
 const TABS: { tab: PlayerTab; label: string; icon: typeof ListMusic }[] = [
   { tab: 'queue', label: 'Queue', icon: ListMusic },
   { tab: 'related', label: 'Related', icon: Radio },
+  { tab: 'visualizer', label: 'Visualizer', icon: VisualizerIcon },
   { tab: 'lyrics', label: 'Lyrics', icon: MicVocal },
 ];
+
+/** The visualizer tab: Rakki's sound across the whole side (Settings → Visualizer for its look). */
+function VisualizerTab() {
+  return <Visualizer className="np-visualizer" />;
+}
 
 export function NowPlaying() {
   const open = useLayout((s) => s.nowPlaying);
@@ -200,6 +208,7 @@ export function NowPlaying() {
   if (!presence.render || !item) return null;
   const tint = client ? artColor(client.blurhash(item), '#202024') : '#202024';
   const big = client?.imageUrl(item, 1000);
+  const backdrop = client?.imageUrl(item, 500);
   const song = { ...item, ...full, UserData: item.UserData };
   const badges = [formatOf(song)[0], song.ProductionYear].filter(Boolean);
   const l = useLayout.getState();
@@ -207,7 +216,7 @@ export function NowPlaying() {
   return (
     <div className={`nowplaying${idle ? ' idle' : ''}${presence.leaving ? ' leaving' : ''}`} style={{ ['--tint' as string]: tint }}>
       <div className="np-solid" />
-      {big ? <div className="np-backdrop" style={{ backgroundImage: `url("${big}")` }} /> : null}
+      <DynamicBackground image={backdrop} active={!presence.leaving} />
       <div className="np-shade" />
       <div className="np-top" data-tauri-drag-region>
         <button className="iconbtn" aria-label="Close full player" title="Close (Esc)" onClick={() => l.setNowPlaying(false)}>
@@ -219,6 +228,18 @@ export function NowPlaying() {
         <div style={{ flex: 1 }} data-tauri-drag-region />
         {tab === 'lyrics' && !item.Radio ? <LyricsTiming itemId={item.Id} /> : null}
         {tab === 'lyrics' ? <LyricsStyle /> : null}
+        {tab === 'visualizer' ? (
+          <button
+            className="iconbtn"
+            aria-label="Visualizer settings"
+            title="Visualizer settings"
+            onClick={() => {
+              l.setNowPlaying(false);
+              go({ name: 'settings', section: 'visualizer' });
+            }}>
+            <SlidersHorizontal size={19} />
+          </button>
+        ) : null}
         <button
           className="iconbtn np-fs"
           aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
@@ -259,13 +280,13 @@ export function NowPlaying() {
         </div>
         <div className="np-right">
           <div key={tab} className="np-tab-pane">
-            {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : <RelatedTab item={item} />}
+            {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : tab === 'visualizer' ? <VisualizerTab /> : <RelatedTab item={item} />}
           </div>
         </div>
       </div>
       <div className="np-tabs">
         {TABS.map(({ tab: t, label, icon: Icon }) => (
-          <button key={t} className={`iconbtn${tab === t ? ' on' : ''}`} aria-label={label} title={label} onClick={() => l.setPlayerTab(t)}>
+          <button key={t} className={`iconbtn${tab === t ? ' on' : ''}`} aria-label={label} aria-pressed={tab === t} title={label} onClick={() => l.setPlayerTab(t)}>
             <Icon size={19} />
           </button>
         ))}

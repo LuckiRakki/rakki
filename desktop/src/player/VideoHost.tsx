@@ -4,8 +4,8 @@
 // stutters the video. The webview's own controls (play, seek, volume, picture in picture) are on
 // the video in every size.
 //
-// Its sound also feeds the theater's visualizer graph (Web Audio; your server allows the
-// cross-origin read it needs).
+// Its sound feeds the visualizer and its frames the theater's moving background (Web Audio and
+// WebGL; your server allows the cross-origin reads they need).
 import { useQuery } from '@tanstack/react-query';
 import Hls from 'hls.js';
 import { ChevronDown, Expand, Maximize2, PanelRight, Pause, Play, Shrink, SkipBack, SkipForward, Volume2, X } from '~/ui/icons';
@@ -23,6 +23,9 @@ import { useLayout } from '~/layout/layout';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { songForVideo, useVideo, videoSource } from '~/player/video';
+import { hearVideo } from '~/audio/sound';
+import { Visualizer } from '~/audio/Visualizer';
+import { DynamicBackground } from '~/ui/DynamicBackground';
 import { usePresence } from '~/ui/motion';
 import { ArtistLinks, Artwork, formatTime } from '~/ui/parts';
 
@@ -31,6 +34,8 @@ const COUNTDOWN_S = 5;
 // ---- The video's state, for the player bar and the sidebar ----
 
 let element: HTMLVideoElement | null = null;
+/** The <video>, for the theater's background (it flows with the video's own frames). */
+const useVideoElement = create<{ el: HTMLVideoElement | null }>(() => ({ el: null }));
 
 export const usePlayback = create<{ playing: boolean; time: number; duration: number; volume: number }>(() => ({
   playing: false,
@@ -100,96 +105,6 @@ function useSlotRect(el: HTMLElement | null, full: boolean) {
   return rect;
 }
 
-// ---- Sound for the visualizer ----
-
-let audio: { ctx: AudioContext; analyser: AnalyserNode } | null = null;
-/** Each video element can be tapped once; a new element (the next video opened) gets its own. */
-const tapped = new WeakMap<HTMLVideoElement, MediaElementAudioSourceNode>();
-
-/** Route the video's sound through the analyser (it then plays through it). */
-function hearVideo(v: HTMLVideoElement) {
-  try {
-    if (!audio) {
-      const ctx = new AudioContext();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 4096;
-      analyser.smoothingTimeConstant = 0.82;
-      analyser.connect(ctx.destination);
-      audio = { ctx, analyser };
-    }
-    if (!tapped.has(v)) {
-      const source = audio.ctx.createMediaElementSource(v);
-      source.connect(audio.analyser);
-      tapped.set(v, source);
-    }
-    void audio.ctx.resume();
-  } catch {
-    // No Web Audio: the video plays as usual, the graph stays flat.
-  }
-}
-
-/** A graph of the video's sound: the spectrum from 40 Hz to 16 kHz as a smooth filled curve. */
-function Visualizer() {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const c = canvas.current!;
-    const g = c.getContext('2d')!;
-    let frame = 0;
-    const POINTS = 96;
-    const levels = new Float32Array(POINTS);
-    let data = new Uint8Array(0);
-    const draw = () => {
-      frame = requestAnimationFrame(draw);
-      const dpr = window.devicePixelRatio || 1;
-      const w = c.clientWidth;
-      const h = c.clientHeight;
-      if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
-        c.width = Math.round(w * dpr);
-        c.height = Math.round(h * dpr);
-      }
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      g.clearRect(0, 0, w, h);
-      const a = audio?.analyser;
-      if (a) {
-        if (data.length !== a.frequencyBinCount) data = new Uint8Array(a.frequencyBinCount);
-        a.getByteFrequencyData(data);
-        const hzPerBin = a.context.sampleRate / a.fftSize;
-        for (let i = 0; i < POINTS; i++) {
-          const hz = 40 * Math.pow(16000 / 40, i / (POINTS - 1));
-          const v = (data[Math.min(data.length - 1, Math.round(hz / hzPerBin))] ?? 0) / 255;
-          // Rise fast, fall slowly.
-          levels[i] = v > levels[i] ? v : levels[i] * 0.9 + v * 0.1;
-        }
-      } else levels.fill(0);
-      const accent = getComputedStyle(c).getPropertyValue('--accent').trim() || '#fd642d';
-      const y = (v: number) => h - 2 - v * (h - 6);
-      g.beginPath();
-      g.moveTo(0, h);
-      g.lineTo(0, y(levels[0]));
-      for (let i = 1; i < POINTS; i++) {
-        const x0 = ((i - 1) / (POINTS - 1)) * w;
-        const x1 = (i / (POINTS - 1)) * w;
-        const xm = (x0 + x1) / 2;
-        g.quadraticCurveTo(x0, y(levels[i - 1]), xm, (y(levels[i - 1]) + y(levels[i])) / 2);
-      }
-      g.lineTo(w, y(levels[POINTS - 1]));
-      g.lineTo(w, h);
-      g.closePath();
-      const fill = g.createLinearGradient(0, 0, 0, h);
-      fill.addColorStop(0, `${accent}cc`);
-      fill.addColorStop(1, `${accent}10`);
-      g.fillStyle = fill;
-      g.fill();
-      g.strokeStyle = accent;
-      g.lineWidth = 2;
-      g.stroke();
-    };
-    draw();
-    return () => cancelAnimationFrame(frame);
-  }, []);
-  return <canvas className="vt-visualizer" ref={canvas} aria-label="Sound graph" />;
-}
-
 // ---- What's shown around the video ----
 
 const resolution = (v: BaseItem) => {
@@ -236,9 +151,11 @@ function Theater({ video, leaving }: { video: BaseItem; leaving: boolean }) {
   const year = video.ProductionYear ?? song?.ProductionYear;
   const badges = [res, video.MediaSources?.[0]?.MediaStreams?.find((x) => x.Type === 'Video')?.Codec?.toUpperCase(), year].filter(Boolean);
   const v = useVideo.getState();
+  const el = useVideoElement((s) => s.el);
   return (
     <div className={`vt${leaving ? ' leaving' : ''}`} style={{ ['--tint' as string]: tint }}>
-      {thumb ? <div className="vt-backdrop" style={{ backgroundImage: `url("${thumb}")` }} /> : null}
+      <DynamicBackground video={el} image={thumb} active={!leaving} />
+      <div className="vt-shade" />
       <div className="vt-top" data-tauri-drag-region>
         <button className="iconbtn" aria-label="Shrink to the sidebar" title="Shrink to the sidebar (Esc)" onClick={() => v.setMode('mini')}>
           <ChevronDown size={24} />
@@ -268,6 +185,9 @@ function Theater({ video, leaving }: { video: BaseItem; leaving: boolean }) {
                   </span>
                 ))}
               </div>
+            </div>
+            {/* The album card, then the visualizer across the rest of the row. */}
+            <div className="vt-album-row">
               {song?.AlbumId ? (
                 <button className="vt-album" onClick={() => (v.setMode('mini'), go({ name: 'album', id: song.AlbumId! }))} title="Open the album">
                   <Artwork item={song} size={120} className="thumb" />
@@ -277,8 +197,8 @@ function Theater({ video, leaving }: { video: BaseItem; leaving: boolean }) {
                   </span>
                 </button>
               ) : null}
+              <Visualizer className="vt-visualizer" />
             </div>
-            <Visualizer />
           </div>
         </div>
         <UpNextList />
@@ -481,6 +401,7 @@ export function VideoHost() {
     const v = el.current;
     if (!video || !v) return;
     element = v;
+    useVideoElement.setState({ el: v });
     setError(null);
     const src = videoSource(video);
     if (!src) return;

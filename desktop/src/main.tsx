@@ -28,6 +28,7 @@ import { queryClient } from '~/queries';
 import { Overlays } from '~/ui/overlays';
 import { ServerBar, refetchFailed } from '~/ui/states';
 import { useApplyTheme } from '~/ui/theme';
+import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
 
 /** Keyboard shortcuts that work anywhere (not while typing). */
@@ -142,7 +143,7 @@ function App() {
 }
 
 // Development only: lets the interface be checked in a browser without real playback.
-if (import.meta.env.DEV) Object.assign(window, { __rakki: { usePlayer, useLayout, useNav } });
+if (import.meta.env.DEV) Object.assign(window, { __rakki: { usePlayer, useLayout, useNav, useVideo } });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

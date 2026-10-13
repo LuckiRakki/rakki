@@ -3058,6 +3058,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tokio",
  "webview2-com",
+ "windows 0.62.2",
  "windows-core",
 ]
 

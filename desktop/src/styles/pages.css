@@ -2,7 +2,7 @@
 
 /* ---- Main ---- */
 
-.main { grid-area: main; overflow-y: auto; position: relative; }
+.main { grid-area: main; overflow-y: auto; position: relative; container: main / inline-size; }
 .page { padding: 24px 28px 40px; }
 .page h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
 .page.home h1 { margin-bottom: 18px; }
@@ -178,7 +178,36 @@
 .top-name { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Settings ---- */
-.settings { max-width: 900px; }
+.settings { max-width: 1040px; }
+.settings h1 { margin-bottom: 20px; }
+.settings-layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; align-items: start; }
+.settings-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+.settings-nav button { text-align: left; padding: 10px 12px; border-radius: 8px; font-weight: 700; color: var(--text-2); transition: background 0.15s, color 0.15s; }
+.settings-nav button:hover { background: var(--surface-2); color: var(--text); }
+.settings-nav button.on { background: var(--surface-3); color: var(--text); }
+.settings-body { min-width: 0; animation: fade-in 0.2s var(--ease-out); }
+/* Narrow: the groups become a row of chips above. */
+@container main (max-width: 720px) {
+  .settings-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .settings-nav { flex-direction: row; flex-wrap: wrap; position: static; gap: 6px; }
+  .settings-nav button { padding: 7px 14px; border-radius: 999px; background: var(--surface-2); }
+}
+.choice { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.choice button { min-height: 32px; padding: 0 14px; border-radius: 999px; font-weight: 700; font-size: 13px; background: var(--surface-3); color: var(--text-2); transition: background 0.15s, color 0.15s; }
+.choice button:hover { background: var(--surface-4); color: var(--text); }
+.choice button.on { background: var(--text); color: #000; }
+.slider { display: flex; align-items: center; gap: 12px; width: 240px; flex: none; }
+.slider .range { flex: 1; }
+.slider > span { width: 44px; text-align: right; color: var(--text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.more { border-top: 1px solid var(--line); }
+.more-head { display: flex; align-items: center; gap: 6px; width: 100%; padding: 14px 0; font-weight: 700; color: var(--text-2); }
+.more-head:hover { color: var(--text); }
+.more-head .ico { transition: transform 0.2s var(--ease-out); }
+.more.open .more-head .ico { transform: rotate(180deg); }
+.more-body { animation: fade-in 0.2s var(--ease-out); }
+.more-body > .setting:first-child { border-top: 1px solid var(--line); }
+.settings-visualizer { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.settings-visualizer-graph { height: 140px; border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 8%, #0b0b0d); }
 .settings-section { margin-bottom: 28px; }
 .settings-section h2 { font-size: 18px; margin-bottom: 10px; }
 .settings-card { background: var(--surface-2); border-radius: var(--radius); padding: 4px 18px; }

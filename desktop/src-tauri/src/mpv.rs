@@ -174,6 +174,11 @@ impl Mpv {
         }
     }
 
+    /// mpv's process id (for recording its sound, capture.rs).
+    pub fn pid(&self) -> Option<u32> {
+        self.child.lock().ok()?.as_ref()?.id()
+    }
+
     pub fn quit(&self) {
         self.command(json!(["quit"]));
         if let Some(mut child) = self.child.lock().ok().and_then(|mut c| c.take()) {

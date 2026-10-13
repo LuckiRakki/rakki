@@ -49,9 +49,9 @@
 
 .nowplaying { position: fixed; inset: 0 0 var(--playerbar) 0; z-index: 50; display: flex; flex-direction: column; isolation: isolate; }
 .np-solid { position: fixed; inset: 0; z-index: -3; background: color-mix(in srgb, var(--tint) 45%, #000); pointer-events: none; }
-.np-backdrop { position: fixed; inset: -100px; background-size: cover; background-position: center; filter: blur(80px) saturate(1.5) brightness(0.6); z-index: -2; }
-.np-shade { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 30% 45%, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.45)); }
-.np-backdrop, .np-shade { pointer-events: none; }
+/* A flat scrim over the moving background: keeps white text readable on bright covers. */
+.np-shade { position: fixed; inset: 0; z-index: -1; background: rgba(0, 0, 0, 0.2); pointer-events: none; }
+.np-visualizer { flex: 1; min-height: 0; margin-bottom: 8px; }
 .app.np-open .playerbar { position: relative; z-index: 51; } /* stays, over the same blurred artwork */
 .np-top { display: flex; align-items: center; gap: 4px; height: var(--titlebar); padding-left: 10px; transition: opacity 0.4s; }
 .np-top .iconbtn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: rgba(255, 255, 255, 0.8); }

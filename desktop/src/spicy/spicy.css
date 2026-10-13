@@ -187,8 +187,14 @@
 
 /* End-of-lyrics "Written by:" credit — smaller; glows once it's reached. */
 .sl-credits {
-    font-size: clamp(1rem, 1.5vw, 1.7rem);
+    font-size: clamp(1rem, 3cqi, 1.7rem);
     margin-top: 0.6em;
+}
+
+/* Rakki: the provider and sync credits under Written by (the API's attribution). */
+.sl-credits--small {
+    font-size: clamp(0.8rem, 2.2cqi, 1.1rem);
+    margin-top: 0;
 }
 
 /* ── Words ────────────────────────────────────────────────────────────────── */
@@ -353,7 +359,6 @@
     border-radius: 7px;
     object-fit: cover;
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 .sl-nextup-text {
@@ -363,15 +368,13 @@
 }
 
 .sl-nextup-label {
-    font-size: 0.68rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    opacity: 0.5;
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.75;
 }
 
 .sl-nextup-title {
-    font-size: clamp(1rem, 1.6vw, 1.5rem);
+    font-size: clamp(1rem, 3.2cqi, 1.5rem);
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
@@ -379,9 +382,9 @@
 }
 
 .sl-nextup-artist {
-    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    font-size: clamp(0.85rem, 2.2cqi, 1rem);
     font-weight: 500;
-    opacity: 0.7;
+    opacity: 0.8;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

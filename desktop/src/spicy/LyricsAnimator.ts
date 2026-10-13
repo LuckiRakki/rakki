@@ -159,6 +159,7 @@ export class LyricsAnimator {
     // "Next up" card shown once the lyrics are over.
     private nextUpEl: HTMLElement | null = null;
     private lastLyricEnd = 0;
+    private credits: { text: string; small?: boolean }[] | null = null;
 
     // Wall-clock frame delta for the springs — they move in real time,
     // independent of the (seek-jumpy) playback clock.
@@ -192,7 +193,12 @@ export class LyricsAnimator {
 
     // ── Public ────────────────────────────────────────────────────────────────
 
-    load(payload: LyricsPayload): void {
+    /**
+     * Rakki: the credits to end the lyrics with (written by, provider, synced by), as lines of
+     * the lyrics themselves rather than a strip under them. Without them, Written by only.
+     */
+    load(payload: LyricsPayload, credits?: { text: string; small?: boolean }[]): void {
+        this.credits = credits ?? null;
         this.payload = payload;
         this.synced = payload.isSynced;
         this.setManual(false);
@@ -458,16 +464,22 @@ export class LyricsAnimator {
      */
     private appendCredits(payload: LyricsPayload): void {
         const writers = payload.songwriters;
-        if (!writers || !writers.length || !this.rows.length) return;
+        const lines = this.credits ?? (writers?.length ? [{ text: `Written by: ${writers.join(', ')}` }] : []);
+        if (!lines.length || !this.rows.length) return;
 
+        // All of them light up together once the last lyric is done.
         const start = this.lastLyricEnd;
-        const lastRow = this.rows[this.rows.length - 1];
-        const row = this.addRow('credits', this.groups.length, false, false, start);
-        row.el.textContent = `Written by: ${writers.join(', ')}`;
-        row.el.classList.toggle('sl-line--right', lastRow.el.classList.contains('sl-line--right'));
-        row.startMs = start;
-        row.endMs = start + 600000;
-        this.groups.push({ first: this.rows.length - 1, last: this.rows.length - 1, startMs: row.startMs, endMs: row.endMs });
+        const right = this.rows[this.rows.length - 1].el.classList.contains('sl-line--right');
+        const first = this.rows.length;
+        for (const credit of lines) {
+            const row = this.addRow('credits', this.groups.length, false, false, start);
+            row.el.textContent = credit.text;
+            row.el.classList.toggle('sl-line--right', right);
+            row.el.classList.toggle('sl-credits--small', !!credit.small);
+            row.startMs = start;
+            row.endMs = start + 600000;
+        }
+        this.groups.push({ first, last: this.rows.length - 1, startMs: start, endMs: start + 600000 });
     }
 
     /** The most common agent is treated as the "left" (primary) singer. */

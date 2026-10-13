@@ -4,11 +4,13 @@
 // music keeps playing with the interface asleep.
 
 mod autostart;
+mod capture;
 mod discord;
 mod media;
 mod memory;
 mod mpv;
 
+use capture::Capture;
 use discord::Discord;
 use media::{Media, NowPlaying};
 use mpv::Mpv;
@@ -93,6 +95,24 @@ fn autostart_set(on: bool) -> Result<bool, String> {
     Ok(autostart::enabled())
 }
 
+/// Start sending mpv's sound to the page (capture.rs): for the visualizer and backgrounds.
+#[tauri::command]
+async fn capture_start(
+    app: AppHandle,
+    player: State<'_, Player>,
+    capture: State<'_, Capture>,
+    on_audio: tauri::ipc::Channel<tauri::ipc::InvokeResponseBody>,
+) -> Result<u32, String> {
+    let pid = player.get(&app).await?.pid().ok_or("mpv isn't running")?;
+    capture.start(pid, on_audio);
+    Ok(capture::RATE)
+}
+
+#[tauri::command]
+fn capture_stop(capture: State<'_, Capture>) {
+    capture.stop();
+}
+
 /// The tray icon's tooltip: what's playing, and where (player/remote.ts).
 #[tauri::command]
 fn tray_tooltip(app: AppHandle, text: String) {
@@ -151,6 +171,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(Player::default())
         .manage(Discord::default())
+        .manage(Capture::default())
         .setup(|app| {
             let handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("main window");
@@ -196,6 +217,8 @@ pub fn run() {
             media_playback,
             discord_set,
             tray_tooltip,
+            capture_start,
+            capture_stop,
             autostart_get,
             autostart_set
         ])
