@@ -14,7 +14,8 @@ import { useLayout } from '~/layout/layout';
 import { LyricsView } from '~/lyrics/LyricsView';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
-import { MiniVideoCard } from '~/player/VideoHost';
+import { useVideo } from '~/player/video';
+import { VideoPanel } from '~/player/VideoHost';
 import { useItem } from '~/queries';
 import { openMenu } from '~/ui/overlays';
 import { ArtistLinks, Artwork, formatTime, SaveButton, ticksToSeconds } from '~/ui/parts';
@@ -274,7 +275,22 @@ function QueueView() {
 export function NowPlayingPanel() {
   const panel = useLayout((s) => s.panel);
   const item = usePlayer((s) => s.queue[s.index]);
+  const video = useVideo((s) => s.video);
   if (!panel) return null;
+  // A music video takes the sidebar over: the video, what it is, Up next.
+  if (video) {
+    return (
+      <aside className="rightpanel panel">
+        <header className="rp-head">
+          <div className="rp-title">Music video</div>
+          <button className="iconbtn" aria-label="Close" title="Close" onClick={() => useLayout.getState().setPanel(null)}>
+            <X size={17} />
+          </button>
+        </header>
+        <VideoPanel video={video} />
+      </aside>
+    );
+  }
   const queue = panel === 'queue';
   return (
     <aside className="rightpanel panel">
@@ -294,7 +310,6 @@ export function NowPlayingPanel() {
           <X size={17} />
         </button>
       </header>
-      <MiniVideoCard />
       {queue ? <QueueView /> : item ? <NowView item={item} /> : <p className="muted pad">Nothing playing yet. Double-click a song, or press play on an album.</p>}
     </aside>
   );

@@ -5,8 +5,8 @@
 //   - full: the video alone, filling the screen.
 // Formats the webview plays itself (MP4/MOV/WebM with H.264, VP8/VP9 or AV1, and AAC/MP3/Opus/
 // Vorbis/FLAC sound) stream straight from the file; anything else is converted by the server to
-// H.264/AAC over HLS (at most 720p, like the phone). The music pauses while a video plays and
-// picks up again when the video is closed, if it was playing.
+// H.264/AAC over HLS (at most 720p, like the phone). One player at a time: a video stops the
+// music and takes over the player bar and the right sidebar; playing music closes the video.
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -95,10 +95,10 @@ interface VideoState {
   played: string[];
   /** Seconds until the next video starts after one ends (null: not counting). */
   countdown: number | null;
-  /** The music was playing when the first video opened (it resumes when they close). */
-  resume: boolean;
   open(video: BaseItem, from?: BaseItem[]): void;
   next(): void;
+  /** The video before this one (Previous). */
+  back(): void;
   setMode(mode: VideoMode): void;
   close(): void;
 }
@@ -111,14 +111,12 @@ export const useVideo = create<VideoState>((set, get) => ({
   upNext: [],
   played: [],
   countdown: null,
-  resume: false,
   open(video, from) {
     const p = usePlayer.getState();
     const s = get();
-    const resume = s.video ? s.resume : p.playing;
     if (p.playing) p.toggle();
     const played = s.video ? [...s.played, s.video.Id] : [];
-    set({ video, resume, played, countdown: null, mode: s.video ? s.mode : 'theater' });
+    set({ video, played, countdown: null, mode: s.video ? s.mode : 'theater' });
     // Up next from the list it was started from, else every video.
     const fill = (list: BaseItem[]) => get().video?.Id === video.Id && set({ upNext: upNextFor(video, list, new Set(played)) });
     if (from?.length) {
@@ -132,6 +130,14 @@ export const useVideo = create<VideoState>((set, get) => ({
     if (first) get().open(first);
     else set({ countdown: null });
   },
+  back() {
+    const s = get();
+    const lastId = s.played[s.played.length - 1];
+    const last = lastId ? fromList.find((v) => v.Id === lastId) : undefined;
+    if (!last || !s.video) return;
+    const current = s.video;
+    set({ played: s.played.slice(0, -1), video: last, countdown: null, upNext: [current, ...s.upNext.filter((v) => v.Id !== current.Id)] });
+  },
   setMode(mode) {
     const was = get().mode;
     set({ mode });
@@ -142,11 +148,9 @@ export const useVideo = create<VideoState>((set, get) => ({
     if (mode === 'mini' && !l.panel) l.setPanel('now');
   },
   close() {
-    const { resume, mode } = get();
-    if (mode === 'full' && useLayout.getState().fullscreen) useLayout.getState().setFullscreen(false);
+    if (get().mode === 'full' && useLayout.getState().fullscreen) useLayout.getState().setFullscreen(false);
     fromList = [];
-    set({ video: null, upNext: [], played: [], countdown: null, resume: false, mode: 'theater' });
-    if (resume && !usePlayer.getState().playing) usePlayer.getState().toggle();
+    set({ video: null, upNext: [], played: [], countdown: null, mode: 'theater' });
   },
 }));
 

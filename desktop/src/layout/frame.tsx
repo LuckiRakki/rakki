@@ -51,6 +51,8 @@ import { collectionMenu, songMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout, win } from '~/layout/layout';
 import { DevicesButton } from '~/layout/Devices';
 import { RemoteBar } from '~/layout/RemoteBar';
+import { useVideo } from '~/player/video';
+import { VideoBar } from '~/player/VideoHost';
 import { useRemote } from '~/player/remote';
 import { setMini } from '~/layout/MiniPlayer';
 import { openUpdate, useUpdate } from '~/lib/updateCheck';
@@ -519,8 +521,10 @@ export function PlayerBar() {
   const open = useLayout((s) => s.nowPlaying);
   const tab = useLayout((s) => s.playerTab);
   const target = useRemote((s) => s.target);
+  const video = useVideo((s) => s.video);
   const l = useLayout.getState();
-  // Another device picked in Devices: the bar is that device's.
+  // A music video: the bar is the video's. Another device picked in Devices: that device's.
+  if (video) return <VideoBar video={video} />;
   if (target) return <RemoteBar target={target} />;
   return (
     <footer className="playerbar">

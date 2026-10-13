@@ -8,7 +8,7 @@
 // cross-origin read it needs).
 import { useQuery } from '@tanstack/react-query';
 import Hls from 'hls.js';
-import { ChevronDown, Expand, Maximize2, Play, Shrink, X } from 'lucide-react';
+import { ChevronDown, Expand, Maximize2, PanelRight, Pause, Play, Shrink, SkipBack, SkipForward, Volume2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { create } from 'zustand';
 
@@ -17,15 +17,40 @@ import { artColor } from '@/lib/blurhash';
 import { useSettings } from '@/settings/store';
 import { videoTitle } from '@/video/titles';
 import { useAuth } from '~/auth/session';
-import { WindowButtons } from '~/layout/frame';
+import { Range, WindowButtons } from '~/layout/frame';
 import { useLayout } from '~/layout/layout';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { songForVideo, useVideo, videoSource } from '~/player/video';
 import { usePresence } from '~/ui/motion';
-import { ArtistLinks, Artwork } from '~/ui/parts';
+import { ArtistLinks, Artwork, formatTime } from '~/ui/parts';
 
 const COUNTDOWN_S = 5;
+
+// ---- The video's state, for the player bar and the sidebar ----
+
+let element: HTMLVideoElement | null = null;
+
+export const usePlayback = create<{ playing: boolean; time: number; duration: number; volume: number }>(() => ({
+  playing: false,
+  time: 0,
+  duration: 0,
+  volume: 0.8,
+}));
+
+export const videoControls = {
+  toggle() {
+    if (!element) return;
+    if (element.paused) void element.play();
+    else element.pause();
+  },
+  seek(seconds: number) {
+    if (element) element.currentTime = Math.max(0, seconds);
+  },
+  setVolume(v: number) {
+    if (element) element.volume = Math.max(0, Math.min(1, v));
+  },
+};
 
 // ---- The slot the video sits over ----
 
@@ -321,6 +346,105 @@ export function MiniVideoCard({ floating = false }: { floating?: boolean }) {
   );
 }
 
+/** The right sidebar while a video is open: the video (in the mini size), what it is, Up next. */
+export function VideoPanel({ video }: { video: BaseItem }) {
+  const client = useAuth((s) => s.client);
+  const song = useQuery({ queryKey: ['videoSong', video.Id], queryFn: () => songForVideo(video), staleTime: 6 * 3600_000 }).data;
+  const res = resolution(video);
+  const year = video.ProductionYear ?? song?.ProductionYear;
+  return (
+    <div className="panel-body video-panel">
+      <MiniVideoCard />
+      {useVideo.getState().mode !== 'mini' && client?.videoThumbUrl(video, 640) ? (
+        <button className="video-panel-thumb" onClick={() => useVideo.getState().setMode('mini')} title="Play it here in the sidebar">
+          <img src={client.videoThumbUrl(video, 640)} alt="" />
+        </button>
+      ) : null}
+      <div className="video-panel-info">
+        <div className="np-view-title">{videoTitle(video.Name, video.Artists ?? []) || video.Name}</div>
+        <div className="np-view-by">{video.ArtistItems?.length ? <ArtistLinks item={video} /> : video.Artists?.join(', ')}</div>
+        <div className="np-tags">
+          <span>Music video</span>
+          {res ? <span>{res}</span> : null}
+          {year ? <span>{year}</span> : null}
+        </div>
+        {song?.AlbumId ? (
+          <button className="vt-album" onClick={() => go({ name: 'album', id: song.AlbumId! })} title="Open the album">
+            <Artwork item={song} size={120} className="thumb" />
+            <span className="t">
+              <span className="name">{song.Album}</span>
+              <span className="sub">{['Album', song.ProductionYear].filter(Boolean).join(' · ')}</span>
+            </span>
+          </button>
+        ) : null}
+      </div>
+      <UpNextList />
+    </div>
+  );
+}
+
+/** The player bar while a video is open: the video's controls instead of the music's. */
+export function VideoBar({ video }: { video: BaseItem }) {
+  const client = useAuth((s) => s.client);
+  const { playing, time, duration, volume } = usePlayback();
+  const mode = useVideo((s) => s.mode);
+  const hasNext = useVideo((s) => s.upNext.length > 0);
+  const hasBack = useVideo((s) => s.played.length > 0);
+  const v = useVideo.getState();
+  const thumb = client?.videoThumbUrl(video, 240);
+  return (
+    <footer className="playerbar video">
+      <div className="np">
+        <button className="video-bar-thumb" title="Bigger" onClick={() => v.setMode(mode === 'theater' ? 'mini' : 'theater')}>
+          {thumb ? <img src={thumb} alt="" /> : <Play size={18} />}
+        </button>
+        <div key={`t-${video.Id}`} className="t">
+          <div className="name">{videoTitle(video.Name, video.Artists ?? []) || video.Name}</div>
+          <div className="by">{video.Artists?.join(', ')}</div>
+        </div>
+      </div>
+      <div className="controls">
+        <div className="buttons">
+          <button className="iconbtn" aria-label="Previous video" title="Previous video" disabled={!hasBack} onClick={() => v.back()}>
+            <SkipBack size={20} fill="currentColor" />
+          </button>
+          <button className="pp" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause (Space)' : 'Play (Space)'} onClick={videoControls.toggle}>
+            {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />}
+          </button>
+          <button className="iconbtn" aria-label="Next video" title="Next video" disabled={!hasNext} onClick={() => v.next()}>
+            <SkipForward size={20} fill="currentColor" />
+          </button>
+        </div>
+        <div className="seek">
+          <span>{formatTime(time)}</span>
+          <Range value={time} max={duration} onSet={videoControls.seek} />
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+      <div className="right">
+        <button className={`iconbtn${mode === 'mini' ? ' on' : ''}`} aria-label="In the sidebar" title="In the sidebar" onClick={() => v.setMode('mini')}>
+          <PanelRight size={18} />
+        </button>
+        <button className={`iconbtn${mode === 'theater' ? ' on' : ''}`} aria-label="Bigger" title="Bigger" onClick={() => v.setMode('theater')}>
+          <Maximize2 size={17} />
+        </button>
+        <button className="iconbtn" aria-label="Full screen" title="Full screen (F)" onClick={() => v.setMode('full')}>
+          <Expand size={17} />
+        </button>
+        <div className="volume" title={`Volume ${Math.round(volume * 100)}% (scroll to change)`} onWheel={(e) => videoControls.setVolume(volume + (e.deltaY < 0 ? 0.05 : -0.05))}>
+          <Volume2 size={18} />
+          <div className="vol">
+            <Range value={volume * 100} max={100} onSet={(x) => videoControls.setVolume(x / 100)} />
+          </div>
+        </div>
+        <button className="iconbtn" aria-label="Close the video" title="Close the video" onClick={() => v.close()}>
+          <X size={17} />
+        </button>
+      </div>
+    </footer>
+  );
+}
+
 // ---- The host ----
 
 export function VideoHost() {
@@ -355,6 +479,7 @@ export function VideoHost() {
   useEffect(() => {
     const v = el.current;
     if (!video || !v) return;
+    element = v;
     setError(null);
     const src = videoSource(video);
     if (!src) return;
@@ -382,10 +507,7 @@ export function VideoHost() {
   useEffect(
     () =>
       usePlayer.subscribe((s, prev) => {
-        if (s.playing && !prev.playing && useVideo.getState().video) {
-          useVideo.setState({ resume: false });
-          useVideo.getState().close();
-        }
+        if (s.playing && !prev.playing && useVideo.getState().video) useVideo.getState().close();
       }),
     [],
   );
@@ -445,8 +567,14 @@ export function VideoHost() {
           onPlay={(e) => {
             hearVideo(e.currentTarget);
             useVideo.setState({ countdown: null });
+            usePlayback.setState({ playing: true });
           }}
+          onPause={() => usePlayback.setState({ playing: false })}
+          onTimeUpdate={(e) => usePlayback.setState({ time: e.currentTarget.currentTime })}
+          onDurationChange={(e) => usePlayback.setState({ duration: Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0 })}
+          onVolumeChange={(e) => usePlayback.setState({ volume: e.currentTarget.muted ? 0 : e.currentTarget.volume })}
           onEnded={() => {
+            usePlayback.setState({ playing: false });
             const s = useVideo.getState();
             if (useSettings.getState().videoAutoplay && s.upNext.length) useVideo.setState({ countdown: COUNTDOWN_S });
           }}

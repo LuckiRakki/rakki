@@ -569,7 +569,7 @@ h1, h2, h3, p { margin: 0; }
 .vp-error { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 16px; border-radius: 8px; background: rgba(0, 0, 0, 0.75); color: #ff8a80; font-weight: 700; }
 
 /* Theater: the phone's video screen. */
-.vt { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; background: color-mix(in srgb, var(--tint) 45%, #050506); isolation: isolate; overflow: hidden; }
+.vt { position: fixed; inset: 0 0 var(--playerbar) 0; z-index: 70; display: flex; flex-direction: column; background: color-mix(in srgb, var(--tint) 45%, #050506); isolation: isolate; overflow: hidden; }
 .vt-backdrop { position: absolute; inset: -80px; background-size: cover; background-position: center; filter: blur(70px) saturate(1.4) brightness(0.45); z-index: -1; }
 .vt-top { display: flex; align-items: center; gap: 6px; height: var(--titlebar); padding-left: 10px; flex: none; }
 .vt-top .iconbtn:not(.win) { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: rgba(255, 255, 255, 0.8); }
@@ -577,8 +577,8 @@ h1, h2, h3, p { margin: 0; }
 .vt-label { flex: 1; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
 .vt-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; padding: 6px 28px 22px; }
 .vt-main { min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; scrollbar-width: none; }
-.vt-stage { width: min(100%, calc((100vh - 290px) * 16 / 9)); aspect-ratio: 16 / 9; flex: none; align-self: center; }
-.vt-under { width: min(100%, calc((100vh - 290px) * 16 / 9)); align-self: center; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: end; }
+.vt-stage { width: min(100%, calc((100vh - 290px - var(--playerbar)) * 16 / 9)); aspect-ratio: 16 / 9; flex: none; align-self: center; }
+.vt-under { width: min(100%, calc((100vh - 290px - var(--playerbar)) * 16 / 9)); align-self: center; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: end; }
 .vt-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .vt-title { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vt-by { color: rgba(255, 255, 255, 0.8); font-weight: 600; font-size: 16px; }
@@ -612,7 +612,21 @@ h1, h2, h3, p { margin: 0; }
 .vf-title .by { margin-left: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.65); }
 
 /* Mini: in the right sidebar, or a small card when it's closed. */
-.mini-video { padding: 0 12px 12px; flex: none; }
+.mini-video { padding: 0 0 4px; flex: none; }
+.video-panel { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.video-panel > * { flex-shrink: 0; }
+.video-panel .mini-video-row { display: none; }
+.video-panel-thumb { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000; }
+.video-panel-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; transition: opacity 0.2s; }
+.video-panel-thumb:hover img { opacity: 1; }
+.video-panel-info { display: flex; flex-direction: column; gap: 6px; }
+.video-panel .vt-next h3 { font-size: 15px; }
+.video-panel .vt-next-thumb { width: 96px; }
+.video-panel .vt-next-row:hover { background: var(--surface-2); }
+.video-panel .vt-next-row .sub { color: var(--text-3); }
+.video-bar-thumb { width: 96px; aspect-ratio: 16 / 9; flex: none; border-radius: 6px; overflow: hidden; background: #000; display: grid; place-items: center; color: #fff; }
+.video-bar-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.playerbar.video .np .t { min-width: 0; }
 .mini-video.floating { position: fixed; right: 16px; bottom: calc(var(--playerbar) + 12px); width: 340px; z-index: 44; padding: 10px; border-radius: 12px; background: #1d1d20; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
 .mini-video-stage { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; background: #000; }
 .mini-video-row { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
