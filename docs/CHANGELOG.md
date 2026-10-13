@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.17.0 (2026-10-13)
+- **Your devices on the phone**: the laptop button next to AirPlay in the player lists your other
+  Rakki apps (the computer) and what each is playing. Control one from there (previous, play /
+  pause, next), take its music over ("Play here"), or send the phone's music to it ("Play
+  there"), at the same moment in the song.
+- Coming back to Rakki reconnects to your server's live connection at once, so the computer can
+  control the phone again right away.
+
 ## 1.16.0 (2026-10-13)
 - **Rakki on your computer can control the phone and move music between them** (playing
   across devices, phases 2 and 3). The phone listens on your server's live connection while

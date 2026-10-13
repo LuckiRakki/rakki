@@ -243,12 +243,16 @@ export default function PlayerScreen() {
           {/* Output + queue */}
           {/* Three columns: the middle (Lyrics, Video) stays centred under play/pause. */}
           <View style={styles.bottomRow}>
-            <View style={styles.side}>
+            <View style={[styles.side, { gap: t.space.md }]}>
               {RoutePicker ? (
                 <RoutePicker style={{ width: 30, height: 30 }} tintColor={t.colors.text} activeTintColor={t.colors.accent} />
               ) : (
                 <Ionicons name="phone-portrait-outline" size={22} color={t.colors.textMuted} />
               )}
+              {/* Your other Rakki apps: control them, move the music (app/devices.tsx). */}
+              <Pressable hitSlop={10} onPress={() => router.push('/devices')} accessibilityLabel="Your devices">
+                <Ionicons name="laptop-outline" size={24} color={t.colors.text} />
+              </Pressable>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.sm }}>
               {plainRadio ? null : (

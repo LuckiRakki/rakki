@@ -3,6 +3,8 @@
 // iOS keeps Rakki running while it plays, so a playing phone can always be controlled; an idle,
 // suspended one hears nothing until it's opened. "Stop" pauses, so the queue is still here.
 // (Volume isn't offered: an app can't set the phone's volume.)
+import { AppState } from 'react-native';
+
 import { useAuth } from '@/auth/store';
 import { listenForCommands, type RemotePlayer } from '@/remote/socket';
 import { usePlayer } from '@/player/store';
@@ -38,6 +40,7 @@ const player: RemotePlayer = {
 };
 
 let stop: (() => void) | null = null;
+let watching = false;
 
 /** At sign-in (the root layout, whenever the account changes); stops the previous one. */
 export function startRemoteCommands() {
@@ -45,5 +48,11 @@ export function startRemoteCommands() {
   stop = null;
   const client = useAuth.getState().client;
   if (client) stop = listenForCommands(client, player);
+  // iOS drops the connection while Rakki sleeps; coming back to the front reconnects at once
+  // instead of waiting out the retry pause.
+  if (!watching) {
+    watching = true;
+    AppState.addEventListener('change', (state) => state === 'active' && useAuth.getState().client && startRemoteCommands());
+  }
 }
 

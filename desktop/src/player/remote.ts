@@ -11,7 +11,11 @@ import { create } from 'zustand';
 import { control, deviceNow, positionNow, pullFrom, pushTo, setDeviceVolume, type RakkiDevice } from '@/remote/devices';
 import { listenForCommands, type RemotePlayer } from '@/remote/socket';
 import { client } from '~/auth/session';
-import { usePlayer } from '~/player/store';
+import { invoke } from '@tauri-apps/api/core';
+
+import { inTauri } from '~/lib/tauri';
+import { engine } from '~/player/engine';
+import { handOverMedia, usePlayer } from '~/player/store';
 import { useVideo } from '~/player/video';
 import { toast } from '~/ui/overlays';
 
@@ -154,3 +158,87 @@ export const useRemote = create<RemoteState>((set, get) => ({
     }
   },
 }));
+
+// ---- Phase 4: the media controls and the tray follow the controlled device ----
+
+const TICKS = 10_000_000;
+
+/** Media keys, the media overlay and the tray menu, for the controlled device. */
+function remoteKeys(command: string): boolean {
+  const r = useRemote.getState();
+  const t = r.target;
+  if (!t) return false;
+  if (command === 'toggle') r.command('PlayPause');
+  else if (command === 'play') t.paused && r.command('PlayPause');
+  else if (command === 'pause' || command === 'stop') !t.paused && r.command('PlayPause');
+  else if (command === 'next') r.command('NextTrack');
+  else if (command === 'previous') r.command('PreviousTrack');
+  else if (command === 'forward') r.seek(positionNow(t) + 10);
+  else if (command === 'backward') r.seek(Math.max(0, positionNow(t) - 10));
+  else if (command.startsWith('position:')) r.seek(Number(command.slice(9)));
+  return true;
+}
+
+let shown = '';
+
+function showRemoteMedia(t: RakkiDevice) {
+  const c = client();
+  const item = t.item;
+  const key = `${t.sessionId}|${item?.Id}|${t.paused}|${Math.round(t.reportedSec)}`;
+  if (key === shown) return;
+  const songChanged = shown.split('|')[1] !== item?.Id || shown.split('|')[0] !== t.sessionId;
+  shown = key;
+  if (songChanged) {
+    void engine.nowPlaying(
+      item
+        ? {
+            title: item.Name,
+            artist: `${item.Artists?.join(', ') || item.AlbumArtist || ''} · on ${t.name}`,
+            album: item.Album ?? '',
+            artwork: c?.imageUrl(item, 600),
+            duration: item.RunTimeTicks ? item.RunTimeTicks / TICKS : undefined,
+          }
+        : null,
+    );
+  }
+  if (item) void engine.playback(!t.paused, positionNow(t));
+}
+
+/** The tray icon's tooltip: what's playing, and where. */
+function trayText(): string {
+  const t = useRemote.getState().target;
+  if (t) return t.item ? `Rakki: playing on ${t.name}\n${t.item.Name} · ${t.item.Artists?.join(', ') ?? ''}` : `Rakki: controlling ${t.name}`;
+  const p = usePlayer.getState();
+  const item = p.queue[p.index];
+  if (!item) return 'Rakki';
+  return `Rakki${p.playing ? '' : ' (paused)'}\n${item.Name} · ${item.Artists?.join(', ') || item.AlbumArtist || ''}`;
+}
+
+let trayShown = '';
+function updateTray() {
+  const text = trayText().slice(0, 127);
+  if (text === trayShown || !inTauri) return;
+  trayShown = text;
+  void invoke('tray_tooltip', { text }).catch(() => {});
+}
+
+let wired = false;
+
+/** main.tsx, once. */
+export function startRemoteMedia() {
+  if (wired) return;
+  wired = true;
+  useRemote.subscribe((s, prev) => {
+    if (s.target && !prev.target) handOverMedia(remoteKeys);
+    if (!s.target && prev.target) {
+      shown = '';
+      handOverMedia(null);
+    }
+    if (s.target) showRemoteMedia(s.target);
+    updateTray();
+  });
+  usePlayer.subscribe((s, prev) => {
+    if (s.playing !== prev.playing || s.queue[s.index]?.Id !== prev.queue[prev.index]?.Id) updateTray();
+  });
+  updateTray();
+}

@@ -13,6 +13,8 @@ import { create } from 'zustand';
 import type { BaseItem } from '@/api/jellyfin';
 import { useSettings } from '@/settings/store';
 import { inTauri } from '~/lib/tauri';
+import { positionNow } from '@/remote/devices';
+import { useRemote } from '~/player/remote';
 import { currentPosition, usePlayer } from '~/player/store';
 
 const KEY = 'rakki.discord';
@@ -96,20 +98,25 @@ let last = '';
 async function sync(force = false) {
   if (!inTauri) return;
   const d = useDiscord.getState();
-  const p = usePlayer.getState();
+  const local = usePlayer.getState();
+  // Controlling another device: that's what you're listening to.
+  const t = useRemote.getState().target;
+  const p = t?.item
+    ? { queue: [t.item], index: 0, playing: !t.paused, duration: (t.item.RunTimeTicks ?? 0) / 10_000_000, position: positionNow(t), positionAt: performance.now() }
+    : local;
   const item = p.queue[p.index];
   const appId = discordAppId(d.appId);
   const on = d.enabled;
   const show = on && item && p.playing;
   // What would be shown, to skip repeats (the time bar is checked separately below).
-  const what = show ? `${item.Id}|${Math.round(currentPosition(p))}` : 'off';
+  const what = show ? `${item.Id}|${Math.round(t?.item ? positionNow(t) : currentPosition(local))}` : 'off';
   if (!force && what === last) return;
   if (!on && last === 'off') return;
   last = what;
 
   let activity: Record<string, unknown> | null = null;
   if (show) {
-    const start = Date.now() - currentPosition(p) * 1000;
+    const start = Date.now() - (t?.item ? positionNow(t) : currentPosition(local)) * 1000;
     const cover = await coverFor(item);
     activity = {
       type: 2, // Listening
@@ -134,6 +141,10 @@ export function startDiscord() {
   if (started || !inTauri) return;
   started = true;
   let lastExpected = 0;
+  useRemote.subscribe((s, prev) => {
+    const a = s.target, b = prev.target;
+    if (a?.sessionId !== b?.sessionId || a?.item?.Id !== b?.item?.Id || a?.paused !== b?.paused) void sync(true);
+  });
   usePlayer.subscribe((s, prev) => {
     const changed = s.queue[s.index]?.Id !== prev.queue[prev.index]?.Id || s.playing !== prev.playing;
     // A seek: the position moved away from where time alone would put it.

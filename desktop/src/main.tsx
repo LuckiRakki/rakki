@@ -19,7 +19,7 @@ import { NowPlaying } from '~/player/NowPlaying';
 import { VideoHost } from '~/player/VideoHost';
 import { startUpdateCheck } from '~/lib/updateCheck';
 import { startDiscord } from '~/player/discord';
-import { startRemoteCommands, useRemote } from '~/player/remote';
+import { startRemoteCommands, startRemoteMedia, useRemote } from '~/player/remote';
 import { startRadioWatch } from '~/radio/radio';
 import { currentPosition, startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
@@ -60,6 +60,7 @@ function App() {
     startPlayer();
     startDiscord();
     startRadioWatch();
+    startRemoteMedia();
     // Music started here: the player bar is this computer's again.
     usePlayer.subscribe((p, prev) => {
       if (p.playing && !prev.playing && useRemote.getState().target) useRemote.getState().setTarget(null);

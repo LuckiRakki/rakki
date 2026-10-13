@@ -7,8 +7,15 @@ Built: phase 1 (2026-10-12: both apps send capabilities and their queue; the des
 button lists your other Rakki apps), phases 2 and 3 (2026-10-13: both apps take commands over
 the server's live connection, src/remote/socket.ts; the desktop controls another device from
 its player bar and moves playback both ways, src/remote/devices.ts + desktop
-src/player/remote.ts). Not yet: the phone's own Devices button (controlling the desktop from
-the phone), and phase 4.
+src/player/remote.ts), phase 4 (2026-10-13: the desktop's media keys, Windows' media overlay /
+MPRIS, tray menu and tooltip, and Discord follow the device it controls; the phone has its own
+Devices screen, app/devices.tsx; the phone reconnects as soon as it's back in front).
+
+Left out on purpose:
+- The phone's lock screen can't show "Playing on {computer}": iOS only shows what the app itself
+  is playing. The phone's Devices screen is the place for it.
+- The Rakki plugin's full-queue store isn't needed: reports carry 20 songs before and 180 after
+  the playing one, in the queue's own (shuffled) order, which is all a hand-off uses.
 
 ## What Jellyfin already gives us
 

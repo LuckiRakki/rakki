@@ -80,6 +80,14 @@ async fn discord_set(discord: State<'_, Discord>, app_id: String, activity: Opti
     discord.set(&app_id, activity).await
 }
 
+/// The tray icon's tooltip: what's playing, and where (player/remote.ts).
+#[tauri::command]
+fn tray_tooltip(app: AppHandle, text: String) {
+    if let Some(tray) = app.tray_by_id("rakki") {
+        let _ = tray.set_tooltip(Some(text));
+    }
+}
+
 fn show_window(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.unminimize();
@@ -163,7 +171,8 @@ pub fn run() {
             player_stop,
             media_now_playing,
             media_playback,
-            discord_set
+            discord_set,
+            tray_tooltip
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

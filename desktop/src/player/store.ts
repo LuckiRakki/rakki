@@ -140,10 +140,48 @@ function reportStopped(position: number) {
   session = null;
 }
 
+// ---- The system's media controls (media keys, Windows' overlay, Linux's MPRIS, the tray) ----
+// They follow this computer, unless another device is being controlled (player/remote.ts),
+// which then owns them: its song is shown and the keys go to it.
+
+let controlOverride: ((command: string) => boolean) | null = null;
+let remoteOwnsMedia = false;
+
+/** player/remote.ts: take the media keys (return true when handled) and the media info. */
+export function handOverMedia(override: ((command: string) => boolean) | null) {
+  controlOverride = override;
+  remoteOwnsMedia = !!override;
+  if (!override) showLocalMedia();
+}
+
+const media = {
+  nowPlaying: (...args: Parameters<typeof engine.nowPlaying>) => (remoteOwnsMedia ? undefined : engine.nowPlaying(...args)),
+  playback: (playing: boolean, position: number) => (remoteOwnsMedia ? undefined : engine.playback(playing, position)),
+};
+
+function localNowPlaying(item: BaseItem) {
+  const c = client();
+  return {
+    title: item.Name,
+    artist: item.Artists?.join(', ') || item.AlbumArtist || '',
+    album: item.Album ?? '',
+    artwork: item.Radio ? item.Radio.coverUrl : c?.imageUrl(item, 600),
+    duration: item.RunTimeTicks ? item.RunTimeTicks / TICKS_PER_SECOND : undefined,
+  };
+}
+
+/** Show this computer's song in the media controls again (control came back here). */
+export function showLocalMedia() {
+  const s = usePlayer.getState();
+  const item = s.queue[s.index];
+  void engine.nowPlaying(item ? localNowPlaying(item) : null);
+  if (item) void engine.playback(s.playing, currentPosition(s));
+}
+
 /** A new song is on: tell Jellyfin and the system's media controls. */
 function songStarted(item: BaseItem | undefined) {
   if (!item) {
-    void engine.nowPlaying(null);
+    void media.nowPlaying(null);
     return;
   }
   // Normalization: Jellyfin's loudness gain for the song (dB), through mpv's volume-gain.
@@ -154,14 +192,7 @@ function songStarted(item: BaseItem | undefined) {
     setTimeout(() => void maybeExtend(), 4000);
     reportStart(item);
   }
-  const c = client();
-  void engine.nowPlaying({
-    title: item.Name,
-    artist: item.Artists?.join(', ') || item.AlbumArtist || '',
-    album: item.Album ?? '',
-    artwork: item.Radio ? item.Radio.coverUrl : c?.imageUrl(item, 600),
-    duration: item.RunTimeTicks ? item.RunTimeTicks / TICKS_PER_SECOND : undefined,
-  });
+  void media.nowPlaying(localNowPlaying(item));
 }
 
 // ---- Autoplay ----
@@ -351,7 +382,7 @@ export function startPlayer() {
           if (!s.queue.length) return;
           const playing = value === false;
           usePlayer.setState({ playing, position: currentPosition(s), positionAt: now });
-          void engine.playback(playing, currentPosition(s));
+          void media.playback(playing, currentPosition(s));
           break;
         }
         case 'time-pos':
@@ -368,7 +399,7 @@ export function startPlayer() {
           if (value === true && usePlayer.getState().queue.length) {
             reportStopped(usePlayer.getState().duration);
             usePlayer.setState({ playing: false, position: 0, positionAt: now });
-            void engine.playback(false, 0);
+            void media.playback(false, 0);
           }
           break;
       }
@@ -391,6 +422,7 @@ export function startPlayer() {
       }
     },
     onControl(command) {
+      if (controlOverride?.(command)) return;
       const p = usePlayer.getState();
       if (command === 'toggle') p.toggle();
       else if (command === 'play') !p.playing && p.toggle();
