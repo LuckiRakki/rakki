@@ -4,6 +4,10 @@
    background. --accent follows your colour or Lucid (the album that's playing). */
 
 :root {
+  /* Motion: one set of curves for the whole app. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --bg: #050506;
   --surface: #121214;
   --surface-2: #1b1b1e;
@@ -674,6 +678,62 @@ h1, h2, h3, p { margin: 0; }
 .signin-card p { margin-bottom: 8px; line-height: 1.5; }
 .wordmark { font-size: 40px; font-weight: 900; letter-spacing: -0.04em; }
 .qc-code { font-size: 46px; font-weight: 900; letter-spacing: 0.24em; text-align: center; padding: 14px 0; color: var(--accent); }
+
+/* ---- Motion ---- */
+
+@keyframes route-in { from { opacity: 0; transform: translateY(10px); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes swap-in { from { opacity: 0; transform: scale(0.94); } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.95); } }
+@keyframes player-up { from { opacity: 0; transform: translateY(5%); } }
+@keyframes player-down { to { opacity: 0; transform: translateY(5%); } }
+@keyframes fade-out { to { opacity: 0; } }
+
+.route { animation: route-in 0.32s var(--ease-out); }
+.rightpanel .panel-body { animation: fade-in 0.25s var(--ease-out); }
+.mini-video { animation: fade-in 0.3s var(--ease-out); }
+.menu { animation: pop-in 0.16s var(--ease-out); transform-origin: top left; }
+.dialog { animation: pop-in 0.22s var(--ease-spring); }
+.devices-pop { animation: rise-in 0.22s var(--ease-out); transform-origin: bottom right; }
+
+/* The full player slides up from the player bar and back down. */
+.nowplaying { animation: player-up 0.38s var(--ease-out); }
+.nowplaying.leaving { animation: player-down 0.26s var(--ease-in-out) forwards; pointer-events: none; }
+.np-cover { animation: swap-in 0.45s var(--ease-out); }
+.np-tab-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: fade-in 0.28s var(--ease-out); }
+.np-tab-pane > .lyrics, .np-tab-pane > .songtable, .np-tab-pane > .spicy-view { flex: 1; min-height: 0; }
+
+/* Videos: the theater fades, and the video glides between its places. */
+.vt { animation: fade-in 0.3s var(--ease-out); }
+.vt.leaving { animation: fade-out 0.26s var(--ease-in-out) forwards; pointer-events: none; }
+.video-frame.moving { z-index: 72; transition: left 0.44s var(--ease-out), top 0.44s var(--ease-out), width 0.44s var(--ease-out), height 0.44s var(--ease-out), border-radius 0.44s var(--ease-out); }
+
+/* The song in the player bar crossfades when it changes. */
+.playerbar .np-art, .playerbar .np .t { animation: swap-in 0.35s var(--ease-out); }
+
+/* Your Library's buttons fold away smoothly. */
+.side-links-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.32s var(--ease-out), opacity 0.25s; }
+.side-links-fold > .side-links { min-height: 0; overflow: hidden; }
+.side-links-fold.folded { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
+.side-head-chev { transition: transform 0.3s var(--ease-out); }
+
+/* Things respond to the hand: press, hover. */
+.iconbtn:active:not(:disabled) { transform: scale(0.9); }
+.pp { transition: transform 0.18s var(--ease-spring); }
+.pp:active { transform: scale(0.92); }
+.primary:active:not(:disabled), .secondary:active:not(:disabled), .pill-btn:active, .filters button:active { transform: scale(0.96); }
+.secondary, .pill-btn, .filters button { transition: transform 0.15s var(--ease-out), background 0.15s, border-color 0.15s; }
+.side-links .link { transition: background 0.15s, color 0.15s, transform 0.15s var(--ease-out); }
+.side-links .link:active { transform: scale(0.97); }
+.card .artwork { transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out); }
+.card:hover .artwork { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45); }
+.card:active .artwork { transform: translateY(-1px) scale(0.985); }
+.tt-row, .qrow, .row, .st-row, .station, .video-card .video-thumb { transition: background 0.15s, transform 0.2s var(--ease-out); }
+.video-card:hover .video-thumb { transform: translateY(-3px); }
+.quick { transition: background 0.18s, transform 0.2s var(--ease-out); }
+.quick:active { transform: scale(0.98); }
+.range .fill { transition: background 0.15s; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 

@@ -53,6 +53,7 @@ function onKey(e: KeyboardEvent) {
 function App() {
   const signedIn = useAuth((s) => !!s.client);
   const { panel, sidebarWidth, panelWidth, nowPlaying, mini } = useLayout();
+  const routeKey = useNav((s) => `${s.route.name}:${'id' in s.route ? s.route.id : ''}`);
   useApplyTheme();
 
   useEffect(() => {
@@ -103,7 +104,9 @@ function App() {
           <Sidebar />
           <Resizer which="sidebar" />
           <main className="panel main" id="main">
-            <Page />
+            <div key={routeKey} className="route">
+              <Page />
+            </div>
           </main>
           {panel ? <Resizer which="panel" /> : null}
           <NowPlayingPanel />

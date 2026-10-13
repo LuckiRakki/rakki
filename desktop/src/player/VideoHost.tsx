@@ -22,6 +22,7 @@ import { useLayout } from '~/layout/layout';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { songForVideo, useVideo, videoSource } from '~/player/video';
+import { usePresence } from '~/ui/motion';
 import { ArtistLinks, Artwork } from '~/ui/parts';
 
 const COUNTDOWN_S = 5;
@@ -198,7 +199,7 @@ function UpNextList() {
   );
 }
 
-function Theater({ video }: { video: BaseItem }) {
+function Theater({ video, leaving }: { video: BaseItem; leaving: boolean }) {
   const client = useAuth((s) => s.client);
   const fullscreen = useLayout((s) => s.fullscreen);
   const song = useQuery({ queryKey: ['videoSong', video.Id], queryFn: () => songForVideo(video), staleTime: 6 * 3600_000 }).data;
@@ -210,7 +211,7 @@ function Theater({ video }: { video: BaseItem }) {
   const badges = [res, video.MediaSources?.[0]?.MediaStreams?.find((x) => x.Type === 'Video')?.Codec?.toUpperCase(), year].filter(Boolean);
   const v = useVideo.getState();
   return (
-    <div className="vt" style={{ ['--tint' as string]: tint }}>
+    <div className={`vt${leaving ? ' leaving' : ''}`} style={{ ['--tint' as string]: tint }}>
       {thumb ? <div className="vt-backdrop" style={{ backgroundImage: `url("${thumb}")` }} /> : null}
       <div className="vt-top" data-tauri-drag-region>
         <button className="iconbtn" aria-label="Shrink to the sidebar" title="Shrink to the sidebar (Esc)" onClick={() => v.setMode('mini')}>
@@ -332,6 +333,23 @@ export function VideoHost() {
   const el = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const rect = useSlotRect(mode === 'full' ? null : slot, mode === 'full');
+  const theater = usePresence(!!video && mode === 'theater', 260);
+  // While it changes size, the video glides from its old place to the new one. Marked in the
+  // same render as the change, so the very first move is already animated.
+  const modeSeen = useRef(mode);
+  const movingUntil = useRef(0);
+  if (modeSeen.current !== mode) {
+    modeSeen.current = mode;
+    movingUntil.current = performance.now() + 460;
+  }
+  const [, settle] = useState(0);
+  useEffect(() => {
+    const left = movingUntil.current - performance.now();
+    if (left <= 0) return;
+    const t = setTimeout(() => settle((n) => n + 1), left);
+    return () => clearTimeout(t);
+  }, [mode]);
+  const moving = performance.now() < movingUntil.current;
 
   // Load the video: straight from the file, or HLS (the webview's own, else hls.js).
   useEffect(() => {
@@ -410,9 +428,9 @@ export function VideoHost() {
     : { left: 0, top: 0, width: 1, height: 1, opacity: 0, pointerEvents: 'none' };
   return (
     <>
-      {mode === 'theater' ? <Theater video={video} /> : null}
+      {theater.render ? <Theater video={video} leaving={theater.leaving} /> : null}
       {mode === 'mini' && !panel ? <MiniVideoCard floating /> : null}
-      <div className={`video-frame ${mode}`} style={placed}>
+      <div className={`video-frame ${mode}${moving ? ' moving' : ''}`} style={placed}>
         <video
           ref={el}
           className="video-el"

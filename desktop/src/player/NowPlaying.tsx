@@ -22,6 +22,7 @@ import { SpicyView } from '~/spicy/SpicyView';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
+import { usePresence } from '~/ui/motion';
 import { openMenu } from '~/ui/overlays';
 import { ArtistLinks, Artwork, formatTime, SaveButton, ticksToSeconds } from '~/ui/parts';
 
@@ -162,6 +163,7 @@ export function NowPlaying() {
   const full = useItem(open ? item?.Id : undefined).data;
   const client = useAuth((s) => s.client);
   const [idle, setIdle] = useState(false);
+  const presence = usePresence(open, 260);
 
   useEffect(() => {
     if (!open) return;
@@ -193,7 +195,7 @@ export function NowPlaying() {
     if (open && !item) useLayout.getState().setNowPlaying(false);
   }, [open, item]);
 
-  if (!open || !item) return null;
+  if (!presence.render || !item) return null;
   const tint = client ? artColor(client.blurhash(item), '#202024') : '#202024';
   const big = client?.imageUrl(item, 1000);
   const song = { ...item, ...full, UserData: item.UserData };
@@ -201,7 +203,7 @@ export function NowPlaying() {
   const l = useLayout.getState();
 
   return (
-    <div className={`nowplaying${idle ? ' idle' : ''}`} style={{ ['--tint' as string]: tint }}>
+    <div className={`nowplaying${idle ? ' idle' : ''}${presence.leaving ? ' leaving' : ''}`} style={{ ['--tint' as string]: tint }}>
       <div className="np-solid" />
       {big ? <div className="np-backdrop" style={{ backgroundImage: `url("${big}")` }} /> : null}
       <div className="np-shade" />
@@ -225,7 +227,7 @@ export function NowPlaying() {
       </div>
       <div className="np-body">
         <div className="np-left">
-          <Artwork item={item} size={1000} className="np-cover" />
+          <Artwork key={item.Id} item={item} size={1000} className="np-cover" />
           <div className="np-meta" onContextMenu={(e) => openMenu(e, songMenu([item]))}>
             <div className="np-title">{item.Name}</div>
             <div className="np-artist" onClick={() => l.setNowPlaying(false)}>
@@ -253,7 +255,9 @@ export function NowPlaying() {
           </div>
         </div>
         <div className="np-right">
-          {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : <RelatedTab item={item} />}
+          <div key={tab} className="np-tab-pane">
+            {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : <RelatedTab item={item} />}
+          </div>
         </div>
       </div>
       <div className="np-tabs">

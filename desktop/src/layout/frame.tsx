@@ -289,13 +289,13 @@ export function Sidebar() {
   return (
     <aside className="sidebar panel">
       <LibraryHead />
-      {libOpen ? (
+      <div className={`side-links-fold${libOpen ? '' : ' folded'}`} aria-hidden={!libOpen}>
         <nav className="side-links">
           {LIBRARY_TABS.filter((t) => !hiddenTabs.includes(t.to.name)).map(({ to, label, Icon }) => (
             <NavLink key={to.name} to={to} icon={<Icon size={17} />} label={label} />
           ))}
         </nav>
-      ) : null}
+      </div>
       <div className="side-lists">
         <button className={`row${route.name === 'liked' ? ' on' : ''}`} onClick={() => go({ name: 'liked' })}>
           <div className="artwork empty liked-art thumb">
@@ -522,13 +522,13 @@ export function PlayerBar() {
       <div className="np">
         {now ? (
           <>
-            <button className="np-art" title={open ? 'Close full player' : 'Full player'} onClick={() => l.setNowPlaying(!open)}>
+            <button key={now.Id} className="np-art" title={open ? 'Close full player' : 'Full player'} onClick={() => l.setNowPlaying(!open)}>
               <Artwork item={now} size={160} className="thumb" />
               <span className="expand">
                 <Maximize2 size={14} />
               </span>
             </button>
-            <div className="t" onContextMenu={now.Radio ? undefined : (e) => openMenu(e, songMenu([now]))}>
+            <div key={`t-${now.Id}`} className="t" onContextMenu={now.Radio ? undefined : (e) => openMenu(e, songMenu([now]))}>
               <div className="name linkish" onClick={() => now.AlbumId && go({ name: 'album', id: now.AlbumId })}>
                 {now.Name}
               </div>
