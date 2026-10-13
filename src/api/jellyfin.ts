@@ -138,8 +138,15 @@ export interface SessionInfo {
   NowPlayingItem?: BaseItem;
   PlayState?: { PositionTicks?: number; IsPaused?: boolean; RepeatMode?: string; PlaybackOrder?: string };
   NowPlayingQueue?: QueueItem[];
+  /** The playing song's entry in NowPlayingQueue. */
+  PlaylistItemId?: string;
   SupportsRemoteControl?: boolean;
+  /** What it said it can do (POST /Sessions/Capabilities/Full). */
+  Capabilities?: { SupportedCommands?: string[]; SupportsMediaControl?: boolean };
 }
+
+/** Playback commands another app can be sent (POST /Sessions/{id}/Playing/{command}). */
+export type PlaystateCommand = 'Stop' | 'Pause' | 'Unpause' | 'PlayPause' | 'NextTrack' | 'PreviousTrack' | 'Seek';
 
 /** What this app can do when another app controls it (POST /Sessions/Capabilities/Full). */
 export interface ClientCapabilities {
@@ -366,6 +373,32 @@ export class JellyfinClient {
    */
   getSessions(withinSeconds = 960) {
     return this.get<SessionInfo[]>('/Sessions', { ActiveWithinSeconds: withinSeconds });
+  }
+
+  /** Pause, resume, skip, seek or stop another app (remote/devices.ts). */
+  sessionPlaystate(sessionId: string, command: PlaystateCommand, seekPositionTicks?: number) {
+    return this.send('POST', `/Sessions/${sessionId}/Playing/${command}`, undefined, { seekPositionTicks });
+  }
+
+  /** Have another app play these songs, from this one, at this position. */
+  sessionPlay(sessionId: string, itemIds: string[], startIndex: number, startPositionTicks: number) {
+    return this.send('POST', `/Sessions/${sessionId}/Playing`, undefined, {
+      playCommand: 'PlayNow',
+      itemIds: itemIds.join(','),
+      startIndex,
+      startPositionTicks: Math.max(0, Math.round(startPositionTicks)),
+    });
+  }
+
+  /** A general command for another app (SetVolume and the like). */
+  sessionCommand(sessionId: string, name: string, args: Record<string, string> = {}) {
+    return this.send('POST', `/Sessions/${sessionId}/Command`, { Name: name, Arguments: args });
+  }
+
+  /** The server's live connection, which delivers other apps' commands to this one. */
+  socketUrl(): string {
+    const { serverUrl, deviceId, token } = this.session;
+    return `${serverUrl.replace(/^http/i, 'ws')}/socket${query({ api_key: token, deviceId })}`;
   }
 
   /** Tell the server what this app can do (it shows other apps and the dashboard). */

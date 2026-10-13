@@ -34,7 +34,8 @@ interface PlayerState {
   /** The window is hidden to the tray: nothing on screen needs updating. */
   hidden: boolean;
 
-  playQueue(items: BaseItem[], start?: number, opts?: { shuffle?: boolean }): void;
+  /** `at`: seconds into the first song (playback moved from another device). */
+  playQueue(items: BaseItem[], start?: number, opts?: { shuffle?: boolean; at?: number }): void;
   playAt(index: number): void;
   toggle(): void;
   next(): void;
@@ -238,10 +239,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
         const first = items[start];
         const rest = shuffled(items.filter((_, i) => i !== start));
         set({ queue: [first, ...rest], unshuffled: items, shuffle: true });
-        load(0);
+        load(0, opts?.at ?? 0);
       } else {
         set({ queue: items, unshuffled: null, shuffle: false });
-        load(start);
+        load(start, opts?.at ?? 0);
       }
     },
 

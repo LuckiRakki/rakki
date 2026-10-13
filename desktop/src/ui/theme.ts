@@ -1,5 +1,6 @@
 // The accent colour: your own, or Lucid (the colour of the album that's playing, like the phone
-// app's), applied as CSS variables so every screen follows without re-rendering.
+// app's, or of the music video while one is open), applied as CSS variables so every screen
+// follows without re-rendering.
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
@@ -8,6 +9,7 @@ import { vividAccent, withAlpha } from '@/lib/color';
 import { readPref, writePref } from '@/lib/prefs';
 import { useAuth } from '~/auth/session';
 import { usePlayer } from '~/player/store';
+import { useVideo } from '~/player/video';
 
 export const DEFAULT_ACCENT = '#fd642d';
 const KEY = 'rakki.desktop.theme';
@@ -40,7 +42,10 @@ export const useTheme = create<ThemeState>((set, get) => ({
 export function useApplyTheme() {
   const { accent, lucid } = useTheme();
   const client = useAuth((s) => s.client);
-  const item = usePlayer((s) => s.queue[s.index]);
+  const song = usePlayer((s) => s.queue[s.index]);
+  const video = useVideo((s) => s.video);
+  // A video's own picture when it has one, else the song's.
+  const item = video && client?.blurhash(video) ? video : song;
   const hash = item && client ? client.blurhash(item) : undefined;
   const rgb = lucid ? blurhashAverage(hash) : null;
   const color = rgb ? vividAccent(rgb) : accent;

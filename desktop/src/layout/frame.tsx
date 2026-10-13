@@ -50,6 +50,8 @@ import { setLiked } from '~/library/actions';
 import { collectionMenu, songMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout, win } from '~/layout/layout';
 import { DevicesButton } from '~/layout/Devices';
+import { RemoteBar } from '~/layout/RemoteBar';
+import { useRemote } from '~/player/remote';
 import { setMini } from '~/layout/MiniPlayer';
 import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav, type Route } from '~/nav';
@@ -516,7 +518,10 @@ export function PlayerBar() {
   const panel = useLayout((s) => s.panel);
   const open = useLayout((s) => s.nowPlaying);
   const tab = useLayout((s) => s.playerTab);
+  const target = useRemote((s) => s.target);
   const l = useLayout.getState();
+  // Another device picked in Devices: the bar is that device's.
+  if (target) return <RemoteBar target={target} />;
   return (
     <footer className="playerbar">
       <div className="np">

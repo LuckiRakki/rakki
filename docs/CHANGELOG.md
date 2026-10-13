@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.16.0 (2026-10-13)
+- **Rakki on your computer can control the phone and move music between them** (playing
+  across devices, phases 2 and 3). The phone listens on your server's live connection while
+  Rakki is open or playing, and does what the desktop asks: play these songs from here, pause,
+  resume, skip, seek, repeat, shuffle. "Play here" on the desktop takes over what the phone is
+  playing at the same moment (the phone pauses); "Play on phone" sends the desktop's queue to
+  the phone. A stopped phone keeps its queue (it pauses).
+
 ## 1.15.2 (2026-10-12)
 - The list of your other Rakki apps (the desktop's Devices button) now finds the phone: it
   asked the server only for apps that accept remote control, which Rakki doesn't yet.

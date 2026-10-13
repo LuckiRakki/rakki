@@ -377,11 +377,15 @@ export function VideoHost() {
     };
   }, [video, client]);
 
-  // Starting the music pauses the video (both at once is never wanted).
+  // One player at a time: starting the music closes the video (and the music, already
+  // playing, has nothing to resume).
   useEffect(
     () =>
       usePlayer.subscribe((s, prev) => {
-        if (s.playing && !prev.playing && el.current && !el.current.paused) el.current.pause();
+        if (s.playing && !prev.playing && useVideo.getState().video) {
+          useVideo.setState({ resume: false });
+          useVideo.getState().close();
+        }
       }),
     [],
   );

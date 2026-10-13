@@ -3,8 +3,12 @@
 The user's request (2026-10-12): Rakki on the desktop and Rakki on the phone know about each
 other. You can see what the other one is playing, control it, and move playback from one to
 the other ("play on my phone" / "play here"), picking up the same queue at the same moment.
-Phase 1 is built (2026-10-12): both apps send capabilities and their queue, and the desktop's
-Devices button lists your other Rakki apps with what they play. Phases 2 to 4 are next.
+Built: phase 1 (2026-10-12: both apps send capabilities and their queue; the desktop's Devices
+button lists your other Rakki apps), phases 2 and 3 (2026-10-13: both apps take commands over
+the server's live connection, src/remote/socket.ts; the desktop controls another device from
+its player bar and moves playback both ways, src/remote/devices.ts + desktop
+src/player/remote.ts). Not yet: the phone's own Devices button (controlling the desktop from
+the phone), and phase 4.
 
 ## What Jellyfin already gives us
 

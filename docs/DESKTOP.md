@@ -80,8 +80,10 @@ Phone app features, and where the desktop is.
 
 ### Playing across devices
 - [x] Phase 1: the Devices button lists your other Rakki apps and what they play.
-- [ ] Like Spotify Connect: control them, move playback between desktop and phone. Framework in
-      [REMOTE_PLAYBACK.md](REMOTE_PLAYBACK.md).
+- [x] Phases 2 and 3: pick a device to control it from the player bar ("Playing on ..."); Play
+      here and Play on {device} move playback, at the same moment. Both apps take commands.
+- [ ] Phase 4 (lock screen and tray show "Playing on ...", the plugin's full-queue store); the
+      phone's own Devices button. See [REMOTE_PLAYBACK.md](REMOTE_PLAYBACK.md).
 
 ### Wave 4: desktop extras
 - [x] App icon (Rakki's, rounded).

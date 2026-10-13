@@ -6,7 +6,6 @@ import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { startPlaylistCache } from '@/library/playlistCache';
-import { announceCapabilities } from '@/remote/devices';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
@@ -20,6 +19,7 @@ import { NowPlaying } from '~/player/NowPlaying';
 import { VideoHost } from '~/player/VideoHost';
 import { startUpdateCheck } from '~/lib/updateCheck';
 import { startDiscord } from '~/player/discord';
+import { startRemoteCommands, useRemote } from '~/player/remote';
 import { startRadioWatch } from '~/radio/radio';
 import { currentPosition, startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
@@ -60,6 +60,10 @@ function App() {
     startPlayer();
     startDiscord();
     startRadioWatch();
+    // Music started here: the player bar is this computer's again.
+    usePlayer.subscribe((p, prev) => {
+      if (p.playing && !prev.playing && useRemote.getState().target) useRemote.getState().setTarget(null);
+    });
     startUpdateCheck();
     // The mouse's back and forward buttons.
     const onMouse = (e: MouseEvent) => {
@@ -87,9 +91,8 @@ function App() {
     if (!signedIn) return;
     void syncLastfmKey();
     startPlaylistCache();
-    // Let your other Rakki apps see this one (remote/devices.ts).
-    const c = useAuth.getState().client;
-    if (c) void announceCapabilities(c);
+    // Your other Rakki apps can see and control this one (player/remote.ts).
+    startRemoteCommands();
   }, [signedIn, userId]);
 
   return (
