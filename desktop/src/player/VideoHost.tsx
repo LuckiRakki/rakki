@@ -76,23 +76,29 @@ function useSlotRect(el: HTMLElement | null, full: boolean) {
 // ---- Sound for the visualizer ----
 
 let audio: { ctx: AudioContext; analyser: AnalyserNode } | null = null;
+/** Each video element can be tapped once; a new element (the next video opened) gets its own. */
+const tapped = new WeakMap<HTMLVideoElement, MediaElementAudioSourceNode>();
 
-/** Route the video's sound through an analyser (once per element; it then plays through it). */
+/** Route the video's sound through the analyser (it then plays through it). */
 function hearVideo(v: HTMLVideoElement) {
-  if (!audio) {
-    try {
+  try {
+    if (!audio) {
       const ctx = new AudioContext();
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 4096;
       analyser.smoothingTimeConstant = 0.82;
-      ctx.createMediaElementSource(v).connect(analyser);
       analyser.connect(ctx.destination);
       audio = { ctx, analyser };
-    } catch {
-      return;
     }
+    if (!tapped.has(v)) {
+      const source = audio.ctx.createMediaElementSource(v);
+      source.connect(audio.analyser);
+      tapped.set(v, source);
+    }
+    void audio.ctx.resume();
+  } catch {
+    // No Web Audio: the video plays as usual, the graph stays flat.
   }
-  void audio.ctx.resume();
 }
 
 /** A graph of the video's sound: the spectrum from 40 Hz to 16 kHz as a smooth filled curve. */
