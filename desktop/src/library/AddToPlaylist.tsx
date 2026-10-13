@@ -1,9 +1,11 @@
 // "Add to playlist", like the phone app's: every playlist with a tick where the songs already
 // are (or how many of them are), Liked Songs on top for a single song, find, New playlist.
-// Ticks are staged and saved on Done; saving asks the server what each playlist has right then.
+// Ticks are staged; Done closes the dialog at once and saves behind it (asking the server what
+// each playlist has right then), then says what happened: "Added to Wednesday" or "Couldn't add
+// to Wednesday".
 // The ticks show at once from the shared playlist cache (library/playlistCache, as on the phone),
 // which checks the server again as the dialog opens.
-import { Check, Circle, Heart, Plus, Search } from 'lucide-react';
+import { Check, Circle, Heart, Plus, Search } from '~/ui/icons';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -32,7 +34,6 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
   const [fetched, setFetched] = useState<Record<string, number>>({});
   const [changes, setChanges] = useState<Record<string, boolean>>({});
   const [find, setFind] = useState('');
-  const [saving, setSaving] = useState(false);
   const cache = usePlaylistCache((s) => s.lists);
 
   // How many of the songs each playlist already has: from the cache, else asked.
@@ -72,39 +73,41 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
   const isOn = (id: string) => changes[id] ?? wasIn(id);
   const toggle = (id: string) => setChanges((c) => ({ ...c, [id]: !isOn(id) }));
 
-  const save = async () => {
+  /** Done: the dialog closes now; the changes save behind it and the result comes as a toast. */
+  const save = () => {
     const c = client();
+    closeDialog();
     if (!c) return;
-    setSaving(true);
-    let added = 0;
-    const changed: string[] = [];
-    try {
-      for (const p of playlists) {
-        const on = changes[p.Id];
-        if (on === undefined || on === wasIn(p.Id)) continue;
-        const entries = (await c.getPlaylistMembership(p.Id)).filter((e) => ids.has(e.Id));
-        const present = new Set(entries.map((e) => e.Id));
-        if (on) {
-          const missing = songs.filter((s) => !present.has(s.Id)).map((s) => s.Id);
-          if (missing.length) {
-            await c.addToPlaylist(p.Id, missing);
-            changed.push(p.Id);
-            added++;
+    const work = playlists.filter((p) => changes[p.Id] !== undefined && changes[p.Id] !== wasIn(p.Id)).map((p) => ({ p, on: changes[p.Id] }));
+    if (single && changes[LIKED] !== undefined && changes[LIKED] !== wasIn(LIKED)) void setLiked([single], changes[LIKED]);
+    if (!work.length) return;
+    void (async () => {
+      const added: string[] = [];
+      const removed: string[] = [];
+      const failed: string[] = [];
+      for (const { p, on } of work) {
+        try {
+          const entries = (await c.getPlaylistMembership(p.Id)).filter((e) => ids.has(e.Id));
+          const present = new Set(entries.map((e) => e.Id));
+          if (on) {
+            const missing = songs.filter((s) => !present.has(s.Id)).map((s) => s.Id);
+            if (missing.length) await c.addToPlaylist(p.Id, missing);
+            added.push(displayName(p));
+          } else {
+            if (entries.length) await c.removeFromPlaylist(p.Id, entries.map((e) => e.PlaylistItemId!).filter(Boolean));
+            removed.push(displayName(p));
           }
-        } else if (entries.length) {
-          await c.removeFromPlaylist(p.Id, entries.map((e) => e.PlaylistItemId!).filter(Boolean));
-          changed.push(p.Id);
+        } catch {
+          failed.push(displayName(p));
         }
       }
-      if (single && changes[LIKED] !== undefined && changes[LIKED] !== wasIn(LIKED)) await setLiked([single], changes[LIKED]);
       void queryClient.invalidateQueries({ predicate: (q) => ['playlists', 'playlistItems'].includes(q.queryKey[0] as string) });
-      if (changed.length) emitPlaylistsChanged(changed);
-      if (added) toast(added === 1 ? 'Added to playlist' : `Added to ${added} playlists`);
-      closeDialog();
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Couldn't save.");
-      setSaving(false);
-    }
+      emitPlaylistsChanged(work.map((w) => w.p.Id));
+      const names = (list: string[]) => (list.length === 1 ? list[0] : `${list.length} playlists`);
+      if (failed.length) toast(`Couldn’t change ${names(failed)}. Try again.`);
+      else if (added.length) toast(`Added to ${names(added)}`);
+      else if (removed.length) toast(`Removed from ${names(removed)}`);
+    })();
   };
 
   const shown = playlists.filter((p) => p.Name.toLowerCase().includes(find.trim().toLowerCase()));
@@ -148,14 +151,14 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
               LIKED,
               'Liked Songs',
               <div className="artwork empty liked-art" style={{ width: 44, flex: 'none' }}>
-                <Heart size={18} fill="#fff" color="#fff" />
+                <Heart size={18} fill="#fff" />
               </div>,
               wasIn(LIKED) ? 'Already added' : 'Your liked songs',
             )
           : null}
         {shown.map((p) => {
           const n = have[p.Id];
-          const sub = n === undefined ? 'Checking...' : n === songs.length ? 'Already added' : n > 0 ? `${n} of ${songs.length} already added` : `${p.ChildCount ?? 0} songs`;
+          const sub = n === undefined ? `${p.ChildCount ?? 0} songs` : n === songs.length ? 'Already added' : n > 0 ? `${n} of ${songs.length} already added` : `${p.ChildCount ?? 0} songs`;
           return row(p.Id, displayName(p), <Artwork item={p} size={100} className="thumb" />, sub);
         })}
       </div>
@@ -163,8 +166,8 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
         <button className="secondary" onClick={closeDialog}>
           Cancel
         </button>
-        <button className="primary" disabled={saving} onClick={() => void save()}>
-          {saving ? 'Saving...' : 'Done'}
+        <button className="primary" onClick={save}>
+          Done
         </button>
       </div>
     </div>

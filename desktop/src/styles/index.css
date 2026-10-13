@@ -1,0 +1,11 @@
+/* Rakki desktop's styles, one file per area; motion last so its timings win. */
+@import './base.css';
+@import './frame.css';
+@import './pages.css';
+@import './tracks.css';
+@import './panel.css';
+@import './lyrics.css';
+@import './player.css';
+@import './video.css';
+@import './overlays.css';
+@import './motion.css';

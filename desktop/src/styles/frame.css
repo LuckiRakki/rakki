@@ -1,0 +1,108 @@
+/* The window frame: grid, title bar, sidebar (layout/TitleBar.tsx, layout/Sidebar.tsx). */
+
+/* ---- Frame ---- */
+
+.app {
+  display: grid;
+  height: 100%;
+  grid-template-rows: var(--titlebar) minmax(0, 1fr) var(--playerbar);
+  grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel);
+  grid-template-areas: 'title title title' 'side main panel' 'player player player';
+  gap: 8px;
+  padding: 0 8px;
+  position: relative;
+}
+.app.no-panel { grid-template-columns: var(--sidebar) minmax(0, 1fr); grid-template-areas: 'title title' 'side main' 'player player'; }
+.panel { background: var(--surface); border-radius: var(--radius); overflow: hidden; min-height: 0; }
+
+/* Drag handles in the gaps beside the sidebars (layout/frame.tsx Resizer). */
+.resizer { position: absolute; top: var(--titlebar); bottom: var(--playerbar); width: 8px; z-index: 5; cursor: col-resize; touch-action: none; }
+.resizer.sidebar { left: calc(8px + var(--sidebar)); }
+.resizer.panel { right: calc(8px + var(--panel)); }
+.resizer::after { content: ''; position: absolute; top: 12px; bottom: 12px; left: 3px; width: 2px; border-radius: 2px; background: transparent; transition: background 0.15s; }
+.resizer:hover::after, .resizer.dragging::after { background: rgba(255, 255, 255, 0.35); }
+.app:has(.resizer.dragging) { cursor: col-resize; }
+.app:has(.resizer.dragging) main, .app:has(.resizer.dragging) aside { pointer-events: none; }
+
+/* ---- Title bar ---- */
+
+.titlebar { grid-area: title; display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center; height: var(--titlebar); }
+.tb-left { display: flex; align-items: center; gap: 8px; height: 100%; padding-left: 10px; }
+.tb-center { display: flex; align-items: center; gap: 8px; height: 100%; }
+.tb-right { display: flex; justify-content: flex-end; height: 100%; }
+.brand { font-weight: 900; font-size: 18px; letter-spacing: -0.02em; margin-right: 10px; }
+.brand b, .wordmark b { color: var(--accent); }
+.navbtn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); background: var(--surface); transition: background 0.15s, color 0.15s; }
+.navbtn:hover:not(:disabled) { color: var(--text); background: var(--surface-3); }
+.navbtn:disabled { opacity: 0.4; }
+.navbtn.home { width: 44px; height: 44px; background: var(--surface-2); color: var(--text); }
+.search {
+  width: min(460px, 42vw); height: 44px; border-radius: 999px; background: var(--surface-2);
+  display: flex; align-items: center; gap: 10px; padding: 0 16px; color: var(--text-3);
+  border: 1px solid transparent; transition: border-color 0.15s, background 0.15s;
+}
+.search:hover { background: var(--surface-3); }
+.search:focus-within { border-color: var(--text); background: var(--surface-3); }
+.search input { flex: 1; background: none; border: 0; outline: 0; color: var(--text); font-size: 15px; }
+.search .clear { color: var(--text-3); display: grid; place-items: center; }
+.winbtns { display: flex; height: 100%; margin-right: -8px; }
+.win { width: 48px; height: 100%; display: grid; place-items: center; color: var(--text-2); transition: background 0.12s; }
+.win:hover { background: var(--surface-3); color: var(--text); }
+.win.close:hover { background: #c42b1c; color: #fff; }
+
+/* ---- Sidebar ---- */
+
+.sidebar { grid-area: side; display: flex; flex-direction: column; }
+.side-head { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 18px 20px 10px; font-weight: 800; color: var(--text-2); transition: color 0.15s; }
+.side-head:hover { color: var(--text); }
+.side-head-chev { margin-left: auto; display: grid; place-items: center; opacity: 0.7; }
+.side-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; padding: 4px 14px 12px; }
+.side-links .link {
+  display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; border-radius: 8px; min-width: 0;
+  background: var(--surface-2); color: var(--text-2); font-weight: 600; font-size: 13px; transition: background 0.15s, color 0.15s;
+}
+.side-links .link-icon { width: 18px; height: 18px; flex: none; display: grid; place-items: center; }
+.side-links .link-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-links .link { cursor: pointer; position: relative; }
+.side-links .link-close { position: absolute; right: 6px; top: 50%; margin-top: -10px; width: 20px; height: 20px; border-radius: 50%; background: inherit; display: grid; place-items: center; color: inherit; opacity: 0; transition: opacity 0.12s, background 0.12s; }
+.side-links .link:hover .link-close { opacity: 0.6; }
+.side-links .link-close:hover { opacity: 1 !important; background: rgba(127, 127, 127, 0.25); }
+.side-links .link:hover { background: var(--surface-3); color: var(--text); }
+.side-links .link.on { background: var(--text); color: #000; }
+.side-lists { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
+.row { display: flex; align-items: center; gap: 12px; padding: 7px 8px; border-radius: 8px; width: 100%; text-align: left; transition: background 0.12s; }
+.row:hover { background: var(--surface-2); }
+.row.on { background: var(--surface-3); }
+.row .thumb { width: 48px; flex: none; }
+.row .t, .qrow .t, .pick-row .t { min-width: 0; flex: 1; }
+.row .name, .qrow .name, .pick-row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .sub, .qrow .sub, .pick-row .sub { font-size: 13px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.artwork.liked-art { background: linear-gradient(135deg, #4a2fd1, #9a86f5) !important; color: #fff; }
+
+.update-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; margin-right: 8px; border-radius: 999px; background: var(--text); color: #000; font-weight: 800; font-size: 13px; transition: filter 0.15s; }
+.update-btn:hover { filter: brightness(1.1); }
+
+/* ---- Settings ---- */
+
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 800; display: grid; place-items: center; overflow: hidden; position: relative; margin: auto 10px auto 0; flex: none; }
+.avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.avatar.big { width: 56px; height: 56px; font-size: 22px; margin: 0; }
+
+/* ---- Narrow windows (layout.ts: floating, rail) ---- */
+
+/* The right sidebar floats over the page instead of squeezing it. */
+.app.floating .rightpanel {
+  position: absolute; grid-area: auto; z-index: 30; right: 8px; top: calc(var(--titlebar) + 8px); bottom: calc(var(--playerbar) + 8px);
+  width: min(var(--panel), calc(100% - 120px)); box-shadow: -16px 0 40px rgba(0, 0, 0, 0.5); animation: panel-in 0.24s var(--ease-out);
+}
+@keyframes panel-in { from { opacity: 0; transform: translateX(16px); } }
+
+/* The left sidebar: icons and covers only. */
+.app.rail { grid-template-columns: 72px minmax(0, 1fr) var(--panel); }
+.app.rail.no-panel { grid-template-columns: 72px minmax(0, 1fr); }
+.app.rail .side-head { justify-content: center; padding: 16px 0 10px; }
+.app.rail .side-head-label, .app.rail .side-head-chev, .app.rail .link-label, .app.rail .link-close, .app.rail .row .t { display: none; }
+.app.rail .side-links { grid-template-columns: 1fr; padding: 4px 8px 10px; }
+.app.rail .side-links .link { justify-content: center; padding: 0; height: 44px; }
+.app.rail .side-lists { padding: 4px 8px 12px; scrollbar-width: none; }
+.app.rail .row { justify-content: center; padding: 4px; }

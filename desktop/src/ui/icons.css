@@ -1,0 +1,10 @@
+/* Ionicons (MIT), the phone app's icon font; see ui/icons.tsx. */
+@font-face {
+  font-family: 'Ionicons';
+  src: url('../assets/Ionicons.ttf') format('truetype');
+  font-display: block;
+}
+.ico { font-family: 'Ionicons'; font-style: normal; font-weight: normal; line-height: 1; width: 1em; height: 1em; display: inline-flex; align-items: center; justify-content: center; flex: none; speak: never; -webkit-font-smoothing: antialiased; }
+.ico-svg { flex: none; display: block; }
+.ico-stack { position: relative; display: inline-grid; place-items: center; flex: none; }
+.ico-stack > b { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -54%); font-weight: 900; line-height: 1; font-family: 'Inter Variable', sans-serif; }

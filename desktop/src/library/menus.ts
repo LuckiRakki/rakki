@@ -16,7 +16,7 @@ import {
   Trash2,
   User,
   X,
-} from 'lucide-react';
+} from '~/ui/icons';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { isMix } from '@/lib/mixes';

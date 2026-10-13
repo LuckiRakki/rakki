@@ -1,0 +1,51 @@
+/* Lyrics: regular (lyrics/LyricsView.tsx), Spicy's frame (spicy/SpicyView.tsx; the engine: spicy/spicy.css), timing. */
+
+/* ---- Lyrics ---- */
+
+.lyrics { flex: 1; overflow-y: auto; padding: 16px 22px 40%; scrollbar-width: none; }
+.lyrics::-webkit-scrollbar { display: none; }
+.lyrics p { font-size: 22px; font-weight: 800; line-height: 1.3; margin: 0 0 14px; color: rgba(255, 255, 255, 0.4); transition: color 0.25s; cursor: pointer; user-select: text; }
+.lyrics p:hover { color: rgba(255, 255, 255, 0.75); }
+.lyrics p.past { color: rgba(255, 255, 255, 0.65); }
+.lyrics p.on { color: var(--text); }
+.lyrics.unsynced p { color: var(--text-2); cursor: default; }
+.lyrics { position: relative; }
+.lyrics.card { height: 230px; flex: none; padding: 20px 0 50%; cursor: pointer; -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 80%, transparent); mask-image: linear-gradient(transparent, #000 12%, #000 80%, transparent); }
+.lyrics.card p { font-size: 19px; margin-bottom: 8px; color: rgba(255, 255, 255, 0.4); pointer-events: none; }
+.lyrics.card p.past { color: rgba(255, 255, 255, 0.6); }
+.lyrics.card p.on { color: #fff; }
+.lyrics.card.unsynced p { color: rgba(255, 255, 255, 0.85); }
+.lyrics.big { padding: 30vh 6px 50vh 0; -webkit-mask-image: linear-gradient(transparent, #000 15%, #000 80%, transparent); mask-image: linear-gradient(transparent, #000 15%, #000 80%, transparent); }
+.lyrics.big p { font-size: clamp(26px, 2.6vw, 44px); font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.6em; color: rgba(255, 255, 255, calc(0.62 - var(--d, 1) * 0.08)); filter: blur(calc(var(--d, 0) * 0.55px)); transition: color 0.35s, filter 0.35s, transform 0.35s; transform-origin: left center; }
+.lyrics.big p.on { color: #fff; filter: none; transform: scale(1.03); }
+.lyrics.big p:hover { filter: none; color: rgba(255, 255, 255, 0.85); }
+.lyrics.big.unsynced p { color: rgba(255, 255, 255, 0.85); filter: none; }
+.lyrics.big .lyrics-credits { color: rgba(255, 255, 255, 0.55); }
+.lyrics-credits { color: var(--text-3); font-size: 14px; font-weight: 600; margin-top: 30px; line-height: 1.7; }
+.lyrics-credits .small { font-size: 12px; }
+.lyrics-empty { padding: 30px 20px; color: var(--text-3); text-align: center; }
+
+/* Spicy lyrics in the full player (spicy/SpicyView.tsx; the engine's own styles: spicy/spicy.css). */
+.spicy-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.spicy-mount { flex: 1; min-height: 0; min-width: 0; position: relative; container-type: inline-size; --sl-lyric-scale: 0.72; }
+.spicy-credit { flex: none; text-align: left; padding: 8px 0 0; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.5); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0, 0, 0, 0.25); margin-right: 8px; }
+.seg button { padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; color: rgba(255, 255, 255, 0.7); }
+.seg button.on { background: #fff; color: #000; }
+
+/* Lyrics timing (lyrics/LyricsTiming.tsx) and Spicy in the sidebar's card. */
+.timing { position: relative; margin-right: 4px; }
+.timing-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; width: 360px; padding: 14px; border-radius: 12px; background: #262628; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); animation: pop-in 0.16s var(--ease-out); transform-origin: top right; }
+.timing-head { font-weight: 800; margin-bottom: 10px; }
+.timing-row { display: flex; align-items: center; gap: 6px; }
+.timing-step { height: 32px; padding: 0 10px; border-radius: 8px; background: var(--surface-3); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; transition: background 0.15s, transform 0.15s var(--ease-out); }
+.timing-step:hover { background: var(--surface-4); }
+.timing-step:active { transform: scale(0.95); }
+.timing-now { flex: 1; display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: 13px; }
+.timing-now span { font-size: 12px; color: var(--text-2); font-weight: 700; text-decoration: underline; }
+.timing-foot { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--text-2); align-items: flex-start; }
+.spicy-view.card { height: 230px; flex: none; cursor: pointer; }
+.spicy-view.card .sl-root { --sl-font-size: 19px; --sl-line-gap: 4px; }
+.spicy-view.card .sl-scroller { padding: 40px 0 120px; }
+.spicy-view.card .spicy-mount { -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); }
+.spicy-view.card .spicy-credit { font-size: 11px; padding-top: 4px; }

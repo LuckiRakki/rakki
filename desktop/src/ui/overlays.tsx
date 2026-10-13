@@ -1,6 +1,6 @@
 // Things that float above the window: right-click menus, toasts and dialogs. One host renders
 // them all (see <Overlays/> in main.tsx); anything can open one through the stores below.
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '~/ui/icons';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
 
@@ -16,23 +16,59 @@ export interface MenuItem {
   disabled?: boolean;
 }
 
+interface OpenMenu {
+  x: number;
+  y: number;
+  items: MenuItem[];
+  title?: string;
+  /** Opened from the keyboard (Menu key, Shift+F10, Enter on a button): focus starts on the first item. */
+  keyboard: boolean;
+  /** Where focus goes back to when it closes. */
+  from: HTMLElement | null;
+}
+
 interface MenuState {
-  open: { x: number; y: number; items: MenuItem[]; title?: string } | null;
-  show(x: number, y: number, items: MenuItem[], title?: string): void;
+  open: OpenMenu | null;
+  show(m: OpenMenu): void;
   close(): void;
 }
 
 export const useMenu = create<MenuState>((set) => ({
   open: null,
-  show: (x, y, items, title) => set({ open: { x, y, items, title } }),
+  show: (m) => set({ open: m }),
   close: () => set({ open: null }),
 }));
 
-/** Opens a menu at the mouse (for onContextMenu, or a "more" button). */
-export function openMenu(e: { clientX: number; clientY: number; preventDefault(): void; stopPropagation?(): void }, items: MenuItem[], title?: string) {
+type MenuEvent = {
+  clientX: number;
+  clientY: number;
+  type?: string;
+  detail?: number;
+  currentTarget?: EventTarget | null;
+  nativeEvent?: Event;
+  preventDefault(): void;
+  stopPropagation?(): void;
+};
+
+/**
+ * Opens a menu at the mouse (for onContextMenu, or a "more" button). From the keyboard (the Menu
+ * key or Shift+F10 on a focused row, Enter or Space on a button) it opens under the element
+ * instead, with the first item focused.
+ */
+export function openMenu(e: MenuEvent, items: MenuItem[], title?: string) {
   e.preventDefault();
   e.stopPropagation?.();
-  useMenu.getState().show(e.clientX, e.clientY, items, title);
+  const native = e.nativeEvent as (Event & { pointerType?: string }) | undefined;
+  const keyboard =
+    e.type === 'contextmenu' ? native?.pointerType === '' || (e.clientX === 0 && e.clientY === 0) : e.detail === 0;
+  const from = (e.currentTarget instanceof HTMLElement ? e.currentTarget : null) ?? (document.activeElement as HTMLElement | null);
+  let { clientX: x, clientY: y } = e;
+  if (keyboard && from) {
+    const r = from.getBoundingClientRect();
+    x = r.left + Math.min(24, r.width / 2);
+    y = r.bottom;
+  }
+  useMenu.getState().show({ x, y, items, title, keyboard, from: (document.activeElement as HTMLElement | null) ?? from });
 }
 
 function ContextMenu() {
@@ -40,49 +76,77 @@ function ContextMenu() {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
-  // Keep it inside the window.
+  // Keep it inside the window, then put focus in it (the first item when opened by keyboard).
   useLayoutEffect(() => {
     if (!open || !ref.current) return setPos(null);
     const r = ref.current.getBoundingClientRect();
     setPos({
-      left: Math.min(open.x, window.innerWidth - r.width - 8),
+      left: Math.max(8, Math.min(open.x, window.innerWidth - r.width - 8)),
       top: open.y + r.height > window.innerHeight - 8 ? Math.max(8, open.y - r.height) : open.y,
     });
+    const first = ref.current.querySelector<HTMLButtonElement>('.menu-item:not(:disabled)');
+    if (open.keyboard && first) first.focus();
+    else ref.current.focus();
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const close = () => useMenu.getState().close();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
     window.addEventListener('mousedown', close);
     window.addEventListener('blur', close);
-    window.addEventListener('keydown', onKey);
     window.addEventListener('wheel', close, { passive: true });
     return () => {
       window.removeEventListener('mousedown', close);
       window.removeEventListener('blur', close);
-      window.removeEventListener('keydown', onKey);
       window.removeEventListener('wheel', close);
     };
   }, [open]);
+
+  /** Close; back to where the menu came from when focus was in the menu. */
+  const close = (refocus: boolean) => {
+    const from = open?.from;
+    useMenu.getState().close();
+    if (refocus && from?.isConnected) from.focus();
+  };
+
+  // Arrow keys move through the items (wrapping), Home / End jump, Escape and Tab close.
+  const onKey = (e: React.KeyboardEvent) => {
+    const items = [...(ref.current?.querySelectorAll<HTMLButtonElement>('.menu-item:not(:disabled)') ?? [])];
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+    const move = (i: number) => items[(i + items.length) % items.length]?.focus();
+    if (e.key === 'ArrowDown') move(at + 1);
+    else if (e.key === 'ArrowUp') move(at < 0 ? -1 : at - 1);
+    else if (e.key === 'Home') move(0);
+    else if (e.key === 'End') move(-1);
+    else if (e.key === 'Escape' || e.key === 'Tab') close(true);
+    else return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   if (!open) return null;
   return (
     <div
       ref={ref}
       className="menu"
+      role="menu"
+      aria-label={open.title}
+      tabIndex={-1}
       style={{ left: pos?.left ?? open.x, top: pos?.top ?? open.y, visibility: pos ? 'visible' : 'hidden' }}
+      onKeyDown={onKey}
       onMouseDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.preventDefault()}>
       {open.title ? <div className="menu-title">{open.title}</div> : null}
       {open.items.map((item, i) => (
-        <div key={i}>
-          {item.divider ? <div className="menu-divider" /> : null}
+        <div key={i} role="none">
+          {item.divider ? <div className="menu-divider" role="separator" /> : null}
           <button
             className={`menu-item${item.danger ? ' danger' : ''}`}
+            role="menuitem"
+            tabIndex={-1}
             disabled={item.disabled}
             onClick={() => {
-              useMenu.getState().close();
+              close(open.keyboard);
               item.run?.();
             }}>
             {item.icon ? <item.icon size={16} /> : <span style={{ width: 16 }} />}

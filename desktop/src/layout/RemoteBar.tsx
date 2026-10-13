@@ -2,12 +2,12 @@
 // device's song, its controls (sent to it), its place in the song, its volume when it takes
 // volume commands, and the way back (Play here takes the music over; the X controls this
 // computer again).
-import { ArrowDownToLine, Pause, Play, SkipBack, SkipForward, Smartphone, Monitor, Volume2, X } from 'lucide-react';
+import { ArrowDownToLine, Pause, Play, SkipBack, SkipForward, Smartphone, Monitor, Volume2, X } from '~/ui/icons';
 import { useEffect, useState } from 'react';
 
 import { positionNow, type RakkiDevice } from '@/remote/devices';
 import { isPhone, DevicesButton } from '~/layout/Devices';
-import { Range } from '~/layout/frame';
+import { Range } from '~/ui/Range';
 import { useRemote } from '~/player/remote';
 import { ArtistLinks, Artwork, formatTime, ticksToSeconds } from '~/ui/parts';
 
@@ -60,7 +60,7 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
         </div>
         <div className="seek">
           <span>{formatTime(position)}</span>
-          <Range value={position} max={length} onSet={(v) => r.seek(v)} />
+          <Range label="Seek" step={5} value={position} max={length} onSet={(v) => r.seek(v)} />
           <span>{formatTime(length)}</span>
         </div>
         <div className="remote-strip">
@@ -78,6 +78,8 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
             <Volume2 size={18} />
             <div className="vol">
               <Range
+                label="Volume"
+                step={5}
                 value={volume}
                 max={100}
                 onSet={(v) => {

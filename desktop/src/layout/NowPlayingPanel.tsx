@@ -3,7 +3,7 @@
 //   full player's lyrics), About the artist, Credits (artists, writers, producers; album, year,
 //   genre, file format), and the next song.
 // - Queue: everything that's coming, then what already played.
-import { ChevronLeft, Ellipsis, ListMusic, Maximize2, X } from 'lucide-react';
+import { ChevronLeft, Ellipsis, ListMusic, Maximize2, X } from '~/ui/icons';
 import type { ReactNode } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';

@@ -1,7 +1,7 @@
 // Search, as on the phone: Jellyfin's own search merged with the on-device fuzzy index (so
 // typos still find things), ranked together; songs whose lyrics match (the Rakki plugin's
 // lyrics index); filters; and the results you opened lately while the box is empty.
-import { X } from 'lucide-react';
+import { X } from '~/ui/icons';
 import { useEffect, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -17,7 +17,9 @@ import { go, openItem, useNav } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useGenres } from '~/queries';
 import { openMenu } from '~/ui/overlays';
-import { ArtistLinks, Artwork, ItemCard, Shelf, Spinner, TrackTable } from '~/ui/parts';
+import { activateOnKey } from '~/ui/keys';
+import { ArtistLinks, Artwork, ItemCard, Shelf, TrackTable } from '~/ui/parts';
+import { Loading } from '~/ui/states';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -78,7 +80,7 @@ function Recent() {
       </div>
       <div className="recent-grid">
         {items.slice(0, 12).map((item) => (
-          <div key={item.Id} className="recent" role="button" tabIndex={0} onClick={() => open(item)}>
+          <div key={item.Id} className="recent" role="button" tabIndex={0} aria-label={`${item.Name}, ${kindLabel(item)}`} onClick={() => open(item)} onKeyDown={activateOnKey(() => open(item))}>
             {item.Type === 'Genre' ? <div className="artwork empty thumb" /> : <Artwork item={item} size={100} round={item.Type === 'MusicArtist'} className="thumb" />}
             <div className="t">
               <div className="name">{item.Name}</div>
@@ -86,7 +88,7 @@ function Recent() {
             </div>
             <button
               className="iconbtn"
-              aria-label="Remove"
+              aria-label={`Remove ${item.Name} from recent searches`}
               title="Remove"
               onClick={(e) => {
                 e.stopPropagation();
@@ -179,9 +181,9 @@ export function SearchPage({ term }: { term: string }) {
             {f.label}
           </button>
         ))}
-        {syncing ? <span className="muted small">Updating the search index…</span> : null}
+        {syncing ? <span className="muted small">Updating the search index in the background</span> : null}
       </div>
-      {q.isLoading ? <Spinner /> : null}
+      {q.isLoading ? <Loading what={`results for “${t}”`} /> : null}
       {nothing ? <p className="empty-note">Nothing found for “{t}”. Check the spelling, or try fewer words.</p> : null}
 
       {filter === 'all' && r ? (

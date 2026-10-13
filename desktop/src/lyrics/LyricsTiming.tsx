@@ -2,7 +2,7 @@
 // they run ahead of or behind the song. Saved on this computer as you go (shared code:
 // lyrics/offset.ts); Save to server writes it into the lyrics themselves, so every Rakki has it
 // (not for lyrics from the Spicy Lyrics API, which can't be kept).
-import { Timer } from 'lucide-react';
+import { Timer } from '~/ui/icons';
 import { useEffect, useRef, useState } from 'react';
 
 import { pickLyrics } from '~/lyrics/LyricsView';
@@ -21,7 +21,6 @@ function describe(ms: number): string {
 
 export function LyricsTiming({ itemId }: { itemId: string }) {
   const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const offset = useLyricsOffset(itemId);
   const lyrics = pickLyrics(useLyrics(itemId).data);
   const target = serverSaveFor(lyrics);
@@ -32,22 +31,32 @@ export function LyricsTiming({ itemId }: { itemId: string }) {
   useEffect(() => {
     if (!open) return;
     const outside = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const escape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      // Only the panel closes (not the full player behind it); focus goes back to its button.
+      e.stopImmediatePropagation();
+      setOpen(false);
+      box.current?.querySelector<HTMLButtonElement>('.iconbtn')?.focus();
+    };
     window.addEventListener('mousedown', outside);
-    return () => window.removeEventListener('mousedown', outside);
+    window.addEventListener('keydown', escape, true);
+    return () => {
+      window.removeEventListener('mousedown', outside);
+      window.removeEventListener('keydown', escape, true);
+    };
   }, [open]);
 
+  // Saves behind the screen (the panel closes); the toast says how it went.
   const save = async () => {
     if (!lyrics) return;
-    setSaving(true);
+    setOpen(false);
     try {
       await saveOffsetToServer(itemId, lyrics, offset);
       // The shared code refreshes the phone's cache; this is the desktop's.
       await queryClient.invalidateQueries({ queryKey: ['lyrics'] });
       toast('Lyrics timing saved to the server');
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Couldn’t save the timing');
-    } finally {
-      setSaving(false);
+      toast(`Couldn’t save the timing: ${e instanceof Error ? e.message : 'try again'}`);
     }
   };
 
@@ -82,8 +91,8 @@ export function LyricsTiming({ itemId }: { itemId: string }) {
           </div>
           <div className="timing-foot">
             {target.ok ? (
-              <button className="device-btn" disabled={!offset || saving} onClick={() => void save()}>
-                {saving ? 'Saving…' : 'Save to server'}
+              <button className="device-btn" disabled={!offset} onClick={() => void save()}>
+                Save to server
               </button>
             ) : (
               <span>{target.reason.replace('this phone', 'this computer')}</span>

@@ -1,7 +1,7 @@
 // Settings: your account, the look (accent or Lucid), playback, lyrics and Last.fm. Playback and
 // Last.fm are the phone app's settings (shared store), so they behave the same.
 import { invoke } from '@tauri-apps/api/core';
-import { Check, LogOut } from 'lucide-react';
+import { Check, LogOut } from '~/ui/icons';
 import { useEffect, useState } from 'react';
 
 import { checkLastfmKey, LastfmError } from '@/lib/lastfm';

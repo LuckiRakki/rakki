@@ -12,7 +12,7 @@ import {
   quickConnectState,
 } from '@/api/jellyfin';
 import { deviceId, useAuth } from '~/auth/session';
-import { WindowButtons } from '~/layout/frame';
+import { WindowButtons } from '~/layout/TitleBar';
 
 export function SignIn() {
   const [server, setServer] = useState(localStorage.getItem('rakki.lastServer') ?? '');

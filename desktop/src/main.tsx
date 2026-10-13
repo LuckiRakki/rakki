@@ -1,5 +1,5 @@
 import '@fontsource-variable/inter';
-import './styles.css';
+import './styles/index.css';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode, useEffect } from 'react';
@@ -9,12 +9,14 @@ import { startPlaylistCache } from '@/library/playlistCache';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
-import { PlayerBar, Resizer, Sidebar, TitleBar } from '~/layout/frame';
+import { PlayerBar } from '~/layout/PlayerBar';
+import { Resizer, Sidebar } from '~/layout/Sidebar';
+import { TitleBar } from '~/layout/TitleBar';
 import { useLayout } from '~/layout/layout';
 import { MiniPlayer } from '~/layout/MiniPlayer';
 import { NowPlayingPanel } from '~/layout/NowPlayingPanel';
 import { useNav } from '~/nav';
-import { Page } from '~/pages/pages';
+import { Page } from '~/pages/Page';
 import { NowPlaying } from '~/player/NowPlaying';
 import { VideoHost } from '~/player/VideoHost';
 import { startUpdateCheck } from '~/lib/updateCheck';
@@ -24,11 +26,16 @@ import { startRadioWatch } from '~/radio/radio';
 import { currentPosition, startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
 import { Overlays } from '~/ui/overlays';
+import { ServerBar, refetchFailed } from '~/ui/states';
 import { useApplyTheme } from '~/ui/theme';
+import { watchServer } from '@/lib/online';
 
 /** Keyboard shortcuts that work anywhere (not while typing). */
 function onKey(e: KeyboardEvent) {
-  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
+  const el = e.target as HTMLElement | null;
+  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '');
+  // Space on a focused button (or anything acting as one) presses it, not play / pause.
+  const pressable = !!el?.closest?.('button, [role="button"], [role="link"], [role="menuitem"], [role="slider"], [role="separator"], [role="row"], a');
   const p = usePlayer.getState();
   if (e.key === 'F11') {
     e.preventDefault();
@@ -39,7 +46,7 @@ function onKey(e: KeyboardEvent) {
   if (e.altKey && e.key === 'ArrowLeft') return useNav.getState().back();
   if (e.altKey && e.key === 'ArrowRight') return useNav.getState().forward();
   if (typing) return;
-  if (e.code === 'Space') {
+  if (e.code === 'Space' && !pressable) {
     e.preventDefault();
     p.toggle();
   } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') p.next();
@@ -52,7 +59,7 @@ function onKey(e: KeyboardEvent) {
 
 function App() {
   const signedIn = useAuth((s) => !!s.client);
-  const { panel, sidebarWidth, panelWidth, nowPlaying, mini } = useLayout();
+  const { panel, sidebarWidth, panelWidth, nowPlaying, mini, floating, rail } = useLayout();
   const routeKey = useNav((s) => `${s.route.name}:${'id' in s.route ? s.route.id : ''}`);
   useApplyTheme();
 
@@ -66,6 +73,12 @@ function App() {
       if (p.playing && !prev.playing && useRemote.getState().target) useRemote.getState().setTarget(null);
     });
     startUpdateCheck();
+    // The server stops answering: a bar says so, Rakki keeps asking, and failed pages load again once it's back.
+    watchServer({ url: () => useAuth.getState().session?.serverUrl, back: refetchFailed });
+    // Narrow windows: the right sidebar floats, the left one shrinks to icons (layout.ts).
+    const onResize = () => useLayout.getState().setWindowWidth(window.innerWidth);
+    onResize();
+    window.addEventListener('resize', onResize);
     // The mouse's back and forward buttons.
     const onMouse = (e: MouseEvent) => {
       if (e.button === 3) useNav.getState().back();
@@ -82,6 +95,7 @@ function App() {
       window.removeEventListener('mouseup', onMouse);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('contextmenu', noMenu);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 
@@ -102,17 +116,18 @@ function App() {
         <MiniPlayer />
       ) : signedIn ? (
         <div
-          className={`app${panel ? '' : ' no-panel'}${nowPlaying ? ' np-open' : ''}`}
+          className={`app${panel && !floating ? '' : ' no-panel'}${floating ? ' floating' : ''}${rail ? ' rail' : ''}${nowPlaying ? ' np-open' : ''}`}
           style={{ ['--sidebar' as string]: `${sidebarWidth}px`, ['--panel' as string]: `${panelWidth}px` }}>
           <TitleBar />
           <Sidebar />
-          <Resizer which="sidebar" />
+          {rail ? null : <Resizer which="sidebar" />}
           <main className="panel main" id="main">
+            <ServerBar />
             <div key={routeKey} className="route">
               <Page />
             </div>
           </main>
-          {panel ? <Resizer which="panel" /> : null}
+          {panel && !floating ? <Resizer which="panel" /> : null}
           <NowPlayingPanel />
           <PlayerBar />
           <NowPlaying />

@@ -3,12 +3,13 @@
 // song, the controls and a thin seek bar; drag it anywhere. The expand button (or Esc) grows
 // the window back to the size it was.
 import { LogicalSize } from '@tauri-apps/api/dpi';
-import { Maximize2, Pause, Pin, PinOff, Play, SkipBack, SkipForward } from 'lucide-react';
+import { Maximize2, Pause, Pin, PinOff, Play, SkipBack, SkipForward } from '~/ui/icons';
 import { useEffect, useState } from 'react';
 
 import { artColor } from '@/lib/blurhash';
 import { useAuth } from '~/auth/session';
-import { useLivePosition, Range } from '~/layout/frame';
+import { useLivePosition } from '~/player/position';
+import { Range } from '~/ui/Range';
 import { useLayout, win } from '~/layout/layout';
 import { usePlayer } from '~/player/store';
 import { ArtistLinks, Artwork, SaveButton } from '~/ui/parts';
@@ -98,7 +99,7 @@ export function MiniPlayer() {
           <span />
         </div>
         <div className="mini-seek">
-          <Range value={position} max={duration} onSet={(v) => p.seek(v)} />
+          <Range label="Seek" step={5} value={position} max={duration} onSet={(v) => p.seek(v)} />
         </div>
       </div>
     </div>

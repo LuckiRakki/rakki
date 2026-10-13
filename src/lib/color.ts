@@ -82,15 +82,37 @@ export function widgetGradient(colors: RGB[] | null, seed: string): [string, str
   ];
 }
 
+/** WCAG relative luminance of a colour (0 black to 1 white). */
+export function luminance(color: string): number {
+  const lin = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const [r, g, b] = parseColor(color);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+/** WCAG contrast ratio between two colours (1 to 21); 4.5 is the floor for normal text. */
+export function contrastRatio(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
+
+/** The lightest dark surface accent text sits on (hovered rows, pills): what the accent must read on. */
+const ACCENT_SURFACE = '#26262a';
+
 /**
  * An accent colour from an average art colour: same hue, pushed to a saturation and lightness
- * that read well on a dark background (album averages are often muddy or dark).
+ * that read well on a dark background (album averages are often muddy or dark), then lightened
+ * until it reads as text on Rakki's surfaces (4.5:1): strong blues and purples otherwise don't.
+ * Black text reads on any result.
  */
 export function vividAccent(rgb: RGB): string {
   const [h, s0, l0] = rgbToHsl(rgb);
   // Near-grey art stays a soft neutral instead of inventing a colour.
   const s = s0 < 0.08 ? 0.08 : Math.max(s0, 0.55);
-  const l = Math.min(0.68, Math.max(0.58, l0));
+  let l = Math.min(0.68, Math.max(0.58, l0));
+  while (l < 0.9 && contrastRatio(hslToHex(h, s, l), ACCENT_SURFACE) < 4.5) l += 0.01;
   return hslToHex(h, s, l);
 }
 
@@ -100,11 +122,19 @@ export function vividAccent(rgb: RGB): string {
  * each genre keeps its own colour.
  */
 export function tileColor(rgb: RGB | null, seed: string): string {
-  if (rgb) {
-    const [h, s0] = rgbToHsl(rgb);
-    if (s0 >= 0.15) return hslToHex(h, Math.max(s0, 0.6), 0.42);
+  let h: number;
+  let s = 0.6;
+  const [h0, s0] = rgb ? rgbToHsl(rgb) : [0, 0];
+  if (rgb && s0 >= 0.15) {
+    h = h0;
+    s = Math.max(s0, 0.6);
+  } else {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    h = Math.abs(hash) % 360;
   }
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return hslToHex(Math.abs(hash) % 360, 0.6, 0.42);
+  // Bright hues (yellow, green, cyan) need a darker tile than blue for white text to read (4.5:1).
+  let l = 0.42;
+  while (l > 0.12 && contrastRatio(hslToHex(h, s, l), '#ffffff') < 4.5) l -= 0.01;
+  return hslToHex(h, s, l);
 }

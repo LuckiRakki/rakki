@@ -1,9 +1,9 @@
 // Library → Radio and Library → Music videos.
 // Radio: your internet radio stations (add one by its address: a stream, a .pls/.m3u link, or a
 // SUB/WAVE station, which also shows what's on air). Music videos: the Music Videos library;
-// each opens in its own mpv window (player/video.ts).
+// each plays in Rakki's own video player (player/video.ts, player/VideoHost.tsx).
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Play, Plus, Radio as RadioIcon, Search, Trash2 } from 'lucide-react';
+import { ExternalLink, MonitorPlay, Play, Plus, Radio as RadioIcon, Search, Trash2 } from '~/ui/icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useMemo, useState } from 'react';
 
@@ -16,7 +16,8 @@ import { playVideo } from '~/player/video';
 import { playStation } from '~/radio/radio';
 import { usePlayer } from '~/player/store';
 import { openMenu, toast } from '~/ui/overlays';
-import { Spinner } from '~/ui/parts';
+import { activateOnKey } from '~/ui/keys';
+import { Empty, QueryState } from '~/ui/states';
 
 function StationCard({ st }: { st: Station }) {
   const playingId = usePlayer((s) => (s.playing ? s.queue[s.index]?.Radio?.stationId : null));
@@ -32,7 +33,9 @@ function StationCard({ st }: { st: Station }) {
       className={`station${playingId === st.id ? ' on' : ''}`}
       role="button"
       tabIndex={0}
+      aria-label={`Play ${st.name}`}
       onClick={() => playStation(st)}
+      onKeyDown={activateOnKey(() => playStation(st))}
       onContextMenu={(e) =>
         openMenu(
           e,
@@ -57,17 +60,17 @@ function StationCard({ st }: { st: Station }) {
 export function Radio() {
   const stations = useStations((s) => s.stations);
   const [address, setAddress] = useState('');
-  const [busy, setBusy] = useState(false);
+  // The field clears at once; the station appears when its address is worked out, or the
+  // address comes back with what went wrong.
   const add = async () => {
-    setBusy(true);
+    const typed = address.trim();
+    setAddress('');
     try {
-      const st = useStations.getState().add(await resolveStation(address));
+      const st = useStations.getState().add(await resolveStation(typed));
       toast(`Added ${st.name}`);
-      setAddress('');
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Couldn’t add that station');
-    } finally {
-      setBusy(false);
+      setAddress((now) => now || typed);
+      toast(`Couldn’t add that station: ${e instanceof Error ? e.message : 'check the address'}`);
     }
   };
   return (
@@ -79,9 +82,9 @@ export function Radio() {
           e.preventDefault();
           void add();
         }}>
-        <input className="field" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Add a station: its stream, a .pls or .m3u link, or a SUB/WAVE address" spellCheck={false} />
-        <button className="secondary small" disabled={!address.trim() || busy}>
-          <Plus size={15} /> {busy ? 'Adding…' : 'Add'}
+        <input className="field" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Add a station: its stream, a .pls or .m3u link, or a SUB/WAVE address" aria-label="Station address" spellCheck={false} />
+        <button className="secondary small" disabled={!address.trim()}>
+          <Plus size={16} /> Add
         </button>
       </form>
       {stations.length ? (
@@ -91,7 +94,7 @@ export function Radio() {
           ))}
         </div>
       ) : (
-        <p className="empty-note">No stations yet. Paste an internet radio address above. Stations live on this computer (the phone keeps its own list).</p>
+        <Empty icon={RadioIcon} title="No stations yet" detail="Paste an internet radio address above. Stations live on this computer; the phone keeps its own list." />
       )}
     </div>
   );
@@ -111,11 +114,14 @@ export function Videos() {
         <h1>Music videos</h1>
         <label className="find">
           <Search size={15} />
-          <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a video" />
+          <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a video" aria-label="Find a video" />
         </label>
       </div>
-      {q.isLoading ? <Spinner /> : null}
-      {q.data && !q.data.length ? <p className="empty-note">No music videos on your server (a Music Videos library in Jellyfin).</p> : null}
+      <QueryState
+        q={q}
+        what="music videos"
+        empty={<Empty icon={MonitorPlay} title="No music videos yet" detail="Videos in a Music Videos library on your Jellyfin server show up here." />}
+      />
       <div className="video-grid">
         {shown.map((v) => (
           <VideoCard key={v.Id} video={v} from={shown} />

@@ -13,7 +13,7 @@ import { useSettings } from '@/settings/store';
 import { useLayout } from '~/layout/layout';
 import { currentPosition, usePlayer } from '~/player/store';
 import { SpicyView } from '~/spicy/SpicyView';
-import { Spinner } from '~/ui/parts';
+import { Loading } from '~/ui/states';
 
 export function pickLyrics(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } | undefined): Lyrics | null {
   if (!bundle) return null;
@@ -73,7 +73,7 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
 
   if (!item) return <div className="lyrics-empty">Play something to see its lyrics.</div>;
   if (item.Radio) return <div className="lyrics-empty">No lyrics for radio.</div>;
-  if (q.isLoading) return <Spinner />;
+  if (q.isLoading) return <Loading what="lyrics" />;
   if (!lyrics) return <div className="lyrics-empty">No lyrics for this song.</div>;
   // Spicy (word by word) in the sidebar's card too, when that's the lyrics style.
   if (variant === 'card' && mode === 'spicy') return <SpicyView lyrics={lyrics} itemId={item.Id} variant="card" active={!covered} onOpen={onOpen} />;

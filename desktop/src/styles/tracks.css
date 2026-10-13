@@ -1,0 +1,60 @@
+/* Song tables: the library's (ui/parts.tsx TrackTable) and the full player's (player/NowPlaying.tsx). */
+
+/* ---- Song table ---- */
+
+.tracktable { padding: 0 20px 24px; outline: none; }
+.tt-head, .tt-row { display: grid; align-items: center; gap: 14px; padding: 0 12px; }
+.tt-head { height: 36px; color: var(--text-3); font-size: 13px; border-bottom: 1px solid var(--line); margin-bottom: 8px; position: sticky; top: 0; background: var(--surface); z-index: 2; }
+.tt-head > div { display: flex; align-items: center; }
+.tt-row { position: absolute; left: 0; right: 0; height: 56px; border-radius: 6px; color: var(--text-3); margin: 0 20px; }
+.tt-row:hover { background: rgba(255, 255, 255, 0.08); }
+.tracktable.movable .tt-row { cursor: grab; }
+.tracktable.dragging, .tracktable.dragging .tt-row { cursor: grabbing; }
+.tracktable.dragging .tt-row:hover { background: none; }
+.tt-row.lifted { opacity: 0.45; }
+.tt-drop { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--text); border-radius: 2px; z-index: 2; pointer-events: none; }
+.tt-row.sel { background: rgba(255, 255, 255, 0.16); }
+.tt-row .num { display: flex; justify-content: flex-end; position: relative; font-variant-numeric: tabular-nums; }
+.tt-row .num .hoverplay { position: absolute; right: -2px; display: none; color: var(--text); }
+.tt-row:hover .num .n { visibility: hidden; }
+.tt-row:hover .num .hoverplay { display: grid; }
+.tt-row .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tt-row .who .thumb { width: 40px; flex: none; border-radius: 4px; }
+.tt-text { min-width: 0; }
+.tt-row .name { color: var(--text); font-weight: 500; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt-row .by, .tt-row .album { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt-row:hover .by, .tt-row:hover .album, .tt-row.sel .by { color: var(--text-2); }
+.tt-row.now .name { color: var(--accent); }
+.tt-row .len, .tt-row .plays { font-size: 13px; font-variant-numeric: tabular-nums; display: flex; }
+.heart { color: var(--text-3); display: grid; place-items: center; transition: color 0.15s, transform 0.12s; }
+.tt-row .heart { visibility: hidden; }
+.tt-row:hover .heart, .tt-row .heart.on { visibility: visible; }
+.heart:hover { color: var(--text); transform: scale(1.08); }
+.heart.on { color: var(--text); }
+.eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.eq i { width: 3px; background: var(--accent); border-radius: 1px; animation: eq 0.9s ease-in-out infinite; }
+.eq i:nth-child(2) { animation-delay: -0.3s; }
+.eq i:nth-child(3) { animation-delay: -0.6s; }
+.eq.paused i { animation: none; height: 4px; }
+@keyframes eq { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+
+/* Song table in the full player: queue and related. */
+.songtable { overflow-y: auto; padding-right: 6px; }
+.st-row { display: grid; grid-template-columns: 36px minmax(0, 2.4fr) minmax(0, 1.4fr) minmax(0, 0.9fr) 52px 58px 34px; align-items: center; gap: 12px; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+.st-row:not(.st-head):hover { background: rgba(255, 255, 255, 0.1); }
+.st-row.now { background: rgba(255, 255, 255, 0.14); }
+.st-row.now .name { color: var(--accent); }
+.st-row.past { opacity: 0.5; }
+.st-head { position: sticky; top: 0; z-index: 1; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.75); padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); border-radius: 0; margin-bottom: 6px; background: var(--np-solid, #111); }
+.st-n { text-align: center; font-variant-numeric: tabular-nums; display: flex; justify-content: center; }
+.st-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.st-title .thumb { width: 40px; flex: none; border-radius: 4px; }
+.st-title .t { display: flex; flex-direction: column; min-width: 0; }
+.st-title .name { color: #fff; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-title .sub { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.st-album, .st-genre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-len, .st-year { font-variant-numeric: tabular-nums; text-align: right; }
+.st-row .heart { opacity: 0; justify-self: center; }
+.st-row:hover .heart, .st-row .heart.on { opacity: 1; }
+@container (max-width: 600px) { .st-row { grid-template-columns: 36px minmax(0, 2.4fr) minmax(0, 1.4fr) 58px 34px; } .st-genre, .st-year { display: none; } }
+@container (max-width: 430px) { .st-row { grid-template-columns: 36px minmax(0, 1fr) 58px 34px; } .st-album { display: none; } }

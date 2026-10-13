@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDuration, ticksToSeconds } from '@/lib/format';
@@ -16,11 +16,14 @@ import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const REFRESH_MS = 3000;
+/** Playback being moved (Play here / Play there): one at a time. The screen closes at once. */
+let moving = false;
 
 /**
  * Your devices (playing across devices, docs/REMOTE_PLAYBACK.md): your other Rakki apps on this
  * server (the computer) and what each is playing. Control one from here, take its music over
  * ("Play here"), or send this phone's music to it ("Play on computer"), at the same moment.
+ * Moving playback closes the screen at once; a toast says when it's playing (or why not).
  */
 export default function DevicesScreen() {
   const t = useTheme();
@@ -29,7 +32,6 @@ export default function DevicesScreen() {
   const client = useAuth((s) => s.client);
   const [devices, setDevices] = useState<RakkiDevice[] | null>(null);
   const [error, setError] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
   const [, redraw] = useState(0);
   const here = usePlayer((s) => s.queue[s.index]?.item);
   const playingHere = usePlayer((s) => s.playing);
@@ -61,9 +63,10 @@ export default function DevicesScreen() {
   };
 
   const playHere = async (d: RakkiDevice) => {
-    if (!client || busy) return;
+    if (!client || moving) return;
     tick();
-    setBusy(`Taking over from ${d.name}…`);
+    moving = true;
+    router.back();
     try {
       const h = await pullFrom(client, d);
       if (!h.items.length) return showToast(`Nothing to take over from ${d.name}`);
@@ -71,19 +74,19 @@ export default function DevicesScreen() {
       if (h.positionSec > 1) setTimeout(() => usePlayer.getState().seek(h.positionSec), 700);
       await h.release();
       showToast(`Playing here (from ${d.name})`);
-      router.back();
     } catch {
       showToast(`Couldn’t take over from ${d.name}`);
     } finally {
-      setBusy(null);
+      moving = false;
     }
   };
 
   const playOn = async (d: RakkiDevice) => {
     const p = usePlayer.getState();
-    if (!client || busy || !p.queue.length) return;
+    if (!client || moving || !p.queue.length) return;
     tick();
-    setBusy(`Moving to ${d.name}…`);
+    moving = true;
+    router.back();
     try {
       const ok = await pushTo(client, d, p.queue.map((e) => e.item), p.index, engine.getProgress().position);
       if (!ok) return showToast(`${d.name} didn’t start. Open Rakki there and try again.`);
@@ -92,7 +95,7 @@ export default function DevicesScreen() {
     } catch {
       showToast(`Couldn’t reach ${d.name}`);
     } finally {
-      setBusy(null);
+      moving = false;
     }
   };
 
@@ -118,7 +121,11 @@ export default function DevicesScreen() {
           </View>
         </View>
 
-        {devices === null && !error ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
+        {devices === null && !error ? (
+          <T variant="caption" style={styles.note}>
+            Looking for your other Rakki apps
+          </T>
+        ) : null}
         {error ? (
           <T variant="caption" style={styles.note}>
             Couldn’t ask the server.
@@ -162,17 +169,17 @@ export default function DevicesScreen() {
                   <View style={styles.actions}>
                     {d.item ? (
                       <>
-                        <Pressable hitSlop={8} onPress={() => send(d, 'PreviousTrack')} accessibilityLabel="Previous">
+                        <Pressable style={styles.control} onPress={() => send(d, 'PreviousTrack')} accessibilityLabel="Previous">
                           <Ionicons name="play-skip-back" size={22} color={t.colors.text} />
                         </Pressable>
-                        <Pressable hitSlop={8} onPress={() => send(d, 'PlayPause')} accessibilityLabel={d.paused ? 'Play' : 'Pause'}>
+                        <Pressable style={styles.control} onPress={() => send(d, 'PlayPause')} accessibilityLabel={d.paused ? 'Play' : 'Pause'}>
                           <Ionicons name={d.paused ? 'play' : 'pause'} size={26} color={t.colors.text} />
                         </Pressable>
-                        <Pressable hitSlop={8} onPress={() => send(d, 'NextTrack')} accessibilityLabel="Next">
+                        <Pressable style={styles.control} onPress={() => send(d, 'NextTrack')} accessibilityLabel="Next">
                           <Ionicons name="play-skip-forward" size={22} color={t.colors.text} />
                         </Pressable>
                         <View style={{ flex: 1 }} />
-                        <Pressable disabled={!!busy} onPress={() => void playHere(d)} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.7 }]}>
+                        <Pressable onPress={() => void playHere(d)} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.7 }]}>
                           <Ionicons name="arrow-down" size={14} color={t.colors.text} />
                           <T style={styles.pillText}>Play here</T>
                         </Pressable>
@@ -181,7 +188,7 @@ export default function DevicesScreen() {
                       <View style={{ flex: 1 }} />
                     )}
                     {here ? (
-                      <Pressable disabled={!!busy} onPress={() => void playOn(d)} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.7 }]}>
+                      <Pressable onPress={() => void playOn(d)} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.7 }]}>
                         <Ionicons name="arrow-up" size={14} color={t.colors.text} />
                         <T style={styles.pillText}>Play there</T>
                       </Pressable>
@@ -198,7 +205,7 @@ export default function DevicesScreen() {
         })}
 
         <T variant="caption" style={styles.note}>
-          {busy ?? 'Moving music picks up at the same moment in the song.'}
+          Moving music picks up at the same moment in the song.
         </T>
       </ScrollView>
     </View>
@@ -216,13 +223,16 @@ const useStyles = makeStyles((t) => ({
   device: { flexDirection: 'row', paddingHorizontal: t.space.lg, paddingVertical: t.space.md },
   icon: { marginRight: t.space.md, marginTop: 2 },
   song: { flexDirection: 'row', alignItems: 'center', marginTop: t.space.sm },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: t.space.lg, marginTop: t.space.md },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: t.space.sm, marginTop: t.space.sm },
+  // 44 pt touch targets (Apple's minimum), the icons centred in them.
+  control: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: t.space.md,
-    paddingVertical: 6,
+    minHeight: 44,
+    paddingHorizontal: t.space.lg,
+    paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: t.colors.surface2,
   },

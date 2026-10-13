@@ -1,8 +1,9 @@
 // The pieces every screen is built from: artwork, cards, shelves, the song table, and the header
 // and action bar at the top of album, artist and playlist pages.
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, ChevronRight, Clock3, Heart, MoreHorizontal, Music2, Pause, Play, Search, Shuffle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock3, Heart, MoreHorizontal, Music2, Pause, Play, Search, Shuffle } from '~/ui/icons';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useInAnyPlaylist } from '@/library/playlistCache';
@@ -14,12 +15,26 @@ import { openAddToPlaylist } from '~/library/AddToPlaylist';
 import { collectionMenu, songMenu, type MenuContext } from '~/library/menus';
 import { go, openItem } from '~/nav';
 import { usePlayer } from '~/player/store';
+import { activateOnKey } from '~/ui/keys';
 import { openMenu } from '~/ui/overlays';
+
+/** Pictures picked on this computer, shown while they upload (library/actions.ts). */
+const useLocalPictures = create<Record<string, string>>(() => ({}));
+
+export function showLocalPicture(id: string, url: string | null) {
+  useLocalPictures.setState((m) => {
+    const next = { ...m };
+    if (url) next[id] = url;
+    else delete next[id];
+    return next;
+  }, true);
+}
 
 export function Artwork({ item, size = 300, round, className }: { item?: BaseItem; size?: number; round?: boolean; className?: string }) {
   const client = useAuth((s) => s.client);
+  const local = useLocalPictures((m) => (item ? m[item.Id] : undefined));
   // A radio station's picture is what's on air (SUB/WAVE), not a Jellyfin image.
-  const src = item?.Radio ? item.Radio.coverUrl : item ? client?.imageUrl(item, size) : undefined;
+  const src = local ?? (item?.Radio ? item.Radio.coverUrl : item ? client?.imageUrl(item, size) : undefined);
   const [failed, setFailed] = useState(false);
   const bg = item && client ? artColor(client.blurhash(item), '#2a2a2e') : undefined;
   return (
@@ -57,7 +72,8 @@ export function ItemCard({ item }: { item: BaseItem }) {
       role="button"
       tabIndex={0}
       onClick={() => openItem(item)}
-      onKeyDown={(e) => e.key === 'Enter' && openItem(item)}
+      aria-label={`${displayName(item)}, ${subtitle(item)}`}
+      onKeyDown={activateOnKey(() => openItem(item))}
       onContextMenu={(e) => openMenu(e, collectionMenu(item), displayName(item))}>
       <div className="art">
         <Artwork item={item} round={round} />
@@ -108,10 +124,6 @@ export function Shelf({ title, items, onShowAll }: { title: string; items?: Base
   );
 }
 
-export function Spinner() {
-  return <div className="spin" />;
-}
-
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
   const s = Math.floor(seconds % 60);
@@ -154,7 +166,7 @@ export function ArtistLinks({ item, sep = ', ' }: { item: BaseItem; sep?: string
  * A song's save button (Spotify's): filled when the song is in Liked Songs or any of your
  * playlists. Not saved: one click likes it. Saved: opens Add to playlist to change where.
  */
-export function SaveButton({ item, size = 16, className = '' }: { item: BaseItem; size?: number; className?: string }) {
+export function SaveButton({ item, size = 16, className = '', tabIndex }: { item: BaseItem; size?: number; className?: string; tabIndex?: number }) {
   const inPlaylist = useInAnyPlaylist(item.Id);
   const liked = !!item.UserData?.IsFavorite;
   const saved = liked || inPlaylist;
@@ -166,6 +178,7 @@ export function SaveButton({ item, size = 16, className = '' }: { item: BaseItem
       className={`heart${saved ? ' on' : ''}${className ? ` ${className}` : ''}`}
       aria-label={title}
       title={title}
+      tabIndex={tabIndex}
       onClick={(e) => {
         e.stopPropagation();
         if (saved) openAddToPlaylist([item]);
@@ -205,8 +218,9 @@ export interface TrackTableProps {
 
 /**
  * Songs as a table, like Spotify's: click selects (Ctrl adds, Shift picks a range), double-click
- * or Enter plays, right-click opens the menu for what's selected. Only the rows on screen are
- * drawn, so a 5,000-song list costs the same as a 20-song one.
+ * or Enter plays, right-click (or the Menu key) opens the menu for what's selected. From the
+ * keyboard: Tab reaches the table, the arrow keys move (Shift extends), Space selects, Home / End
+ * jump. Only the rows on screen are drawn, so a 5,000-song list costs the same as a 20-song one.
  */
 const ROW_H = 56;
 
@@ -220,6 +234,8 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [anchor, setAnchor] = useState(0);
   const [margin, setMargin] = useState(0);
+  // The row the keyboard is on (the one Tab lands on).
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     setMargin(parent.current?.offsetTop ?? 0);
@@ -234,6 +250,39 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
   });
 
   const play = (i: number) => usePlayer.getState().playQueue(tracks, i, { shuffle: false });
+
+  /** Keyboard: move to row i (scrolling it into view), selecting it, or the range with Shift. */
+  const moveTo = (i: number, extend: boolean) => {
+    const to = Math.max(0, Math.min(tracks.length - 1, i));
+    setCursor(to);
+    if (extend) {
+      const [a, b] = [Math.min(anchor, to), Math.max(anchor, to)];
+      setSelected(new Set(Array.from({ length: b - a + 1 }, (_, k) => a + k)));
+    } else {
+      setSelected(new Set([to]));
+      setAnchor(to);
+    }
+    rows.scrollToIndex(to, { align: 'auto' });
+    requestAnimationFrame(() => body.current?.querySelector<HTMLElement>(`[data-row="${to}"]`)?.focus());
+  };
+  const onRowKey = (e: React.KeyboardEvent, i: number) => {
+    const page = Math.max(1, Math.floor((document.getElementById('main')?.clientHeight ?? 560) / ROW_H) - 1);
+    const to: Record<string, number> = { ArrowDown: i + 1, ArrowUp: i - 1, PageDown: i + page, PageUp: i - page, Home: 0, End: tracks.length - 1 };
+    if (to[e.key] !== undefined) {
+      e.preventDefault();
+      moveTo(to[e.key], e.shiftKey);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      play(i);
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      const next = new Set(selected);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      setSelected(next);
+      setAnchor(i);
+    }
+  };
   const pick = (i: number, e: React.MouseEvent) => {
     if (e.shiftKey) {
       const [a, b] = [Math.min(anchor, i), Math.max(anchor, i)];
@@ -288,15 +337,16 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
     <div
       className={`tracktable${drag ? ' dragging' : ''}${onMove ? ' movable' : ''}`}
       ref={parent}
-      tabIndex={-1}
+      role="grid"
+      aria-rowcount={tracks.length}
+      aria-multiselectable
       onKeyDown={(e) => {
-        if (e.key === 'Enter' && selected.size) play(Math.min(...selected));
         if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
           setSelected(new Set(tracks.map((_, i) => i)));
         }
       }}>
-      <div className="tt-head" style={{ gridTemplateColumns: grid }}>
+      <div className="tt-head" role="row" style={{ gridTemplateColumns: grid }}>
         <div className="num">#</div>
         <div>Title</div>
         {album ? <div>Album</div> : null}
@@ -317,6 +367,14 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
               key={row.key}
               className={`tt-row${selected.has(row.index) ? ' sel' : ''}${now ? ' now' : ''}${drag?.from === row.index ? ' lifted' : ''}`}
               style={{ gridTemplateColumns: grid, transform: `translateY(${row.start - margin}px)` }}
+              role="row"
+              aria-rowindex={row.index + 1}
+              aria-selected={selected.has(row.index)}
+              aria-label={`${t.Name}, ${t.Artists?.join(', ') ?? ''}`}
+              data-row={row.index}
+              tabIndex={row.index === Math.min(cursor, tracks.length - 1) ? 0 : -1}
+              onKeyDown={(e) => onRowKey(e, row.index)}
+              onFocus={() => setCursor(row.index)}
               onPointerDown={(e) => startDrag(row.index, e)}
               onClick={(e) => pick(row.index, e)}
               onDoubleClick={() => play(row.index)}
@@ -334,6 +392,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
                 <span className="n">{now ? <Playing paused={!playing} /> : trackNumbers ? (t.IndexNumber ?? row.index + 1) : row.index + 1}</span>
                 <button
                   className="hoverplay"
+                  tabIndex={-1}
                   aria-label={now && playing ? 'Pause' : 'Play'}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -368,7 +427,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
               ) : null}
               {plays ? <div className="right plays">{count !== undefined ? count.toLocaleString() : (t.UserData?.PlayCount ?? 0) || ''}</div> : null}
               <div className="like">
-                <SaveButton item={t} />
+                <SaveButton item={t} tabIndex={-1} />
               </div>
               <div className="right len">{formatTime(ticksToSeconds(t.RunTimeTicks))}</div>
             </div>

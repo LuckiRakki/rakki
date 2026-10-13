@@ -1,0 +1,77 @@
+/* Rakki desktop: the phone app's colours and type, laid out like Spotify / Feishin (sidebar,
+   main, queue or lyrics on the right, player bar at the bottom). Plain CSS with transitions
+   only: nothing animates when nothing changes, so the app costs next to nothing in the
+   background. --accent follows your colour or Lucid (the album that's playing). */
+
+:root {
+  /* Motion: one set of curves for the whole app. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --bg: #050506;
+  --surface: #121214;
+  --surface-2: #1b1b1e;
+  --surface-3: #26262a;
+  --surface-4: #333338;
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #f5f5f6;
+  --text-2: #b6b6bc;
+  --text-3: #a0a0a8; /* 4.8:1 on the lightest surface (--surface-4) */
+  --accent: #fd642d;
+  --accent-soft: rgba(253, 100, 45, 0.16);
+  /* Focus rings: white reads on every surface and every Lucid colour. */
+  --focus: #fff;
+  /* Text on an accent fill: Lucid keeps every accent light enough for black (lib/color.ts). */
+  --on-accent: #000;
+  --radius: 10px;
+  --radius-art: 6px;
+  --titlebar: 48px;
+  --playerbar: 88px;
+  --sidebar: 280px;
+  --panel: 340px;
+  color-scheme: dark;
+  font-family: 'Inter Variable', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; overflow: hidden; user-select: none; background: var(--bg); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:disabled { cursor: default; }
+input, select { font: inherit; color: inherit; }
+img { display: block; }
+h1, h2, h3, p { margin: 0; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.28); }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.muted { color: var(--text-3); }
+.small { font-size: 12px; }
+.center { text-align: center; justify-content: center; }
+.pad { padding: 8px 12px; }
+.right { text-align: right; justify-content: flex-end; }
+.linkish { cursor: pointer; }
+.linkish:hover { color: var(--text); text-decoration: underline; }
+.empty-note { color: var(--text-3); padding: 28px 0; }
+.error { color: #ff8a80; font-size: 13px; }
+.spin { width: 26px; height: 26px; border: 3px solid var(--surface-3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 48px auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Page states (ui/states.tsx): loading, empty, failed, and the server bar ---- */
+.state { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 48px 24px; color: var(--text-2); }
+.state.loading { flex-direction: row; justify-content: center; gap: 14px; color: var(--text-2); font-weight: 600; }
+.state.loading .spin { margin: 0; width: 22px; height: 22px; }
+.state h2 { font-size: 20px; font-weight: 800; color: var(--text); margin-top: 6px; }
+.state p { max-width: 420px; line-height: 1.5; }
+.state .ico { color: var(--text-3); }
+.state .secondary { margin-top: 8px; }
+.state.failed .ico { color: #ff8a80; }
+.page-states { padding: 0 28px; }
+.server-bar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 10px; padding: 10px 20px; background: var(--surface-3); color: var(--text); font-size: 13px; font-weight: 600; }
+.server-bar span { flex: 1; min-width: 0; }
+.server-bar .text-btn { color: var(--text); }

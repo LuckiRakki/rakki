@@ -8,7 +8,7 @@
 // cross-origin read it needs).
 import { useQuery } from '@tanstack/react-query';
 import Hls from 'hls.js';
-import { ChevronDown, Expand, Maximize2, PanelRight, Pause, Play, Shrink, SkipBack, SkipForward, Volume2, X } from 'lucide-react';
+import { ChevronDown, Expand, Maximize2, PanelRight, Pause, Play, Shrink, SkipBack, SkipForward, Volume2, X } from '~/ui/icons';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { create } from 'zustand';
 
@@ -17,7 +17,8 @@ import { artColor } from '@/lib/blurhash';
 import { useSettings } from '@/settings/store';
 import { videoTitle } from '@/video/titles';
 import { useAuth } from '~/auth/session';
-import { Range, WindowButtons } from '~/layout/frame';
+import { WindowButtons } from '~/layout/TitleBar';
+import { Range } from '~/ui/Range';
 import { useLayout } from '~/layout/layout';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
@@ -417,7 +418,7 @@ export function VideoBar({ video }: { video: BaseItem }) {
         </div>
         <div className="seek">
           <span>{formatTime(time)}</span>
-          <Range value={time} max={duration} onSet={videoControls.seek} />
+          <Range label="Seek" step={5} value={time} max={duration} onSet={videoControls.seek} />
           <span>{formatTime(duration)}</span>
         </div>
       </div>
@@ -434,7 +435,7 @@ export function VideoBar({ video }: { video: BaseItem }) {
         <div className="volume" title={`Volume ${Math.round(volume * 100)}% (scroll to change)`} onWheel={(e) => videoControls.setVolume(volume + (e.deltaY < 0 ? 0.05 : -0.05))}>
           <Volume2 size={18} />
           <div className="vol">
-            <Range value={volume * 100} max={100} onSet={(x) => videoControls.setVolume(x / 100)} />
+            <Range label="Volume" step={5} value={volume * 100} max={100} onSet={(x) => videoControls.setVolume(x / 100)} />
           </div>
         </div>
         <button className="iconbtn" aria-label="Close the video" title="Close the video" onClick={() => v.close()}>

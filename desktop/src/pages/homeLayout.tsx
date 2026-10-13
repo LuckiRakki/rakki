@@ -1,6 +1,6 @@
 // Home's sections, in your order, with the ones you hid left out (remembered). Customize Home
 // (the button on Home) drags them into order and switches them on and off.
-import { Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Eye, EyeOff, GripVertical } from '~/ui/icons';
 import { useRef, useState } from 'react';
 import { create } from 'zustand';
 

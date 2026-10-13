@@ -1,8 +1,9 @@
 // The Devices button (player bar), like Spotify's device list: your other Rakki apps signed in to
 // this server and what each is playing (docs/REMOTE_PLAYBACK.md). Click one to control it from
 // the player bar, or move playback: Play here (take it over) or Play on it (send it there).
-// Asks the server every few seconds while open.
-import { ArrowDownToLine, ArrowUpFromLine, Monitor, MonitorSpeaker, Pause, Play, SkipBack, SkipForward, Smartphone } from 'lucide-react';
+// Asks the server every few seconds while open. Moving playback closes the list at once; a toast
+// says when it's playing on the other side (or why not).
+import { ArrowDownToLine, ArrowUpFromLine, Monitor, MonitorSpeaker, Pause, Play, SkipBack, SkipForward, Smartphone } from '~/ui/icons';
 import { useEffect, useRef, useState } from 'react';
 
 import { otherRakkiDevices, positionNow, type RakkiDevice } from '@/remote/devices';
@@ -23,7 +24,6 @@ function ago(ms: number): string {
 function DeviceRow({ d, onPicked }: { d: RakkiDevice; onPicked(): void }) {
   const [, tick] = useState(0);
   const target = useRemote((s) => s.target);
-  const busy = useRemote((s) => s.busy);
   const hasQueueHere = usePlayer((s) => s.queue.length > 0 && !s.queue[s.index]?.Radio);
   useEffect(() => {
     if (!d.item || d.paused) return;
@@ -74,16 +74,22 @@ function DeviceRow({ d, onPicked }: { d: RakkiDevice; onPicked(): void }) {
             {d.item ? (
               <>
                 <button className="iconbtn" aria-label="Previous" title="Previous" onClick={() => send('PreviousTrack')}>
-                  <SkipBack size={15} fill="currentColor" />
+                  <SkipBack size={16} />
                 </button>
                 <button className="iconbtn" aria-label={d.paused ? 'Play' : 'Pause'} title={d.paused ? 'Play' : 'Pause'} onClick={() => send('PlayPause')}>
-                  {d.paused ? <Play size={15} fill="currentColor" /> : <Pause size={15} fill="currentColor" />}
+                  {d.paused ? <Play size={16} /> : <Pause size={16} />}
                 </button>
                 <button className="iconbtn" aria-label="Next" title="Next" onClick={() => send('NextTrack')}>
-                  <SkipForward size={15} fill="currentColor" />
+                  <SkipForward size={16} />
                 </button>
                 <span className="spacer" />
-                <button className="device-btn" disabled={!!busy} onClick={() => void r.playHere(d)} title={`Take over what ${d.name} is playing, at the same moment`}>
+                <button
+                  className="device-btn"
+                  onClick={() => {
+                    onPicked();
+                    void r.playHere(d);
+                  }}
+                  title={`Take over what ${d.name} is playing, at the same moment`}>
                   <ArrowDownToLine size={14} /> Play here
                 </button>
               </>
@@ -91,7 +97,13 @@ function DeviceRow({ d, onPicked }: { d: RakkiDevice; onPicked(): void }) {
               <span className="spacer" />
             )}
             {hasQueueHere ? (
-              <button className="device-btn" disabled={!!busy} onClick={() => void r.playOn(d)} title={`Send this computer's queue to ${d.name}, at the same moment`}>
+              <button
+                className="device-btn"
+                onClick={() => {
+                  onPicked();
+                  void r.playOn(d);
+                }}
+                title={`Send this computer's queue to ${d.name}, at the same moment`}>
                 <ArrowUpFromLine size={14} /> Play on {isPhone(d) ? 'phone' : 'it'}
               </button>
             ) : null}
@@ -109,7 +121,6 @@ export function DevicesButton() {
   const [open, setOpen] = useState(false);
   const [devices, setDevices] = useState<RakkiDevice[] | null>(null);
   const [error, setError] = useState(false);
-  const busy = useRemote((s) => s.busy);
   const target = useRemote((s) => s.target);
   const box = useRef<HTMLDivElement>(null);
 
@@ -144,7 +155,7 @@ export function DevicesButton() {
         aria-label="Your devices"
         title={target ? `Controlling ${target.name}` : 'Your devices'}
         onClick={() => setOpen(!open)}>
-        <MonitorSpeaker size={18} />
+        <MonitorSpeaker size={20} />
       </button>
       {open ? (
         <div className="devices-pop">
@@ -159,11 +170,11 @@ export function DevicesButton() {
               <div className="sub">{here ? (playingHere ? `Playing ${here.Name}` : `Paused: ${here.Name}`) : 'Nothing playing here'}</div>
             </div>
           </div>
-          {devices === null && !error ? <div className="sub pad">Looking…</div> : null}
+          {devices === null && !error ? <div className="sub pad">Looking for your other Rakki apps</div> : null}
           {error ? <div className="sub pad">Couldn't ask the server.</div> : null}
           {devices?.map((d) => <DeviceRow key={d.sessionId} d={d} onPicked={() => setOpen(false)} />)}
           {devices && !devices.length ? <div className="sub pad">No other Rakki apps are signed in right now. Open Rakki on your phone to see it here.</div> : null}
-          {busy ? <div className="devices-note busy">{busy}</div> : <div className="devices-note">An iPhone takes commands while Rakki is open or playing on it.</div>}
+          <div className="devices-note">An iPhone takes commands while Rakki is open or playing on it.</div>
         </div>
       ) : null}
     </div>

@@ -26,7 +26,8 @@
     --sl-text-active:   #fff;                       /* dots, placeholder */
     --sl-text-inactive: rgba(255, 255, 255, 0.30);
     /* Big, screen-filling lyrics (× user lyric-size setting) */
-    --sl-font-size:   calc(clamp(2rem, 5vw, 4rem) * var(--sl-lyric-scale, 1));
+    /* Sized from the column the lyrics sit in (Rakki: .spicy-mount is the container), not the window. */
+    --sl-font-size:   calc(clamp(2rem, 9.5cqi, 4rem) * var(--sl-lyric-scale, 1));
     --sl-line-gap:    calc(var(--sl-font-size) * 0.2);
 }
 
@@ -69,6 +70,7 @@
     flex-wrap: wrap;
     align-items: baseline;
     padding-right: 5%;
+    min-width: 0;
     font-size: var(--sl-font-size);
     font-weight: 700;
     line-height: 1.18;

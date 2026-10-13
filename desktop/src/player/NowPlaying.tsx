@@ -5,14 +5,14 @@
 // expand button (or F11) makes the window fill the screen. The top fades while the mouse is
 // still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink } from 'lucide-react';
+import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink } from '~/ui/icons';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { artColor } from '@/lib/blurhash';
 import { useAuth } from '~/auth/session';
 import { songMenu } from '~/library/menus';
-import { WindowButtons } from '~/layout/frame';
+import { WindowButtons } from '~/layout/TitleBar';
 import { useLayout, type PlayerTab } from '~/layout/layout';
 import { formatOf } from '~/layout/NowPlayingPanel';
 import { useLyrics } from '@/lyrics/fetch';
@@ -24,6 +24,7 @@ import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
 import { usePresence } from '~/ui/motion';
+import { Loading } from '~/ui/states';
 import { openMenu } from '~/ui/overlays';
 import { ArtistLinks, Artwork, formatTime, SaveButton, ticksToSeconds } from '~/ui/parts';
 
@@ -121,7 +122,7 @@ function RelatedTab({ item }: { item: BaseItem }) {
     queryFn: () => client!.getInstantMix(item.Id, 40),
   });
   const songs = (q.data ?? []).filter((s) => s.Id !== item.Id);
-  if (q.isLoading) return <div className="spin" />;
+  if (q.isLoading) return <Loading what="related songs" />;
   if (!songs.length) return <p className="lyrics-empty">Nothing related found.</p>;
   return <SongTable songs={songs} first={0} onPlay={(i) => usePlayer.getState().playQueue(songs, i, { shuffle: false })} />;
 }
