@@ -23,12 +23,20 @@ public class RakkiAudioModule: Module {
   private var player: RakkiPlayer?
   private let playerLock = NSLock()
 
+  /// The one player in the process. A reload (an update's Restart now) makes a new module; any
+  /// player left from before is torn down here, so only one ever answers the lock screen.
+  private static weak var live: RakkiPlayer?
+
   /// Created lazily on the main thread (every AsyncFunction below runs on main).
   private func ensurePlayer() -> RakkiPlayer {
     if let existing = currentPlayer() {
       return existing
     }
+    if let leftover = RakkiAudioModule.live {
+      leftover.teardown()
+    }
     let created = RakkiPlayer()
+    RakkiAudioModule.live = created
     created.emit = { [weak self] name, body in
       self?.sendEvent(name, body)
     }

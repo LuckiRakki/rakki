@@ -68,7 +68,15 @@ export async function checkForUpdate(quiet = true): Promise<void> {
     await Updates.fetchUpdateAsync();
     Alert.alert('Update ready', 'A new version of Rakki has downloaded.', [
       { text: 'Later', style: 'cancel' },
-      { text: 'Restart now', onPress: () => void Updates.reloadAsync() },
+      {
+        text: 'Restart now',
+        onPress: async () => {
+          // Nothing from this run may keep answering the lock screen buttons (player/store.ts).
+          const { prepareForReload } = await import('@/player/store');
+          await prepareForReload();
+          await Updates.reloadAsync();
+        },
+      },
     ]);
   } catch (e) {
     if (!quiet) Alert.alert('Couldn’t check for updates', e instanceof Error ? e.message : String(e));

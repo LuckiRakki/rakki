@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.17.1 (2026-10-13)
+- **Fixed: two songs at once after the lock screen or Control Center buttons.** Restart now
+  (after an update downloads) reloads Rakki in place, and the player from before could stay
+  behind, paused but still answering the iOS buttons, so resume or skip woke it alongside the
+  new one. Rakki now stops its player and lets go of those buttons before it reloads. (The next
+  native build also makes sure only one player can exist.) If it happens now, close Rakki from
+  the app switcher once.
+
 ## 1.17.0 (2026-10-13)
 - **Your devices on the phone**: the laptop button next to AirPlay in the player lists your other
   Rakki apps (the computer) and what each is playing. Control one from there (previous, play /

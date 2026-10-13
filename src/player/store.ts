@@ -530,6 +530,18 @@ export async function holdForVideo() {
   usePlayer.setState({ playing: false, buffering: false });
 }
 
+/**
+ * Before Rakki reloads in place (Restart now, after an update downloads): stop the native player
+ * and let go of the lock screen, Control Center and headphone buttons. The reloaded app makes
+ * its own player; one left behind still answering those buttons played a second song at once.
+ * The queue comes back paused after the reload (restoreQueue).
+ */
+export async function prepareForReload() {
+  reporter.stopped(engine.getProgress().position);
+  await engine.stop().catch(() => {});
+  await engine.stepAside(true).catch(() => {});
+}
+
 /** The music video ended (or music is wanted again): the queue goes back, paused, where it was. */
 export async function afterVideo() {
   void engine.stepAside(false);
