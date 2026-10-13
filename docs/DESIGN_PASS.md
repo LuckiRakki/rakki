@@ -3,7 +3,25 @@
 Waiting on the user's go-ahead (2026-10-13). A full design pass over everything built for Rakki
 desktop, extending to the phone app's new features (the Devices screen and the rest of this
 round), plus refactoring, then the 1.0.0 build (installers are on hold until the user says so).
-The user asked for the antislop plugin to be used for the review.
+The user asked for the antislop plugin to be used for the review. Restate the ethos below to
+the user before starting.
+
+## The design ethos (the direction; antislop is the filter on top)
+
+1. **Spotify x Feishin look and feel:** dark, the album art's colour drives the accent (Lucid,
+   else your own colour); Inter; 8-pt grid; radii 4 (art), 8 (cards), full pills (chips).
+2. **Spicy Lyrics is the headline:** word by word is the focus and the default; Regular is the
+   clean alternative. Every lyrics surface shows its source and credits (API Terms).
+3. **Everything customizable, never cluttered:** every visual choice is a setting with a
+   sensible default; settings are grouped, simple first, advanced folded away.
+4. **Light enough to forget it's running:** fine in the background while gaming or on a laptop;
+   nothing animates or redraws when nothing changes; asleep when out of sight.
+5. **One Rakki across devices:** the desktop has the phone's features and clean look, shares its
+   code, and behaves the same.
+6. **Real icons, no emojis** (or glyphs like the cross and note characters).
+7. **Plain, honest wording:** say what a thing does, in normal sentences; no hype, no filler.
+8. **Your music stays yours:** no server addresses or keys in the code; nothing about the
+   library made public.
 
 ## Asked for specifically (on top of the overall pass)
 
