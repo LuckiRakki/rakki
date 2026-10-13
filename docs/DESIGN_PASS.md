@@ -56,15 +56,28 @@ Using the same library with these values gives exactly that look; the settings s
 its main options (mode, gradient and colours, line width, fill, bars, mirror and reflection,
 frequency range, smoothing) with presets, rather than all ~50.
 
-## Decisions needed when the work starts
+## Decisions
 
-- **Where the desktop visualizer gets the music's sound.** Music plays in mpv, outside the
-  webview, so the page can't hear it (music videos are fine: they play in the page). Options:
-  1. Capture this app's sound only: Windows 10 2004+ can capture one process (mpv); on Linux,
-     PipeWire / PulseAudio can record mpv's stream. Recommended: shows only Rakki, not games.
-  2. Capture everything the computer plays (simpler, but a game or a video call moves it too).
-  The sound would be sent to the page and analysed there by audioMotion.
-- **Background engine:** use Kawarp itself (MIT) rather than rewriting it.
+- **Where the desktop visualizer gets the music's sound: Rakki's own sound only** (the user's
+  choice, 2026-10-13). Music plays in mpv, outside the webview, so the page can't hear it (music
+  videos are fine: they play in the page). Windows 10 2004+ captures one process (mpv's) with
+  process loopback; on Linux, PipeWire / PulseAudio records mpv's stream. The sound is sent to
+  the page and analysed there by audioMotion. Games and calls never move the visualizer.
+- **Background engine:** Kawarp itself (MIT) rather than a rewrite.
+
+## Found so far (antislop contrast checker, WCAG AA)
+
+| Text on background | Ratio | AA normal text |
+|---|---|---|
+| --text-3 #85858d on --surface #121214 | 5.11 | pass |
+| --text-3 on --surface-2 #1b1b1e | 4.69 | pass (barely) |
+| --text-3 on --surface-3 #26262a (hovered rows, pills, Devices buttons) | 4.12 | **fail** |
+| --text-2 #b6b6bc on --surface-2 | 8.51 | pass |
+| accent #fd642d on --surface | 6.27 | pass |
+| black on accent (buttons) | 7.04 | pass |
+
+Lucid accents change with every album, so the pass also needs a floor that keeps any album's
+accent readable on the dark surfaces (and black text readable on it).
 
 ## The overall pass (antislop)
 
