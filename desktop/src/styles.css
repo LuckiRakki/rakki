@@ -797,3 +797,24 @@ h1, h2, h3, p { margin: 0; }
 .hex .field { width: 120px; height: 34px; }
 .row-form { display: flex; gap: 10px; }
 .row-form .field { flex: 1; height: 38px; }
+
+/* Lyrics timing (lyrics/LyricsTiming.tsx) and Spicy in the sidebar's card. */
+.timing { position: relative; margin-right: 4px; }
+.timing-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; width: 360px; padding: 14px; border-radius: 12px; background: #262628; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); animation: pop-in 0.16s var(--ease-out); transform-origin: top right; }
+.timing-head { font-weight: 800; margin-bottom: 10px; }
+.timing-row { display: flex; align-items: center; gap: 6px; }
+.timing-step { height: 32px; padding: 0 10px; border-radius: 8px; background: var(--surface-3); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; transition: background 0.15s, transform 0.15s var(--ease-out); }
+.timing-step:hover { background: var(--surface-4); }
+.timing-step:active { transform: scale(0.95); }
+.timing-now { flex: 1; display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: 13px; }
+.timing-now span { font-size: 11px; color: var(--accent); font-weight: 700; }
+.timing-foot { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--text-2); align-items: flex-start; }
+.spicy-view.card { height: 230px; flex: none; cursor: pointer; }
+.spicy-view.card .sl-root { --sl-font-size: 19px; --sl-line-gap: 4px; }
+.spicy-view.card .sl-scroller { padding: 40px 0 120px; }
+.spicy-view.card .spicy-mount { -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); }
+.spicy-view.card .spicy-credit { font-size: 11px; padding-top: 4px; }
+/* The timing panel stays put while it's open, even when the player's top fades. */
+.nowplaying.idle .np-top:has(.timing-pop) { opacity: 1; }
+.nowplaying.idle:has(.timing-pop) { cursor: auto; }
+.np-top .iconbtn.on { color: var(--accent); }

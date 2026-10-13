@@ -3,6 +3,7 @@
 // (media.rs) and a tray icon sit alongside. Closing the window only hides it to the tray, where
 // music keeps playing with the interface asleep.
 
+mod autostart;
 mod discord;
 mod media;
 mod memory;
@@ -80,6 +81,18 @@ async fn discord_set(discord: State<'_, Discord>, app_id: String, activity: Opti
     discord.set(&app_id, activity).await
 }
 
+/// Start with the computer (Settings).
+#[tauri::command]
+fn autostart_get() -> bool {
+    autostart::enabled()
+}
+
+#[tauri::command]
+fn autostart_set(on: bool) -> Result<bool, String> {
+    autostart::set(on)?;
+    Ok(autostart::enabled())
+}
+
 /// The tray icon's tooltip: what's playing, and where (player/remote.ts).
 #[tauri::command]
 fn tray_tooltip(app: AppHandle, text: String) {
@@ -143,6 +156,13 @@ pub fn run() {
             let window = app.get_webview_window("main").expect("main window");
             app.manage(Media::new(&handle, &window));
             setup_tray(&handle)?;
+            // Started with the computer: stay in the tray (asleep); otherwise open the window.
+            if std::env::args().any(|a| a == autostart::TRAY_ARG) {
+                memory::set_away(&handle, true);
+            } else {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -160,6 +180,9 @@ pub fn run() {
                         memory::set_away(window.app_handle(), minimized);
                     }
                 }
+                // A window you're using is never asleep, whatever came before (a missed restore
+                // left it frozen once).
+                WindowEvent::Focused(true) => memory::set_away(window.app_handle(), false),
                 _ => {}
             }
         })
@@ -172,7 +195,9 @@ pub fn run() {
             media_now_playing,
             media_playback,
             discord_set,
-            tray_tooltip
+            tray_tooltip,
+            autostart_get,
+            autostart_set
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

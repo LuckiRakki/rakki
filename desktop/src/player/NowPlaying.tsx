@@ -19,6 +19,7 @@ import { useLyrics } from '@/lyrics/fetch';
 import { useSettings } from '@/settings/store';
 import { LyricsView, pickLyrics } from '~/lyrics/LyricsView';
 import { SpicyView } from '~/spicy/SpicyView';
+import { LyricsTiming } from '~/lyrics/LyricsTiming';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
@@ -132,7 +133,7 @@ function PlayerLyrics() {
   const item = usePlayer((s) => s.queue[s.index]);
   const q = useLyrics(item?.Radio ? undefined : item?.Id);
   const lyrics = pickLyrics(q.data);
-  if (mode === 'spicy' && lyrics) return <SpicyView key={item?.Id} lyrics={lyrics} />;
+  if (mode === 'spicy' && lyrics) return <SpicyView key={item?.Id} lyrics={lyrics} itemId={item?.Id} />;
   return <LyricsView variant="big" />;
 }
 
@@ -215,6 +216,7 @@ export function NowPlaying() {
           <Ellipsis size={20} />
         </button>
         <div style={{ flex: 1 }} data-tauri-drag-region />
+        {tab === 'lyrics' && !item.Radio ? <LyricsTiming itemId={item.Id} /> : null}
         {tab === 'lyrics' ? <LyricsStyle /> : null}
         <button
           className="iconbtn np-fs"

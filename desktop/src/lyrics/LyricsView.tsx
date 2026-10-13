@@ -8,7 +8,11 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { creditRows, useLyrics } from '@/lyrics/fetch';
 import type { Lyrics } from '@/lyrics/types';
+import { useLyricsOffset } from '@/lyrics/offset';
+import { useSettings } from '@/settings/store';
+import { useLayout } from '~/layout/layout';
 import { currentPosition, usePlayer } from '~/player/store';
+import { SpicyView } from '~/spicy/SpicyView';
 import { Spinner } from '~/ui/parts';
 
 export function pickLyrics(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } | undefined): Lyrics | null {
@@ -40,16 +44,21 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
   const [current, setCurrent] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
   const userScrolled = useRef(0);
+  // The song's timing offset (lyrics/offset.ts, shared with the phone; positive = later).
+  const offset = useLyricsOffset(item?.Id);
+  const mode = useSettings((s) => s.lyricsMode);
+  // The card rests while the full player covers it.
+  const covered = useLayout((s) => s.nowPlaying);
 
   // Follow the song a few times a second while it plays and the lyrics are on screen.
   useEffect(() => {
     if (!lyrics?.isSynced) return setCurrent(-1);
-    const update = () => setCurrent(lineAt(lyrics, currentPosition(usePlayer.getState()) * 1000 + 150));
+    const update = () => setCurrent(lineAt(lyrics, currentPosition(usePlayer.getState()) * 1000 + 150 - offset));
     update();
     if (!playing || hidden) return;
     const id = setInterval(update, 120);
     return () => clearInterval(id);
-  }, [lyrics, playing, hidden]);
+  }, [lyrics, playing, hidden, offset]);
   usePlayer((s) => s.position); // a seek updates the line at once
 
   // Keep the sung line in view (unless you've just scrolled yourself). Scrolls this box only,
@@ -66,6 +75,8 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
   if (item.Radio) return <div className="lyrics-empty">No lyrics for radio.</div>;
   if (q.isLoading) return <Spinner />;
   if (!lyrics) return <div className="lyrics-empty">No lyrics for this song.</div>;
+  // Spicy (word by word) in the sidebar's card too, when that's the lyrics style.
+  if (variant === 'card' && mode === 'spicy') return <SpicyView lyrics={lyrics} itemId={item.Id} variant="card" active={!covered} onOpen={onOpen} />;
 
   return (
     <div
@@ -83,7 +94,7 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
             lyrics.isSynced && variant !== 'card'
               ? () => {
                   userScrolled.current = 0;
-                  usePlayer.getState().seek(line.startMs / 1000);
+                  usePlayer.getState().seek(Math.max(0, (line.startMs + offset) / 1000));
                 }
               : undefined
           }>

@@ -1,12 +1,14 @@
 // Settings: your account, the look (accent or Lucid), playback, lyrics and Last.fm. Playback and
 // Last.fm are the phone app's settings (shared store), so they behave the same.
+import { invoke } from '@tauri-apps/api/core';
 import { Check, LogOut } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { checkLastfmKey, LastfmError } from '@/lib/lastfm';
 import { SWATCHES } from '@/appearance/presets';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { useAuth } from '~/auth/session';
+import { inTauri } from '~/lib/tauri';
 import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { useDiscord } from '~/player/discord';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
@@ -32,6 +34,32 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2>{title}</h2>
       <div className="settings-card">{children}</div>
     </section>
+  );
+}
+
+/** Start with the computer: in the tray, quietly, when you sign in (src-tauri autostart.rs). */
+function StartupToggle() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (inTauri) void invoke<boolean>('autostart_get').then(setOn).catch(() => setOn(false));
+  }, []);
+  if (!inTauri) return null;
+  return (
+    <>
+      <Toggle
+        on={!!on}
+        onChange={(v) => {
+          setNote(null);
+          void invoke<boolean>('autostart_set', { on: v })
+            .then(setOn)
+            .catch((e) => setNote(String(e)));
+        }}
+        label="Start with the computer"
+        detail="Rakki opens in the tray when you sign in to the computer, ready to play (the window stays closed)."
+      />
+      {note ? <div className="setting-detail error pad">{note}</div> : null}
+    </>
   );
 }
 
@@ -142,6 +170,7 @@ export function Settings() {
             </select>
           </label>
         </div>
+        <StartupToggle />
         <Toggle on={s.normalize} onChange={(v) => s.set('normalize', v)} label="Volume normalization" detail="Songs play at the same loudness (Jellyfin's loudness measurement)." />
         <Toggle on={s.autoplay} onChange={(v) => s.set('autoplay', v)} label="Autoplay" detail="When the queue ends, keep going with similar songs." />
         <Toggle on={s.videoAutoplay} onChange={(v) => s.set('videoAutoplay', v)} label="Autoplay music videos" detail="When a video ends, the next in Up next follows after a short countdown." />

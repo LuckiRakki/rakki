@@ -65,7 +65,7 @@ Phone app features, and where the desktop is.
 
 ### Wave 3: the rest of the phone app
 - [x] Spicy lyrics (the web mod's engine) in the full player, with the Spicy / Regular style.
-- [ ] Lyrics offset.
+- [x] Lyrics timing (offset) per song, shared with the phone; Save to server. Spicy in the sidebar card too.
 - [x] Search: on-device fuzzy index (shared with the phone), lyrics search, filters, recent
       searches, Browse all.
 - [x] Smart queue / autoplay, song and artist radio (shared smartQueue).
@@ -93,7 +93,7 @@ Phone app features, and where the desktop is.
       its low memory target.
 - [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
 - [x] Discord presence ("Listening to Rakki", Rakki's own Discord application; your own ID optional).
-- [ ] Start with the computer.
+- [x] Start with the computer (installed app): opens quietly in the tray.
 - [x] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb (needs mpv), built by
       .github/workflows/desktop.yml (by hand, or a desktop-v* tag for a draft release).
 - [x] Update check: a newer desktop-v* release shows an Update button (opens the download page).
