@@ -89,7 +89,7 @@ Phone app features, and where the desktop is.
 - [x] Out of sight (tray or minimized): the page sleeps, WebView2 stops rendering and drops to
       its low memory target.
 - [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
-- [x] Discord presence ("Listening to"): set up in Settings with your own Discord application.
+- [x] Discord presence ("Listening to Rakki", Rakki's own Discord application; your own ID optional).
 - [ ] Start with the computer.
 - [x] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb (needs mpv), built by
       .github/workflows/desktop.yml (by hand, or a desktop-v* tag for a draft release).

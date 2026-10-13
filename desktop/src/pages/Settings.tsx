@@ -38,7 +38,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function DiscordSection() {
   const d = useDiscord();
   const [id, setId] = useState(d.appId);
-  const valid = /^\d{15,22}$/.test(id.trim());
+  const valid = id.trim() === '' || /^\d{15,22}$/.test(id.trim());
   return (
     <Section title="Discord">
       <Toggle
@@ -48,11 +48,10 @@ function DiscordSection() {
         detail="Your Discord profile shows the song, artists and a time bar while Rakki plays (the Discord app must be open on this computer)."
       />
       <div className="setting column">
-        <div className="setting-label">Application ID</div>
+        <div className="setting-label">Application ID (optional)</div>
         <div className="setting-detail">
-          Discord shows the name of an application you make, once: open discord.com/developers/applications, choose New Application, name it Rakki (that's the
-          name people see), and copy its Application ID here. For a picture when Discord can't find the album's cover, upload Rakki's icon under Rich Presence, Art
-          Assets, named rakki.
+          Rakki uses its own Discord application, so your status reads Listening to Rakki. To show another name, make an application at
+          discord.com/developers/applications and paste its Application ID here; leave it empty for Rakki's.
         </div>
         <form
           className="row-form"
@@ -60,7 +59,7 @@ function DiscordSection() {
             e.preventDefault();
             d.set({ appId: id.trim() });
           }}>
-          <input className="field" value={id} onChange={(e) => setId(e.target.value)} placeholder="e.g. 1234567890123456789" spellCheck={false} inputMode="numeric" />
+          <input className="field" value={id} onChange={(e) => setId(e.target.value)} placeholder="Rakki's (leave empty)" spellCheck={false} inputMode="numeric" />
           <button className="secondary small" disabled={!valid || id.trim() === d.appId}>
             Save
           </button>

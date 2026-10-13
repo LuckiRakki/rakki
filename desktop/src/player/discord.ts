@@ -17,6 +17,12 @@ import { currentPosition, usePlayer } from '~/player/store';
 
 const KEY = 'rakki.discord';
 
+/** Rakki's own Discord application ("Listening to Rakki"); Settings can name another. */
+export const RAKKI_DISCORD_APP = '1559411115925180416';
+const validId = (id: string) => /^\d{15,22}$/.test(id);
+/** The application in use: yours if you set one, else Rakki's. */
+export const discordAppId = (appId: string) => (validId(appId.trim()) ? appId.trim() : RAKKI_DISCORD_APP);
+
 interface DiscordPrefs {
   enabled: boolean;
   appId: string;
@@ -92,7 +98,8 @@ async function sync(force = false) {
   const d = useDiscord.getState();
   const p = usePlayer.getState();
   const item = p.queue[p.index];
-  const on = d.enabled && /^\d{15,22}$/.test(d.appId.trim());
+  const appId = discordAppId(d.appId);
+  const on = d.enabled;
   const show = on && item && p.playing;
   // What would be shown, to skip repeats (the time bar is checked separately below).
   const what = show ? `${item.Id}|${Math.round(currentPosition(p))}` : 'off';
@@ -112,9 +119,8 @@ async function sync(force = false) {
       assets: { large_image: cover ?? 'rakki', large_text: text(item.Album ?? 'Rakki') },
     };
   }
-  if (!on && !d.appId.trim()) return;
   try {
-    await invoke('discord_set', { appId: d.appId.trim(), activity });
+    await invoke('discord_set', { appId, activity });
     if (useDiscord.getState().error) useDiscord.setState({ error: null });
   } catch (e) {
     useDiscord.setState({ error: String(e) });
