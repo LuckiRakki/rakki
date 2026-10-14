@@ -1,4 +1,4 @@
-// "Add to playlist", like the phone app's: every playlist with a tick where the songs already
+// "Add to Playlist", like the phone app's: every playlist with a tick where the songs already
 // are (or how many of them are), Liked Songs on top for a single song, find, New playlist.
 // Ticks are staged; Done closes the dialog at once and saves behind it (asking the server what
 // each playlist has right then), then says what happened: "Added to Wednesday" or "Couldn't add
@@ -127,7 +127,7 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
 
   return (
     <div className="add-to">
-      <h2 className="dialog-title">Add to playlist</h2>
+      <h2 className="dialog-title">Add to Playlist</h2>
       <p className="muted" style={{ marginTop: -6 }}>
         {single ? `${single.Name} · ${single.Artists?.join(', ') ?? ''}` : `${songs.length} songs`}
       </p>

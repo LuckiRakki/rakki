@@ -28,7 +28,7 @@ import { queryClient } from '~/queries';
 import { Overlays } from '~/ui/overlays';
 import { ServerBar, refetchFailed } from '~/ui/states';
 import { useApplyTheme } from '~/ui/theme';
-import { useLook } from '~/settings/look';
+import { useApplyLook } from '~/ui/applyLook';
 import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
 
@@ -64,9 +64,7 @@ function App() {
   const { panel, sidebarWidth, panelWidth, nowPlaying, mini, floating, rail } = useLayout();
   const routeKey = useNav((s) => `${s.route.name}:${'id' in s.route ? s.route.id : ''}`);
   useApplyTheme();
-  // The full player's lyrics size (Settings → Lyrics → Text size).
-  const lyricsSize = useLook((s) => s.lyricsSize);
-  useEffect(() => document.documentElement.style.setProperty('--lyrics-size', String(lyricsSize)), [lyricsSize]);
+  useApplyLook();
 
   useEffect(() => {
     startPlayer();

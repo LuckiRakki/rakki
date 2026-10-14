@@ -112,5 +112,5 @@ export function Visualizer({ className }: { className?: string }) {
     }
   }, [playing, hidden]);
 
-  return <div className={`visualizer${className ? ` ${className}` : ''}`} ref={box} aria-label="Sound graph" role="img" />;
+  return <div className={`visualizer${className ? ` ${className}` : ''}`} ref={box} aria-label="Sound Graph" role="img" />;
 }

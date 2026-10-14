@@ -34,7 +34,8 @@ export const FEISHIN: VisualizerLook = {
   minFreq: 20,
   maxFreq: 22050,
   smoothing: 0.6,
-  peaks: true,
+  // One line: no peak marks falling behind it.
+  peaks: false,
 };
 
 export const VISUALIZER_PRESETS: { id: string; label: string; look: VisualizerLook }[] = [
@@ -53,34 +54,47 @@ export interface BackgroundLook {
   followMusic: boolean;
 }
 
-/** The full player's lyrics size, relative to the lyrics' column (so it fills any window alike). */
-export const LYRICS_SIZES: { value: number; label: string }[] = [
-  { value: 0.75, label: 'Small' },
-  { value: 1, label: 'Medium' },
-  { value: 1.3, label: 'Large' },
-  { value: 1.6, label: 'Huge' },
-  { value: 1.9, label: 'Fill' },
-];
+/** The full player's lyrics size, relative to the lyrics' column (so it fills any window alike); 1 is medium. */
+export const LYRICS_SIZE = { min: 0.5, max: 2.5, default: 1.3 };
+
+/** The whole app: its size (zoom), typeface, corners, spacing and motion. */
+export interface AppLook {
+  /** 0.8-1.5: everything bigger or smaller, like the browser's zoom. */
+  size: number;
+  font: 'inter' | 'system';
+  corners: 'rounded' | 'soft' | 'square';
+  density: 'comfortable' | 'compact';
+  /** Fewer animations: pages and panels appear without moving, backgrounds hold still. */
+  reduceMotion: boolean;
+}
+
+export const APP_LOOK: AppLook = { size: 1, font: 'inter', corners: 'rounded', density: 'comfortable', reduceMotion: false };
 
 interface LookState {
   visualizer: VisualizerLook;
   background: BackgroundLook;
   lyricsSize: number;
+  app: AppLook;
   setVisualizer(patch: Partial<VisualizerLook>): void;
   setBackground(patch: Partial<BackgroundLook>): void;
   setLyricsSize(size: number): void;
+  setApp(patch: Partial<AppLook>): void;
 }
 
 const KEY = 'rakki.look';
 
-function saved(): Pick<LookState, 'visualizer' | 'background' | 'lyricsSize'> {
-  const fallback = { visualizer: FEISHIN, background: { motion: 'lively' as const, followMusic: true }, lyricsSize: 1.3 };
+function saved(): Pick<LookState, 'visualizer' | 'background' | 'lyricsSize' | 'app'> {
+  const fallback = { visualizer: FEISHIN, background: { motion: 'lively' as const, followMusic: true }, lyricsSize: LYRICS_SIZE.default, app: APP_LOOK };
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<LookState>;
+    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<LookState> & { v?: number };
+    const visualizer = { ...fallback.visualizer, ...v.visualizer };
+    // Version 2: the line visualizer is one line (peak marks off).
+    if ((v.v ?? 1) < 2) visualizer.peaks = false;
     return {
-      visualizer: { ...fallback.visualizer, ...v.visualizer },
+      visualizer,
       background: { ...fallback.background, ...v.background },
       lyricsSize: typeof v.lyricsSize === 'number' ? v.lyricsSize : fallback.lyricsSize,
+      app: { ...fallback.app, ...v.app },
     };
   } catch {
     return fallback;
@@ -89,9 +103,9 @@ function saved(): Pick<LookState, 'visualizer' | 'background' | 'lyricsSize'> {
 
 export const useLook = create<LookState>((set, get) => {
   const save = () => {
-    const { visualizer, background, lyricsSize } = get();
+    const { visualizer, background, lyricsSize, app } = get();
     try {
-      localStorage.setItem(KEY, JSON.stringify({ visualizer, background, lyricsSize }));
+      localStorage.setItem(KEY, JSON.stringify({ v: 2, visualizer, background, lyricsSize, app }));
     } catch {
       // Kept for this session only.
     }
@@ -108,6 +122,10 @@ export const useLook = create<LookState>((set, get) => {
     },
     setLyricsSize(lyricsSize) {
       set({ lyricsSize });
+      save();
+    },
+    setApp(patch) {
+      set({ app: { ...get().app, ...patch } });
       save();
     },
   };

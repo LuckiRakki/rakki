@@ -64,15 +64,15 @@ export function LyricsTiming({ itemId }: { itemId: string }) {
     <div className="timing" ref={box}>
       <button
         className={`iconbtn${offset ? ' on' : ''}`}
-        aria-label="Lyrics timing"
-        title={offset ? `Lyrics timing: ${describe(offset)}` : 'Lyrics timing'}
+        aria-label="Lyrics Timing"
+        title={offset ? `Lyrics timing: ${describe(offset)}` : 'Lyrics Timing'}
         disabled={!lyrics?.isSynced}
         onClick={() => setOpen(!open)}>
         <Timer size={19} />
       </button>
       {open ? (
         <div className="timing-pop">
-          <div className="timing-head">Lyrics timing</div>
+          <div className="timing-head">Lyrics Timing</div>
           <div className="timing-row">
             {STEPS.slice(0, 2).map((s) => (
               <button key={s} className="timing-step" onClick={() => move(s)} title={`${Math.abs(s) / 1000} s earlier`}>
@@ -92,7 +92,7 @@ export function LyricsTiming({ itemId }: { itemId: string }) {
           <div className="timing-foot">
             {target.ok ? (
               <button className="secondary small" disabled={!offset} onClick={() => void save()}>
-                Save to server
+                Save to Server
               </button>
             ) : (
               <span>{target.reason.replace('this phone', 'this computer')}</span>

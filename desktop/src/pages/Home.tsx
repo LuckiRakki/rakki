@@ -81,9 +81,9 @@ export function Home() {
       {fresh ? (
         <Empty
           icon={Disc3}
-          title="Nothing played yet"
+          title="Nothing Played Yet"
           detail="Albums you play show up here, with your mixes and playlists."
-          action={{ label: 'Browse albums', run: () => go({ name: 'albums' }) }}
+          action={{ label: 'Browse Albums', run: () => go({ name: 'albums' }) }}
         />
       ) : (
         order.filter((id) => !hidden.includes(id)).map((id) => <HomeSectionView key={id} id={id} />)

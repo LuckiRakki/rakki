@@ -24,9 +24,9 @@ export function DevicesButton() {
   return (
     <button
       className={`iconbtn${open || target ? ' on' : ''}${target ? ' dot' : ''}`}
-      aria-label={target ? `Listening on ${target.name}` : 'Connect to a device'}
+      aria-label={target ? `Listening on ${target.name}` : 'Connect to a Device'}
       aria-pressed={open}
-      title={target ? `Listening on ${target.name}` : 'Connect to a device'}
+      title={target ? `Listening on ${target.name}` : 'Connect to a Device'}
       onClick={() => useLayout.getState().togglePanel('devices')}>
       <MonitorSpeaker size={20} />
     </button>
@@ -111,10 +111,10 @@ export function DevicesPanel() {
       <div className="panel-body connect">
         <Row
           icon={Monitor}
-          name="This computer"
+          name="This Computer"
           on={!target}
           paused={!playingHere}
-          sub={here ? `${playingHere ? 'Playing' : 'Paused'}: ${here.Name}` : 'Nothing playing'}
+          sub={here ? `${playingHere ? 'Playing' : 'Paused'}: ${here.Name}` : 'Nothing Playing'}
           onPick={pickHere}
         />
         {devices?.map((d) => (

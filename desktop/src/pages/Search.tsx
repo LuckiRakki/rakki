@@ -73,7 +73,7 @@ function Recent() {
   return (
     <section className="shelf">
       <div className="shelf-head">
-        <h2>Recent searches</h2>
+        <h2>Recent Searches</h2>
         <div className="shelf-tools">
           <button onClick={() => useRecentSearches.getState().clear()}>Clear</button>
         </div>
@@ -164,7 +164,7 @@ export function SearchPage({ term }: { term: string }) {
     return (
       <div className="page">
         <Recent />
-        <h1 className="browse-title">Browse all</h1>
+        <h1 className="browse-title">Browse All</h1>
         <BrowseAll />
       </div>
     );
@@ -191,7 +191,7 @@ export function SearchPage({ term }: { term: string }) {
           {r.top ? (
             <div className="search-top">
               <section>
-                <h2>Top result</h2>
+                <h2>Top Result</h2>
                 <button className="top-result" onClick={() => open(r.top!)} onContextMenu={r.top.Type === 'Audio' ? (e) => openMenu(e, songMenu([r.top!])) : undefined}>
                   <Artwork item={r.top} size={200} round={r.top.Type === 'MusicArtist'} className="top-art" />
                   <div className="top-name">{r.top.Name}</div>

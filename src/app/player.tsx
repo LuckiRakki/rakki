@@ -250,7 +250,7 @@ export default function PlayerScreen() {
                 <Ionicons name="phone-portrait-outline" size={22} color={t.colors.textMuted} />
               )}
               {/* Your other Rakki apps: control them, move the music (app/devices.tsx). */}
-              <Pressable hitSlop={10} onPress={() => router.push('/devices')} accessibilityLabel="Your devices">
+              <Pressable hitSlop={10} onPress={() => router.push('/devices')} accessibilityLabel="Connect">
                 <Ionicons name="laptop-outline" size={24} color={t.colors.text} />
               </Pressable>
             </View>

@@ -112,8 +112,8 @@ function sleepMenu(): { items: MenuItem[]; title: string } {
       { label: '30 minutes', run: choose(30) },
       { label: '45 minutes', run: choose(45) },
       { label: '1 hour', run: choose(60) },
-      { label: 'End of this song', run: choose('song') },
-      ...(endsAt ? [{ label: 'Turn off', run: choose(null), divider: true, danger: true }] : []),
+      { label: 'End of This Song', run: choose('song') },
+      ...(endsAt ? [{ label: 'Turn Off', run: choose(null), divider: true, danger: true }] : []),
     ],
     title: endsAt ? (endOfSong ? 'Pausing at the end of this song' : `Pausing in ${left} min`) : 'Pause after',
   };
@@ -131,8 +131,8 @@ function SleepButton() {
   return (
     <button
       className={`iconbtn${endsAt ? ' on' : ''}`}
-      aria-label="Sleep timer"
-      title={endsAt ? (endOfSong ? 'Sleep timer: end of this song' : `Sleep timer: ${left} min left`) : 'Sleep timer'}
+      aria-label="Sleep Timer"
+      title={endsAt ? (endOfSong ? 'Sleep timer: end of this song' : `Sleep timer: ${left} min left`) : 'Sleep Timer'}
       onClick={(e) => {
         const m = sleepMenu();
         openMenu(e, m.items, m.title);
@@ -207,12 +207,12 @@ export function PlayerBar() {
     const items: MenuItem[] = [
       ...(fit === 'tight'
         ? [
-            { label: panel === 'now' ? 'Hide Now playing view' : 'Now playing view', icon: PanelRight, run: () => l.togglePanel('now') },
-            { label: open && tab === 'lyrics' ? 'Close lyrics' : 'Lyrics', icon: MicVocal, run: toggleLyrics, disabled: !now },
+            { label: panel === 'now' ? 'Hide Now Playing View' : 'Now Playing View', icon: PanelRight, run: () => l.togglePanel('now') },
+            { label: open && tab === 'lyrics' ? 'Close Lyrics' : 'Lyrics', icon: MicVocal, run: toggleLyrics, disabled: !now },
           ]
         : []),
-      { label: 'Sleep timer', icon: Moon, run: () => openMenu(e, sleep.items, sleep.title), divider: fit === 'tight' },
-      { label: 'Mini player', icon: PictureInPicture2, run: () => void setMini(true) },
+      { label: 'Sleep Timer', icon: Moon, run: () => openMenu(e, sleep.items, sleep.title), divider: fit === 'tight' },
+      { label: 'Mini Player', icon: PictureInPicture2, run: () => void setMini(true) },
     ];
     openMenu(e, items);
   };
@@ -222,7 +222,7 @@ export function PlayerBar() {
       <div className="np">
         {now ? (
           <>
-            <button key={now.Id} className="np-art" title={open ? 'Close full player' : 'Full player'} aria-label={open ? 'Close full player' : 'Full player'} onClick={() => l.setNowPlaying(!open)}>
+            <button key={now.Id} className="np-art" title={open ? 'Close Full Player' : 'Full Player'} aria-label={open ? 'Close Full Player' : 'Full Player'} onClick={() => l.setNowPlaying(!open)}>
               <Artwork item={now} size={160} className="thumb" />
               <span className="expand">
                 <Maximize2 size={14} />
@@ -248,7 +248,7 @@ export function PlayerBar() {
       <div className="right">
         {fit !== 'tight' ? (
           <>
-            <button className={`iconbtn${panel === 'now' ? ' on dot' : ''}`} aria-label="Now playing view" aria-pressed={panel === 'now'} title="Now playing view" onClick={() => l.togglePanel('now')}>
+            <button className={`iconbtn${panel === 'now' ? ' on dot' : ''}`} aria-label="Now Playing View" aria-pressed={panel === 'now'} title="Now Playing View" onClick={() => l.togglePanel('now')}>
               <PanelRight size={19} />
             </button>
             <button className={`iconbtn${open && tab === 'lyrics' ? ' on dot' : ''}`} aria-label="Lyrics" aria-pressed={open && tab === 'lyrics'} title="Lyrics" disabled={!now} onClick={toggleLyrics}>
@@ -268,7 +268,7 @@ export function PlayerBar() {
         <DevicesButton />
         <VolumeControl />
         {fit === 'wide' ? (
-          <button className="iconbtn" aria-label="Mini player" title="Mini player" onClick={() => void setMini(true)}>
+          <button className="iconbtn" aria-label="Mini Player" title="Mini Player" onClick={() => void setMini(true)}>
             <PictureInPicture2 size={19} />
           </button>
         ) : (
@@ -278,8 +278,8 @@ export function PlayerBar() {
         )}
         <button
           className={`iconbtn${open ? ' on' : ''}`}
-          aria-label={open ? 'Close full player' : 'Full player'}
-          title={open ? 'Close full player (Esc)' : 'Full player'}
+          aria-label={open ? 'Close Full Player' : 'Full Player'}
+          title={open ? 'Close Full Player (Esc)' : 'Full Player'}
           disabled={!now}
           onClick={() => l.setNowPlaying(!open)}>
           {open ? <Minimize2 size={19} /> : <Maximize2 size={19} />}

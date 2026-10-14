@@ -64,7 +64,9 @@ export function DynamicBackground({ image, video, active = true }: { image?: str
   const canvas = useRef<HTMLCanvasElement>(null);
   const kawarp = useRef<Kawarp | null>(null);
   const [failed, setFailed] = useState(false);
-  const { motion, followMusic } = useLook((s) => s.background);
+  const { motion: chosen, followMusic } = useLook((s) => s.background);
+  // Reduce Motion (Settings -> Look) holds the background still.
+  const motion = useLook((s) => s.app.reduceMotion) ? 'still' : chosen;
   const playing = usePlayer((s) => s.playing);
   const hidden = usePlayer((s) => s.hidden);
   const sound = useSound(active && followMusic && motion !== 'still');

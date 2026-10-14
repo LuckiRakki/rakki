@@ -9,15 +9,15 @@ import { closeDialog, showDialog } from '~/ui/overlays';
 export type HomeSection = 'quick' | 'mixes' | 'jump' | 'added' | 'playlists' | 'artists' | 'most' | 'rediscover' | 'random';
 
 export const SECTION_LABEL: Record<HomeSection, string> = {
-  quick: 'Quick picks',
+  quick: 'Quick Picks',
   mixes: 'Your Daily Mixes',
-  jump: 'Jump back in',
-  added: 'Recently added',
-  playlists: 'Your playlists',
-  artists: 'Artists you play',
-  most: 'Most played',
+  jump: 'Jump Back In',
+  added: 'Recently Added',
+  playlists: 'Your Playlists',
+  artists: 'Artists You Play',
+  most: 'Most Played',
   rediscover: 'Rediscover',
-  random: 'Random picks',
+  random: 'Random Picks',
 };
 
 const DEFAULT_ORDER = Object.keys(SECTION_LABEL) as HomeSection[];

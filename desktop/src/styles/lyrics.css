@@ -38,7 +38,7 @@
 .timing-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; width: 360px; padding: 14px; border-radius: 12px; background: #262628; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); animation: pop-in 0.16s var(--ease-out); transform-origin: top right; }
 .timing-head { font-weight: 800; margin-bottom: 10px; }
 .timing-row { display: flex; align-items: center; gap: 6px; }
-.timing-step { height: 32px; padding: 0 10px; border-radius: 8px; background: var(--surface-3); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; transition: background 0.15s, transform 0.15s var(--ease-out); }
+.timing-step { height: 32px; padding: 0 10px; border-radius: var(--radius-sm); background: var(--surface-3); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; transition: background 0.15s, transform 0.15s var(--ease-out); }
 .timing-step:hover { background: var(--surface-4); }
 .timing-step:active { transform: scale(0.95); }
 .timing-now { flex: 1; display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: 13px; }

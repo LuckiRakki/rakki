@@ -6,6 +6,12 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.18.0 (2026-10-14)
+- **Connect, like Spotify's.** The devices button in the player opens a simple list: This
+  Phone and your other Rakki apps, the one playing lit. Tap a device to listen there (the
+  music moves over at the same moment in the song); tap This Phone to bring it back. The
+  separate Play here / Play there buttons and the small controls are gone.
+
 ## 1.17.2 (2026-10-13)
 - **Your devices: bigger buttons.** Previous, play / pause, next and Play here / Play there are
   now full-size touch targets (44 pt), and moving music closes the screen at once; a message

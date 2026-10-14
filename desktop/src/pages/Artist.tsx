@@ -82,15 +82,15 @@ export function Artist({ id }: { id: string }) {
       {popular.tracks.length > 5 ? (
         <div className="page" style={{ padding: '0 28px' }}>
           <button className="textbtn" onClick={() => setShowAll(!showAll)}>
-            {showAll ? 'Show less' : 'See more'}
+            {showAll ? 'Show Less' : 'See More'}
           </button>
         </div>
       ) : null}
       <div className="page">
         <Shelf title="Albums" items={full} />
         <Shelf title="Singles and EPs" items={singles} />
-        <Shelf title="Appears on" items={appears} />
-        <Shelf title="Fans also like" items={similar} />
+        <Shelf title="Appears On" items={appears} />
+        <Shelf title="Fans Also Like" items={similar} />
         {item?.Overview ? (
           <section className="shelf">
             <h2 style={{ marginBottom: 10 }}>About</h2>

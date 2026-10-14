@@ -24,6 +24,7 @@
   /* Text on an accent fill: Lucid keeps every accent light enough for black (lib/color.ts). */
   --on-accent: #000;
   --radius: 10px;
+  --radius-sm: 8px;
   --radius-art: 6px;
   --titlebar: 48px;
   --playerbar: 88px;
@@ -81,3 +82,15 @@ h1, h2, h3, p { margin: 0; }
 .dyn-bg.fallback { inset: -100px; width: auto; height: auto; background-size: cover; background-position: center; filter: blur(80px) saturate(1.5) brightness(0.6); }
 .visualizer { position: relative; min-height: 0; overflow: hidden; }
 .visualizer canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* ---- Settings -> Look (ui/applyLook.ts): typeface, corners, spacing, motion ---- */
+:root[data-font='system'] { font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; }
+:root[data-corners='soft'] { --radius: 6px; --radius-sm: 5px; --radius-art: 4px; }
+:root[data-corners='square'] { --radius: 2px; --radius-sm: 2px; --radius-art: 2px; }
+:root[data-density='compact'] .row { padding-top: 4px; padding-bottom: 4px; }
+:root[data-density='compact'] .row .thumb { width: 40px; }
+:root[data-density='compact'] .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+:root[data-density='compact'] .shelf-row { grid-auto-columns: 150px; }
+:root[data-density='compact'] .page { padding-top: 18px; }
+:root[data-density='compact'] .setting { padding: 10px 0; }
+:root[data-reduce-motion] *, :root[data-reduce-motion] *::before, :root[data-reduce-motion] *::after { transition: none !important; animation: none !important; }

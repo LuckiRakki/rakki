@@ -16,7 +16,11 @@ not listed here follows the nearest existing screen.
 5. **One Rakki.** The desktop has the phone's features and look, shares its code and behaves
    the same.
 6. **Real icons, no emojis.** No glyph stand-ins (crosses, notes) either.
-7. **Plain, honest wording.** Say what a thing does, in sentence case.
+7. **Plain, honest wording, and Title Case names.** Say what a thing does. Names and labels are
+   Title Case: headings, buttons, tabs, menu items, setting names, device names ("This
+   Computer", "Add to Playlist", "Moves with the Music"; small words like a, and, of, the, to,
+   with stay lower case inside). Descriptions, messages and toasts are normal sentences
+   ("Added to Wednesday"). The owner's rule (2026-10-14): never sentence-case a name.
 8. **Your music stays yours.** No server addresses or keys in the code.
 9. **No loading screens.** An action finishes on screen at once and reports after ("Added to
    Wednesday" / "Couldn't add to Wednesday"), undoing itself if it failed. A spinner only when

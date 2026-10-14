@@ -89,9 +89,9 @@ function LibraryHead() {
         openMenu(
           e,
           [
-            { label: open ? 'Fold buttons away' : 'Show buttons', icon: open ? ChevronUp : ChevronDown, run: () => set({ open: !open }) },
+            { label: open ? 'Fold Buttons Away' : 'Show Buttons', icon: open ? ChevronUp : ChevronDown, run: () => set({ open: !open }) },
             ...closed.map((t, i) => ({ label: `Bring back ${t.label}`, icon: t.Icon, divider: i === 0, run: () => set({ hidden: hidden.filter((h) => h !== t.to.name) }) })),
-            ...(closed.length > 1 ? [{ label: 'Bring them all back', icon: Plus, run: () => set({ hidden: [] }) }] : []),
+            ...(closed.length > 1 ? [{ label: 'Bring Them All Back', icon: Plus, run: () => set({ hidden: [] }) }] : []),
           ],
           'Your Library',
         )

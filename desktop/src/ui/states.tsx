@@ -51,7 +51,7 @@ export function LoadError({ what, error, retry }: { what: string; error: unknown
       <p>{why}</p>
       <button className="secondary small" onClick={retry}>
         <Refresh size={16} />
-        Try again
+        Try Again
       </button>
     </div>
   );
@@ -91,7 +91,7 @@ export function ServerBar() {
         Can’t reach {name ?? 'your server'}. What’s already loaded stays here, and Rakki keeps trying.
       </span>
       <button className="text-btn" onClick={() => void probe()}>
-        Try again
+        Try Again
       </button>
     </div>
   );

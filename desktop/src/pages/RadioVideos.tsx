@@ -41,8 +41,8 @@ function StationCard({ st }: { st: Station }) {
           e,
           [
             { label: 'Play', icon: Play, run: () => playStation(st) },
-            ...(site ? [{ label: 'Open website', icon: ExternalLink, run: () => void (inTauri ? openUrl(site) : window.open(site)) }] : []),
-            { label: 'Remove station', icon: Trash2, danger: true, divider: true, run: () => useStations.getState().remove(st.id) },
+            ...(site ? [{ label: 'Open Website', icon: ExternalLink, run: () => void (inTauri ? openUrl(site) : window.open(site)) }] : []),
+            { label: 'Remove Station', icon: Trash2, danger: true, divider: true, run: () => useStations.getState().remove(st.id) },
           ],
           st.name,
         )
@@ -82,7 +82,7 @@ export function Radio() {
           e.preventDefault();
           void add();
         }}>
-        <input className="field" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Add a station: its stream, a .pls or .m3u link, or a SUB/WAVE address" aria-label="Station address" spellCheck={false} />
+        <input className="field" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Add a station: its stream, a .pls or .m3u link, or a SUB/WAVE address" aria-label="Station Address" spellCheck={false} />
         <button className="secondary small" disabled={!address.trim()}>
           <Plus size={16} /> Add
         </button>
@@ -94,7 +94,7 @@ export function Radio() {
           ))}
         </div>
       ) : (
-        <Empty icon={RadioIcon} title="No stations yet" detail="Paste an internet radio address above. Stations live on this computer; the phone keeps its own list." />
+        <Empty icon={RadioIcon} title="No Stations Yet" detail="Paste an internet radio address above. Stations live on this computer; the phone keeps its own list." />
       )}
     </div>
   );
@@ -111,7 +111,7 @@ export function Videos() {
   return (
     <div className="page">
       <div className="home-head">
-        <h1>Music videos</h1>
+        <h1>Music Videos</h1>
         <label className="find">
           <Search size={15} />
           <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a video" aria-label="Find a video" />
@@ -120,7 +120,7 @@ export function Videos() {
       <QueryState
         q={q}
         what="music videos"
-        empty={<Empty icon={MonitorPlay} title="No music videos yet" detail="Videos in a Music Videos library on your Jellyfin server show up here." />}
+        empty={<Empty icon={MonitorPlay} title="No Music Videos Yet" detail="Videos in a Music Videos library on your Jellyfin server show up here." />}
       />
       <div className="video-grid">
         {shown.map((v) => (

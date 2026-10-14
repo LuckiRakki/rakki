@@ -41,7 +41,7 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
           </>
         ) : (
           <div className="t">
-            <div className="name">Nothing playing</div>
+            <div className="name">Nothing Playing</div>
             <div className="by">on {target.name}</div>
           </div>
         )}
@@ -63,7 +63,7 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
           <Range label="Seek" step={5} value={position} max={length} onSet={(v) => r.seek(v)} />
           <span>{formatTime(length)}</span>
         </div>
-        <button className="remote-strip" title="Choose where to listen" onClick={() => useLayout.getState().setPanel('devices')}>
+        <button className="remote-strip" title="Choose Where to Listen" onClick={() => useLayout.getState().setPanel('devices')}>
           <Icon size={14} />
           {busy ?? `Listening on ${target.name}`}
         </button>

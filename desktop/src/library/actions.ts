@@ -123,7 +123,7 @@ function playlistsChanged(ids: string[] | null) {
 
 export async function createPlaylist(items: BaseItem[] = []): Promise<string | null> {
   const c = client();
-  const name = await askText('New playlist', '', 'Create');
+  const name = await askText('New Playlist', '', 'Create');
   if (!c || !name) return null;
   try {
     const songs = (await Promise.all(items.map(songsOf))).flat();

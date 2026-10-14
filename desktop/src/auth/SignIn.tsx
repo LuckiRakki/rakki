@@ -97,7 +97,7 @@ export function SignIn() {
             <form onSubmit={connect}>
               <h1>Welcome</h1>
               <p className="muted">Your Jellyfin music, word by word. Enter your server's address to start.</p>
-              <label className="field-label">Server address</label>
+              <label className="field-label">Server Address</label>
               <input className="field" placeholder="e.g. 192.168.1.20:8096 or https://music.example.com" value={server} onChange={(e) => setServer(e.target.value)} autoFocus />
               {error ? <div className="error">{error}</div> : null}
               <button className="primary" disabled={busy || !server.trim()}>
@@ -116,7 +116,7 @@ export function SignIn() {
             </form>
           ) : (
             <form onSubmit={signIn}>
-              <h1>Sign in</h1>
+              <h1>Sign In</h1>
               <p className="muted">to {found.name}</p>
               <label className="field-label">Username</label>
               <input className="field" value={user} onChange={(e) => setUser(e.target.value)} autoFocus />
@@ -124,7 +124,7 @@ export function SignIn() {
               <input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
               {error ? <div className="error">{error}</div> : null}
               <button className="primary" disabled={busy || !user.trim()}>
-                {busy ? 'Signing in...' : 'Sign in'}
+                {busy ? 'Signing in...' : 'Sign In'}
               </button>
               {found.quick ? (
                 <button type="button" className="secondary" onClick={() => void startQuickConnect()}>
@@ -132,7 +132,7 @@ export function SignIn() {
                 </button>
               ) : null}
               <button type="button" className="textbtn center" onClick={() => setFound(null)}>
-                Use a different server
+                Use a Different Server
               </button>
             </form>
           )}

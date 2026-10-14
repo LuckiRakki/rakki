@@ -73,7 +73,7 @@ function AboutArtist({ id }: { id: string }) {
     <section className="np-card about" onClick={() => go({ name: 'artist', id })}>
       {img ? <div className="about-img" style={{ backgroundImage: `url("${img}")` }} /> : null}
       <div className="about-body">
-        <h3>About the artist</h3>
+        <h3>About the Artist</h3>
         <div className="about-name">{artist.Name}</div>
         {artist.Overview ? <p className="about-text">{artist.Overview}</p> : null}
       </div>
@@ -129,7 +129,7 @@ function NowView({ item }: { item: BaseItem }) {
           className="lyrics-card"
           style={{ ['--tint' as string]: tint }}
           action={
-            <button className="iconbtn" aria-label="Open lyrics" title="Open lyrics" onClick={() => useLayout.getState().setNowPlaying(true, 'lyrics')}>
+            <button className="iconbtn" aria-label="Open Lyrics" title="Open Lyrics" onClick={() => useLayout.getState().setNowPlaying(true, 'lyrics')}>
               <Maximize2 size={15} />
             </button>
           }>
@@ -202,7 +202,7 @@ function NowView({ item }: { item: BaseItem }) {
             ) : null}
             {song.UserData?.PlayCount || full?.UserData?.PlayCount ? (
               <>
-                <dt>Your plays</dt>
+                <dt>Your Plays</dt>
                 <dd>{(full?.UserData?.PlayCount ?? song.UserData?.PlayCount ?? 0).toLocaleString()}</dd>
               </>
             ) : null}
@@ -211,10 +211,10 @@ function NowView({ item }: { item: BaseItem }) {
       )}
 
       <Card
-        title="Next in queue"
+        title="Next in Queue"
         action={
           <button className="text-btn" onClick={() => useLayout.getState().setPanel('queue')}>
-            Open queue
+            Open Queue
           </button>
         }>
         {next ? (
@@ -254,13 +254,13 @@ function QueueView() {
     <div className="panel-body">
       {now ? (
         <>
-          <div className="label">Now playing</div>
+          <div className="label">Now Playing</div>
           <QueueRow item={now} at={index} now />
         </>
       ) : (
         <p className="muted pad">Nothing playing yet. Double-click a song, or press play on an album.</p>
       )}
-      {upcoming.length ? <div className="label">Next up</div> : null}
+      {upcoming.length ? <div className="label">Next Up</div> : null}
       {upcoming.map((t, i) => (
         <QueueRow key={`${t.Id}-${index + 1 + i}`} item={t} at={index + 1 + i} />
       ))}
@@ -284,7 +284,7 @@ export function NowPlayingPanel() {
     return (
       <aside className="rightpanel panel">
         <header className="rp-head">
-          <div className="rp-title">Music video</div>
+          <div className="rp-title">Music Video</div>
           <button className="iconbtn" aria-label="Close" title="Close" onClick={() => useLayout.getState().setPanel(null)}>
             <X size={17} />
           </button>
@@ -298,11 +298,11 @@ export function NowPlayingPanel() {
     <aside className="rightpanel panel">
       <header className="rp-head">
         {queue ? (
-          <button className="iconbtn" aria-label="Back to Now playing" title="Now playing" onClick={() => useLayout.getState().setPanel('now')}>
+          <button className="iconbtn" aria-label="Back to Now Playing" title="Now Playing" onClick={() => useLayout.getState().setPanel('now')}>
             <ChevronLeft size={18} />
           </button>
         ) : null}
-        <div className="rp-title">{queue ? 'Queue' : (item?.Album ?? 'Now playing')}</div>
+        <div className="rp-title">{queue ? 'Queue' : (item?.Album ?? 'Now Playing')}</div>
         {queue ? null : (
           <button className="iconbtn" aria-label="Queue" title="Queue" onClick={() => useLayout.getState().setPanel('queue')}>
             <ListMusic size={17} />

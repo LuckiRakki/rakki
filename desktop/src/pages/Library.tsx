@@ -14,7 +14,7 @@ import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, TrackTable } from 
 import { Empty, QueryState } from '~/ui/states';
 
 type SortKey = 'name' | 'recent' | 'artist' | 'year';
-const SORT_LABEL: Record<SortKey, string> = { name: 'Alphabetical', recent: 'Recently added', artist: 'Artist', year: 'Release year' };
+const SORT_LABEL: Record<SortKey, string> = { name: 'Alphabetical', recent: 'Recently Added', artist: 'Artist', year: 'Release year' };
 
 function sortItems(items: BaseItem[], key: SortKey): BaseItem[] {
   const by = (f: (i: BaseItem) => string | number) =>
@@ -70,7 +70,7 @@ function LibraryGrid({ title, q, sorts, empty }: { title: string; q: GridQuery; 
           <label className="select">
             <ArrowDownAZ size={16} />
             <select
-              aria-label="Sort by"
+              aria-label="Sort By"
               value={sort}
               onChange={(e) => {
                 setSort(e.target.value as SortKey);
@@ -101,18 +101,18 @@ export const Albums = () => (
     title="Albums"
     q={useAllAlbums()}
     sorts={['name', 'recent', 'artist', 'year']}
-    empty={{ icon: Disc3, title: 'No albums yet', detail: 'Albums in your Jellyfin music library show up here.' }}
+    empty={{ icon: Disc3, title: 'No Albums Yet', detail: 'Albums in your Jellyfin music library show up here.' }}
   />
 );
 export const Artists = () => (
-  <LibraryGrid title="Artists" q={useAllArtists()} sorts={['name', 'recent']} empty={{ icon: UserRound, title: 'No artists yet', detail: 'The artists of your albums show up here.' }} />
+  <LibraryGrid title="Artists" q={useAllArtists()} sorts={['name', 'recent']} empty={{ icon: UserRound, title: 'No Artists Yet', detail: 'The artists of your albums show up here.' }} />
 );
 export const Playlists = () => (
   <LibraryGrid
     title="Playlists"
     q={usePlaylists()}
     sorts={['name', 'recent']}
-    empty={{ icon: ListMusic, title: 'No playlists yet', detail: 'Make one here, or from any song’s Add to playlist.', action: { label: 'New playlist', run: () => void createPlaylist() } }}
+    empty={{ icon: ListMusic, title: 'No Playlists Yet', detail: 'Make one here, or from any song’s Add to playlist.', action: { label: 'New Playlist', run: () => void createPlaylist() } }}
   />
 );
 export const Mixes = () => (
@@ -120,7 +120,7 @@ export const Mixes = () => (
     title="Daily Mixes"
     q={useDailyMixes()}
     sorts={['name']}
-    empty={{ icon: Blend, title: 'No Daily Mixes yet', detail: 'The Rakki plugin on your server makes them from what you play, once a day.' }}
+    empty={{ icon: Blend, title: 'No Daily Mixes Yet', detail: 'The Rakki plugin on your server makes them from what you play, once a day.' }}
   />
 );
 
@@ -138,7 +138,7 @@ export function Songs() {
       </div>
       <ActionBar tracks={tracks} find={find} onFind={setFind} />
       <div className="page-states">
-        <QueryState q={q} what="your songs" empty={<Empty icon={Music} title="No songs yet" detail="Songs in your Jellyfin music library show up here." />} />
+        <QueryState q={q} what="your songs" empty={<Empty icon={Music} title="No Songs Yet" detail="Songs in your Jellyfin music library show up here." />} />
       </div>
       {q.data?.length ? <TrackTable tracks={tracks} plays /> : null}
     </div>
@@ -153,7 +153,7 @@ export function Genres() {
       <div className="page-head">
         <h1>Genres</h1>
       </div>
-      <QueryState q={q} what="genres" empty={<Empty icon={Tags} title="No genres yet" detail="Genres come from your music’s tags." />} />
+      <QueryState q={q} what="genres" empty={<Empty icon={Tags} title="No Genres Yet" detail="Genres come from your music’s tags." />} />
       <div className="genre-grid">
         {q.data?.map((g) => {
           const rgb = g.album && client ? blurhashAverage(client.blurhash(g.album)) : null;
@@ -191,7 +191,7 @@ export function Genre({ name }: { name: string }) {
       <ActionBar tracks={top} color={tint} />
       {top.length ? (
         <div className="page" style={{ paddingTop: 0, paddingBottom: 0 }}>
-          <h2>Your most played</h2>
+          <h2>Your Most Played</h2>
         </div>
       ) : null}
       <TrackTable tracks={top} plays />

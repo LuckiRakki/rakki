@@ -5,8 +5,9 @@
 // expand button (or F11) makes the window fill the screen. The top fades while the mouse is
 // still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, TextSize, Visualizer as VisualizerIcon } from '~/ui/icons';
-import { LYRICS_SIZES, useLook } from '~/settings/look';
+import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, TextSize, Visualizer as VisualizerIcon } from '~/ui/icons';
+import { LYRICS_SIZE, useLook } from '~/settings/look';
+import { Slider } from '~/ui/Slider';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -141,30 +142,53 @@ function PlayerLyrics() {
   return <LyricsView variant="big" />;
 }
 
-/** The lyrics' text size, from the player (the same choice as Settings → Lyrics). */
+/** The lyrics' text size, from the player: a slider (the same setting as Settings → Lyrics). */
 function LyricsSize() {
   const size = useLook((s) => s.lyricsSize);
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const escape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopImmediatePropagation();
+      setOpen(false);
+    };
+    window.addEventListener('mousedown', outside);
+    window.addEventListener('keydown', escape, true);
+    return () => {
+      window.removeEventListener('mousedown', outside);
+      window.removeEventListener('keydown', escape, true);
+    };
+  }, [open]);
   return (
-    <button
-      className="iconbtn"
-      aria-label="Text size"
-      title="Text size"
-      onClick={(e) =>
-        openMenu(
-          e,
-          LYRICS_SIZES.map((o) => ({ label: o.label, icon: o.value === size ? Check : undefined, run: () => useLook.getState().setLyricsSize(o.value) })),
-          'Lyrics text size',
-        )
-      }>
-      <TextSize size={20} />
-    </button>
+    <div className="timing" ref={box}>
+      <button className={`iconbtn${open ? ' on' : ''}`} aria-label="Text Size" aria-expanded={open} title="Text Size" onClick={() => setOpen(!open)}>
+        <TextSize size={20} />
+      </button>
+      {open ? (
+        <div className="timing-pop size-pop">
+          <div className="timing-head">Lyrics Text Size</div>
+          <Slider
+            label="Lyrics Text Size"
+            value={size}
+            min={LYRICS_SIZE.min}
+            max={LYRICS_SIZE.max}
+            step={0.05}
+            show={(v) => `${Math.round(v * 100)}%`}
+            onChange={(v) => useLook.getState().setLyricsSize(v)}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
 function LyricsStyle() {
   const mode = useSettings((s) => s.lyricsMode);
   return (
-    <div className="seg" role="group" aria-label="Lyrics style">
+    <div className="seg" role="group" aria-label="Lyrics Style">
       {(['spicy', 'regular'] as const).map((m) => (
         <button key={m} className={mode === m ? 'on' : ''} title={m === 'spicy' ? 'Word by word' : 'Line by line'} onClick={() => useSettings.getState().set('lyricsMode', m)}>
           {m === 'spicy' ? 'Spicy' : 'Regular'}
@@ -239,10 +263,10 @@ export function NowPlaying() {
       <DynamicBackground image={backdrop} active={!presence.leaving} />
       <div className="np-shade" />
       <div className="np-top" data-tauri-drag-region>
-        <button className="iconbtn" aria-label="Close full player" title="Close (Esc)" onClick={() => l.setNowPlaying(false)}>
+        <button className="iconbtn" aria-label="Close Full Player" title="Close (Esc)" onClick={() => l.setNowPlaying(false)}>
           <ChevronDown size={24} />
         </button>
-        <button className="iconbtn" aria-label="Song options" title="Song options" onClick={(e) => openMenu(e, songMenu([item]))}>
+        <button className="iconbtn" aria-label="Song Options" title="Song Options" onClick={(e) => openMenu(e, songMenu([item]))}>
           <Ellipsis size={20} />
         </button>
         <div style={{ flex: 1 }} data-tauri-drag-region />
@@ -252,8 +276,8 @@ export function NowPlaying() {
         {tab === 'visualizer' ? (
           <button
             className="iconbtn"
-            aria-label="Visualizer settings"
-            title="Visualizer settings"
+            aria-label="Visualizer Settings"
+            title="Visualizer Settings"
             onClick={() => {
               l.setNowPlaying(false);
               go({ name: 'settings', section: 'visualizer' });
@@ -263,8 +287,8 @@ export function NowPlaying() {
         ) : null}
         <button
           className="iconbtn np-fs"
-          aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
-          title={fullscreen ? 'Exit full screen (F11)' : 'Full screen (F11)'}
+          aria-label={fullscreen ? 'Exit Full Screen' : 'Full Screen'}
+          title={fullscreen ? 'Exit Full Screen (F11)' : 'Full Screen (F11)'}
           onClick={() => l.setFullscreen(!fullscreen)}>
           {fullscreen ? <Shrink size={19} /> : <Expand size={19} />}
         </button>

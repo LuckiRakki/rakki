@@ -156,7 +156,7 @@ export class LyricsAnimator {
     private centeredGroup = -1;
     private lastMs = -1;
 
-    // "Next up" card shown once the lyrics are over.
+    // "Next Up" card shown once the lyrics are over.
     private nextUpEl: HTMLElement | null = null;
     private lastLyricEnd = 0;
     private credits: { text: string; small?: boolean }[] | null = null;
@@ -330,7 +330,7 @@ export class LyricsAnimator {
         text.className = 'sl-nextup-text';
         const label = document.createElement('span');
         label.className = 'sl-nextup-label';
-        label.textContent = 'Next up';
+        label.textContent = 'Next Up';
         const title = document.createElement('span');
         title.className = 'sl-nextup-title';
         title.textContent = info.title;

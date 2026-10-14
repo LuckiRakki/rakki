@@ -119,7 +119,7 @@ function UpNextList() {
   const client = useAuth((s) => s.client);
   return (
     <div className="vt-next">
-      <h3>Up next</h3>
+      <h3>Up Next</h3>
       {upNext.length ? null : <p className="muted small">Nothing else to play.</p>}
       {upNext.map((v, i) => (
         <button key={v.Id} className={`vt-next-row${i === 0 && countdown !== null ? ' counting' : ''}`} onClick={() => useVideo.getState().open(v)} title={`Play ${v.Name}`}>
@@ -133,7 +133,7 @@ function UpNextList() {
       ))}
       {countdown !== null ? (
         <button className="text-btn" onClick={() => useVideo.setState({ countdown: null })}>
-          Cancel autoplay
+          Cancel Autoplay
         </button>
       ) : null}
     </div>
@@ -157,16 +157,16 @@ function Theater({ video, leaving }: { video: BaseItem; leaving: boolean }) {
       <DynamicBackground video={el} image={thumb} active={!leaving} />
       <div className="vt-shade" />
       <div className="vt-top" data-tauri-drag-region>
-        <button className="iconbtn" aria-label="Shrink to the sidebar" title="Shrink to the sidebar (Esc)" onClick={() => v.setMode('mini')}>
+        <button className="iconbtn" aria-label="Shrink to the Sidebar" title="Shrink to the Sidebar (Esc)" onClick={() => v.setMode('mini')}>
           <ChevronDown size={24} />
         </button>
         <span className="vt-label" data-tauri-drag-region>
-          Music video
+          Music Video
         </span>
-        <button className="iconbtn" aria-label="Full screen" title="Full screen (F)" onClick={() => v.setMode('full')}>
+        <button className="iconbtn" aria-label="Full Screen" title="Full Screen (F)" onClick={() => v.setMode('full')}>
           <Expand size={19} />
         </button>
-        <button className="iconbtn" aria-label="Close the video" title="Close the video" onClick={() => v.close()}>
+        <button className="iconbtn" aria-label="Close the Video" title="Close the Video" onClick={() => v.close()}>
           <X size={20} />
         </button>
         {fullscreen ? null : <WindowButtons />}
@@ -189,7 +189,7 @@ function Theater({ video, leaving }: { video: BaseItem; leaving: boolean }) {
             {/* The album card, then the visualizer across the rest of the row. */}
             <div className="vt-album-row">
               {song?.AlbumId ? (
-                <button className="vt-album" onClick={() => (v.setMode('mini'), go({ name: 'album', id: song.AlbumId! }))} title="Open the album">
+                <button className="vt-album" onClick={() => (v.setMode('mini'), go({ name: 'album', id: song.AlbumId! }))} title="Open the Album">
                   <Artwork item={song} size={120} className="thumb" />
                   <span className="t">
                     <span className="name">{song.Album}</span>
@@ -227,14 +227,14 @@ function FullChrome({ video }: { video: BaseItem }) {
   return (
     <div className={`vf${idle ? ' idle' : ''}`}>
       <div className="vf-top">
-        <button className="iconbtn" aria-label="Leave full screen" title="Leave full screen (Esc)" onClick={() => v.setMode('theater')}>
+        <button className="iconbtn" aria-label="Leave Full Screen" title="Leave Full Screen (Esc)" onClick={() => v.setMode('theater')}>
           <Shrink size={19} />
         </button>
         <span className="vf-title">
           {videoTitle(video.Name, video.Artists ?? []) || video.Name}
           <span className="by">{video.Artists?.join(', ')}</span>
         </span>
-        <button className="iconbtn" aria-label="Close the video" title="Close the video" onClick={() => v.close()}>
+        <button className="iconbtn" aria-label="Close the Video" title="Close the Video" onClick={() => v.close()}>
           <X size={20} />
         </button>
       </div>
@@ -259,7 +259,7 @@ export function MiniVideoCard({ floating = false }: { floating?: boolean }) {
         <button className="iconbtn" aria-label="Bigger" title="Bigger" onClick={() => v.setMode('theater')}>
           <Maximize2 size={15} />
         </button>
-        <button className="iconbtn" aria-label="Close the video" title="Close the video" onClick={() => v.close()}>
+        <button className="iconbtn" aria-label="Close the Video" title="Close the Video" onClick={() => v.close()}>
           <X size={16} />
         </button>
       </div>
@@ -285,12 +285,12 @@ export function VideoPanel({ video }: { video: BaseItem }) {
         <div className="np-view-title">{videoTitle(video.Name, video.Artists ?? []) || video.Name}</div>
         <div className="np-view-by">{video.ArtistItems?.length ? <ArtistLinks item={video} /> : video.Artists?.join(', ')}</div>
         <div className="np-tags">
-          <span>Music video</span>
+          <span>Music Video</span>
           {res ? <span>{res}</span> : null}
           {year ? <span>{year}</span> : null}
         </div>
         {song?.AlbumId ? (
-          <button className="vt-album" onClick={() => go({ name: 'album', id: song.AlbumId! })} title="Open the album">
+          <button className="vt-album" onClick={() => go({ name: 'album', id: song.AlbumId! })} title="Open the Album">
             <Artwork item={song} size={120} className="thumb" />
             <span className="t">
               <span className="name">{song.Album}</span>
@@ -326,13 +326,13 @@ export function VideoBar({ video }: { video: BaseItem }) {
       </div>
       <div className="controls">
         <div className="buttons">
-          <button className="iconbtn" aria-label="Previous video" title="Previous video" disabled={!hasBack} onClick={() => v.back()}>
+          <button className="iconbtn" aria-label="Previous Video" title="Previous Video" disabled={!hasBack} onClick={() => v.back()}>
             <SkipBack size={20} fill="currentColor" />
           </button>
           <button className="pp" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause (Space)' : 'Play (Space)'} onClick={videoControls.toggle}>
             {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />}
           </button>
-          <button className="iconbtn" aria-label="Next video" title="Next video" disabled={!hasNext} onClick={() => v.next()}>
+          <button className="iconbtn" aria-label="Next Video" title="Next Video" disabled={!hasNext} onClick={() => v.next()}>
             <SkipForward size={20} fill="currentColor" />
           </button>
         </div>
@@ -343,13 +343,13 @@ export function VideoBar({ video }: { video: BaseItem }) {
         </div>
       </div>
       <div className="right">
-        <button className={`iconbtn${mode === 'mini' ? ' on' : ''}`} aria-label="In the sidebar" title="In the sidebar" onClick={() => v.setMode('mini')}>
+        <button className={`iconbtn${mode === 'mini' ? ' on' : ''}`} aria-label="In the Sidebar" title="In the Sidebar" onClick={() => v.setMode('mini')}>
           <PanelRight size={18} />
         </button>
         <button className={`iconbtn${mode === 'theater' ? ' on' : ''}`} aria-label="Bigger" title="Bigger" onClick={() => v.setMode('theater')}>
           <Maximize2 size={17} />
         </button>
-        <button className="iconbtn" aria-label="Full screen" title="Full screen (F)" onClick={() => v.setMode('full')}>
+        <button className="iconbtn" aria-label="Full Screen" title="Full Screen (F)" onClick={() => v.setMode('full')}>
           <Expand size={17} />
         </button>
         <div className="volume" title={`Volume ${Math.round(volume * 100)}% (scroll to change)`} onWheel={(e) => videoControls.setVolume(volume + (e.deltaY < 0 ? 0.05 : -0.05))}>
@@ -358,7 +358,7 @@ export function VideoBar({ video }: { video: BaseItem }) {
             <Range label="Volume" step={5} value={volume * 100} max={100} onSet={(x) => videoControls.setVolume(x / 100)} />
           </div>
         </div>
-        <button className="iconbtn" aria-label="Close the video" title="Close the video" onClick={() => v.close()}>
+        <button className="iconbtn" aria-label="Close the Video" title="Close the Video" onClick={() => v.close()}>
           <X size={17} />
         </button>
       </div>

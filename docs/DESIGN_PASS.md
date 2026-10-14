@@ -20,7 +20,8 @@ the user before starting.
 5. **One Rakki across devices:** the desktop has the phone's features and clean look, shares its
    code, and behaves the same.
 6. **Real icons, no emojis** (or glyphs like the cross and note characters).
-7. **Plain, honest wording:** say what a thing does, in normal sentences; no hype, no filler.
+7. **Plain, honest wording:** say what a thing does; no hype, no filler. Names and labels in
+   Title Case ("This Computer"), descriptions and messages as sentences (see DESIGN.md).
 8. **Your music stays yours:** no server addresses or keys in the code; nothing about the
    library made public.
 9. **No loading screens; actions never hang** (user, 2026-10-13): an action finishes on screen

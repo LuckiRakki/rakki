@@ -20,6 +20,7 @@
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-resizable",
     "core:window:allow-unmaximize",
+    "core:webview:allow-set-webview-zoom",
     "opener:default"
   ]
 }

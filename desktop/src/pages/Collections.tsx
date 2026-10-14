@@ -122,11 +122,11 @@ export function Playlist({ id }: { id: string }) {
         kind={mix ? 'Daily Mix' : 'Playlist'}
         art={
           item && !mix ? (
-            <button className="cover-edit" title="Change picture" aria-label="Change the playlist’s picture" onClick={() => changePlaylistPicture(item)}>
+            <button className="cover-edit" title="Change Picture" aria-label="Change the playlist’s picture" onClick={() => changePlaylistPicture(item)}>
               <Artwork item={item} size={500} />
               <span>
                 <ImagePlus size={34} />
-                Choose picture
+                Choose Picture
               </span>
             </button>
           ) : undefined
@@ -146,8 +146,8 @@ export function Playlist({ id }: { id: string }) {
         extra={
           <label className="select">
             <ArrowDownAZ size={16} />
-            <select aria-label="Sort by" value={sort} onChange={(e) => setSort(e.target.value as PlaylistSort)}>
-              <option value="custom">Custom order</option>
+            <select aria-label="Sort By" value={sort} onChange={(e) => setSort(e.target.value as PlaylistSort)}>
+              <option value="custom">Custom Order</option>
               <option value="title">Title</option>
               <option value="artist">Artist</option>
               <option value="album">Album</option>
@@ -163,9 +163,9 @@ export function Playlist({ id }: { id: string }) {
           empty={
             <Empty
               icon={ListMusic}
-              title="This playlist is empty"
+              title="This Playlist Is Empty"
               detail="Right-click any song (or use its heart) and choose Add to playlist."
-              action={{ label: 'Find songs', run: () => go({ name: 'search', term: '' }) }}
+              action={{ label: 'Find Songs', run: () => go({ name: 'search', term: '' }) }}
             />
           }
         />
@@ -205,9 +205,9 @@ export function Liked() {
           empty={
             <Empty
               icon={Heart}
-              title="No liked songs yet"
+              title="No Liked Songs Yet"
               detail="Click the heart beside a song to keep it here."
-              action={{ label: 'Browse songs', run: () => go({ name: 'songs' }) }}
+              action={{ label: 'Browse Songs', run: () => go({ name: 'songs' }) }}
             />
           }
         />

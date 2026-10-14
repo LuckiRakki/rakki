@@ -15,6 +15,7 @@ import { openAddToPlaylist } from '~/library/AddToPlaylist';
 import { collectionMenu, songMenu, type MenuContext } from '~/library/menus';
 import { go, openItem } from '~/nav';
 import { usePlayer } from '~/player/store';
+import { useLook } from '~/settings/look';
 import { activateOnKey } from '~/ui/keys';
 import { openMenu } from '~/ui/overlays';
 
@@ -106,11 +107,11 @@ export function Shelf({ title, items, onShowAll }: { title: string; items?: Base
           {title}
         </h2>
         <div className="shelf-tools">
-          {onShowAll ? <button onClick={onShowAll}>Show all</button> : null}
-          <button className="arrow" aria-label="Scroll left" onClick={() => scroll(-1)}>
+          {onShowAll ? <button onClick={onShowAll}>Show All</button> : null}
+          <button className="arrow" aria-label="Scroll Left" onClick={() => scroll(-1)}>
             <ChevronLeft size={18} />
           </button>
-          <button className="arrow" aria-label="Scroll right" onClick={() => scroll(1)}>
+          <button className="arrow" aria-label="Scroll Right" onClick={() => scroll(1)}>
             <ChevronRight size={18} />
           </button>
         </div>
@@ -208,7 +209,7 @@ export interface TrackTableProps {
   plays?: boolean;
   /** Album pages: the disc's track numbers instead of 1, 2, 3. */
   trackNumbers?: boolean;
-  /** Songs in a playlist ("Remove from this playlist" in the menu). */
+  /** Songs in a playlist ("Remove from This Playlist" in the menu). */
   menu?: MenuContext;
   /** Extra numbers shown in the plays column (Last.fm plays), by song id. */
   playsOf?: (t: BaseItem) => number | undefined;
@@ -222,11 +223,12 @@ export interface TrackTableProps {
  * keyboard: Tab reaches the table, the arrow keys move (Shift extends), Space selects, Home / End
  * jump. Only the rows on screen are drawn, so a 5,000-song list costs the same as a 20-song one.
  */
-const ROW_H = 56;
+const ROW_HEIGHT = { comfortable: 56, compact: 44 };
 
 export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, menu, playsOf, onMove }: TrackTableProps) {
   const parent = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
+  const ROW_H = ROW_HEIGHT[useLook((l) => l.app.density)];
   // Dragging a row: which one, and the gap it would drop into (0..length).
   const [drag, setDrag] = useState<{ from: number; gap: number } | null>(null);
   const nowId = usePlayer((s) => s.queue[s.index]?.Id);
@@ -248,6 +250,8 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
     overscan: 10,
     scrollMargin: margin,
   });
+  // Spacing changed (Settings -> Look): every row's size changed with it.
+  useEffect(() => rows.measure(), [ROW_H]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const play = (i: number) => usePlayer.getState().playQueue(tracks, i, { shuffle: false });
 
@@ -366,7 +370,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
             <div
               key={row.key}
               className={`tt-row${selected.has(row.index) ? ' sel' : ''}${now ? ' now' : ''}${drag?.from === row.index ? ' lifted' : ''}`}
-              style={{ gridTemplateColumns: grid, transform: `translateY(${row.start - margin}px)` }}
+              style={{ gridTemplateColumns: grid, height: ROW_H, transform: `translateY(${row.start - margin}px)` }}
               role="row"
               aria-rowindex={row.index + 1}
               aria-selected={selected.has(row.index)}
@@ -509,8 +513,8 @@ export function ActionBar({
       </button>
       <button
         className="iconbtn big"
-        aria-label="Shuffle play"
-        title="Shuffle play"
+        aria-label="Shuffle Play"
+        title="Shuffle Play"
         disabled={!tracks.length}
         onClick={() => usePlayer.getState().playQueue(tracks, Math.floor(Math.random() * tracks.length), { shuffle: true })}>
         <Shuffle size={26} />
@@ -530,7 +534,7 @@ export function ActionBar({
       {onFind ? (
         <label className="find">
           <Search size={15} />
-          <input value={find} onChange={(e) => onFind(e.target.value)} placeholder="Find in list" />
+          <input value={find} onChange={(e) => onFind(e.target.value)} placeholder="Find in List" />
         </label>
       ) : null}
     </div>

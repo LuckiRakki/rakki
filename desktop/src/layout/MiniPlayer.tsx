@@ -67,7 +67,7 @@ export function MiniPlayer() {
         <div className="mini-top" data-tauri-drag-region>
           <div className="mini-text" data-tauri-drag-region>
             <div className="mini-title" data-tauri-drag-region>
-              {item?.Name ?? 'Nothing playing'}
+              {item?.Name ?? 'Nothing Playing'}
             </div>
             <div className="mini-by">{item ? <ArtistLinks item={item} /> : null}</div>
           </div>
@@ -81,7 +81,7 @@ export function MiniPlayer() {
             }}>
             {onTop ? <Pin size={15} /> : <PinOff size={15} />}
           </button>
-          <button className="iconbtn" aria-label="Back to the full window" title="Back to the full window (Esc)" onClick={() => void setMini(false)}>
+          <button className="iconbtn" aria-label="Back to the Full Window" title="Back to the Full Window (Esc)" onClick={() => void setMini(false)}>
             <Maximize2 size={15} />
           </button>
         </div>

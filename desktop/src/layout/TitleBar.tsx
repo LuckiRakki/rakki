@@ -49,7 +49,7 @@ function UserButton() {
           e,
           [
             { label: 'Settings', icon: Settings2, run: () => go({ name: 'settings' }) },
-            { label: 'Sign out', icon: LogOut, run: () => useAuth.getState().signOut(), divider: true },
+            { label: 'Sign Out', icon: LogOut, run: () => useAuth.getState().signOut(), divider: true },
           ],
           `${session.userName} · ${session.serverName}`,
         )
