@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
 import { tick } from '@/lib/haptics';
@@ -24,6 +25,46 @@ function nowLine(d: RakkiDevice): string {
   if (!d.item) return 'Not playing';
   const who = d.item.Artists?.join(', ') ?? d.item.AlbumArtist;
   return `${d.paused ? 'Paused' : 'Playing'}: ${d.item.Name}${who ? ` · ${who}` : ''}`;
+}
+
+/** Bring the music here from the device that's playing it. */
+async function moveHere(client: JellyfinClient, d: RakkiDevice) {
+  if (moving) return;
+  tick();
+  moving = true;
+  router.back();
+  try {
+    const h = await pullFrom(client, d);
+    if (!h.items.length) return showToast(`Nothing to take over from ${d.name}`);
+    usePlayer.getState().playQueue(h.items, { startIndex: h.index, shuffle: false });
+    if (h.positionSec > 1) setTimeout(() => usePlayer.getState().seek(h.positionSec), 700);
+    await h.release();
+    showToast(`Playing on This Phone (from ${d.name})`);
+  } catch {
+    showToast(`Couldn’t take over from ${d.name}`);
+  } finally {
+    moving = false;
+  }
+}
+
+/** Move this phone's music to another device. */
+async function moveTo(client: JellyfinClient, d: RakkiDevice) {
+  const p = usePlayer.getState();
+  if (moving) return;
+  if (!p.queue.length) return showToast('Play something here first, then move it');
+  tick();
+  moving = true;
+  router.back();
+  try {
+    const ok = await pushTo(client, d, p.queue.map((e) => e.item), p.index, engine.getProgress().position);
+    if (!ok) return showToast(`${d.name} didn’t start. Open Rakki there and try again.`);
+    if (usePlayer.getState().playing) usePlayer.getState().toggle();
+    showToast(`Playing on ${d.name}`);
+  } catch {
+    showToast(`Couldn’t reach ${d.name}`);
+  } finally {
+    moving = false;
+  }
 }
 
 /**
@@ -63,45 +104,11 @@ export default function DevicesScreen() {
   const playingElsewhere = devices?.find((d) => d.item && !d.paused && d.controllable);
   const litHere = playingHere || !playingElsewhere;
 
-  /** Bring the music here from the device that's playing it. */
-  const pickHere = async () => {
-    const d = playingElsewhere;
-    if (!client || moving || litHere || !d) return;
-    tick();
-    moving = true;
-    router.back();
-    try {
-      const h = await pullFrom(client, d);
-      if (!h.items.length) return showToast(`Nothing to take over from ${d.name}`);
-      usePlayer.getState().playQueue(h.items, { startIndex: h.index, shuffle: false });
-      if (h.positionSec > 1) setTimeout(() => usePlayer.getState().seek(h.positionSec), 700);
-      await h.release();
-      showToast(`Playing on This Phone (from ${d.name})`);
-    } catch {
-      showToast(`Couldn’t take over from ${d.name}`);
-    } finally {
-      moving = false;
-    }
+  const pickHere = () => {
+    if (client && !litHere && playingElsewhere) void moveHere(client, playingElsewhere);
   };
-
-  /** Move this phone's music to another device. */
-  const pick = async (d: RakkiDevice) => {
-    const p = usePlayer.getState();
-    if (!client || moving || playingElsewhere?.sessionId === d.sessionId) return;
-    if (!p.queue.length) return showToast('Play something here first, then move it');
-    tick();
-    moving = true;
-    router.back();
-    try {
-      const ok = await pushTo(client, d, p.queue.map((e) => e.item), p.index, engine.getProgress().position);
-      if (!ok) return showToast(`${d.name} didn’t start. Open Rakki there and try again.`);
-      if (usePlayer.getState().playing) usePlayer.getState().toggle();
-      showToast(`Playing on ${d.name}`);
-    } catch {
-      showToast(`Couldn’t reach ${d.name}`);
-    } finally {
-      moving = false;
-    }
+  const pick = (d: RakkiDevice) => {
+    if (client && playingElsewhere?.sessionId !== d.sessionId) void moveTo(client, d);
   };
 
   const row = (key: string, icon: keyof typeof Ionicons.glyphMap, name: string, sub: string, lit: boolean, onPress: () => void, disabled = false) => (
@@ -136,7 +143,7 @@ export default function DevicesScreen() {
         <View style={{ width: 28 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: t.space.md, paddingBottom: insets.bottom + t.space.xl }}>
-        {row('here', 'phone-portrait-outline', 'This Phone', here ? `${playingHere ? 'Playing' : 'Paused'}: ${here.Name}` : 'Nothing playing', litHere, () => void pickHere())}
+        {row('here', 'phone-portrait-outline', 'This Phone', here ? `${playingHere ? 'Playing' : 'Paused'}: ${here.Name}` : 'Nothing playing', litHere, pickHere)}
         {devices?.map((d) =>
           row(
             d.sessionId,
@@ -144,7 +151,7 @@ export default function DevicesScreen() {
             d.name,
             d.controllable ? nowLine(d) : 'Update Rakki there to connect to it',
             !litHere && playingElsewhere?.sessionId === d.sessionId,
-            () => void pick(d),
+            () => pick(d),
             !d.controllable,
           ),
         )}
