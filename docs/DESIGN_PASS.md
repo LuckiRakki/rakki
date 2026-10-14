@@ -1,6 +1,7 @@
 # Design pass before Rakki desktop 1.0.0
 
-Waiting on the user's go-ahead (2026-10-13). A full design pass over everything built for Rakki
+Done 2026-10-13: audit in anti-slop/audit-001-2026-10-13.md, fixes and the requested work in
+anti-slop/report-001-2026-10-13.md, the lasting rules in DESIGN.md. Below is the plan as written. A full design pass over everything built for Rakki
 desktop, extending to the phone app's new features (the Devices screen and the rest of this
 round), plus refactoring, then the 1.0.0 build (installers are on hold until the user says so).
 The user asked for the antislop plugin to be used for the review. Restate the ethos below to

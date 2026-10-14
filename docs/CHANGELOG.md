@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.17.2 (2026-10-13)
+- **Your devices: bigger buttons.** Previous, play / pause, next and Play here / Play there are
+  now full-size touch targets (44 pt), and moving music closes the screen at once; a message
+  says when it's playing on the other side (or why not).
+- **Readable colours.** Lucid accents from strong blues and purples are lightened until they
+  read on Rakki's dark surfaces, and genre tiles from yellow and green art are darkened until
+  their white names read.
+
 ## 1.17.1 (2026-10-13)
 - **Fixed: two songs at once after the lock screen or Control Center buttons.** Restart now
   (after an update downloads) reloads Rakki in place, and the player from before could stay

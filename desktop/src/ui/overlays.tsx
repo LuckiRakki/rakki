@@ -76,7 +76,7 @@ function ContextMenu() {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
-  // Keep it inside the window, then put focus in it (the first item when opened by keyboard).
+  // Keep it inside the window.
   useLayoutEffect(() => {
     if (!open || !ref.current) return setPos(null);
     const r = ref.current.getBoundingClientRect();
@@ -84,10 +84,15 @@ function ContextMenu() {
       left: Math.max(8, Math.min(open.x, window.innerWidth - r.width - 8)),
       top: open.y + r.height > window.innerHeight - 8 ? Math.max(8, open.y - r.height) : open.y,
     });
+  }, [open]);
+
+  // Once placed (it can't take focus while hidden for measuring): focus into it.
+  useEffect(() => {
+    if (!open || !pos || !ref.current) return;
     const first = ref.current.querySelector<HTMLButtonElement>('.menu-item:not(:disabled)');
     if (open.keyboard && first) first.focus();
-    else ref.current.focus();
-  }, [open]);
+    else ref.current.focus({ preventScroll: true });
+  }, [open, pos]);
 
   useEffect(() => {
     if (!open) return;

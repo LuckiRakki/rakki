@@ -207,7 +207,6 @@ export function NowPlaying() {
 
   if (!presence.render || !item) return null;
   const tint = client ? artColor(client.blurhash(item), '#202024') : '#202024';
-  const big = client?.imageUrl(item, 1000);
   const backdrop = client?.imageUrl(item, 500);
   const song = { ...item, ...full, UserData: item.UserData };
   const badges = [formatOf(song)[0], song.ProductionYear].filter(Boolean);
