@@ -111,7 +111,9 @@ mod platform {
                     },
                 },
             };
-            let prop = PROPVARIANT {
+            // Never cleared: PROPVARIANT's drop would free the blob, which points at `params`
+            // on this stack (heap corruption).
+            let prop = std::mem::ManuallyDrop::new(PROPVARIANT {
                 Anonymous: PROPVARIANT_0 {
                     Anonymous: std::mem::ManuallyDrop::new(PROPVARIANT_0_0 {
                         vt: VT_BLOB,
@@ -124,10 +126,10 @@ mod platform {
                         ..Default::default()
                     }),
                 },
-            };
+            });
             let ready_event = CreateEventW(None, false, false, None)?;
             let handler: IActivateAudioInterfaceCompletionHandler = Ready(ready_event).into();
-            let op = ActivateAudioInterfaceAsync(VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK, &IAudioClient::IID, Some(&prop), &handler)?;
+            let op = ActivateAudioInterfaceAsync(VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK, &IAudioClient::IID, Some(&*prop), &handler)?;
             WaitForSingleObject(ready_event, 5_000);
             let _ = CloseHandle(ready_event);
             let mut hr = HRESULT(0);
