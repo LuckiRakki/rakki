@@ -77,36 +77,44 @@ function ensureFeed(): Promise<void> {
 // ---- Recording mpv ----
 
 let users = 0;
-let recording = false;
 let stopWatch: (() => void) | null = null;
+/** Whether recording is wanted, and whether the app is recording. Starts and stops run one at a
+ *  time, each settling towards what's wanted now, so quick open / close never crosses over. */
+let wanted = false;
+let recording = false;
+let settling = false;
 
-async function startRecording() {
-  if (recording || !inTauri) return;
-  recording = true;
+async function settle() {
+  if (settling || !inTauri) return;
+  settling = true;
   try {
-    await ensureFeed();
-    const ch = new Channel<ArrayBuffer>();
-    ch.onmessage = (buf) => feed?.port.postMessage(new Float32Array(buf), [buf]);
-    await invoke('capture_start', { onAudio: ch });
-    void ctx?.resume();
+    while (recording !== wanted) {
+      if (wanted) {
+        await ensureFeed();
+        const ch = new Channel<ArrayBuffer>();
+        ch.onmessage = (buf) => feed?.port.postMessage(new Float32Array(buf), [buf]);
+        await invoke('capture_start', { onAudio: ch });
+        recording = true;
+        await ctx?.resume();
+      } else {
+        await invoke('capture_stop');
+        recording = false;
+      }
+    }
   } catch {
     // No capture (an older Windows, no PulseAudio): the visualizer stays flat.
+    wanted = false;
     recording = false;
+  } finally {
+    settling = false;
   }
-}
-
-function stopRecording() {
-  if (!recording) return;
-  recording = false;
-  if (inTauri) void invoke('capture_stop').catch(() => {});
 }
 
 /** Recording follows: someone wants it, music is playing, the window is in view, no video. */
 function follow() {
   const p = usePlayer.getState();
-  const want = users > 0 && p.playing && !p.hidden && !useVideo.getState().video;
-  if (want) void startRecording();
-  else stopRecording();
+  wanted = users > 0 && p.playing && !p.hidden && !useVideo.getState().video;
+  void settle();
 }
 
 function acquire(): () => void {
