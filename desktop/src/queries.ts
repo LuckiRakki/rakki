@@ -54,3 +54,6 @@ export const useAppearsOn = (id: string) => useClientQuery(['appearsOn', id], (c
 export const useArtistTracks = (id: string) => useClientQuery(['artistTracks', id], (c) => c.getArtistTracks(id));
 
 export type { BaseItem };
+
+/** You (name and profile picture tag), for your picture in the title bar and Settings. */
+export const useMe = () => useClientQuery(['me'], (c) => c.getMe());

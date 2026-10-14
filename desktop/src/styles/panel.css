@@ -51,36 +51,20 @@
 .details dd { margin: 0; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; }
 
 
-.devices { position: relative; }
-.devices-pop { text-align: left; position: absolute; right: -60px; bottom: calc(100% + 14px); width: 340px; max-height: 60vh; overflow-y: auto; z-index: 60; padding: 14px; border-radius: 12px; background: #282829; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
-.devices-pop h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
-.devices-pop .pad { padding: 8px 4px; }
-.device { display: flex; gap: 12px; padding: 10px 4px; border-top: 1px solid var(--line); }
-.device:first-of-type { border-top: 0; }
-.device .device-icon { flex: none; margin-top: 2px; color: var(--text-2); }
-.device.current .device-icon, .device.current .name { color: var(--accent); }
-.device.playing .device-icon { color: var(--accent); }
-.device .t { min-width: 0; flex: 1; }
-.device .name { font-weight: 700; }
-.device .sub, .devices-pop .sub { font-size: 12px; color: var(--text-3); }
-.device-song { display: flex; align-items: center; gap: 10px; margin-top: 8px; width: 100%; text-align: left; padding: 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
-.device-song:hover { background: rgba(255, 255, 255, 0.1); }
-.device-song .thumb { width: 40px; flex: none; border-radius: 4px; }
-.device-song .t { display: flex; flex-direction: column; min-width: 0; }
-.device-song .song { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.device-song .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.devices-note { margin-top: 10px; font-size: 12px; color: var(--text-3); }
-.device-pick { display: flex; align-items: center; gap: 8px; text-align: left; max-width: 100%; }
-.device-pick:not(:disabled):hover .name { text-decoration: underline; }
-.device-pick:disabled { cursor: default; }
-.device-tag { font-size: 12px; font-weight: 700; color: var(--text-2); background: var(--surface-4); padding: 1px 8px; border-radius: 999px; }
-.device.picked .device-icon, .device.picked .name { color: var(--accent); }
-.device-song { cursor: default; }
-.device-actions { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
-.device-actions .iconbtn { width: 28px; height: 28px; border-radius: 50%; color: var(--text-2); }
-.device-actions .iconbtn:hover { background: var(--surface-4); color: var(--text); }
-.device-actions .spacer { flex: 1; }
-.device-btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: var(--surface-4); color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; transition: background 0.15s, transform 0.15s var(--ease-out); }
-.device-btn:hover:not(:disabled) { background: var(--text); color: #000; }
-.device-btn:active:not(:disabled) { transform: scale(0.96); }
-.device-btn:disabled { opacity: 0.5; }
+
+/* Connect (layout/Devices.tsx): the devices list, as in Spotify. */
+.connect { display: flex; flex-direction: column; gap: 4px; padding: 4px 8px 12px; }
+.connect-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 10px 12px; border-radius: 8px; text-align: left; color: var(--text); transition: background 0.15s; }
+.connect-row:hover:not(:disabled) { background: var(--surface-2); }
+.connect-row:disabled { cursor: default; opacity: 0.6; }
+.connect-row .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.connect-row .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.connect-row .sub { font-size: 13px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.connect-row.on { background: var(--accent-soft); }
+.connect-row.on .name, .connect-row.on > .ico { color: var(--accent); }
+.connect-foot { flex: none; border-top: 1px solid var(--line); padding: 6px 8px 10px; }
+.connect-help { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; color: var(--text-2); }
+.connect-help:hover { background: var(--surface-2); color: var(--text); }
+.connect-help .ico { transition: transform 0.2s var(--ease-out); }
+.connect-help[aria-expanded='true'] .ico { transform: rotate(180deg); }
+.connect-note { padding: 8px 12px; font-size: 13px; line-height: 1.5; color: var(--text-3); }

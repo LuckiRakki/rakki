@@ -10,6 +10,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { artColor } from '@/lib/blurhash';
 import { useAuth } from '~/auth/session';
 import { songMenu } from '~/library/menus';
+import { DevicesPanel } from '~/layout/Devices';
 import { useLayout } from '~/layout/layout';
 import { LyricsView } from '~/lyrics/LyricsView';
 import { go } from '~/nav';
@@ -277,6 +278,7 @@ export function NowPlayingPanel() {
   const item = usePlayer((s) => s.queue[s.index]);
   const video = useVideo((s) => s.video);
   if (!panel) return null;
+  if (panel === 'devices') return <DevicesPanel />;
   // A music video takes the sidebar over: the video, what it is, Up next.
   if (video) {
     return (

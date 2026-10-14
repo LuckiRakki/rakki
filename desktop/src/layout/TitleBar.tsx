@@ -7,6 +7,7 @@ import { win } from '~/layout/layout';
 import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav } from '~/nav';
 import { ChevronLeft, ChevronRight, CircleArrowDown, Copy, Home as HomeIcon, LogOut, Minus, Search as SearchIcon, Settings2, Square, X } from '~/ui/icons';
+import { Avatar } from '~/ui/Avatar';
 import { openMenu } from '~/ui/overlays';
 
 export function WindowButtons() {
@@ -37,10 +38,7 @@ export function WindowButtons() {
 /** Your picture in the title bar: Settings and Sign out. */
 function UserButton() {
   const session = useAuth((s) => s.session);
-  const client = useAuth((s) => s.client);
-  const [failed, setFailed] = useState(false);
   if (!session) return null;
-  const src = client?.userImageUrl({ Id: session.userId }, 80);
   return (
     <button
       className="avatar"
@@ -56,8 +54,7 @@ function UserButton() {
           `${session.userName} · ${session.serverName}`,
         )
       }>
-      {src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} /> : null}
-      <span>{session.userName.slice(0, 1).toUpperCase()}</span>
+      <Avatar size={32} />
     </button>
   );
 }

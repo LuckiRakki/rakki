@@ -15,8 +15,9 @@ import { inTauri } from '~/lib/tauri';
 import { openUpdate, useUpdate } from '~/lib/updateCheck';
 import { useNav } from '~/nav';
 import { useDiscord } from '~/player/discord';
-import { FEISHIN, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
+import { FEISHIN, LYRICS_SIZES, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
 import { Check, ChevronDown, LogOut } from '~/ui/icons';
+import { Avatar } from '~/ui/Avatar';
 import { Range } from '~/ui/Range';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
 import pkg from '../../package.json';
@@ -100,15 +101,10 @@ function Card({ title, children }: { title?: string; children: ReactNode }) {
 
 function Account() {
   const session = useAuth((s) => s.session);
-  const client = useAuth((s) => s.client);
-  const avatar = session && client ? client.userImageUrl({ Id: session.userId }, 160) : undefined;
   return (
     <Card>
       <div className="account">
-        <div className="avatar big">
-          {avatar ? <img src={avatar} alt="" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} /> : null}
-          <span>{session?.userName.slice(0, 1).toUpperCase()}</span>
-        </div>
+        <Avatar size={56} big />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="setting-label">{session?.userName}</div>
           <div className="setting-detail">
@@ -177,8 +173,13 @@ function Look() {
 
 function Lyrics() {
   const s = useSettings();
+  const size = useLook((l) => l.lyricsSize);
+  const setSize = useLook((l) => l.setLyricsSize);
   return (
     <Card>
+      <Row label="Text size" detail="The full player's lyrics, scaled to their side of the window. Fill uses all of it.">
+        <Choice label="Lyrics text size" value={size} onChange={setSize} options={LYRICS_SIZES} />
+      </Row>
       <Row label="Lyrics style" detail="Spicy: word by word, as on the phone. Regular: line by line. Also switchable in the full player.">
         <Choice
           label="Lyrics style"
@@ -217,7 +218,7 @@ function VisualizerSettings() {
             options={[...VISUALIZER_PRESETS.map((p) => ({ value: p.id, label: p.label })), ...(preset ? [] : [{ value: 'custom', label: 'Yours' }])]}
           />
         </Row>
-        <Row label="Colours">
+        <Row label="Colours" detail="Accent follows Lucid: the colour of what's playing.">
           <Choice
             label="Colours"
             value={look.colors}

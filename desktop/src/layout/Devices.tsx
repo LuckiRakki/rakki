@@ -1,131 +1,75 @@
-// The Devices button (player bar), like Spotify's device list: your other Rakki apps signed in to
-// this server and what each is playing (docs/REMOTE_PLAYBACK.md). Click one to control it from
-// the player bar, or move playback: Play here (take it over) or Play on it (send it there).
-// Asks the server every few seconds while open. Moving playback closes the list at once; a toast
-// says when it's playing on the other side (or why not).
-import { ArrowDownToLine, ArrowUpFromLine, Monitor, MonitorSpeaker, Pause, Play, SkipBack, SkipForward, Smartphone } from '~/ui/icons';
-import { useEffect, useRef, useState } from 'react';
+// Connect, like Spotify's: the Devices button opens a list of your Rakki apps (this computer and
+// the others signed in to this server, docs/REMOTE_PLAYBACK.md) in the right sidebar. Click one
+// to listen there: the music moves over at the same moment in the song and the player bar
+// controls that device. Click This computer to bring it back. A device with nothing to move
+// to it (nothing playing here) is simply controlled. The list asks the server every few
+// seconds while open; a toast says when the music has moved (or why not).
+import { useEffect, useState } from 'react';
 
-import { otherRakkiDevices, positionNow, type RakkiDevice } from '@/remote/devices';
+import { otherRakkiDevices, type RakkiDevice } from '@/remote/devices';
 import { useAuth } from '~/auth/session';
-import { usePlayer } from '~/player/store';
+import { useLayout } from '~/layout/layout';
 import { useRemote } from '~/player/remote';
-import { Artwork, formatTime, ticksToSeconds } from '~/ui/parts';
+import { usePlayer } from '~/player/store';
+import { ChevronDown, Monitor, MonitorSpeaker, Smartphone, X } from '~/ui/icons';
 
 const REFRESH_MS = 4000;
 
 export const isPhone = (d: { name: string }) => /iphone|ipad|ios|android|phone/i.test(d.name);
 
-function ago(ms: number): string {
-  const m = Math.round((Date.now() - ms) / 60_000);
-  return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`;
-}
-
-function DeviceRow({ d, onPicked }: { d: RakkiDevice; onPicked(): void }) {
-  const [, tick] = useState(0);
+/** The player bar's button: opens Connect in the right sidebar. */
+export function DevicesButton() {
+  const open = useLayout((s) => s.panel === 'devices');
   const target = useRemote((s) => s.target);
-  const hasQueueHere = usePlayer((s) => s.queue.length > 0 && !s.queue[s.index]?.Radio);
-  useEffect(() => {
-    if (!d.item || d.paused) return;
-    const id = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [d]);
-  const Icon = isPhone(d) ? Smartphone : Monitor;
-  const length = ticksToSeconds(d.item?.RunTimeTicks);
-  const picked = target?.sessionId === d.sessionId;
-  const r = useRemote.getState();
-  const send = (cmd: 'PlayPause' | 'NextTrack' | 'PreviousTrack') => {
-    if (!picked) r.setTarget(d);
-    useRemote.getState().command(cmd);
-  };
   return (
-    <div className={`device${d.item && !d.paused ? ' playing' : ''}${picked ? ' picked' : ''}`}>
-      <Icon size={20} className="device-icon" />
-      <div className="t">
-        <button
-          className="device-pick"
-          disabled={!d.controllable}
-          title={d.controllable ? `Control ${d.name} from here` : undefined}
-          onClick={() => {
-            r.setTarget(picked ? null : d);
-            onPicked();
-          }}>
-          <span className="name">{d.name}</span>
-          {picked ? <span className="device-tag">Controlling</span> : null}
-        </button>
-        {d.item ? (
-          <div className="device-song">
-            <Artwork item={d.item} size={80} className="thumb" />
-            <span className="t">
-              <span className="song">{d.item.Name}</span>
-              <span className="sub">
-                {d.item.Artists?.join(', ') ?? d.item.AlbumArtist}
-                {' · '}
-                {d.paused ? 'Paused' : 'Playing'} {formatTime(Math.min(positionNow(d), length || Infinity))}
-                {length ? ` / ${formatTime(length)}` : ''}
-              </span>
-            </span>
-          </div>
-        ) : (
-          <div className="sub">Not playing · seen {ago(d.reportedAt)}</div>
-        )}
-        {d.controllable ? (
-          <div className="device-actions">
-            {d.item ? (
-              <>
-                <button className="iconbtn" aria-label="Previous" title="Previous" onClick={() => send('PreviousTrack')}>
-                  <SkipBack size={16} />
-                </button>
-                <button className="iconbtn" aria-label={d.paused ? 'Play' : 'Pause'} title={d.paused ? 'Play' : 'Pause'} onClick={() => send('PlayPause')}>
-                  {d.paused ? <Play size={16} /> : <Pause size={16} />}
-                </button>
-                <button className="iconbtn" aria-label="Next" title="Next" onClick={() => send('NextTrack')}>
-                  <SkipForward size={16} />
-                </button>
-                <span className="spacer" />
-                <button
-                  className="device-btn"
-                  onClick={() => {
-                    onPicked();
-                    void r.playHere(d);
-                  }}
-                  title={`Take over what ${d.name} is playing, at the same moment`}>
-                  <ArrowDownToLine size={14} /> Play here
-                </button>
-              </>
-            ) : (
-              <span className="spacer" />
-            )}
-            {hasQueueHere ? (
-              <button
-                className="device-btn"
-                onClick={() => {
-                  onPicked();
-                  void r.playOn(d);
-                }}
-                title={`Send this computer's queue to ${d.name}, at the same moment`}>
-                <ArrowUpFromLine size={14} /> Play on {isPhone(d) ? 'phone' : 'it'}
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="sub">Update Rakki on this device to control it from here.</div>
-        )}
-      </div>
-    </div>
+    <button
+      className={`iconbtn${open || target ? ' on' : ''}${target ? ' dot' : ''}`}
+      aria-label={target ? `Listening on ${target.name}` : 'Connect to a device'}
+      aria-pressed={open}
+      title={target ? `Listening on ${target.name}` : 'Connect to a device'}
+      onClick={() => useLayout.getState().togglePanel('devices')}>
+      <MonitorSpeaker size={20} />
+    </button>
   );
 }
 
-export function DevicesButton() {
+function nowLine(d: RakkiDevice): string {
+  if (!d.item) return 'Not playing';
+  const who = d.item.Artists?.join(', ') ?? d.item.AlbumArtist;
+  return `${d.paused ? 'Paused' : 'Playing'}: ${d.item.Name}${who ? ` · ${who}` : ''}`;
+}
+
+/** One device; the one you're listening on is lit. */
+function Row({ icon: Icon, name, sub, on, paused, disabled, onPick }: { icon: typeof Monitor; name: string; sub: string; on: boolean; paused: boolean; disabled?: boolean; onPick(): void }) {
+  return (
+    <button className={`connect-row${on ? ' on' : ''}`} aria-current={on ? 'true' : undefined} disabled={disabled} onClick={onPick}>
+      <Icon size={22} />
+      <span className="t">
+        <span className="name">{name}</span>
+        <span className="sub">{sub}</span>
+      </span>
+      {on ? (
+        <span className={`eq${paused ? ' paused' : ''}`} aria-hidden>
+          <i />
+          <i />
+          <i />
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+export function DevicesPanel() {
   const client = useAuth((s) => s.client);
-  const [open, setOpen] = useState(false);
+  const target = useRemote((s) => s.target);
+  const here = usePlayer((s) => s.queue[s.index]);
+  const playingHere = usePlayer((s) => s.playing);
   const [devices, setDevices] = useState<RakkiDevice[] | null>(null);
   const [error, setError] = useState(false);
-  const target = useRemote((s) => s.target);
-  const box = useRef<HTMLDivElement>(null);
+  const [help, setHelp] = useState(false);
 
   useEffect(() => {
-    if (!open || !client) return;
+    if (!client) return;
     let alive = true;
     const load = () =>
       otherRakkiDevices(client)
@@ -133,50 +77,73 @@ export function DevicesButton() {
         .catch(() => alive && setError(true));
     void load();
     const id = setInterval(load, REFRESH_MS);
-    const outside = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    window.addEventListener('mousedown', outside);
-    window.addEventListener('keydown', esc);
     return () => {
       alive = false;
       clearInterval(id);
-      window.removeEventListener('mousedown', outside);
-      window.removeEventListener('keydown', esc);
     };
-  }, [open, client]);
+  }, [client]);
 
-  const here = usePlayer((s) => s.queue[s.index]);
-  const playingHere = usePlayer((s) => s.playing);
-  const playingElsewhere = devices?.some((d) => d.item && !d.paused);
+  const r = useRemote.getState();
+  const hasMusicHere = !!here && !here.Radio;
+
+  /** Listen on this computer: take the music back from the device you were on. */
+  const pickHere = () => {
+    if (!target) return;
+    if (target.item && target.controllable) void r.playHere(target);
+    else r.setTarget(null);
+  };
+
+  /** Listen on another device: move this computer's music there, or just control it. */
+  const pick = (d: RakkiDevice) => {
+    if (target?.sessionId === d.sessionId) return;
+    if (!target && hasMusicHere) void r.playOn(d);
+    else r.setTarget(d);
+  };
+
   return (
-    <div className="devices" ref={box}>
-      <button
-        className={`iconbtn${open || playingElsewhere || target ? ' on' : ''}${target ? ' dot' : ''}`}
-        aria-label="Your devices"
-        title={target ? `Controlling ${target.name}` : 'Your devices'}
-        onClick={() => setOpen(!open)}>
-        <MonitorSpeaker size={20} />
-      </button>
-      {open ? (
-        <div className="devices-pop">
-          <h3>Your devices</h3>
-          <div className={`device current${target ? '' : ' picked'}`}>
-            <Monitor size={20} className="device-icon" />
-            <div className="t">
-              <button className="device-pick" onClick={() => useRemote.getState().setTarget(null)} title="Control this computer">
-                <span className="name">This computer</span>
-                {target ? null : <span className="device-tag">Controlling</span>}
-              </button>
-              <div className="sub">{here ? (playingHere ? `Playing ${here.Name}` : `Paused: ${here.Name}`) : 'Nothing playing here'}</div>
-            </div>
-          </div>
-          {devices === null && !error ? <div className="sub pad">Looking for your other Rakki apps</div> : null}
-          {error ? <div className="sub pad">Couldn't ask the server.</div> : null}
-          {devices?.map((d) => <DeviceRow key={d.sessionId} d={d} onPicked={() => setOpen(false)} />)}
-          {devices && !devices.length ? <div className="sub pad">No other Rakki apps are signed in right now. Open Rakki on your phone to see it here.</div> : null}
-          <div className="devices-note">An iPhone takes commands while Rakki is open or playing on it.</div>
-        </div>
-      ) : null}
-    </div>
+    <aside className="rightpanel panel">
+      <header className="rp-head">
+        <div className="rp-title">Connect</div>
+        <button className="iconbtn" aria-label="Close" title="Close" onClick={() => useLayout.getState().setPanel(null)}>
+          <X size={18} />
+        </button>
+      </header>
+      <div className="panel-body connect">
+        <Row
+          icon={Monitor}
+          name="This computer"
+          on={!target}
+          paused={!playingHere}
+          sub={here ? `${playingHere ? 'Playing' : 'Paused'}: ${here.Name}` : 'Nothing playing'}
+          onPick={pickHere}
+        />
+        {devices?.map((d) => (
+          <Row
+            key={d.sessionId}
+            icon={isPhone(d) ? Smartphone : Monitor}
+            name={d.name}
+            on={target?.sessionId === d.sessionId}
+            paused={!d.item || d.paused}
+            disabled={!d.controllable}
+            sub={d.controllable ? nowLine(d) : 'Update Rakki there to connect to it'}
+            onPick={() => pick(d)}
+          />
+        ))}
+        {devices === null && !error ? <p className="connect-note">Looking for your other Rakki apps</p> : null}
+        {error ? <p className="connect-note">Couldn’t ask your server for your devices.</p> : null}
+      </div>
+      <div className="connect-foot">
+        <button className="connect-help" aria-expanded={help} onClick={() => setHelp(!help)}>
+          Don’t see your device?
+          <ChevronDown size={16} />
+        </button>
+        {help ? (
+          <p className="connect-note">
+            Open Rakki on it, signed in to the same server. An iPhone shows up while Rakki is open or playing on it; your music moves over at the same
+            moment in the song.
+          </p>
+        ) : null}
+      </div>
+    </aside>
   );
 }

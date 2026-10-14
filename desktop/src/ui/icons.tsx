@@ -22,6 +22,7 @@ export type LucideIcon = Icon;
 
 // Code points in Ionicons.ttf (@expo/vector-icons' glyph map), only the ones used.
 const GLYPH: Record<string, number> = {
+  'text-outline': 0xf5cc,
   'add': 0xf103,
   'add-circle-outline': 0xf105,
   'alert-circle-outline': 0xf114,
@@ -215,6 +216,7 @@ export const Tags = glyph('pricetags-outline');
 export const Timer = glyph('timer-outline');
 export const Trash2 = glyph('trash-outline');
 export const Undo = glyph('arrow-undo-outline');
+export const TextSize = glyph('text-outline');
 export const User = glyph('person-outline');
 export const UserRound = glyph('person-outline');
 export const Visualizer = glyph('pulse-outline');

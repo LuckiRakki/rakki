@@ -6,7 +6,7 @@ import { inTauri } from '~/lib/tauri';
 
 export const win = inTauri ? getCurrentWindow() : null;
 
-export type Panel = 'now' | 'queue';
+export type Panel = 'now' | 'queue' | 'devices';
 export type PlayerTab = 'queue' | 'related' | 'lyrics' | 'visualizer';
 
 const read = <T,>(key: string, fallback: T): T => {

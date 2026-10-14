@@ -4,6 +4,8 @@
 import AudioMotionAnalyzer, { type Options } from 'audiomotion-analyzer';
 import { useEffect, useRef } from 'react';
 
+import { mix } from '@/lib/color';
+
 import { soundContext, useSound } from '~/audio/sound';
 import { usePlayer } from '~/player/store';
 import { usePlayback } from '~/player/VideoHost';
@@ -19,8 +21,9 @@ function accentNow(): string {
 /** The gradients the looks use; "accent" follows Lucid, so it's registered again when that changes. */
 function registerGradients(a: AudioMotionAnalyzer) {
   a.registerGradient('rakki-mono', { bgColor: '#000', colorStops: [{ color: '#ffffff', pos: 0.7, level: 0.8 }, { color: '#757575' }] });
+  // The accent (Lucid's album colour) in Feishin's shape: light at the top, the colour below.
   const accent = accentNow();
-  a.registerGradient('rakki-accent', { bgColor: '#000', colorStops: [{ color: accent }, { color: `${accent}99` }] });
+  a.registerGradient('rakki-accent', { bgColor: '#000', colorStops: [{ color: mix(accent, '#ffffff', 0.45), pos: 0.7, level: 0.8 }, { color: accent }] });
 }
 
 function options(look: VisualizerLook): Options {

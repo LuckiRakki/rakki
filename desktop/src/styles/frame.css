@@ -84,9 +84,10 @@
 
 /* ---- Settings ---- */
 
-.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 800; display: grid; place-items: center; overflow: hidden; position: relative; margin: auto 10px auto 0; flex: none; }
-.avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.avatar.big { width: 56px; height: 56px; font-size: 22px; margin: 0; }
+.avatar { display: grid; place-items: center; margin: auto 10px auto 0; flex: none; border-radius: 50%; }
+.avatar-face { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 800; display: grid; place-items: center; overflow: hidden; position: relative; flex: none; }
+.avatar-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.avatar-face.big { width: 56px; height: 56px; font-size: 22px; }
 
 /* ---- Narrow windows (layout.ts: floating, rail) ---- */
 

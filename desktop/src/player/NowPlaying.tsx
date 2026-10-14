@@ -5,7 +5,8 @@
 // expand button (or F11) makes the window fill the screen. The top fades while the mouse is
 // still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, Visualizer as VisualizerIcon } from '~/ui/icons';
+import { Check, ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, TextSize, Visualizer as VisualizerIcon } from '~/ui/icons';
+import { LYRICS_SIZES, useLook } from '~/settings/look';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -140,6 +141,26 @@ function PlayerLyrics() {
   return <LyricsView variant="big" />;
 }
 
+/** The lyrics' text size, from the player (the same choice as Settings → Lyrics). */
+function LyricsSize() {
+  const size = useLook((s) => s.lyricsSize);
+  return (
+    <button
+      className="iconbtn"
+      aria-label="Text size"
+      title="Text size"
+      onClick={(e) =>
+        openMenu(
+          e,
+          LYRICS_SIZES.map((o) => ({ label: o.label, icon: o.value === size ? Check : undefined, run: () => useLook.getState().setLyricsSize(o.value) })),
+          'Lyrics text size',
+        )
+      }>
+      <TextSize size={20} />
+    </button>
+  );
+}
+
 function LyricsStyle() {
   const mode = useSettings((s) => s.lyricsMode);
   return (
@@ -226,6 +247,7 @@ export function NowPlaying() {
         </button>
         <div style={{ flex: 1 }} data-tauri-drag-region />
         {tab === 'lyrics' && !item.Radio ? <LyricsTiming itemId={item.Id} /> : null}
+        {tab === 'lyrics' ? <LyricsSize /> : null}
         {tab === 'lyrics' ? <LyricsStyle /> : null}
         {tab === 'visualizer' ? (
           <button

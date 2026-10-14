@@ -1,6 +1,7 @@
 // How the visualizer and the moving backgrounds look (Settings → Visualizer, Backgrounds),
-// kept on this computer. The visualizer's default is the owner's Feishin visualizer: a thin
-// white-to-grey line graph with a faint mirror under it (audioMotion-analyzer, same settings).
+// kept on this computer. The visualizer's default is the owner's Feishin visualizer (a thin
+// line graph with a faint mirror under it, audioMotion-analyzer's same settings), coloured by
+// the accent, so it follows Lucid; Feishin's white and grey is one of the colour choices.
 import { create } from 'zustand';
 
 export type VisualizerStyle = 'line' | 'bars';
@@ -26,7 +27,7 @@ export interface VisualizerLook {
 export const FEISHIN: VisualizerLook = {
   style: 'line',
   barsPerOctave: 6,
-  colors: 'mono',
+  colors: 'accent',
   lineWidth: 1.9,
   fill: 0,
   reflection: 0.5,
@@ -38,7 +39,7 @@ export const FEISHIN: VisualizerLook = {
 
 export const VISUALIZER_PRESETS: { id: string; label: string; look: VisualizerLook }[] = [
   { id: 'feishin', label: 'Line', look: FEISHIN },
-  { id: 'area', label: 'Area', look: { ...FEISHIN, colors: 'accent', lineWidth: 2, fill: 0.35, reflection: 0, peaks: false } },
+  { id: 'area', label: 'Area', look: { ...FEISHIN, lineWidth: 2, fill: 0.35, reflection: 0, peaks: false } },
   { id: 'bars', label: 'Bars', look: { ...FEISHIN, style: 'bars', barsPerOctave: 6, colors: 'accent', fill: 1, reflection: 0.3, peaks: true } },
   { id: 'prism', label: 'Prism', look: { ...FEISHIN, style: 'bars', barsPerOctave: 12, colors: 'prism', fill: 1, reflection: 0.25, peaks: false } },
 ];
@@ -52,20 +53,35 @@ export interface BackgroundLook {
   followMusic: boolean;
 }
 
+/** The full player's lyrics size, relative to the lyrics' column (so it fills any window alike). */
+export const LYRICS_SIZES: { value: number; label: string }[] = [
+  { value: 0.75, label: 'Small' },
+  { value: 1, label: 'Medium' },
+  { value: 1.3, label: 'Large' },
+  { value: 1.6, label: 'Huge' },
+  { value: 1.9, label: 'Fill' },
+];
+
 interface LookState {
   visualizer: VisualizerLook;
   background: BackgroundLook;
+  lyricsSize: number;
   setVisualizer(patch: Partial<VisualizerLook>): void;
   setBackground(patch: Partial<BackgroundLook>): void;
+  setLyricsSize(size: number): void;
 }
 
 const KEY = 'rakki.look';
 
-function saved(): Pick<LookState, 'visualizer' | 'background'> {
-  const fallback = { visualizer: FEISHIN, background: { motion: 'lively' as const, followMusic: true } };
+function saved(): Pick<LookState, 'visualizer' | 'background' | 'lyricsSize'> {
+  const fallback = { visualizer: FEISHIN, background: { motion: 'lively' as const, followMusic: true }, lyricsSize: 1.3 };
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<LookState>;
-    return { visualizer: { ...fallback.visualizer, ...v.visualizer }, background: { ...fallback.background, ...v.background } };
+    return {
+      visualizer: { ...fallback.visualizer, ...v.visualizer },
+      background: { ...fallback.background, ...v.background },
+      lyricsSize: typeof v.lyricsSize === 'number' ? v.lyricsSize : fallback.lyricsSize,
+    };
   } catch {
     return fallback;
   }
@@ -73,9 +89,9 @@ function saved(): Pick<LookState, 'visualizer' | 'background'> {
 
 export const useLook = create<LookState>((set, get) => {
   const save = () => {
-    const { visualizer, background } = get();
+    const { visualizer, background, lyricsSize } = get();
     try {
-      localStorage.setItem(KEY, JSON.stringify({ visualizer, background }));
+      localStorage.setItem(KEY, JSON.stringify({ visualizer, background, lyricsSize }));
     } catch {
       // Kept for this session only.
     }
@@ -88,6 +104,10 @@ export const useLook = create<LookState>((set, get) => {
     },
     setBackground(patch) {
       set({ background: { ...get().background, ...patch } });
+      save();
+    },
+    setLyricsSize(lyricsSize) {
+      set({ lyricsSize });
       save();
     },
   };

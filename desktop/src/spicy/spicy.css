@@ -27,7 +27,7 @@
     --sl-text-inactive: rgba(255, 255, 255, 0.30);
     /* Big, screen-filling lyrics (× user lyric-size setting) */
     /* Sized from the column the lyrics sit in (Rakki: .spicy-mount is the container), not the window. */
-    --sl-font-size:   calc(clamp(2rem, 9.5cqi, 4rem) * var(--sl-lyric-scale, 1));
+    --sl-font-size:   calc(clamp(1rem, 5cqi, 10rem) * var(--sl-lyric-scale, 1));
     --sl-line-gap:    calc(var(--sl-font-size) * 0.2);
 }
 

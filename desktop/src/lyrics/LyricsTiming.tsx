@@ -91,7 +91,7 @@ export function LyricsTiming({ itemId }: { itemId: string }) {
           </div>
           <div className="timing-foot">
             {target.ok ? (
-              <button className="device-btn" disabled={!offset} onClick={() => void save()}>
+              <button className="secondary small" disabled={!offset} onClick={() => void save()}>
                 Save to server
               </button>
             ) : (

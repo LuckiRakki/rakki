@@ -1,13 +1,13 @@
-// The player bar while another device is picked in Devices (Spotify's "Playing on ..."): that
-// device's song, its controls (sent to it), its place in the song, its volume when it takes
-// volume commands, and the way back (Play here takes the music over; the X controls this
-// computer again).
-import { ArrowDownToLine, Pause, Play, SkipBack, SkipForward, Smartphone, Monitor, Volume2, X } from '~/ui/icons';
+// The player bar while you listen on another device (Spotify's "Listening on ..."): that
+// device's song, its controls (sent to it), its place in the song and its volume when it takes
+// volume commands. Listening on ... opens Connect, where This computer brings the music back.
+import { Pause, Play, SkipBack, SkipForward, Smartphone, Monitor, Volume2 } from '~/ui/icons';
 import { useEffect, useState } from 'react';
 
 import { positionNow, type RakkiDevice } from '@/remote/devices';
 import { isPhone, DevicesButton } from '~/layout/Devices';
 import { Range } from '~/ui/Range';
+import { useLayout } from '~/layout/layout';
 import { useRemote } from '~/player/remote';
 import { ArtistLinks, Artwork, formatTime, ticksToSeconds } from '~/ui/parts';
 
@@ -63,15 +63,12 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
           <Range label="Seek" step={5} value={position} max={length} onSet={(v) => r.seek(v)} />
           <span>{formatTime(length)}</span>
         </div>
-        <div className="remote-strip">
-          <Icon size={13} />
-          {busy ?? `Playing on ${target.name}`}
-        </div>
+        <button className="remote-strip" title="Choose where to listen" onClick={() => useLayout.getState().setPanel('devices')}>
+          <Icon size={14} />
+          {busy ?? `Listening on ${target.name}`}
+        </button>
       </div>
       <div className="right">
-        <button className="device-btn" disabled={!!busy || !item} onClick={() => void r.playHere(target)} title={`Take over what ${target.name} is playing`}>
-          <ArrowDownToLine size={14} /> Play here
-        </button>
         <DevicesButton />
         {hasVolume ? (
           <div className="volume" title={`${target.name}'s volume`}>
@@ -90,9 +87,6 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
             </div>
           </div>
         ) : null}
-        <button className="iconbtn" aria-label="Control this computer" title="Control this computer again" onClick={() => r.setTarget(null)}>
-          <X size={17} />
-        </button>
       </div>
     </footer>
   );
