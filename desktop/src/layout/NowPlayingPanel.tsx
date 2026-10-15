@@ -4,7 +4,7 @@
 //   genre, file format), and the next song.
 // - Queue: everything that's coming, then what already played.
 import { ChevronLeft, Ellipsis, ListMusic, Maximize2, X } from '~/ui/icons';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { artColor } from '@/lib/blurhash';
@@ -168,14 +168,7 @@ function NowView({ item }: { item: BaseItem }) {
               <>
                 <dt>Genre</dt>
                 <dd>
-                  {song.Genres.map((g, i) => (
-                    <span key={g}>
-                      {i ? ', ' : ''}
-                      <span className="linkish" onClick={() => go({ name: 'genre', id: g })}>
-                        {g}
-                      </span>
-                    </span>
-                  ))}
+                  <GenreList genres={song.Genres} />
                 </dd>
               </>
             ) : null}
@@ -270,6 +263,29 @@ function QueueView() {
         <QueueRow key={`${t.Id}-p${i}`} item={t} at={index - played.length + i} past />
       ))}
     </div>
+  );
+}
+
+/** A song's genres, the first three and Show More for the rest. */
+function GenreList({ genres }: { genres: string[] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? genres : genres.slice(0, 3);
+  return (
+    <>
+      {shown.map((g, i) => (
+        <span key={g}>
+          {i ? ', ' : ''}
+          <span className="linkish" onClick={() => go({ name: 'genre', id: g })}>
+            {g}
+          </span>
+        </span>
+      ))}
+      {genres.length > 3 ? (
+        <button className="more-genres" onClick={() => setAll(!all)}>
+          {all ? 'Show Less' : `Show ${genres.length - 3} More`}
+        </button>
+      ) : null}
+    </>
   );
 }
 

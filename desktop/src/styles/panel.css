@@ -68,3 +68,5 @@
 .connect-help .ico { transition: transform 0.2s var(--ease-out); }
 .connect-help[aria-expanded='true'] .ico { transform: rotate(180deg); }
 .connect-note { padding: 8px 12px; font-size: 13px; line-height: 1.5; color: var(--text-3); }
+.more-genres { display: block; margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--text-2); }
+.more-genres:hover { color: var(--text); text-decoration: underline; }
