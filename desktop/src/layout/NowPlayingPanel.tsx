@@ -302,7 +302,7 @@ export function NowPlayingPanel() {
             <ChevronLeft size={18} />
           </button>
         ) : null}
-        <div className="rp-title">{queue ? 'Queue' : (item?.Album ?? 'Now Playing')}</div>
+        <div className="rp-title">{queue ? 'Queue' : null}</div>
         {queue ? null : (
           <button className="iconbtn" aria-label="Queue" title="Queue" onClick={() => useLayout.getState().setPanel('queue')}>
             <ListMusic size={17} />
