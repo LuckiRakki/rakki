@@ -49,11 +49,12 @@ button:disabled { cursor: default; }
 input, select { font: inherit; color: inherit; }
 img { display: block; }
 h1, h2, h3, p { margin: 0; }
-::-webkit-scrollbar { width: 12px; height: 12px; }
-/* Thumbs show while the pointer is over what scrolls, inset from the edge, so a panel's edge stays clean. */
-::-webkit-scrollbar-thumb { background: transparent; border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }
-:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.16); }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.28); }
+/* Thumbs show only while scrolling (ui/scrolling.ts) or under the pointer, inset from the
+   edge, so a panel's edge (and the gap beside it) stays clean, as in Spotify. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; transition: background-color 0.2s; }
+.is-scrolling::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.3); }
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 

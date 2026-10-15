@@ -173,7 +173,7 @@ export function Resizer({ which }: { which: 'sidebar' | 'panel' }) {
   };
   return (
     <div
-      className={`resizer ${which}${dragging ? ' dragging' : ''}`}
+      className={`resizer resizer-${which}${dragging ? ' dragging' : ''}`}
       role="separator"
       aria-orientation="vertical"
       aria-label={which === 'sidebar' ? 'Resize Your Library' : 'Resize the right sidebar'}
