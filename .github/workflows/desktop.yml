@@ -102,6 +102,11 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # The artifacts keep their bundle folders (nsis/, appimage/, deb/): all files side by side.
+      - name: Gather the files
+        run: |
+          find dist -mindepth 2 -type f -exec mv -t dist {} +
+          ls -la dist
       - name: latest.json
         run: |
           node -e '
