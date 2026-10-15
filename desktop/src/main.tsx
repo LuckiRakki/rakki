@@ -29,6 +29,7 @@ import { Overlays } from '~/ui/overlays';
 import { ServerBar, refetchFailed } from '~/ui/states';
 import { useApplyTheme } from '~/ui/theme';
 import { useApplyLook } from '~/ui/applyLook';
+import { useLook } from '~/settings/look';
 import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
 
@@ -145,7 +146,7 @@ function App() {
 }
 
 // Development only: lets the interface be checked in a browser without real playback.
-if (import.meta.env.DEV) Object.assign(window, { __rakki: { usePlayer, useLayout, useNav, useVideo } });
+if (import.meta.env.DEV) Object.assign(window, { __rakki: { usePlayer, useLayout, useNav, useVideo }, __rakkiLook: useLook });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

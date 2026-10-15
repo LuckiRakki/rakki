@@ -1,37 +1,37 @@
-// Is there a newer Rakki desktop? The newest published desktop-v* release on GitHub (made by
-// .github/workflows/desktop.yml) against this version; checked at launch and twice a day.
-// A newer one shows an Update button that opens its download page.
-import { openUrl } from '@tauri-apps/plugin-opener';
+// Updates, a click like the phone's: at launch and twice a day Rakki asks GitHub for the newest
+// desktop release (latest.json, published by .github/workflows/desktop.yml and signed with
+// Rakki's own key, so only real Rakki builds install). A newer one shows an Update button in the
+// title bar; one click downloads it (the button shows how far), installs it and restarts Rakki.
+// Linux .deb installs update through the package instead.
+import { relaunch } from '@tauri-apps/plugin-process';
+import { check, type Update } from '@tauri-apps/plugin-updater';
 import { create } from 'zustand';
 
 import { inTauri } from '~/lib/tauri';
-import pkg from '../../package.json';
+import { toast } from '~/ui/overlays';
 
-const RELEASES = 'https://api.github.com/repos/LuckiRakki/rakki/releases?per_page=30';
 const EVERY = 12 * 3600_000;
 
-export const useUpdate = create<{ version: string | null; url: string | null }>(() => ({ version: null, url: null }));
-
-/** a.b.c newer than x.y.z? */
-function newer(a: string, b: string): boolean {
-  const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
-  const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
-  for (let i = 0; i < 3; i++) if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0);
-  return false;
+interface UpdateState {
+  /** The newer version, when there is one. */
+  version: string | null;
+  /** 0-1 while downloading; null otherwise. */
+  progress: number | null;
 }
 
-async function check() {
+export const useUpdate = create<UpdateState>(() => ({ version: null, progress: null }));
+
+let pending: Update | null = null;
+
+async function look() {
   try {
-    const list = (await fetch(RELEASES, { headers: { Accept: 'application/vnd.github+json' } }).then((r) => r.json())) as {
-      tag_name: string;
-      html_url: string;
-      draft: boolean;
-    }[];
-    const latest = list.find((r) => !r.draft && r.tag_name.startsWith('desktop-v'));
-    const version = latest?.tag_name.slice('desktop-v'.length);
-    if (latest && version && newer(version, pkg.version)) useUpdate.setState({ version, url: latest.html_url });
+    const u = await check();
+    if (u) {
+      pending = u;
+      useUpdate.setState({ version: u.version });
+    }
   } catch {
-    // Offline or GitHub busy: next time.
+    // Offline, GitHub busy, or no release yet: next time.
   }
 }
 
@@ -40,11 +40,29 @@ let started = false;
 export function startUpdateCheck() {
   if (started || !inTauri) return;
   started = true;
-  void check();
-  setInterval(() => void check(), EVERY);
+  void look();
+  setInterval(() => void look(), EVERY);
 }
 
-export function openUpdate() {
-  const { url } = useUpdate.getState();
-  if (url) void openUrl(url);
+/** Download, install, restart. */
+export async function installUpdate() {
+  const u = pending;
+  if (!u || useUpdate.getState().progress !== null) return;
+  let total = 0;
+  let got = 0;
+  useUpdate.setState({ progress: 0 });
+  try {
+    await u.downloadAndInstall((e) => {
+      if (e.event === 'Started') total = e.data.contentLength ?? 0;
+      else if (e.event === 'Progress') {
+        got += e.data.chunkLength;
+        if (total) useUpdate.setState({ progress: Math.min(1, got / total) });
+      }
+    });
+    // Windows' installer closes Rakki itself; elsewhere, restart into the new version.
+    await relaunch();
+  } catch (e) {
+    useUpdate.setState({ progress: null });
+    toast(`Couldn’t update: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }

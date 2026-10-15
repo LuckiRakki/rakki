@@ -31,7 +31,7 @@
 
 /* ---- Forms ---- */
 
-.field { height: 46px; border-radius: var(--radius-sm); background: var(--surface-3); border: 1px solid transparent; padding: 0 14px; outline: 0; color: var(--text); transition: border-color 0.15s; width: 100%; }
+.field { height: var(--control); border-radius: var(--radius-sm); background: var(--surface-3); border: 1px solid transparent; padding: 0 14px; outline: 0; color: var(--text); transition: border-color 0.15s; width: 100%; }
 .field:hover { border-color: var(--text-3); }
 .field:focus { border-color: var(--text); }
 .field-label { font-size: 13px; font-weight: 700; margin-bottom: -6px; }
@@ -41,7 +41,7 @@
 .primary.danger { background: #e5534b; color: #fff; }
 .secondary { height: 44px; border-radius: 999px; border: 1px solid var(--text-3); font-weight: 700; transition: border-color 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .secondary:hover { border-color: var(--text); }
-.secondary.small { height: 34px; padding: 0 14px; font-size: 13px; }
+.secondary.small { height: var(--control-sm); padding: 0 14px; font-size: 13px; }
 
 /* ---- Sign in ---- */
 

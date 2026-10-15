@@ -25,6 +25,9 @@
   --on-accent: #000;
   --radius: 10px;
   --radius-sm: 8px;
+  /* Two control heights: small (chips, find, sort, small buttons) and regular (fields, buttons). */
+  --control-sm: 32px;
+  --control: 40px;
   --radius-art: 6px;
   --titlebar: 48px;
   --playerbar: 88px;

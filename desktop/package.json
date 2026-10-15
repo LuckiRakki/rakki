@@ -17,6 +17,8 @@
     "@tanstack/react-virtual": "^3.14.17",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "2.4.0",
+    "@tauri-apps/plugin-updater": "2.14.0",
     "audiomotion-analyzer": "4.5.4",
     "hls.js": "^1.7.3",
     "react": "^19.1.0",

@@ -19,6 +19,7 @@ import type { Lyrics } from '@/lyrics/types';
 import { useAuth } from '~/auth/session';
 import { useLayout } from '~/layout/layout';
 import { currentPosition, usePlayer } from '~/player/store';
+import { useLook } from '~/settings/look';
 
 import { LyricsAnimator } from './LyricsAnimator';
 import './spicy.css';
@@ -66,6 +67,10 @@ export function SpicyView({
     anim.current?.load(lyrics, big ? creditRows(lyrics).map((r) => ({ text: r.text, small: r.small })) : undefined);
   }, [lyrics, big]);
 
+  // Text size changed (Settings -> Lyrics, or Aa): centre the sung line again, even if paused.
+  const lyricsSize = useLook((s) => s.lyricsSize);
+  useEffect(() => anim.current?.relayout(), [lyricsSize]);
+
   // The Next up card at the end (full player only).
   useEffect(() => {
     const a = anim.current;
@@ -95,7 +100,7 @@ export function SpicyView({
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
     // (Paused, a seek or a timing change starts it again; playing, it never stopped.)
-  }, [playing, hidden, active, lyrics, big, next?.Id, playing ? 0 : position, playing ? 0 : offset]);
+  }, [playing, hidden, active, lyrics, big, next?.Id, playing ? 0 : position, playing ? 0 : offset, lyricsSize]);
 
   const credit = big ? null : creditLine(lyrics);
   return (

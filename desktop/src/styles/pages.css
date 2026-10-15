@@ -10,7 +10,7 @@
 .page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .page-head .count { font-weight: 600; }
 .find, .select {
-  display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; gap: 8px; height: var(--control-sm); padding: 0 12px; border-radius: var(--radius-sm);
   background: var(--surface-2); color: var(--text-3); transition: background 0.15s;
 }
 .find:focus-within, .find:hover, .select:hover { background: var(--surface-3); }
@@ -37,8 +37,8 @@
 .shelf { margin-bottom: 32px; }
 .shelf-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .shelf-tools { display: flex; align-items: center; gap: 6px; }
-.shelf-tools > button:first-child { color: var(--text-3); font-weight: 700; font-size: 13px; margin-right: 6px; }
-.shelf-tools > button:first-child:hover { color: var(--text); text-decoration: underline; }
+.shelf-tools .show-all { color: var(--text-2); font-weight: 700; font-size: 13px; margin-left: 6px; }
+.shelf-tools .show-all:hover { color: var(--text); text-decoration: underline; }
 .shelf-tools .arrow { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); color: var(--text-2); display: grid; place-items: center; opacity: 0; transition: opacity 0.15s; }
 .shelf:hover .arrow { opacity: 1; }
 .shelf-tools .arrow:hover { background: var(--surface-3); color: var(--text); }
@@ -69,7 +69,8 @@
 
 .lib-header {
   display: flex; align-items: flex-end; gap: 24px; padding: 64px 28px 24px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 85%, #fff 0%) 0%, color-mix(in srgb, var(--tint) 55%, var(--surface)) 100%);
+  /* Ends exactly where the action bar's gradient starts, so the two read as one. */
+  background: linear-gradient(180deg, var(--tint) 0%, color-mix(in srgb, var(--tint) 40%, var(--surface)) 100%);
 }
 .lib-cover { width: 232px; flex: none; }
 .lib-meta { min-width: 0; flex: 1; }
@@ -84,7 +85,7 @@
 
 .action-bar {
   display: flex; align-items: center; gap: 22px; padding: 20px 28px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 28%, var(--surface)) 0, var(--surface) 220px);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 40%, var(--surface)) 0, var(--surface) 240px);
 }
 .action-bar + .tracktable, .action-bar + .spin { margin-top: -4px; }
 .bigplay { position: static; opacity: 1; transform: none; width: 56px; height: 56px; }
@@ -226,6 +227,6 @@
 .swatch { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2); transition: transform 0.12s; }
 .swatch:hover { transform: scale(1.1); }
 .swatch.on { box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 4px var(--text); }
-.hex .field { width: 120px; height: 34px; }
+.hex .field { width: 120px; height: var(--control-sm); }
 .row-form { display: flex; gap: 10px; }
-.row-form .field { flex: 1; height: 38px; }
+.row-form .field { flex: 1; height: var(--control); }

@@ -77,7 +77,7 @@
 .row .t, .qrow .t, .pick-row .t { min-width: 0; flex: 1; }
 .row .name, .qrow .name, .pick-row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row .sub, .qrow .sub, .pick-row .sub { font-size: 13px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
-.artwork.liked-art { background: linear-gradient(135deg, #4a2fd1, #9a86f5) !important; color: #fff; }
+.artwork.empty.liked-art { background: linear-gradient(135deg, #4a2fd1, #9a86f5) !important; color: #fff; }
 
 .update-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; margin-right: 8px; border-radius: 999px; background: var(--text); color: #000; font-weight: 800; font-size: 13px; transition: filter 0.15s; }
 .update-btn:hover { filter: brightness(1.1); }

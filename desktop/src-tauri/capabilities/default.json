@@ -21,6 +21,8 @@
     "core:window:allow-set-resizable",
     "core:window:allow-unmaximize",
     "core:webview:allow-set-webview-zoom",
-    "opener:default"
+    "opener:default",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

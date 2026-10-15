@@ -169,6 +169,9 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        // One-click updates from GitHub releases (src/lib/updateCheck.ts), then a restart.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(Player::default())
         .manage(Discord::default())
         .manage(Capture::default())

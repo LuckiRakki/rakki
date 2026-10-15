@@ -2,17 +2,19 @@
 
 /* ---- Song table ---- */
 
-.tracktable { padding: 0 20px 24px; outline: none; }
+.tracktable { padding: 0 16px 24px; outline: none; } /* rows' text lines up with the page's 28 px gutter */
 .tt-head, .tt-row { display: grid; align-items: center; gap: 14px; padding: 0 12px; }
 .tt-head { height: 36px; color: var(--text-3); font-size: 13px; border-bottom: 1px solid var(--line); margin-bottom: 8px; position: sticky; top: 0; background: var(--surface); z-index: 2; }
 .tt-head > div { display: flex; align-items: center; }
-.tt-row { position: absolute; left: 0; right: 0; height: 56px; border-radius: 6px; color: var(--text-3); margin: 0 20px; }
+/* Header cells line up with their columns: numbers and counts to the right, like the rows. */
+.tt-head .num { justify-content: flex-end; }
+.tt-row { position: absolute; left: 0; right: 0; height: 56px; border-radius: var(--radius-sm); color: var(--text-3); }
 .tt-row:hover { background: rgba(255, 255, 255, 0.08); }
 .tracktable.movable .tt-row { cursor: grab; }
 .tracktable.dragging, .tracktable.dragging .tt-row { cursor: grabbing; }
 .tracktable.dragging .tt-row:hover { background: none; }
 .tt-row.lifted { opacity: 0.45; }
-.tt-drop { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--text); border-radius: 2px; z-index: 2; pointer-events: none; }
+.tt-drop { position: absolute; left: 0; right: 0; height: 2px; background: var(--text); border-radius: 2px; z-index: 2; pointer-events: none; }
 .tt-row.sel { background: rgba(255, 255, 255, 0.16); }
 .tt-row .num { display: flex; justify-content: flex-end; position: relative; font-variant-numeric: tabular-nums; }
 .tt-row .num .hoverplay { position: absolute; right: -2px; display: none; color: var(--text); }

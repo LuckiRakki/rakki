@@ -107,13 +107,17 @@ export function Shelf({ title, items, onShowAll }: { title: string; items?: Base
           {title}
         </h2>
         <div className="shelf-tools">
-          {onShowAll ? <button onClick={onShowAll}>Show All</button> : null}
           <button className="arrow" aria-label="Scroll Left" onClick={() => scroll(-1)}>
             <ChevronLeft size={18} />
           </button>
           <button className="arrow" aria-label="Scroll Right" onClick={() => scroll(1)}>
             <ChevronRight size={18} />
           </button>
+          {onShowAll ? (
+            <button className="show-all" onClick={onShowAll}>
+              Show All
+            </button>
+          ) : null}
         </div>
       </div>
       <div className="shelf-row" ref={row}>

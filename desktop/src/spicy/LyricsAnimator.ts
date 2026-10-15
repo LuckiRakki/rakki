@@ -276,6 +276,11 @@ export class LyricsAnimator {
         }
     }
 
+    /** Rakki: the text changed size; centre the sung line again on the next frame. */
+    relayout(): void {
+        this.centeredGroup = -1;
+    }
+
     /** End time (ms) of the last actual lyric — used by the next-up trigger. */
     getLastLyricEnd(): number { return this.lastLyricEnd; }
 

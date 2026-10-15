@@ -12,7 +12,7 @@ import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
 import { Visualizer } from '~/audio/Visualizer';
 import { useAuth } from '~/auth/session';
 import { inTauri } from '~/lib/tauri';
-import { openUpdate, useUpdate } from '~/lib/updateCheck';
+import { installUpdate, useUpdate } from '~/lib/updateCheck';
 import { useNav } from '~/nav';
 import { useDiscord } from '~/player/discord';
 import { APP_LOOK, FEISHIN, LYRICS_SIZE, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
@@ -505,8 +505,8 @@ function About() {
           {update ? (
             <div className="setting-detail">
               Rakki {update} is out.{' '}
-              <span className="linkish" role="link" tabIndex={0} onClick={openUpdate} onKeyDown={(e) => e.key === 'Enter' && openUpdate()}>
-                Download it
+              <span className="linkish" role="button" tabIndex={0} onClick={() => void installUpdate()} onKeyDown={(e) => e.key === 'Enter' && void installUpdate()}>
+                Update and restart
               </span>
             </div>
           ) : null}

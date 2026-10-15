@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '~/auth/session';
 import { win } from '~/layout/layout';
-import { openUpdate, useUpdate } from '~/lib/updateCheck';
+import { installUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav } from '~/nav';
 import { ChevronLeft, ChevronRight, CircleArrowDown, Copy, Home as HomeIcon, LogOut, Minus, Search as SearchIcon, Settings2, Square, X } from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
@@ -59,14 +59,15 @@ function UserButton() {
   );
 }
 
-/** A newer Rakki is out (lib/updateCheck): opens its download page. */
+/** A newer Rakki is out (lib/updateCheck): one click installs it and restarts. */
 function UpdateButton() {
   const version = useUpdate((s) => s.version);
+  const progress = useUpdate((s) => s.progress);
   if (!version) return null;
   return (
-    <button className="update-btn" title={`Rakki ${version} is out: open the download page`} onClick={openUpdate}>
+    <button className="update-btn" title={`Install Rakki ${version} and restart`} disabled={progress !== null} onClick={() => void installUpdate()}>
       <CircleArrowDown size={16} />
-      Update
+      {progress === null ? 'Update' : `Updating ${Math.round(progress * 100)}%`}
     </button>
   );
 }
