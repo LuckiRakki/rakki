@@ -1,8 +1,8 @@
 // The pieces every screen is built from: artwork, cards, shelves, the song table, and the header
 // and action bar at the top of album, artist and playlist pages.
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, ChevronRight, Clock3, Heart, MoreHorizontal, Music2, Pause, Play, Search, Shuffle } from '~/ui/icons';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, Clock3, Disc3, Heart, MoreHorizontal, Music2, Pause, Play, Search, Shuffle } from '~/ui/icons';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -213,6 +213,8 @@ export interface TrackTableProps {
   plays?: boolean;
   /** Album pages: the disc's track numbers instead of 1, 2, 3. */
   trackNumbers?: boolean;
+  /** Album pages: a heading before each disc's songs when there's more than one. */
+  discs?: boolean;
   /** Songs in a playlist ("Remove from This Playlist" in the menu). */
   menu?: MenuContext;
   /** Extra numbers shown in the plays column (Last.fm plays), by song id. */
@@ -228,11 +230,28 @@ export interface TrackTableProps {
  * jump. Only the rows on screen are drawn, so a 5,000-song list costs the same as a 20-song one.
  */
 const ROW_HEIGHT = { comfortable: 56, compact: 44 };
+const DISC_H = 48;
 
-export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, menu, playsOf, onMove }: TrackTableProps) {
+export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, discs = false, menu, playsOf, onMove }: TrackTableProps) {
   const parent = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const ROW_H = ROW_HEIGHT[useLook((l) => l.app.density)];
+  // Albums with more than one disc: a "Disc 2" heading before each disc's songs (not while
+  // reordering, which needs every row the same height).
+  const { slots, slotOf } = useMemo(() => {
+    const out: ({ disc: number } | { track: number })[] = [];
+    const where: number[] = [];
+    const many = discs && !onMove && new Set(tracks.map((t) => t.ParentIndexNumber ?? 1)).size > 1;
+    let last: number | null = null;
+    tracks.forEach((t, i) => {
+      const d = t.ParentIndexNumber ?? 1;
+      if (many && d !== last) out.push({ disc: d });
+      last = d;
+      where[i] = out.length;
+      out.push({ track: i });
+    });
+    return { slots: out, slotOf: where };
+  }, [tracks, discs, onMove]);
   // Dragging a row: which one, and the gap it would drop into (0..length).
   const [drag, setDrag] = useState<{ from: number; gap: number } | null>(null);
   const nowId = usePlayer((s) => s.queue[s.index]?.Id);
@@ -248,9 +267,9 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
   }, []);
 
   const rows = useVirtualizer({
-    count: tracks.length,
+    count: slots.length,
     getScrollElement: () => document.getElementById('main'),
-    estimateSize: () => ROW_H,
+    estimateSize: (i) => (slots[i] && 'disc' in slots[i] ? DISC_H : ROW_H),
     overscan: 10,
     scrollMargin: margin,
   });
@@ -270,7 +289,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
       setSelected(new Set([to]));
       setAnchor(to);
     }
-    rows.scrollToIndex(to, { align: 'auto' });
+    rows.scrollToIndex(slotOf[to] ?? to, { align: 'auto' });
     requestAnimationFrame(() => body.current?.querySelector<HTMLElement>(`[data-row="${to}"]`)?.focus());
   };
   const onRowKey = (e: React.KeyboardEvent, i: number) => {
@@ -367,37 +386,47 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
       <div ref={body} style={{ height: rows.getTotalSize(), position: 'relative' }}>
         {drag ? <div className="tt-drop" style={{ top: drag.gap * ROW_H - 1 }} /> : null}
         {rows.getVirtualItems().map((row) => {
-          const t = tracks[row.index];
+          const slot = slots[row.index];
+          if ('disc' in slot) {
+            return (
+              <div key={row.key} className="tt-disc" style={{ height: DISC_H, transform: `translateY(${row.start - margin}px)` }}>
+                <Disc3 size={18} />
+                Disc {slot.disc}
+              </div>
+            );
+          }
+          const ti = slot.track;
+          const t = tracks[ti];
           const now = t.Id === nowId;
           const count = playsOf?.(t);
           return (
             <div
               key={row.key}
-              className={`tt-row${selected.has(row.index) ? ' sel' : ''}${now ? ' now' : ''}${drag?.from === row.index ? ' lifted' : ''}`}
+              className={`tt-row${selected.has(ti) ? ' sel' : ''}${now ? ' now' : ''}${drag?.from === ti ? ' lifted' : ''}`}
               style={{ gridTemplateColumns: grid, height: ROW_H, transform: `translateY(${row.start - margin}px)` }}
               role="row"
-              aria-rowindex={row.index + 1}
-              aria-selected={selected.has(row.index)}
+              aria-rowindex={ti + 1}
+              aria-selected={selected.has(ti)}
               aria-label={`${t.Name}, ${t.Artists?.join(', ') ?? ''}`}
-              data-row={row.index}
-              tabIndex={row.index === Math.min(cursor, tracks.length - 1) ? 0 : -1}
-              onKeyDown={(e) => onRowKey(e, row.index)}
-              onFocus={() => setCursor(row.index)}
-              onPointerDown={(e) => startDrag(row.index, e)}
-              onClick={(e) => pick(row.index, e)}
-              onDoubleClick={() => play(row.index)}
+              data-row={ti}
+              tabIndex={ti === Math.min(cursor, tracks.length - 1) ? 0 : -1}
+              onKeyDown={(e) => onRowKey(e, ti)}
+              onFocus={() => setCursor(ti)}
+              onPointerDown={(e) => startDrag(ti, e)}
+              onClick={(e) => pick(ti, e)}
+              onDoubleClick={() => play(ti)}
               onContextMenu={(e) => {
-                const inSel = selected.has(row.index);
-                const indexes = inSel ? [...selected].sort((a, b) => a - b) : [row.index];
+                const inSel = selected.has(ti);
+                const indexes = inSel ? [...selected].sort((a, b) => a - b) : [ti];
                 if (!inSel) {
-                  setSelected(new Set([row.index]));
-                  setAnchor(row.index);
+                  setSelected(new Set([ti]));
+                  setAnchor(ti);
                 }
                 const items = indexes.map((i) => tracks[i]);
                 openMenu(e, songMenu(items, menu), items.length > 1 ? `${items.length} songs` : undefined);
               }}>
               <div className="num">
-                <span className="n">{now ? <Playing paused={!playing} /> : trackNumbers ? (t.IndexNumber ?? row.index + 1) : row.index + 1}</span>
+                <span className="n">{now ? <Playing paused={!playing} /> : trackNumbers ? (t.IndexNumber ?? ti + 1) : ti + 1}</span>
                 <button
                   className="hoverplay"
                   tabIndex={-1}
@@ -405,7 +434,7 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
                   onClick={(e) => {
                     e.stopPropagation();
                     if (now) usePlayer.getState().toggle();
-                    else play(row.index);
+                    else play(ti);
                   }}>
                   {now && playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
                 </button>

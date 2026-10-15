@@ -5,9 +5,7 @@
 // expand button (or F11) makes the window fill the screen. The top fades while the mouse is
 // still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, TextSize, Visualizer as VisualizerIcon } from '~/ui/icons';
-import { LYRICS_SIZE, useLook } from '~/settings/look';
-import { Slider } from '~/ui/Slider';
+import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, Visualizer as VisualizerIcon } from '~/ui/icons';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -21,7 +19,7 @@ import { useLyrics } from '@/lyrics/fetch';
 import { useSettings } from '@/settings/store';
 import { LyricsView, pickLyrics } from '~/lyrics/LyricsView';
 import { SpicyView } from '~/spicy/SpicyView';
-import { LyricsTiming } from '~/lyrics/LyricsTiming';
+import { LyricsSettings } from '~/lyrics/LyricsSettings';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { useItem } from '~/queries';
@@ -142,62 +140,6 @@ function PlayerLyrics() {
   return <LyricsView variant="big" />;
 }
 
-/** The lyrics' text size, from the player: a slider (the same setting as Settings → Lyrics). */
-function LyricsSize() {
-  const size = useLook((s) => s.lyricsSize);
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const outside = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
-    const escape = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      e.stopImmediatePropagation();
-      setOpen(false);
-    };
-    window.addEventListener('mousedown', outside);
-    window.addEventListener('keydown', escape, true);
-    return () => {
-      window.removeEventListener('mousedown', outside);
-      window.removeEventListener('keydown', escape, true);
-    };
-  }, [open]);
-  return (
-    <div className="timing" ref={box}>
-      <button className={`iconbtn${open ? ' on' : ''}`} aria-label="Text Size" aria-expanded={open} title="Text Size" onClick={() => setOpen(!open)}>
-        <TextSize size={20} />
-      </button>
-      {open ? (
-        <div className="timing-pop size-pop">
-          <div className="timing-head">Lyrics Text Size</div>
-          <Slider
-            label="Lyrics Text Size"
-            value={size}
-            min={LYRICS_SIZE.min}
-            max={LYRICS_SIZE.max}
-            step={0.05}
-            show={(v) => `${Math.round(v * 100)}%`}
-            onChange={(v) => useLook.getState().setLyricsSize(v)}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function LyricsStyle() {
-  const mode = useSettings((s) => s.lyricsMode);
-  return (
-    <div className="seg" role="group" aria-label="Lyrics Style">
-      {(['spicy', 'regular'] as const).map((m) => (
-        <button key={m} className={mode === m ? 'on' : ''} title={m === 'spicy' ? 'Word by word' : 'Line by line'} onClick={() => useSettings.getState().set('lyricsMode', m)}>
-          {m === 'spicy' ? 'Spicy' : 'Regular'}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 const TABS: { tab: PlayerTab; label: string; icon: typeof ListMusic }[] = [
   { tab: 'queue', label: 'Queue', icon: ListMusic },
   { tab: 'related', label: 'Related', icon: Radio },
@@ -213,7 +155,13 @@ function VisualizerTab() {
 export function NowPlaying() {
   const open = useLayout((s) => s.nowPlaying);
   const fullscreen = useLayout((s) => s.fullscreen);
-  const tab = useLayout((s) => s.playerTab);
+  const chosen = useLayout((s) => s.playerTab);
+  const item0 = usePlayer((s) => s.queue[s.index]);
+  const lyricsQ = useLyrics(item0 && !item0.Radio ? item0.Id : undefined);
+  // A song without lyrics shows the visualizer in their place; the next song with lyrics shows
+  // them again (the chosen tab stays Lyrics).
+  const noLyrics = !!item0 && (!!item0.Radio || (!lyricsQ.isLoading && !pickLyrics(lyricsQ.data)));
+  const tab = chosen === 'lyrics' && noLyrics ? 'visualizer' : chosen;
   const item = usePlayer((s) => s.queue[s.index]);
   const full = useItem(open ? item?.Id : undefined).data;
   const client = useAuth((s) => s.client);
@@ -270,9 +218,7 @@ export function NowPlaying() {
           <Ellipsis size={20} />
         </button>
         <div style={{ flex: 1 }} data-tauri-drag-region />
-        {tab === 'lyrics' && !item.Radio ? <LyricsTiming itemId={item.Id} /> : null}
-        {tab === 'lyrics' ? <LyricsSize /> : null}
-        {tab === 'lyrics' ? <LyricsStyle /> : null}
+        {tab === 'lyrics' ? <LyricsSettings itemId={item.Radio ? undefined : item.Id} /> : null}
         {tab === 'visualizer' ? (
           <button
             className="iconbtn"
@@ -331,7 +277,13 @@ export function NowPlaying() {
       </div>
       <div className="np-tabs">
         {TABS.map(({ tab: t, label, icon: Icon }) => (
-          <button key={t} className={`iconbtn${tab === t ? ' on' : ''}`} aria-label={label} aria-pressed={tab === t} title={label} onClick={() => l.setPlayerTab(t)}>
+          <button
+            key={t}
+            className={`iconbtn${tab === t ? ' on' : ''}`}
+            aria-label={label}
+            aria-pressed={tab === t}
+            title={t === 'lyrics' && noLyrics ? 'No lyrics for this song' : label}
+            onClick={() => l.setPlayerTab(t)}>
             <Icon size={19} />
           </button>
         ))}

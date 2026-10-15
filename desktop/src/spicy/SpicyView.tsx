@@ -22,6 +22,7 @@ import { currentPosition, usePlayer } from '~/player/store';
 import { useLook } from '~/settings/look';
 
 import { LyricsAnimator } from './LyricsAnimator';
+import { openLink } from '~/lib/links';
 import './spicy.css';
 
 const SETTLE_MS = 2500;
@@ -56,6 +57,7 @@ export function SpicyView({
   useEffect(() => {
     const a = new LyricsAnimator(mount.current!);
     a.onSeek = big ? (ms) => usePlayer.getState().seek(Math.max(0, (ms + offsetRef.current) / 1000)) : null;
+    a.onLink = (url) => openLink(url);
     anim.current = a;
     return () => {
       a.destroy();
@@ -64,7 +66,7 @@ export function SpicyView({
   }, [big]);
 
   useEffect(() => {
-    anim.current?.load(lyrics, big ? creditRows(lyrics).map((r) => ({ text: r.text, small: r.small })) : undefined);
+    anim.current?.load(lyrics, big ? creditRows(lyrics).map((r) => ({ text: r.text, small: r.small, link: r.link, avatar: r.avatar })) : undefined);
   }, [lyrics, big]);
 
   // Text size changed (Settings -> Lyrics, or Aa): centre the sung line again, even if paused.

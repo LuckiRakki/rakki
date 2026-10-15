@@ -49,3 +49,14 @@
 .spicy-view.card .sl-scroller { padding: 40px 0 120px; }
 .spicy-view.card .spicy-mount { -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); }
 .spicy-view.card .spicy-credit { font-size: 11px; padding-top: 4px; }
+
+/* Lyrics Settings (lyrics/LyricsSettings.tsx): style, size and timing in one panel. */
+.lyrics-pop { display: flex; flex-direction: column; gap: 8px; }
+.lyrics-pop .timing-head { margin-bottom: 2px; }
+.pop-label { font-size: 12px; font-weight: 700; color: var(--text-2); margin-top: 6px; }
+.choice.start { justify-content: flex-start; }
+.lyrics-pop .slider { width: 100%; }
+.credit-line { display: flex; align-items: center; gap: 8px; }
+.credit-line img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+.credit-line.linked { cursor: pointer; }
+.credit-line.linked:hover span { text-decoration: underline; }

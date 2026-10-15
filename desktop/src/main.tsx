@@ -6,6 +6,7 @@ import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { startPlaylistCache } from '@/library/playlistCache';
+import { restoreCache, startCacheSaving } from '~/lib/cache';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
 import { SignIn } from '~/auth/SignIn';
@@ -148,10 +149,14 @@ function App() {
 // Development only: lets the interface be checked in a browser without real playback.
 if (import.meta.env.DEV) Object.assign(window, { __rakki: { usePlayer, useLayout, useNav, useVideo }, __rakkiLook: useLook });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </StrictMode>,
-);
+// Last time's pages first (lib/cache.ts), then draw; what changes is kept as it changes.
+void restoreCache().then(() => {
+  startCacheSaving();
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+});

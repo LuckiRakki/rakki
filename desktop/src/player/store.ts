@@ -223,6 +223,48 @@ async function maybeExtend() {
   }
 }
 
+// ---- The last queue, kept between launches ----
+
+const QUEUE_KEY = 'rakki.lastQueue';
+/** At most this many songs around the current one are kept. */
+const KEEP = 500;
+/** The restored queue isn't in mpv yet: Play loads it at the saved place. */
+let restoredPending = false;
+
+interface SavedQueue {
+  queue: BaseItem[];
+  index: number;
+  position: number;
+  repeat: RepeatMode;
+  shuffle: boolean;
+}
+
+function saveQueue(s: PlayerState) {
+  try {
+    if (!s.queue.length) return localStorage.removeItem(QUEUE_KEY);
+    const from = Math.max(0, s.index - 100);
+    const saved: SavedQueue = {
+      queue: s.queue.slice(from, from + KEEP),
+      index: s.index - from,
+      position: currentPosition(s),
+      repeat: s.repeat,
+      shuffle: s.shuffle,
+    };
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(saved));
+  } catch {
+    // Storage full: the queue just isn't kept this time.
+  }
+}
+
+function readQueue(): SavedQueue | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? 'null') as SavedQueue | null;
+    return v?.queue?.length ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 // ---- The store ----
 
 export const usePlayer = create<PlayerState>((set, get) => {
@@ -232,6 +274,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     const item = s.queue[index];
     const current = url(item);
     if (!current) return;
+    restoredPending = false;
     reportStopped(currentPosition(s));
     const n = nextIndex({ ...s, index });
     set({ index, position: start, positionAt: performance.now(), duration: (item.RunTimeTicks ?? 0) / TICKS_PER_SECOND, playing: play, error: null });
@@ -284,6 +327,12 @@ export const usePlayer = create<PlayerState>((set, get) => {
     toggle() {
       const s = get();
       if (!s.queue.length) return;
+      // The queue from last time: load it where it was left.
+      if (restoredPending) {
+        restoredPending = false;
+        load(s.index, s.position, true);
+        return;
+      }
       const playing = !s.playing;
       set({ playing, position: currentPosition(s), positionAt: performance.now() });
       void engine.set('pause', !playing);
@@ -308,7 +357,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     seek(seconds) {
       set({ position: seconds, positionAt: performance.now() });
-      void engine.seek(seconds);
+      if (!restoredPending) void engine.seek(seconds);
     },
 
     setVolume(volume) {
@@ -369,6 +418,32 @@ export function startPlayer() {
   if (started) return;
   started = true;
   void engine.set('volume', usePlayer.getState().volume).catch(() => {});
+  // The queue from last time, paused where it was (Play picks it up there).
+  const last = readQueue();
+  if (last && !usePlayer.getState().queue.length) {
+    const item = last.queue[last.index];
+    restoredPending = true;
+    usePlayer.setState({
+      queue: last.queue,
+      index: last.index,
+      position: last.position,
+      positionAt: performance.now(),
+      duration: (item?.RunTimeTicks ?? 0) / TICKS_PER_SECOND,
+      repeat: last.repeat,
+      shuffle: last.shuffle,
+      playing: false,
+    });
+  }
+  // Kept as it changes: at once for the queue, every 10 s for the place in the song, and on the way out.
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  usePlayer.subscribe((s, prev) => {
+    if (s.queue !== prev.queue || s.index !== prev.index || s.repeat !== prev.repeat || s.shuffle !== prev.shuffle || s.playing !== prev.playing) {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => saveQueue(usePlayer.getState()), 500);
+    }
+  });
+  setInterval(() => usePlayer.getState().playing && saveQueue(usePlayer.getState()), 10_000);
+  window.addEventListener('beforeunload', () => saveQueue(usePlayer.getState()));
   // Pausing and resuming are reported at once (your other devices show it), not at the next tick.
   usePlayer.subscribe((s, prev) => {
     if (s.playing !== prev.playing && s.queue[s.index]?.Id === session?.itemId) reportProgress(s.playing ? 'Unpause' : 'Pause');

@@ -13,6 +13,7 @@ import { useSettings } from '@/settings/store';
 import { useLayout } from '~/layout/layout';
 import { currentPosition, usePlayer } from '~/player/store';
 import { SpicyView } from '~/spicy/SpicyView';
+import { openLink } from '~/lib/links';
 import { Loading } from '~/ui/states';
 
 export function pickLyrics(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } | undefined): Lyrics | null {
@@ -104,8 +105,16 @@ export function LyricsView({ variant = 'panel', onOpen }: { variant?: 'panel' | 
       {variant === 'card' ? null : (
         <div className="lyrics-credits">
           {creditRows(lyrics).map((row, i) => (
-            <div key={i} className={row.small ? 'small' : undefined}>
-              {row.text}
+            <div
+              key={i}
+              className={`credit-line${row.small ? ' small' : ''}${row.link ? ' linked' : ''}`}
+              role={row.link ? 'link' : undefined}
+              tabIndex={row.link ? 0 : undefined}
+              title={row.link}
+              onClick={row.link ? () => openLink(row.link!) : undefined}
+              onKeyDown={row.link ? (e) => e.key === 'Enter' && openLink(row.link!) : undefined}>
+              {row.avatar ? <img src={row.avatar} alt="" /> : null}
+              <span>{row.text}</span>
             </div>
           ))}
         </div>

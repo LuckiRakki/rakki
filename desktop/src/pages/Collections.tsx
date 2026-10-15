@@ -82,7 +82,7 @@ export function Album({ id }: { id: string }) {
       <div className="page-states">
         <QueryState q={tracksQ} what="the songs" />
       </div>
-      <TrackTable tracks={shown} album={false} art={false} trackNumbers plays={!!lastfm} playsOf={lastfm ? (t) => lastfm[t.Id] : undefined} />
+      <TrackTable tracks={shown} album={false} art={false} trackNumbers discs plays={!!lastfm} playsOf={lastfm ? (t) => lastfm[t.Id] : undefined} />
       <div className="page">
         {item?.Overview ? <p className="overview">{item.Overview}</p> : null}
         <Shelf

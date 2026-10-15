@@ -69,14 +69,20 @@ export function Home() {
   const added = useRecentlyAdded();
   // A new library: nothing played and nothing added yet.
   const fresh = recent.data?.length === 0 && added.data?.length === 0;
+  const shown = order.filter((id) => !hidden.includes(id));
+  // Quick picks first: they sit on the top band with the greeting.
+  const top = !fresh && shown[0] === 'quick';
   return (
     <div className="page home">
-      <div className="home-head">
-        <h1>{greeting()}</h1>
-        <button className="pill-btn" onClick={openCustomizeHome} title="Reorder or hide Home's sections">
-          <SlidersHorizontal size={16} />
-          Customize
-        </button>
+      <div className="home-top">
+        <div className="home-head">
+          <h1>{greeting()}</h1>
+          <button className="pill-btn" onClick={openCustomizeHome} title="Reorder or hide Home's sections">
+            <SlidersHorizontal size={16} />
+            Customize
+          </button>
+        </div>
+        {top ? <HomeSectionView id="quick" /> : null}
       </div>
       {fresh ? (
         <Empty
@@ -86,7 +92,7 @@ export function Home() {
           action={{ label: 'Browse Albums', run: () => go({ name: 'albums' }) }}
         />
       ) : (
-        order.filter((id) => !hidden.includes(id)).map((id) => <HomeSectionView key={id} id={id} />)
+        (top ? shown.slice(1) : shown).map((id) => <HomeSectionView key={id} id={id} />)
       )}
       <QueryState q={recent} what="Home" />
     </div>

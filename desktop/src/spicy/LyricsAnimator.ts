@@ -111,6 +111,8 @@ interface Word extends Mover {
 }
 
 type RowKind = 'lead' | 'bg' | 'plain' | 'credits';
+/** Rakki: one credit line under the lyrics. */
+export interface Credit { text: string; small?: boolean; link?: string; avatar?: string }
 
 /** One visual line: a lead vocal line, its background vocals, or a plain line. */
 interface Row extends Styled {
@@ -159,7 +161,9 @@ export class LyricsAnimator {
     // "Next Up" card shown once the lyrics are over.
     private nextUpEl: HTMLElement | null = null;
     private lastLyricEnd = 0;
-    private credits: { text: string; small?: boolean }[] | null = null;
+    private credits: Credit[] | null = null;
+    /** Rakki: a credit's link was clicked (the page opens it in the browser). */
+    onLink: ((url: string) => void) | null = null;
 
     // Wall-clock frame delta for the springs — they move in real time,
     // independent of the (seek-jumpy) playback clock.
@@ -197,7 +201,7 @@ export class LyricsAnimator {
      * Rakki: the credits to end the lyrics with (written by, provider, synced by), as lines of
      * the lyrics themselves rather than a strip under them. Without them, Written by only.
      */
-    load(payload: LyricsPayload, credits?: { text: string; small?: boolean }[]): void {
+    load(payload: LyricsPayload, credits?: Credit[]): void {
         this.credits = credits ?? null;
         this.payload = payload;
         this.synced = payload.isSynced;
@@ -478,7 +482,27 @@ export class LyricsAnimator {
         const first = this.rows.length;
         for (const credit of lines) {
             const row = this.addRow('credits', this.groups.length, false, false, start);
-            row.el.textContent = credit.text;
+            // The person's picture and a link to them, as in the web mod.
+            if (credit.avatar) {
+                const img = document.createElement('img');
+                img.className = 'sl-credit-avatar';
+                img.alt = '';
+                img.src = credit.avatar;
+                row.el.appendChild(img);
+            }
+            const text = document.createElement('span');
+            text.textContent = credit.text;
+            row.el.appendChild(text);
+            if (credit.link) {
+                const url = credit.link;
+                row.el.classList.add('sl-credit-link');
+                row.el.title = url;
+                row.el.addEventListener('click', (e) => {
+                    // Instead of jumping to the moment (the row's own click).
+                    e.stopImmediatePropagation();
+                    this.onLink?.(url);
+                }, true);
+            }
             row.el.classList.toggle('sl-line--right', right);
             row.el.classList.toggle('sl-credits--small', !!credit.small);
             row.startMs = start;

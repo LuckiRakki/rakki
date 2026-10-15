@@ -18,6 +18,7 @@
   --text-2: #b6b6bc;
   --text-3: #a0a0a8; /* 4.8:1 on the lightest surface (--surface-4) */
   --accent: #fd642d;
+  --now: #fd642d; /* the playing album's colour (ui/theme.ts) */
   --accent-soft: rgba(253, 100, 45, 0.16);
   /* Focus rings: white reads on every surface and every Lucid colour. */
   --focus: #fff;
@@ -29,7 +30,7 @@
   --control-sm: 32px;
   --control: 40px;
   --radius-art: 6px;
-  --titlebar: 48px;
+  --titlebar: 64px;
   --playerbar: 88px;
   --sidebar: 280px;
   --panel: 340px;
@@ -49,7 +50,9 @@ input, select { font: inherit; color: inherit; }
 img { display: block; }
 h1, h2, h3, p { margin: 0; }
 ::-webkit-scrollbar { width: 12px; height: 12px; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }
+/* Thumbs show while the pointer is over what scrolls, inset from the edge, so a panel's edge stays clean. */
+::-webkit-scrollbar-thumb { background: transparent; border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }
+:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.16); }
 ::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.28); }
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

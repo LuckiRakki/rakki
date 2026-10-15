@@ -401,3 +401,9 @@
         animation:  none !important;
     }
 }
+
+/* Rakki: credits with the person's picture and a link (spicy/LyricsAnimator.ts appendCredits). */
+.sl-credits { display: flex; align-items: center; gap: 0.45em; }
+.sl-credit-avatar { width: 1.5em; height: 1.5em; border-radius: 50%; object-fit: cover; flex: none; }
+.sl-credit-link { cursor: pointer; }
+.sl-credit-link:hover span { text-decoration: underline; }

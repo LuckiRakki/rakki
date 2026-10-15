@@ -60,3 +60,5 @@
 .st-row:hover .heart, .st-row .heart.on { opacity: 1; }
 @container (max-width: 600px) { .st-row { grid-template-columns: 36px minmax(0, 2.4fr) minmax(0, 1.4fr) 58px 34px; } .st-genre, .st-year { display: none; } }
 @container (max-width: 430px) { .st-row { grid-template-columns: 36px minmax(0, 1fr) 58px 34px; } .st-album { display: none; } }
+/* An album's disc heading (ui/parts.tsx TrackTable discs). */
+.tt-disc { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: 12px 12px 0 22px; color: var(--text-2); font-weight: 700; }

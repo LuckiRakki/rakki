@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 
 import { JellyfinClient, type Session } from '@/api/jellyfin';
+import { clearCache } from '~/lib/cache';
 
 const SESSION_KEY = 'rakki.session';
 const DEVICE_KEY = 'rakki.deviceId';
@@ -43,6 +44,8 @@ export const useAuth = create<AuthState>((set) => ({
   },
   signOut() {
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem('rakki.lastQueue');
+    clearCache();
     set({ session: null, client: null });
   },
 }));

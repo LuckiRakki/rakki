@@ -49,9 +49,13 @@ export function useApplyTheme() {
   const hash = item && client ? client.blurhash(item) : undefined;
   const rgb = lucid ? blurhashAverage(hash) : null;
   const color = rgb ? vividAccent(rgb) : accent;
+  // The playing album's own colour, whatever the accent setting: Home's top band follows it.
+  const playing = blurhashAverage(hash);
+  const now = playing ? vividAccent(playing) : color;
   useEffect(() => {
     const root = document.documentElement.style;
     root.setProperty('--accent', color);
     root.setProperty('--accent-soft', withAlpha(color, 0.16));
-  }, [color]);
+    root.setProperty('--now', now);
+  }, [color, now]);
 }
