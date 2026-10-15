@@ -1,6 +1,7 @@
 // Radio stations: internet radio streams you add by address (like Feishin's radio list).
 // SUB/WAVE stations are recognised from their address and get live now-playing, the DJ and
-// song requests (subwave.ts). Saved on the phone, for every account.
+// song requests (subwave.ts). Saved on the device and on your server (stationSync.ts), so every
+// Rakki has the same list.
 import { create } from 'zustand';
 
 import { readPref, writePref } from '@/lib/prefs';
@@ -53,6 +54,8 @@ interface StationsState {
   update(id: string, patch: Partial<Pick<Station, 'name' | 'image' | 'website'>>): void;
   markPlayed(id: string): void;
   remove(id: string): void;
+  /** The whole list from the server (stationSync.ts). */
+  replaceAll(stations: Station[]): void;
 }
 
 export const useStations = create<StationsState>((set, get) => ({
@@ -73,6 +76,10 @@ export const useStations = create<StationsState>((set, get) => ({
   },
   markPlayed(id) {
     const stations = get().stations.map((s) => (s.id === id ? { ...s, lastPlayedAt: Date.now() } : s));
+    writePref(KEY, JSON.stringify(stations));
+    set({ stations });
+  },
+  replaceAll(stations) {
     writePref(KEY, JSON.stringify(stations));
     set({ stations });
   },

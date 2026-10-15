@@ -339,7 +339,7 @@ export class JellyfinClient {
   }
 
   private send<T = void>(
-    method: 'POST' | 'DELETE',
+    method: 'POST' | 'DELETE' | 'PUT',
     path: string,
     body?: unknown,
     params: Record<string, string | number | boolean | undefined> = {},
@@ -472,6 +472,23 @@ export class JellyfinClient {
   /** The Rakki companion plugin, when the server has it (404 when it doesn't). */
   getRakkiInfo() {
     return this.get<{ Version: string; LastFmKeySet: boolean }>('/Rakki/Info');
+  }
+
+  /**
+   * A document the Rakki plugin keeps for this user, shared by every Rakki (phone, desktop):
+   * radio stations, preferences. Null when there's none yet (or the plugin is older).
+   */
+  async getRakkiData<T>(name: string): Promise<T | null> {
+    try {
+      return await this.get<T>(`/Rakki/User/Data/${name}`);
+    } catch (e) {
+      if (e instanceof JellyfinError && e.status === 404) return null;
+      throw e;
+    }
+  }
+
+  putRakkiData(name: string, value: unknown) {
+    return this.send('PUT', `/Rakki/User/Data/${name}`, value);
   }
 
   /** The Last.fm key kept in the Rakki plugin (administrators only). */

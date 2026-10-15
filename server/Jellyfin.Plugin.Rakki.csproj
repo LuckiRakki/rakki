@@ -5,7 +5,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>Jellyfin.Plugin.Rakki</AssemblyName>
     <RootNamespace>Jellyfin.Plugin.Rakki</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <!-- Jellyfin loads plugins via reflection; don't copy its assemblies. -->

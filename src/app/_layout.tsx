@@ -32,6 +32,7 @@ import { startMemoryCare } from '@/lib/memory';
 import { lockPortrait } from '@/lib/orientation';
 import { startPlaylistCache } from '@/library/playlistCache';
 import { startRemoteCommands } from '@/player/remote';
+import { startStationSync } from '@/radio/stationSync';
 import { startCompanionSync, syncLastfmKey } from '@/lib/companion';
 
 SplashScreen.preventAutoHideAsync();
@@ -158,6 +159,9 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     void syncLastfmKey();
     // Your other Rakki apps (the desktop) can see and control this one (player/remote.ts).
     startRemoteCommands();
+    // Radio stations shared with your other Rakki apps through the server (radio/stationSync.ts).
+    const client = useAuth.getState().client;
+    if (client) void startStationSync(client);
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
   }, [userId]);

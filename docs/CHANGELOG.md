@@ -6,6 +6,12 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.19.0 (2026-10-15)
+- **Radio stations on every Rakki.** Your stations are kept on your server by the Rakki plugin
+  (it needs plugin 0.2), so Rakki on your computer has the same list; adding, renaming or
+  removing one shows up on the others. The first time, the phone's stations and the server's
+  are joined (none are lost). A station's own picture stays on the device it was set on.
+
 ## 1.18.0 (2026-10-14)
 - **Connect, like Spotify's.** The devices button in the player opens a simple list: This
   Phone and your other Rakki apps, the one playing lit. Tap a device to listen there (the

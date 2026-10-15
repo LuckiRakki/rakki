@@ -54,3 +54,14 @@
 .signin-card p { margin-bottom: 8px; line-height: 1.5; }
 .wordmark { font-size: 40px; font-weight: 900; letter-spacing: -0.04em; }
 .qc-code { font-size: 46px; font-weight: 900; letter-spacing: 0.24em; text-align: center; padding: 14px 0; color: var(--text); } /* spaced for reading a code aloud */
+
+/* Setting Up Rakki (auth/Setup.tsx): the first sign-in on this computer. */
+.setup { height: 100%; display: grid; place-items: center; background: radial-gradient(1100px 700px at 15% 0%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 60%), var(--bg); }
+.setup-card { width: 420px; max-width: calc(100% - 40px); }
+.setup-card h1 { font-size: 28px; font-weight: 800; margin-top: 18px; }
+.setup-card p { margin: 6px 0 20px; }
+.setup-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.setup-card li { display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--text-2); }
+.setup-card li.done { color: var(--text); }
+.setup-card .tick { width: 20px; height: 20px; display: grid; place-items: center; }
+.spin.small { width: 16px; height: 16px; border-width: 2px; margin: 0; }

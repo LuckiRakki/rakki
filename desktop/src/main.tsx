@@ -9,6 +9,7 @@ import { startPlaylistCache } from '@/library/playlistCache';
 import { restoreCache, startCacheSaving } from '~/lib/cache';
 import { syncLastfmKey } from '@/lib/companion';
 import { useAuth } from '~/auth/session';
+import { SettingUp, startSetup, useSetup } from '~/auth/Setup';
 import { SignIn } from '~/auth/SignIn';
 import { PlayerBar } from '~/layout/PlayerBar';
 import { Resizer, Sidebar } from '~/layout/Sidebar';
@@ -67,6 +68,7 @@ function App() {
   const routeKey = useNav((s) => `${s.route.name}:${'id' in s.route ? s.route.id : ''}`);
   useApplyTheme();
   useApplyLook();
+  const settingUp = useSetup((s) => s.running);
 
   useEffect(() => {
     startPlayer();
@@ -113,11 +115,15 @@ function App() {
     startPlaylistCache();
     // Your other Rakki apps can see and control this one (player/remote.ts).
     startRemoteCommands();
+    // What you set up on your other Rakki apps (stations...): a setup screen the first time.
+    startSetup();
   }, [signedIn, userId]);
 
   return (
     <>
-      {signedIn && mini ? (
+      {signedIn && settingUp ? (
+        <SettingUp />
+      ) : signedIn && mini ? (
         <MiniPlayer />
       ) : signedIn ? (
         <div

@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "Daily Mixes written to playlists (12 AM task, Publish now). Daily Mix preview, skip tracking, one-request playlist check, performance log viewer, and the Spicy Lyrics TTML plugin merged in (lyrics, Spicy Lyrics API, scraper, lyrics search).",
+  "changelog": "0.2: Rakki user data (GET/PUT /Rakki/User/Data/{name}), so radio stations follow you to every Rakki. 0.1: Daily Mixes written to playlists (12 AM task, Publish now). Daily Mix preview, skip tracking, one-request playlist check, performance log viewer, and the Spicy Lyrics TTML plugin merged in (lyrics, Spicy Lyrics API, scraper, lyrics search).",
   "description": "Server features for the Rakki app: word-by-word lyrics (formerly Spicy Lyrics TTML), Daily Mixes, skip tracking, playlist sync and performance logs.",
   "guid": "4aed0f98-72d3-47d4-9a96-8aa90b9669b8",
   "name": "Rakki",
@@ -8,7 +8,7 @@
   "owner": "LuckiRakki",
   "targetAbi": "10.11.0.0",
   "timestamp": "2026-10-10T00:00:00.0000000Z",
-  "version": "0.1.0.0",
+  "version": "0.2.0.0",
   "status": "Active",
   "autoUpdate": false,
   "imagePath": "rakki-plugin.png",
