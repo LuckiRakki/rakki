@@ -28,6 +28,7 @@ import { startRemoteCommands, startRemoteMedia, useRemote } from '~/player/remot
 import { startRadioWatch } from '~/radio/radio';
 import { currentPosition, startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
+import { FullscreenHint } from '~/ui/FullscreenHint';
 import { Overlays } from '~/ui/overlays';
 import { ServerBar, refetchFailed } from '~/ui/states';
 import { useApplyTheme } from '~/ui/theme';
@@ -149,6 +150,7 @@ function App() {
         <SignIn />
       )}
       <Overlays />
+      <FullscreenHint />
     </>
   );
 }

@@ -242,7 +242,10 @@ export function NowPlaying() {
       </div>
       <div className="np-body">
         <div className="np-left">
-          <Artwork key={item.Id} item={item} size={1000} className="np-cover" />
+          {/* Right-click the cover for the song's menu, as anywhere else. */}
+          <div className="np-cover-wrap" onContextMenu={(e) => openMenu(e, songMenu([item]))}>
+            <Artwork key={item.Id} item={item} size={1000} className="np-cover" />
+          </div>
           <div className="np-meta" onContextMenu={(e) => openMenu(e, songMenu([item]))}>
             <div className="np-title">{item.Name}</div>
             <div className="np-artist" onClick={() => l.setNowPlaying(false)}>

@@ -65,3 +65,8 @@
 .setup-card li.done { color: var(--text); }
 .setup-card .tick { width: 20px; height: 20px; display: grid; place-items: center; }
 .spin.small { width: 16px; height: 16px; border-width: 2px; margin: 0; }
+
+/* Full screen's "Press Esc to exit full screen" (ui/FullscreenHint.tsx), Chromium's look. */
+.fs-hint { position: fixed; z-index: 200; top: 24px; left: 50%; transform: translate(-50%, -12px); padding: 12px 22px; border-radius: 999px; background: rgba(32, 33, 36, 0.92); color: #fff; font-size: 15px; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); opacity: 0; pointer-events: none; transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out); }
+.fs-hint.shown { opacity: 1; transform: translate(-50%, 0); }
+.fs-hint kbd { display: inline-block; margin: 0 4px; padding: 1px 8px; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 4px; font: inherit; font-size: 13px; }

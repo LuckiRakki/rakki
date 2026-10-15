@@ -137,7 +137,7 @@ export default function LyricsScreen() {
           {timing && lyrics && lyricsFor ? (
             <SyncPanel itemId={lyricsFor.Id} lyrics={lyrics} onClose={() => setTiming(false)} />
           ) : (
-            <UpNext />
+            <UpNext lyricsEndSec={lyrics?.isSynced && lyrics.lines.length ? (Math.max(...lyrics.lines.map((l) => l.endMs || l.startMs)) + offset) / 1000 : null} />
           )}
           <View style={styles.transport}>
             <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
@@ -158,35 +158,39 @@ export default function LyricsScreen() {
 
 const UP_NEXT_SECONDS = 15;
 
-/** The next song, slid up above the controls for the last seconds of this one. Tap for the queue. */
-function UpNext() {
+/**
+ * The next song, as the desktop's (and the web mod's) Next Up card: its cover, "Next Up", the
+ * title and artist on the lyrics' background, no box. It floats up once the singing is over or
+ * the song has 15 seconds left. Tap for the queue.
+ */
+function UpNext({ lyricsEndSec }: { lyricsEndSec: number | null }) {
   const t = useTheme();
   const styles = useStyles();
   const next = usePlayer((s) => s.queue[s.index + 1]?.item);
   const repeatOne = usePlayer((s) => s.repeat === 'one');
   const { position, duration } = useProgress(500);
   const remaining = duration - position;
-  if (!next || repeatOne || duration < 30 || remaining <= 0 || remaining > UP_NEXT_SECONDS) return null;
+  const sung = lyricsEndSec !== null && lyricsEndSec > 0 && position >= lyricsEndSec;
+  if (!next || repeatOne || duration < 30 || remaining <= 0 || (!sung && remaining > UP_NEXT_SECONDS)) return null;
   return (
     <Animated.View
-      entering={t.reduceMotion ? undefined : FadeInDown.duration(300)}
-      exiting={t.reduceMotion ? undefined : FadeOutDown.duration(200)}
+      entering={t.reduceMotion ? undefined : FadeInDown.duration(600)}
+      exiting={t.reduceMotion ? undefined : FadeOutDown.duration(250)}
       style={styles.upNextWrap}>
       <Pressable
         onPress={() => router.push('/queue')}
-        accessibilityLabel={`Up next: ${next.Name}`}
-        style={({ pressed }) => [styles.upNext, pressed && { opacity: 0.8 }]}>
-        <Artwork item={next} size={40} />
-        <View style={{ flex: 1, marginLeft: t.space.md }}>
-          <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(11), color: 'rgba(255,255,255,0.7)' }}>Up next</T>
-          <T variant="bodyStrong" numberOfLines={1}>
+        accessibilityLabel={`Next up: ${next.Name}`}
+        style={({ pressed }) => [styles.upNext, pressed && { opacity: 0.7 }]}>
+        <Artwork item={next} size={48} rounded={7} />
+        <View style={{ flex: 1, marginLeft: 13 }}>
+          <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: 'rgba(255,255,255,0.75)' }}>Next Up</T>
+          <T numberOfLines={1} style={{ fontFamily: t.fonts.black, fontSize: t.size(19), color: '#fff' }}>
             {next.Name}
           </T>
-          <T variant="caption" numberOfLines={1} style={{ color: 'rgba(255,255,255,0.75)' }}>
+          <T numberOfLines={1} style={{ fontFamily: t.fonts.medium, fontSize: t.size(14), color: 'rgba(255,255,255,0.8)' }}>
             {artistLine(next)}
           </T>
         </View>
-        <Ionicons name="list" size={20} color={t.colors.text} />
       </Pressable>
     </Animated.View>
   );
@@ -269,14 +273,8 @@ const useStyles = makeStyles((t) => ({
   },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
   upNextWrap: { alignSelf: 'stretch', paddingHorizontal: t.space.lg, marginBottom: t.space.md },
-  upNext: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: t.space.sm,
-    paddingRight: t.space.md,
-    borderRadius: t.radius.card,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
+  // As the desktop's Next Up: no box, straight on the lyrics' background.
+  upNext: { flexDirection: 'row', alignItems: 'center' },
   transport: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxl },
   play: {
     width: 52,

@@ -6,6 +6,11 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.19.1 (2026-10-15)
+- **Next Up looks like the desktop's.** The next song's cover, "Next Up", its title and artist,
+  straight on the lyrics' background instead of a dark box, and it floats up once the singing is
+  over as well as in the last 15 seconds.
+
 ## 1.19.0 (2026-10-15)
 - **Radio stations on every Rakki.** Your stations are kept on your server by the Rakki plugin
   (it needs plugin 0.2), so Rakki on your computer has the same list; adding, renaming or
