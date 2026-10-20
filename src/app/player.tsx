@@ -13,6 +13,7 @@ import { HeartButton } from '@/ui/HeartButton';
 import { thud, tick } from '@/lib/haptics';
 import { useMusicVideos } from '@/api/queries';
 import { useAuth } from '@/auth/store';
+import { useInAnyPlaylist } from '@/library/playlistCache';
 import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
@@ -79,6 +80,7 @@ function RemotePlayer({ target }: { target: RakkiDevice }) {
   }).data;
   const [liked, setLiked] = useState<{ id: string; v: boolean } | null>(null);
   const favorite = item ? (liked?.id === item.Id ? liked.v : (full?.UserData?.IsFavorite ?? item.UserData?.IsFavorite ?? false)) : false;
+  const inPlaylist = useInAnyPlaylist(item?.Id);
   return (
     <View style={styles.root}>
       <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
@@ -123,6 +125,7 @@ function RemotePlayer({ target }: { target: RakkiDevice }) {
               </View>
               <HeartButton
                 liked={favorite}
+                inPlaylist={inPlaylist}
                 onToggle={(v) => {
                   setLiked({ id: item.Id, v });
                   usePlayer.getState().setFavorite(item.Id, v);
@@ -169,6 +172,7 @@ function LocalPlayer() {
   const [pageHeight, setPageHeight] = useState(height);
   const client = useAuth((s) => s.client);
   const track = usePlayer((s) => s.queue[s.index]?.item);
+  const inPlaylist = useInAnyPlaylist(track?.Id);
   const source = usePlayer((s) => s.source);
   const playing = usePlayer((s) => s.playing);
   const buffering = usePlayer((s) => s.buffering);
@@ -285,6 +289,7 @@ function LocalPlayer() {
             ) : (
               <HeartButton
                 liked={favorite}
+                inPlaylist={inPlaylist}
                 onToggle={(v) => p().setFavorite(track.Id, v)}
                 onLongPress={() => {
                   thud();

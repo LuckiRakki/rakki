@@ -27,6 +27,25 @@ interface RemoteTargetState {
 
 let poll: ReturnType<typeof setInterval> | null = null;
 
+/**
+ * When the device last reported its place, by this phone's clock. The server stamps reports with
+ * its own clock, which can be seconds off from the phone's (the place ran 6-7 s ahead), so a
+ * report counts as new when its place, song or pause changes between two checks, and it was
+ * made about halfway between them (checks are 2 s apart, apps report every 10 s or on a change).
+ */
+let lastReport = '';
+
+function timed(fresh: RakkiDevice, prev: RakkiDevice): RakkiDevice {
+  const key = `${fresh.item?.Id}|${fresh.paused}|${fresh.reportedSec}`;
+  const first = !lastReport;
+  if (key === lastReport) {
+    // The same report: keep the place as already worked out (or as just commanded).
+    return prev.paused === fresh.paused && prev.item?.Id === fresh.item?.Id ? { ...fresh, reportedSec: prev.reportedSec, reportedAt: prev.reportedAt } : fresh;
+  }
+  lastReport = key;
+  return first ? fresh : { ...fresh, reportedAt: Date.now() - POLL_MS / 2 };
+}
+
 async function refresh() {
   const c = useAuth.getState().client;
   const t = useRemoteTarget.getState().target;
@@ -36,7 +55,7 @@ async function refresh() {
   if (fresh === null) {
     showToast(`${t.name} went away. Back on This Phone.`);
     useRemoteTarget.getState().setTarget(null);
-  } else if (fresh) useRemoteTarget.setState({ target: fresh });
+  } else if (fresh) useRemoteTarget.setState({ target: timed(fresh, useRemoteTarget.getState().target ?? t) });
 }
 
 export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
@@ -44,6 +63,7 @@ export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
   setTarget(d) {
     if (poll) clearInterval(poll);
     poll = null;
+    lastReport = '';
     set({ target: d });
     routeToRemote(d ? route : null);
     if (d) poll = setInterval(() => void refresh(), POLL_MS);

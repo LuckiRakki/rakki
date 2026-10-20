@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.20.2 (2026-10-20)
+- **The heart is solid when a song is in any of your playlists**, not only in Liked Songs, in the
+  player and the remote player (like the desktop and the song lists). Tapping it on a song that's
+  only in playlists opens where it's saved.
+- **The remote player keeps time with the other device.** It ran 6-7 seconds ahead because it
+  went by the server's clock; now it times the device's reports by the phone's own clock, so it
+  settles to within about a second after the first update.
+
 ## 1.20.1 (2026-10-20)
 - **Pick songs for the other device.** While the phone controls Rakki on your computer, tapping
   a song, album, playlist or Shuffle anywhere plays it there and the phone stays its remote. Play
