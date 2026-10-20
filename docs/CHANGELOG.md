@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.20.0 (2026-10-20)
+- **The phone becomes a remote, like Spotify Connect.** Move your music to Rakki on your computer
+  (or, with nothing playing here, tap a device in Connect that's playing) and the mini player and
+  the player show that device's song and where it is in it, with "Listening on {device}" in the
+  accent colour. Play, pause, skip, go back and seek all happen on the computer. Tap "Listening
+  on" to open Connect; This Phone brings the music back. Playing something on the phone, or the
+  computer closing Rakki, makes the phone the player again.
+
 ## 1.19.1 (2026-10-15)
 - **Next Up looks like the desktop's.** The next song's cover, "Next Up", its title and artist,
   straight on the lyrics' background instead of a dark box, and it floats up once the singing is

@@ -9,8 +9,9 @@ import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
 import { tick } from '@/lib/haptics';
 import { engine } from '@/player/engine';
+import { useRemoteTarget } from '@/player/remoteTarget';
 import { usePlayer } from '@/player/store';
-import { otherRakkiDevices, pullFrom, pushTo, type RakkiDevice } from '@/remote/devices';
+import { deviceNow, otherRakkiDevices, pullFrom, pushTo, type RakkiDevice } from '@/remote/devices';
 import { showToast } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -35,6 +36,7 @@ async function moveHere(client: JellyfinClient, d: RakkiDevice) {
   router.back();
   try {
     const h = await pullFrom(client, d);
+    useRemoteTarget.getState().setTarget(null);
     if (!h.items.length) return showToast(`Nothing to take over from ${d.name}`);
     usePlayer.getState().playQueue(h.items, { startIndex: h.index, shuffle: false });
     if (h.positionSec > 1) setTimeout(() => usePlayer.getState().seek(h.positionSec), 700);
@@ -59,6 +61,9 @@ async function moveTo(client: JellyfinClient, d: RakkiDevice) {
     const ok = await pushTo(client, d, p.queue.map((e) => e.item), p.index, engine.getProgress().position);
     if (!ok) return showToast(`${d.name} didn’t start. Open Rakki there and try again.`);
     if (usePlayer.getState().playing) usePlayer.getState().toggle();
+    // This phone becomes its remote: the player shows that device's song and controls it.
+    const fresh = await deviceNow(client, d.sessionId).catch(() => null);
+    useRemoteTarget.getState().setTarget(fresh ?? d);
     showToast(`Playing on ${d.name}`);
   } catch {
     showToast(`Couldn’t reach ${d.name}`);
@@ -70,8 +75,10 @@ async function moveTo(client: JellyfinClient, d: RakkiDevice) {
 /**
  * Connect, like Spotify's (and the desktop's): this phone and your other Rakki apps on this
  * server (docs/REMOTE_PLAYBACK.md), the one playing lit. Tap a device to listen there: the
- * music moves over at the same moment in the song. Tap This Phone to bring it back. The screen
- * closes at once; a toast says when it's playing (or why not).
+ * music moves over at the same moment in the song, and this phone becomes its remote (the player
+ * shows that device's song and controls it, player/remoteTarget.ts). With nothing playing here,
+ * tapping a device that plays just controls it. Tap This Phone to bring the music back. The
+ * screen closes at once; a toast says when it's playing (or why not).
  */
 export default function DevicesScreen() {
   const t = useTheme();
@@ -83,6 +90,7 @@ export default function DevicesScreen() {
   const [help, setHelp] = useState(false);
   const here = usePlayer((s) => s.queue[s.index]?.item);
   const playingHere = usePlayer((s) => s.playing);
+  const target = useRemoteTarget((s) => s.target);
 
   useEffect(() => {
     if (!client) return;
@@ -101,14 +109,28 @@ export default function DevicesScreen() {
 
   // Where the music is: this phone while it plays (or has nothing elsewhere to defer to), else
   // the device that's playing.
-  const playingElsewhere = devices?.find((d) => d.item && !d.paused && d.controllable);
-  const litHere = playingHere || !playingElsewhere;
+  // The device this phone controls counts as where the music is, even while it's paused there.
+  const playingElsewhere = (target && devices?.find((d) => d.sessionId === target.sessionId)) || devices?.find((d) => d.item && !d.paused && d.controllable);
+  const litHere = !target && (playingHere || !playingElsewhere);
 
   const pickHere = () => {
-    if (client && !litHere && playingElsewhere) void moveHere(client, playingElsewhere);
+    if (!client || litHere) return;
+    if (playingElsewhere?.item) void moveHere(client, playingElsewhere);
+    else {
+      useRemoteTarget.getState().setTarget(null);
+      router.back();
+    }
   };
   const pick = (d: RakkiDevice) => {
-    if (client && playingElsewhere?.sessionId !== d.sessionId) void moveTo(client, d);
+    if (!client || target?.sessionId === d.sessionId) return;
+    // Nothing here to move: control what's playing there instead.
+    if (!usePlayer.getState().queue.length || (!playingHere && d.item)) {
+      tick();
+      useRemoteTarget.getState().setTarget(d);
+      router.back();
+      return;
+    }
+    void moveTo(client, d);
   };
 
   const row = (key: string, icon: keyof typeof Ionicons.glyphMap, name: string, sub: string, lit: boolean, onPress: () => void, disabled = false) => (
@@ -173,7 +195,7 @@ export default function DevicesScreen() {
         </Pressable>
         {help ? (
           <T variant="caption" style={styles.note}>
-            Open Rakki on it, signed in to the same server. Your music moves over at the same moment in the song.
+            Open Rakki on it, signed in to the same server. Your music moves over at the same moment in the song, and this phone becomes its remote.
           </T>
         ) : null}
       </ScrollView>

@@ -20,7 +20,10 @@ import { CreditsCard } from '@/player/CreditsCard';
 import { SwipeCover } from '@/player/SwipeCover';
 import { SeekBar } from '@/player/SeekBar';
 import { sleepSheet, useSleepLabel } from '@/player/sleep';
+import { useRemoteProgress, useRemoteTarget } from '@/player/remoteTarget';
 import { usePlayer } from '@/player/store';
+import type { RakkiDevice } from '@/remote/devices';
+import { Artwork } from '@/ui/Artwork';
 import { useProgress } from '@/player/useProgress';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Marquee } from '@/ui/Marquee';
@@ -45,7 +48,106 @@ function tap(fn: () => void) {
   };
 }
 
+/** This phone's player, or the device it controls (player/remoteTarget.ts). */
 export default function PlayerScreen() {
+  const target = useRemoteTarget((s) => s.target);
+  return target ? <RemotePlayer target={target} /> : <LocalPlayer />;
+}
+
+/**
+ * Another Rakki's song, like Spotify's Connect player: its cover, title and place, with buttons
+ * that command it, and "Listening on {device}" at the bottom (tap for Connect to move it back).
+ */
+function RemotePlayer({ target }: { target: RakkiDevice }) {
+  const t = useTheme();
+  const styles = useStyles();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const client = useAuth((s) => s.client);
+  const { position, duration } = useRemoteProgress(250);
+  const item = target.item;
+  const r = useRemoteTarget.getState;
+  const art = Math.min(width - t.space.xl * 2, 420);
+  const tint = artColor(item ? client?.blurhash(item) : undefined);
+  const [liked, setLiked] = useState<{ id: string; v: boolean } | null>(null);
+  const favorite = item ? (liked?.id === item.Id ? liked.v : (item.UserData?.IsFavorite ?? false)) : false;
+  return (
+    <View style={styles.root}>
+      <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
+      <View style={{ flex: 1, paddingTop: insets.top + t.space.sm, paddingBottom: insets.bottom + t.space.md, paddingHorizontal: t.space.xl }}>
+        <View style={styles.header}>
+          <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
+            <Ionicons name="chevron-down" size={28} color={t.colors.text} />
+          </Pressable>
+          <View style={{ flex: 1, alignItems: 'center', marginHorizontal: t.space.md }}>
+            <T variant="label" color={t.colors.textSecondary} style={{ fontSize: t.size(10) }}>
+              Playing On
+            </T>
+            <T numberOfLines={1} style={{ fontFamily: t.fonts.bold, fontSize: t.size(13) }}>
+              {target.name}
+            </T>
+          </View>
+          {item ? (
+            <Pressable hitSlop={12} onPress={() => openMenu(item)} accessibilityLabel="More">
+              <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.text} />
+            </Pressable>
+          ) : (
+            <View style={{ width: 24 }} />
+          )}
+        </View>
+
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          {item ? (
+            <Artwork item={item} size={art} style={styles.artShadow} />
+          ) : (
+            <T variant="caption">Nothing playing on {target.name}</T>
+          )}
+        </View>
+
+        {item ? (
+          <>
+            <View style={styles.titleRow}>
+              <View style={{ flex: 1, marginRight: t.space.md }}>
+                <Pressable disabled={!item.AlbumId} onPress={() => item.AlbumId && openAlbum(item.AlbumId)}>
+                  <Marquee text={item.Name} style={{ fontFamily: t.fonts.bold, fontSize: t.size(22) }} />
+                </Pressable>
+                <ArtistLinks artists={item.ArtistItems} fallback={artistLine(item)} variant="caption" numberOfLines={1} style={{ fontSize: t.size(16), marginTop: 2 }} />
+              </View>
+              <HeartButton
+                liked={favorite}
+                onToggle={(v) => {
+                  setLiked({ id: item.Id, v });
+                  usePlayer.getState().setFavorite(item.Id, v);
+                }}
+              />
+            </View>
+            <SeekBar position={position} duration={duration} onSeek={(s) => r().seek(s)} />
+            <View style={[styles.controls, { justifyContent: 'center', gap: t.space.xxl }]}>
+              <Pressable hitSlop={10} onPress={tap(() => r().command('PreviousTrack'))} accessibilityLabel="Previous">
+                <Ionicons name="play-skip-back" size={34} color={t.colors.text} />
+              </Pressable>
+              <Pressable onPress={tap(() => r().command('PlayPause'))} style={styles.playBtn} accessibilityLabel={target.paused ? 'Play' : 'Pause'}>
+                <Ionicons name={target.paused ? 'play' : 'pause'} size={34} color="#000" style={{ marginLeft: target.paused ? 4 : 0 }} />
+              </Pressable>
+              <Pressable hitSlop={10} onPress={tap(() => r().command('NextTrack'))} accessibilityLabel="Next">
+                <Ionicons name="play-skip-forward" size={34} color={t.colors.text} />
+              </Pressable>
+            </View>
+          </>
+        ) : null}
+
+        <Pressable onPress={() => router.push('/devices')} accessibilityRole="button" accessibilityLabel={`Listening on ${target.name}. Open Connect`} style={styles.listeningOn}>
+          <Ionicons name="laptop-outline" size={18} color={t.colors.accent} />
+          <T numberOfLines={1} style={{ fontFamily: t.fonts.bold, fontSize: t.size(13), color: t.colors.accent, flexShrink: 1 }}>
+            Listening on {target.name}
+          </T>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function LocalPlayer() {
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -348,6 +450,7 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.size(10),
     color: t.colors.accent,
   },
+  listeningOn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, marginTop: t.space.sm },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   side: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 44, marginBottom: t.space.sm },

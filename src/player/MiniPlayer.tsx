@@ -10,7 +10,9 @@ import { tick } from '@/lib/haptics';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { artistLine } from '@/lib/items';
+import { useRemoteProgress, useRemoteTarget } from '@/player/remoteTarget';
 import { usePlayer } from '@/player/store';
+import type { RakkiDevice } from '@/remote/devices';
 import { useProgress } from '@/player/useProgress';
 import { Artwork } from '@/ui/Artwork';
 import { Marquee } from '@/ui/Marquee';
@@ -38,7 +40,9 @@ export function MiniPlayer() {
   const { position, duration } = useProgress(500);
   const video = useVideoSession((s) => s.video);
   const pathname = usePathname();
+  const target = useRemoteTarget((s) => s.target);
 
+  if (target) return <RemoteMini target={target} />;
   if (video && VideoMini) {
     return (
       <Suspense fallback={null}>
@@ -124,6 +128,80 @@ export function MiniPlayer() {
         </Pressable>
       </GestureDetector>
     </Animated.View>
+  );
+}
+
+/**
+ * While this phone controls another Rakki: that device's song, "Listening on {device}" in the
+ * accent colour, and buttons that command it. Tap opens the player (also the device's).
+ */
+function RemoteMini({ target }: { target: RakkiDevice }) {
+  const t = useTheme();
+  const styles = useStyles();
+  const client = useAuth((s) => s.client);
+  const { position, duration } = useRemoteProgress(500);
+  const item = target.item;
+  const r = useRemoteTarget.getState;
+  const pct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
+  const background = item ? t.tint(artColor(client?.blurhash(item), t.colors.surface3)) : t.colors.surface2;
+  const swipes = Gesture.Race(
+    Gesture.Fling()
+      .direction(Directions.UP)
+      .runOnJS(true)
+      .onStart(() => router.push('/player')),
+    Gesture.Fling()
+      .direction(Directions.LEFT)
+      .runOnJS(true)
+      .onStart(() => r().command('NextTrack')),
+    Gesture.Fling()
+      .direction(Directions.RIGHT)
+      .runOnJS(true)
+      .onStart(() => r().command('PreviousTrack')),
+  );
+  return (
+    <View style={styles.wrap}>
+      <GestureDetector gesture={swipes}>
+        <Pressable style={[styles.card, { backgroundColor: background }]} onPress={() => router.push(item ? '/player' : '/devices')}>
+          {item ? <Artwork item={item} size={40} /> : <Ionicons name="laptop-outline" size={26} color={t.colors.text} style={{ width: 40, textAlign: 'center' }} />}
+          <View style={styles.text}>
+            <Marquee text={item?.Name ?? 'Nothing playing'} style={styles.title} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="laptop-outline" size={12} color={t.colors.accent} />
+              <T numberOfLines={1} style={{ fontFamily: t.fonts.semibold, fontSize: t.size(12), color: t.colors.accent, flexShrink: 1 }}>
+                {`Listening on ${target.name}`}
+              </T>
+            </View>
+          </View>
+          {item ? (
+            <>
+              <Pressable
+                hitSlop={10}
+                accessibilityLabel={target.paused ? `Play on ${target.name}` : `Pause on ${target.name}`}
+                onPress={() => {
+                  tick();
+                  r().command('PlayPause');
+                }}
+                style={styles.btn}>
+                <Ionicons name={target.paused ? 'play' : 'pause'} size={26} color={t.colors.text} />
+              </Pressable>
+              <Pressable
+                hitSlop={10}
+                accessibilityLabel={`Next on ${target.name}`}
+                onPress={() => {
+                  tick();
+                  r().command('NextTrack');
+                }}
+                style={styles.btn}>
+                <Ionicons name="play-skip-forward" size={22} color={t.colors.text} />
+              </Pressable>
+            </>
+          ) : null}
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${pct}%` }]} />
+          </View>
+        </Pressable>
+      </GestureDetector>
+    </View>
   );
 }
 

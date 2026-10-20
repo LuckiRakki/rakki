@@ -6,6 +6,28 @@ import { inTauri } from '~/lib/tauri';
 
 export const win = inTauri ? getCurrentWindow() : null;
 
+/**
+ * Full screen edge to edge. Rakki's window has no Windows frame, but keeps its invisible resize
+ * border and shadow, which in full screen left a dark strip down the sides and along the bottom.
+ * Both are off while full screen is on.
+ */
+async function fillScreen(on: boolean) {
+  if (!win) return;
+  try {
+    if (on) {
+      await win.setShadow(false);
+      await win.setResizable(false);
+      await win.setFullscreen(true);
+    } else {
+      await win.setFullscreen(false);
+      await win.setResizable(true);
+      await win.setShadow(true);
+    }
+  } catch {
+    // The window can't change: it stays as it was.
+  }
+}
+
 export type Panel = 'now' | 'queue' | 'devices';
 export type PlayerTab = 'queue' | 'related' | 'lyrics' | 'visualizer';
 
@@ -103,7 +125,7 @@ export const useLayout = create<LayoutState>((set, get) => ({
   },
   setFullscreen(on) {
     set({ fullscreen: on });
-    void win?.setFullscreen(on);
+    void fillScreen(on);
   },
   setMiniOnTop(miniOnTop) {
     save('rakki.miniOnTop', miniOnTop);
