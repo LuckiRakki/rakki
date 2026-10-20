@@ -6,7 +6,7 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
-## 1.21.0 (2026-10-20)
+## 1.20.1 (2026-10-20)
 - **Pick songs for the other device.** While the phone controls Rakki on your computer, tapping
   a song, album, playlist or Shuffle anywhere plays it there and the phone stays its remote. Play
   Next and Add to Queue add to the computer's queue (that part needs the next desktop build).
