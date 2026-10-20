@@ -83,7 +83,9 @@ function toDevice(s: SessionInfo, now: number): RakkiDevice {
     item: s.NowPlayingItem ?? null,
     paused: !!s.PlayState?.IsPaused,
     reportedSec: (s.PlayState?.PositionTicks ?? 0) / TICKS_PER_SECOND,
-    reportedAt: Date.parse(s.LastPlaybackCheckIn ?? s.LastActivityDate ?? '') || now,
+    // The server's clock, not this device's: trusted only as far as one report's age (apps
+    // report every 10 seconds), so a clock that's off can't run the place ahead.
+    reportedAt: now - Math.min(10_000, Math.max(0, now - (Date.parse(s.LastPlaybackCheckIn ?? s.LastActivityDate ?? '') || now))),
     queue,
     queueIndex,
     shuffle: s.PlayState?.PlaybackOrder === 'Shuffle',
@@ -178,6 +180,13 @@ export async function pullFrom(client: JellyfinClient, d: RakkiDevice): Promise<
  * "Play on {device}": send it this queue and position. Resolves true once it reports playing
  * the song (the caller then stops here), false if it didn't within a few seconds.
  */
+/** Add songs to another device's queue: after its current song, or at the end. */
+export function queueOn(client: JellyfinClient, d: RakkiDevice, items: BaseItem[], where: 'next' | 'last') {
+  const ids = items.filter((it) => !it.Radio).map((it) => it.Id).slice(0, BEFORE + AFTER + 1);
+  if (!ids.length) return Promise.resolve();
+  return client.sessionPlay(d.sessionId, ids, 0, 0, where === 'next' ? 'PlayNext' : 'PlayLast');
+}
+
 export async function pushTo(client: JellyfinClient, d: RakkiDevice, items: BaseItem[], index: number, positionSec: number): Promise<boolean> {
   const songs = items.map((it, i) => ({ it, i })).filter(({ it }) => !it.Radio);
   const at = Math.max(0, songs.findIndex(({ i }) => i === index));

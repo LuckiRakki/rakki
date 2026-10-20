@@ -107,6 +107,19 @@ let unshuffledKeys: string[] | null = null;
 let generation = 0;
 let onCellular = false;
 
+/**
+ * While this phone controls another Rakki (player/remoteTarget.ts), picking songs plays them
+ * there instead of here, and Play Next / Add to Queue add them to its queue.
+ */
+export interface RemoteRoute {
+  play(items: BaseItem[], index: number): void;
+  queue(items: BaseItem[], where: 'next' | 'last'): void;
+}
+let remote: RemoteRoute | null = null;
+export function routeToRemote(r: RemoteRoute | null) {
+  remote = r;
+}
+
 function shuffled<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -215,6 +228,16 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     }
     if (items.length === 0) return;
     const shuffle = opts.shuffle ?? get().shuffleMode;
+    if (remote && !items.some((it) => it.Radio)) {
+      let list = items;
+      let at = Math.min(Math.max(opts.startIndex ?? 0, 0), items.length - 1);
+      if (shuffle) {
+        const first = opts.startIndex !== undefined ? items[at] : undefined;
+        list = first ? [first, ...shuffled(items.filter((x) => x !== first))] : shuffled(items);
+        at = 0;
+      }
+      return remote.play(list, at);
+    }
     let queue = entries(items, 'context');
     let index = Math.min(Math.max(opts.startIndex ?? 0, 0), queue.length - 1);
     unshuffledKeys = null;
@@ -267,6 +290,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   playNext(items) {
     if (isOffline()) items = playableOffline(items);
     if (!items.length) return;
+    if (remote) return remote.queue(items, 'next');
     const { queue, index } = get();
     if (queue.length === 0 || radioPlaying()) return get().playQueue(items);
     const next = [...queue];
@@ -277,6 +301,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   addToQueue(items) {
     if (isOffline()) items = playableOffline(items);
     if (!items.length) return;
+    if (remote) return remote.queue(items, 'last');
     const { queue, index } = get();
     if (queue.length === 0 || radioPlaying()) return get().playQueue(items);
     // After the current song and any songs already added with Play next / Add to queue.

@@ -35,6 +35,15 @@ const here: RemotePlayer = {
     useVideo.getState().close();
     usePlayer.getState().playQueue(items, index, { shuffle: false, at: startSec });
   },
+  async queueItems(ids, where) {
+    const c = client();
+    if (!c) return;
+    const found = await c.getItemsByIds(ids);
+    const byId = new Map(found.map((it) => [it.Id, it]));
+    const items = ids.map((id) => byId.get(id)).filter((x) => x !== undefined);
+    if (where === 'next') usePlayer.getState().playNext(items);
+    else usePlayer.getState().addToQueue(items);
+  },
   playPause: () => usePlayer.getState().toggle(),
   pause: () => usePlayer.getState().playing && usePlayer.getState().toggle(),
   unpause: () => !usePlayer.getState().playing && usePlayer.getState().toggle(),

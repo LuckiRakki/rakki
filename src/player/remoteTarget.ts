@@ -1,14 +1,16 @@
 // Controlling another Rakki from this phone, like Spotify Connect (docs/REMOTE_PLAYBACK.md).
 // Once the music moves to another device (or you pick one that's playing in Connect), the mini
 // player and the player screen show that device's song ("Listening on Rakki Desktop") and their
-// buttons command it: play/pause, skip, seek. It's asked how it's doing every two seconds while
+// buttons command it: play/pause, skip, seek. Songs picked anywhere in the app play there too,
+// and Play Next / Add to Queue add to its queue (player/store.ts routeToRemote). It's asked how it's doing every two seconds while
 // picked. Picking This Phone (or the device going away) brings the player back to this phone.
 import { useEffect, useReducer } from 'react';
 import { create } from 'zustand';
 
+import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
-import { usePlayer } from '@/player/store';
-import { control, deviceNow, positionNow, setDeviceVolume, type RakkiDevice } from '@/remote/devices';
+import { routeToRemote, usePlayer } from '@/player/store';
+import { control, deviceNow, positionNow, pushTo, queueOn, setDeviceVolume, type RakkiDevice } from '@/remote/devices';
 import { showToast } from '@/ui/overlays';
 
 const POLL_MS = 2000;
@@ -43,6 +45,7 @@ export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
     if (poll) clearInterval(poll);
     poll = null;
     set({ target: d });
+    routeToRemote(d ? route : null);
     if (d) poll = setInterval(() => void refresh(), POLL_MS);
   },
   command(cmd) {
@@ -68,6 +71,28 @@ export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
   },
 }));
 
+/** Songs picked on this phone, sent to the device it controls. */
+const route = {
+  play(items: BaseItem[], index: number) {
+    const c = useAuth.getState().client;
+    const t = useRemoteTarget.getState().target;
+    if (!c || !t) return;
+    // Shown at once; the device catches up a moment later.
+    useRemoteTarget.setState({ target: { ...t, item: items[index] ?? t.item, paused: false, reportedSec: 0, reportedAt: Date.now() } });
+    void pushTo(c, t, items, index, 0)
+      .then((ok) => {
+        if (!ok) showToast(`${t.name} didn’t start that song. Try again.`);
+        void refresh();
+      })
+      .catch(() => showToast(`Couldn’t reach ${t.name}`));
+  },
+  queue(items: BaseItem[], where: 'next' | 'last') {
+    const c = useAuth.getState().client;
+    const t = useRemoteTarget.getState().target;
+    if (c && t) void queueOn(c, t, items, where).catch(() => showToast(`Couldn’t reach ${t.name}`));
+  },
+};
+
 // Playing something on this phone makes it the player again.
 usePlayer.subscribe((s, prev) => {
   if (s.playing && !prev.playing && useRemoteTarget.getState().target) useRemoteTarget.getState().setTarget(null);
@@ -83,5 +108,7 @@ export function useRemoteProgress(intervalMs = 500): { position: number; duratio
     return () => clearInterval(id);
   }, [t, intervalMs]);
   if (!t?.item) return { position: 0, duration: 0 };
-  return { position: positionNow(t), duration: t.item.RunTimeTicks ? t.item.RunTimeTicks / 10_000_000 : 0 };
+  const duration = t.item.RunTimeTicks ? t.item.RunTimeTicks / 10_000_000 : 0;
+  // Between checks it's a guess, so it stops at the end of the song.
+  return { position: duration > 0 ? Math.min(positionNow(t), duration) : positionNow(t), duration };
 }

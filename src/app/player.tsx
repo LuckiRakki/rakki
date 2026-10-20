@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -69,8 +70,15 @@ function RemotePlayer({ target }: { target: RakkiDevice }) {
   const r = useRemoteTarget.getState;
   const art = Math.min(width - t.space.xl * 2, 420);
   const tint = artColor(item ? client?.blurhash(item) : undefined);
+  // The server's session doesn't say whether you liked the song: ask for it.
+  const full = useQuery({
+    queryKey: ['remoteItem', item?.Id],
+    queryFn: () => client!.getItem(item!.Id),
+    enabled: !!client && !!item,
+    staleTime: 60_000,
+  }).data;
   const [liked, setLiked] = useState<{ id: string; v: boolean } | null>(null);
-  const favorite = item ? (liked?.id === item.Id ? liked.v : (item.UserData?.IsFavorite ?? false)) : false;
+  const favorite = item ? (liked?.id === item.Id ? liked.v : (full?.UserData?.IsFavorite ?? item.UserData?.IsFavorite ?? false)) : false;
   return (
     <View style={styles.root}>
       <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
@@ -88,7 +96,7 @@ function RemotePlayer({ target }: { target: RakkiDevice }) {
             </T>
           </View>
           {item ? (
-            <Pressable hitSlop={12} onPress={() => openMenu(item)} accessibilityLabel="More">
+            <Pressable hitSlop={12} onPress={() => openMenu(full ?? item)} accessibilityLabel="More">
               <Ionicons name="ellipsis-horizontal" size={24} color={t.colors.text} />
             </Pressable>
           ) : (
@@ -118,6 +126,10 @@ function RemotePlayer({ target }: { target: RakkiDevice }) {
                 onToggle={(v) => {
                   setLiked({ id: item.Id, v });
                   usePlayer.getState().setFavorite(item.Id, v);
+                }}
+                onLongPress={() => {
+                  thud();
+                  openAddToPlaylist([full ?? item], item.Name);
                 }}
               />
             </View>

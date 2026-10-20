@@ -6,6 +6,15 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.21.0 (2026-10-20)
+- **Pick songs for the other device.** While the phone controls Rakki on your computer, tapping
+  a song, album, playlist or Shuffle anywhere plays it there and the phone stays its remote. Play
+  Next and Add to Queue add to the computer's queue (that part needs the next desktop build).
+- **The heart works in the remote player.** It shows whether you really liked the song (the
+  server's session doesn't say, so Rakki asks), and holding it adds the song to a playlist.
+- **The progress bar stays on screen.** Between the other device's updates the place is a guess,
+  and it no longer runs past the end of the song (or ahead when the clocks disagree).
+
 ## 1.20.0 (2026-10-20)
 - **The phone becomes a remote, like Spotify Connect.** Move your music to Rakki on your computer
   (or, with nothing playing here, tap a device in Connect that's playing) and the mini player and

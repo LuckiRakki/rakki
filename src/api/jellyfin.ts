@@ -380,10 +380,10 @@ export class JellyfinClient {
     return this.send('POST', `/Sessions/${sessionId}/Playing/${command}`, undefined, { seekPositionTicks });
   }
 
-  /** Have another app play these songs, from this one, at this position. */
-  sessionPlay(sessionId: string, itemIds: string[], startIndex: number, startPositionTicks: number) {
+  /** Have another app play these songs, from this one, at this position (or queue them). */
+  sessionPlay(sessionId: string, itemIds: string[], startIndex: number, startPositionTicks: number, playCommand: 'PlayNow' | 'PlayNext' | 'PlayLast' = 'PlayNow') {
     return this.send('POST', `/Sessions/${sessionId}/Playing`, undefined, {
-      playCommand: 'PlayNow',
+      playCommand,
       itemIds: itemIds.join(','),
       startIndex,
       startPositionTicks: Math.max(0, Math.round(startPositionTicks)),

@@ -12,6 +12,8 @@ const TICKS_PER_SECOND = 10_000_000;
 export interface RemotePlayer {
   /** Play these songs (ids, in order) from `startIndex`, `startSec` into it. */
   playItems(ids: string[], startIndex: number, startSec: number): void | Promise<void>;
+  /** Play these after the current song (next) or at the end of the queue (last). */
+  queueItems?(ids: string[], where: 'next' | 'last'): void | Promise<void>;
   playPause(): void;
   pause(): void;
   unpause(): void;
@@ -45,7 +47,12 @@ function obey(msg: Message, p: RemotePlayer) {
   switch (msg.MessageType) {
     case 'Play': {
       const ids = (data.ItemIds as string[] | undefined) ?? [];
-      if (!ids.length || (data.PlayCommand && data.PlayCommand !== 'PlayNow')) return;
+      if (!ids.length) return;
+      if (data.PlayCommand === 'PlayNext' || data.PlayCommand === 'PlayLast') {
+        void p.queueItems?.(ids, data.PlayCommand === 'PlayNext' ? 'next' : 'last');
+        return;
+      }
+      if (data.PlayCommand && data.PlayCommand !== 'PlayNow') return;
       void p.playItems(ids, Number(data.StartIndex ?? 0), Number(data.StartPositionTicks ?? 0) / TICKS_PER_SECOND);
       return;
     }

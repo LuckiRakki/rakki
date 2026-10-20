@@ -23,6 +23,15 @@ const player: RemotePlayer = {
     // Once it's loaded, to where the other device was.
     if (startSec > 1) setTimeout(() => usePlayer.getState().seek(startSec), 700);
   },
+  async queueItems(ids, where) {
+    const c = useAuth.getState().client;
+    if (!c) return;
+    const found = await c.getItemsByIds(ids);
+    const byId = new Map(found.map((it) => [it.Id, it]));
+    const items = ids.map((id) => byId.get(id)).filter((x) => x !== undefined);
+    if (where === 'next') usePlayer.getState().playNext(items);
+    else usePlayer.getState().addToQueue(items);
+  },
   playPause: () => usePlayer.getState().toggle(),
   pause: () => usePlayer.getState().playing && usePlayer.getState().toggle(),
   unpause: () => !usePlayer.getState().playing && usePlayer.getState().toggle(),

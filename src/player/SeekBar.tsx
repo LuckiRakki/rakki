@@ -21,7 +21,7 @@ export function SeekBar({
   const [scrub, setScrub] = useState<number | null>(null);
 
   const ratioAt = (x: number) => Math.min(1, Math.max(0, x / width));
-  const shown = scrub ?? (duration > 0 ? position / duration : 0);
+  const shown = scrub ?? (duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0);
 
   const pan = Gesture.Pan()
     .runOnJS(true)
