@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { AwayImage as Image } from '@/ui/AwayImage';
 import { PixelRatio, View } from 'react-native';
 
 import { useMe } from '@/api/queries';

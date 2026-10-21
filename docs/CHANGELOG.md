@@ -17,6 +17,15 @@ says otherwise.
   (only they see where files are). The desktop reaches MRQ through its native side, so MRQ
   itself needs no change.
 
+## 1.22.2 (2026-10-21)
+- **Less memory in the background, so iOS closes Rakki less.** The performance log showed iOS
+  closing Rakki in the background for memory 10 times on 10-20, with 150-200 MB held while
+  suspended. Pictures that didn't go through the usual artwork (library and video thumbnails,
+  radio covers and DJs, station art, your profile picture, lyrics credits) now let go of their
+  memory in the background like the artwork does, and so do the full-screen blurs (the moving
+  player background, the Spicy lyrics backdrop and the Glass mini player). Their colours hold
+  the place, and everything comes back from the disk cache when you return.
+
 ## 1.22.1 (2026-10-21)
 - **Spicy lyrics: a crash fix and less work per frame** (from the Oct 18-21 performance logs).
   The phone closed once right after a few minutes on the lyrics screen (a memory crash in native

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { AwayImage as Image } from '@/ui/AwayImage';
 import { router } from 'expo-router';
 import { memo, useState } from 'react';
 import { Pressable, View } from 'react-native';

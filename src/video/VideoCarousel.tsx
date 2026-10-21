@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { AwayImage as Image } from '@/ui/AwayImage';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';

@@ -228,12 +228,17 @@ function LocalPlayer() {
         // The cover's colours flowing slowly behind everything (still with reduced motion).
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.tint(tint), overflow: 'hidden' }]} pointerEvents="none">
           <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} />
-          <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
-          <LinearGradient
-            colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.6)']}
-            locations={[0, 0.5, 1]}
-            style={StyleSheet.absoluteFill}
-          />
+          {/* The full-screen blur keeps big buffers; in the background only the colour stays. */}
+          {away ? null : (
+            <>
+              <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
+              <LinearGradient
+                colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.6)']}
+                locations={[0, 0.5, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+            </>
+          )}
         </View>
       ) : playerBackground === 'gradient' ? (
         <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />

@@ -136,6 +136,7 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
   const blur = useLyricsStyle((s) => s.backdropBlur);
   const dim = useLyricsStyle((s) => s.backdropDim);
   const still = useTheme().reduceMotion || motion <= 0;
+  const away = useInBackground();
 
   useEffect(() => {
     if (still) {
@@ -159,7 +160,7 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0b0b0b', overflow: 'hidden' }]} pointerEvents="none">
       <FlowingCover uri={uri} motion={still ? 0 : motion} />
-      <BlurView intensity={Math.round(100 * blur)} tint="dark" style={StyleSheet.absoluteFill} />
+      {away ? null : <BlurView intensity={Math.round(100 * blur)} tint="dark" style={StyleSheet.absoluteFill} />}
       {/* Brightness pulse, like the web mod's backdrop glow. */}
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, breathe]} />
       <LinearGradient

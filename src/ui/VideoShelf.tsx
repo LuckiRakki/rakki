@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { AwayImage as Image } from '@/ui/AwayImage';
 import { FlatList, Pressable, View } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';

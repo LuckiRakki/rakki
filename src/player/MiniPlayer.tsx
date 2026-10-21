@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { useInBackground } from '@/lib/appActive';
 import { tick } from '@/lib/haptics';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
@@ -41,6 +42,7 @@ export function MiniPlayer() {
   const video = useVideoSession((s) => s.video);
   const pathname = usePathname();
   const target = useRemoteTarget((s) => s.target);
+  const away = useInBackground();
 
   if (target) return <RemoteMini target={target} />;
   if (video && VideoMini) {
@@ -81,7 +83,7 @@ export function MiniPlayer() {
     <Animated.View entering={t.reduceMotion ? undefined : FadeInDown.duration(260)} style={styles.wrap}>
       <GestureDetector gesture={swipes}>
         <Pressable style={[styles.card, { backgroundColor: background }]} onPress={() => router.push('/player')}>
-          {style === 'glass' ? (
+          {style === 'glass' && !away ? (
             <BlurView intensity={70} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(40,40,40,0.35)' }]} />
           ) : null}
           <Artwork item={track} size={40} />
