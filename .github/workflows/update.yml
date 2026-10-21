@@ -19,6 +19,8 @@ on:
       - 'docs/**'
       - '**/*.md'
       - '.github/workflows/ios.yml'
+      - '.github/workflows/ios-release-page.yml'
+      - 'scripts/ios-release-notes.js'
       - 'server/**'
       - 'desktop/**'
   workflow_dispatch:
