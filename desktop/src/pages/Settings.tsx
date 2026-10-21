@@ -1,5 +1,5 @@
 // Settings, one group at a time (the list on the left): account, look (accent, Lucid, the
-// moving backgrounds), lyrics, the visualizer, playback, connections (Last.fm, Discord) and
+// moving backgrounds), lyrics, the visualizer, playback, connections (Last.fm, Discord, MRQ) and
 // about. Each group shows the everyday choices; the rest folds away under More options.
 // Playback, lyrics and Last.fm are the phone app's settings (shared store), so they behave the
 // same.
@@ -13,6 +13,7 @@ import { Visualizer } from '~/audio/Visualizer';
 import { useAuth } from '~/auth/session';
 import { inTauri } from '~/lib/tauri';
 import { installUpdate, useUpdate } from '~/lib/updateCheck';
+import { mrqVersion, normalizeMrqUrl, useMrq } from '~/mrq/client';
 import { useNav } from '~/nav';
 import { useDiscord } from '~/player/discord';
 import { APP_LOOK, FEISHIN, LYRICS_SIZE, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
@@ -495,6 +496,51 @@ function DiscordCard() {
   );
 }
 
+/** MRQ, your tag editor on the server: its address turns on Edit Metadata (mrq/client.ts). */
+function MrqCard() {
+  const saved = useMrq((m) => m.url);
+  const setUrl = useMrq((m) => m.setUrl);
+  const [url, setTyped] = useState(saved);
+  const [note, setNote] = useState<{ text: string; bad?: boolean } | null>(null);
+  const typed = normalizeMrqUrl(url);
+  const test = (address: string, after: string) =>
+    void mrqVersion(address)
+      .then((v) => setNote({ text: `${after}MRQ ${v} answered.` }))
+      .catch((e: unknown) => setNote({ text: `${after}${e instanceof Error ? e.message : 'MRQ didn’t answer.'}`, bad: true }));
+  if (!inTauri) return null;
+  return (
+    <Card title="MRQ">
+      <div className="setting column">
+        <div className="setting-label">Address</div>
+        <div className="setting-detail">
+          Music Review Queue, your tag editor on the server. With its address here, right-click a song or an album and pick Edit Metadata to change its
+          title, artists, album, genres, year, numbers or cover in the files themselves. Jellyfin reads them again straight after.
+        </div>
+        <form
+          className="row-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Saved at once; MRQ is asked behind the screen, and the answer shows under it.
+            setUrl(typed);
+            setTyped(typed);
+            if (!typed) return setNote({ text: 'Removed. Edit Metadata is off.' });
+            setNote({ text: 'Saved.' });
+            test(typed, 'Saved. ');
+          }}>
+          <input className="field" value={url} onChange={(e) => setTyped(e.target.value)} placeholder="http://your-server:5000" aria-label="MRQ Address" spellCheck={false} />
+          <button className="secondary small" disabled={typed === saved}>
+            Save
+          </button>
+          <button type="button" className="secondary small" disabled={!saved || typed !== saved} onClick={() => test(saved, '')}>
+            Test
+          </button>
+        </form>
+        {note ? <div className={`setting-detail${note.bad ? ' error' : ''}`}>{note.text}</div> : null}
+      </div>
+    </Card>
+  );
+}
+
 function About() {
   const update = useUpdate((u) => u.version);
   return (
@@ -530,6 +576,7 @@ const GROUPS: { id: string; label: string; view: () => ReactNode }[] = [
       <>
         <LastfmCard />
         <DiscordCard />
+        <MrqCard />
       </>
     ),
   },

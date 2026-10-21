@@ -6,6 +6,17 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 1.1.0 (2026-10-21, next desktop build)
+- **Edit Metadata through MRQ.** Put your Music Review Queue's address in Settings → Connections
+  → MRQ (Test shows its version). Then right-click a song, several songs or an album and pick
+  Edit Metadata to change the title, artists, album, album artists, genres, year, track and disc
+  numbers, or the cover, in the files themselves. Several songs at once work like MRQ's Tag
+  Editor: a field they disagree on says how many values it has and is left alone unless you type
+  in it. MRQ writes the files (its undo history has the change), then Rakki asks Jellyfin to read
+  them again, so the new names show in a few seconds. Needs a Jellyfin administrator sign-in
+  (only they see where files are). The desktop reaches MRQ through its native side, so MRQ
+  itself needs no change.
+
 ## 1.22.1 (2026-10-21)
 - **Spicy lyrics: a crash fix and less work per frame** (from the Oct 18-21 performance logs).
   The phone closed once right after a few minutes on the lyrics screen (a memory crash in native

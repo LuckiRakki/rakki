@@ -13,6 +13,7 @@ import {
   PlusCircle,
   Radio,
   Shuffle,
+  Tags,
   Trash2,
   User,
   X,
@@ -21,6 +22,8 @@ import {
 import type { BaseItem } from '@/api/jellyfin';
 import { isMix } from '@/lib/mixes';
 import { openAddToPlaylist } from '~/library/AddToPlaylist';
+import { mrqReady } from '~/mrq/client';
+import { openEditMetadata } from '~/mrq/EditMetadata';
 import {
   addToQueue,
   changePlaylistPicture,
@@ -62,6 +65,8 @@ export function songMenu(items: BaseItem[], ctx: MenuContext = {}): MenuItem[] {
     if (one.AlbumId) menu.push({ label: 'Go to Album', icon: Disc3, run: () => goToAlbum(one) });
     if (one.ArtistItems?.length || one.AlbumArtists?.length) menu.push({ label: 'Go to Artist', icon: User, run: () => goToArtist(one) });
   }
+  // Through MRQ, your tag editor, once its address is in Settings.
+  if (mrqReady() && items.every((i) => i.Type === 'Audio' && !i.Radio)) menu.push({ label: 'Edit Metadata', icon: Tags, divider: true, run: () => openEditMetadata(items) });
   if (ctx.playlistId) {
     menu.push({ label: 'Remove from This Playlist', icon: Trash2, danger: true, divider: true, run: () => void removeFromPlaylist(ctx.playlistId!, items) });
   }
@@ -87,6 +92,7 @@ export function collectionMenu(item: BaseItem): MenuItem[] {
       { label: 'Album Radio', icon: Radio, run: () => void startRadio(item) },
     );
     if (item.AlbumArtists?.length) menu.push({ label: 'Go to Artist', icon: User, run: () => goToArtist(item) });
+    if (mrqReady()) menu.push({ label: 'Edit Metadata', icon: Tags, divider: true, run: () => openEditMetadata([item]) });
   } else if (item.Type === 'MusicArtist') {
     menu.push(
       { label: 'Artist Radio', icon: Radio, run: () => void startRadio(item), divider: true },

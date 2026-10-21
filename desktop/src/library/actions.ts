@@ -77,7 +77,7 @@ export async function setLiked(items: BaseItem[], liked: boolean) {
 }
 
 /** Every cached copy of an item, changed (a rename), or the item taken out of every list (a delete). */
-function patchItem(id: string, change: ((item: BaseItem) => BaseItem) | 'remove') {
+export function patchItem(id: string, change: ((item: BaseItem) => BaseItem) | 'remove') {
   queryClient.setQueriesData<unknown>({}, (data: unknown) => {
     if (Array.isArray(data)) {
       return change === 'remove'

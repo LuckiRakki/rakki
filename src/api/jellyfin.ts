@@ -67,6 +67,8 @@ export interface BaseItem {
   NormalizationGain?: number;
   /** Changes whenever the item is saved (asked for with Fields=Etag; the playlist cache). */
   Etag?: string;
+  /** The file on the server (Fields=Path; administrators only). Desktop's Edit Metadata. */
+  Path?: string;
   /** Credits (composers etc.), when the file has them and the request asked for People. */
   People?: { Name: string; Id: string; Type?: string; Role?: string }[];
   /** A radio station playing in the queue (not a Jellyfin item; see src/radio). */
@@ -526,6 +528,19 @@ export class JellyfinClient {
       timeoutMs: 60_000,
       headers: { 'Content-Type': mimeType },
       body: base64,
+    });
+  }
+
+  /**
+   * Have the server read an item's file again (its tags and embedded cover changed: desktop's
+   * Edit Metadata). Queued on the server; administrators only.
+   */
+  refreshItem(itemId: string) {
+    return this.send('POST', `/Items/${itemId}/Refresh`, undefined, {
+      metadataRefreshMode: 'FullRefresh',
+      imageRefreshMode: 'FullRefresh',
+      replaceAllMetadata: true,
+      replaceAllImages: true,
     });
   }
 

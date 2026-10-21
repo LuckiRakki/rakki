@@ -9,6 +9,7 @@ mod discord;
 mod media;
 mod memory;
 mod mpv;
+mod mrq;
 
 use capture::Capture;
 use discord::Discord;
@@ -223,7 +224,8 @@ pub fn run() {
             capture_start,
             capture_stop,
             autostart_get,
-            autostart_set
+            autostart_set,
+            mrq::mrq_request
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

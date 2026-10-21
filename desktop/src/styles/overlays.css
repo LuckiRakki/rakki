@@ -28,6 +28,16 @@
 .pick-row .thumb { width: 44px; flex: none; }
 .tick { color: var(--text-3); flex: none; }
 .tick.on { color: var(--text); }
+/* Edit Metadata (mrq/EditMetadata.tsx): the cover (click to change) beside the title, then the fields. */
+.meta-edit .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta-head { display: flex; align-items: center; gap: 16px; }
+.meta-cover { position: relative; width: 84px; flex: none; border-radius: var(--radius-art); overflow: hidden; }
+.meta-cover .artwork img { width: 100%; height: 100%; object-fit: cover; }
+.meta-cover-hint { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); color: #fff; opacity: 0; transition: opacity 0.15s; }
+.meta-cover:hover .meta-cover-hint, .meta-cover:focus-visible .meta-cover-hint { opacity: 1; }
+.meta-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; overflow-y: auto; }
+.meta-field { grid-column: span 6; display: flex; flex-direction: column; gap: 10px; }
+.meta-field.narrow { grid-column: span 2; }
 
 /* ---- Forms ---- */
 
