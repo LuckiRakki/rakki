@@ -37,6 +37,8 @@ interface Settings {
   wifiBitrate: Bitrate;
   cellularBitrate: Bitrate;
   lyricsMode: LyricsMode;
+  /** Previous, play / pause and next under the lyrics (off: only the artwork, the song and the lyrics). */
+  lyricsControls: boolean;
   downloadQuality: DownloadQuality;
   /** Off = downloads wait for Wi-Fi. */
   downloadOnCellular: boolean;
@@ -71,6 +73,7 @@ const DEFAULTS: Settings = {
   wifiBitrate: 0,
   cellularBitrate: 256,
   lyricsMode: 'spicy',
+  lyricsControls: false,
   downloadQuality: 'original',
   downloadOnCellular: false,
   offlineMode: false,

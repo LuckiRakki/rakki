@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
 import { DEMO_LYRICS, LOOP_MS } from '@/lyrics/demo';
 import { LyricsStage } from '@/lyrics/LyricsStage';
+import { useLyricsScreen } from '@/lyrics/screen';
 import { useLyricsStyle, type LyricsStyle } from '@/lyrics/style';
 import { usePlayer } from '@/player/store';
 import { useSettings, type LyricsMode } from '@/settings/store';
@@ -26,7 +27,8 @@ const times = (n: number) => `${Math.round(n * 100)}%`;
 
 /**
  * Customize → Lyrics style: both lyric systems' look, with a live preview of made-up lyrics
- * looping over the album that's playing.
+ * looping over the album that's playing. Opened from the lyrics screen it also has that
+ * screen's buttons (the visualizer, timing, the controls), so the lyrics screen stays clean.
  */
 export default function LyricsStyleScreen() {
   const t = useTheme();
@@ -36,6 +38,10 @@ export default function LyricsStyleScreen() {
   const [mode, setMode] = useState<LyricsMode>(defaultMode);
   const style = useLyricsStyle();
   const s = style.spicy;
+  const params = useLocalSearchParams<{ from?: string; lyrics?: string; timing?: string }>();
+  const fromLyrics = params.from === 'lyrics';
+  const visualizer = useLyricsScreen((st) => st.visualizer);
+  const controls = useSettings((st) => st.lyricsControls);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
@@ -60,6 +66,37 @@ export default function LyricsStyleScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: t.space.lg, paddingTop: 0, paddingBottom: insets.bottom + t.space.xxl }}>
+        {fromLyrics ? (
+          <SettingSection title="Lyrics Screen">
+            {params.lyrics === '1' ? (
+              <Toggle label="Visualizer" detail="Instead of the lyrics, for this time" value={visualizer} onChange={(v) => useLyricsScreen.getState().set({ visualizer: v })} />
+            ) : null}
+            <Toggle
+              label="Play Controls"
+              detail="Previous, play / pause and next under the lyrics"
+              value={controls}
+              onChange={(v) => useSettings.getState().set('lyricsControls', v)}
+            />
+            {params.timing === '1' ? (
+              <Pressable
+                onPress={() => {
+                  useLyricsScreen.getState().set({ timing: true, visualizer: false });
+                  router.back();
+                }}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]}>
+                <View style={{ flex: 1 }}>
+                  <T variant="bodyStrong">Lyrics Timing</T>
+                  <T variant="caption" style={{ fontSize: t.size(12) }}>
+                    {"Move this song's lyrics earlier or later"}
+                  </T>
+                </View>
+                <Ionicons name="timer-outline" size={22} color={t.colors.text} />
+              </Pressable>
+            ) : null}
+          </SettingSection>
+        ) : null}
+
         <SettingSection title="Lyrics open in">
           <View style={{ marginTop: t.space.md }}>
             <Segmented
@@ -244,6 +281,7 @@ function Preview({ mode }: { mode: LyricsMode }) {
 }
 
 const useStyles = makeStyles((t) => ({
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginTop: t.space.md, minHeight: 44 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

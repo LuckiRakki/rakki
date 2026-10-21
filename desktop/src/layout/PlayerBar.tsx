@@ -1,14 +1,15 @@
 // The player bar along the bottom: the song, the transport and seek bar, and the buttons on the
 // right. It belongs to a music video while one is open (player/VideoHost.tsx VideoBar) and to
 // another device while you control one (layout/RemoteBar.tsx). In a narrow window the less-used
-// buttons move into a More menu so nothing overlaps.
-import { useEffect, useRef, useState } from 'react';
+// buttons move into a More menu so nothing overlaps; Lyrics always stays.
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DevicesButton } from '~/layout/Devices';
 import { useLayout } from '~/layout/layout';
 import { setMini } from '~/layout/MiniPlayer';
 import { RemoteBar } from '~/layout/RemoteBar';
 import { songMenu } from '~/library/menus';
+import { useNoLyrics } from '~/lyrics/LyricsView';
 import { go } from '~/nav';
 import { useLivePosition } from '~/player/position';
 import { useRemote } from '~/player/remote';
@@ -171,19 +172,24 @@ function VolumeControl() {
 /** How much room the bar has: everything, the extras in a menu, or the essentials only. */
 type Fit = 'wide' | 'compact' | 'tight';
 
-function useFit(ref: React.RefObject<HTMLElement | null>): Fit {
+// A callback ref, so the bar is measured again each time it comes back (after a music video or
+// controlling another device the footer is a new element). A width of 0 (the bar gone or hidden
+// in full screen) is ignored: it used to leave the bar on 'tight' with the Lyrics button gone.
+function useFit(): [Fit, (el: HTMLElement | null) => void] {
   const [fit, setFit] = useState<Fit>('wide');
-  useEffect(() => {
-    const el = ref.current;
+  const ro = useRef<ResizeObserver | null>(null);
+  const measure = useCallback((el: HTMLElement | null) => {
+    ro.current?.disconnect();
+    ro.current = null;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => {
+    const o = new ResizeObserver(([e]) => {
       const w = e.contentRect.width;
-      setFit(w >= 1150 ? 'wide' : w >= 940 ? 'compact' : 'tight');
+      if (w > 0) setFit(w >= 1150 ? 'wide' : w >= 940 ? 'compact' : 'tight');
     });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ref]);
-  return fit;
+    o.observe(el);
+    ro.current = o;
+  }, []);
+  return [fit, measure];
 }
 
 export function PlayerBar() {
@@ -194,8 +200,8 @@ export function PlayerBar() {
   const tab = useLayout((s) => s.playerTab);
   const target = useRemote((s) => s.target);
   const video = useVideo((s) => s.video);
-  const bar = useRef<HTMLElement>(null);
-  const fit = useFit(bar);
+  const [fit, bar] = useFit();
+  const noLyrics = useNoLyrics(now);
   const l = useLayout.getState();
   // A music video: the bar is the video's. Another device picked in Devices: that device's.
   if (video) return <VideoBar video={video} />;
@@ -208,7 +214,6 @@ export function PlayerBar() {
       ...(fit === 'tight'
         ? [
             { label: panel === 'now' ? 'Hide Now Playing View' : 'Now Playing View', icon: PanelRight, run: () => l.togglePanel('now') },
-            { label: open && tab === 'lyrics' ? 'Close Lyrics' : 'Lyrics', icon: MicVocal, run: toggleLyrics, disabled: !now },
           ]
         : []),
       { label: 'Sleep Timer', icon: Moon, run: () => openMenu(e, sleep.items, sleep.title), divider: fit === 'tight' },
@@ -247,15 +252,19 @@ export function PlayerBar() {
       </div>
       <div className="right">
         {fit !== 'tight' ? (
-          <>
-            <button className={`iconbtn${panel === 'now' ? ' on dot' : ''}`} aria-label="Now Playing View" aria-pressed={panel === 'now'} title="Now Playing View" onClick={() => l.togglePanel('now')}>
-              <PanelRight size={19} />
-            </button>
-            <button className={`iconbtn${open && tab === 'lyrics' ? ' on dot' : ''}`} aria-label="Lyrics" aria-pressed={open && tab === 'lyrics'} title="Lyrics" disabled={!now} onClick={toggleLyrics}>
-              <MicVocal size={19} />
-            </button>
-          </>
+          <button className={`iconbtn${panel === 'now' ? ' on dot' : ''}`} aria-label="Now Playing View" aria-pressed={panel === 'now'} title="Now Playing View" onClick={() => l.togglePanel('now')}>
+            <PanelRight size={19} />
+          </button>
         ) : null}
+        <button
+          className={`iconbtn${open && tab === 'lyrics' ? ' on dot' : ''}`}
+          aria-label={noLyrics ? 'Lyrics (No Lyrics Found)' : 'Lyrics'}
+          aria-pressed={open && tab === 'lyrics'}
+          title={noLyrics ? 'No Lyrics Found' : 'Lyrics'}
+          disabled={!now}
+          onClick={toggleLyrics}>
+          <MicVocal size={19} />
+        </button>
         <button
           className={`iconbtn${(open ? tab === 'queue' : panel === 'queue') ? ' on dot' : ''}`}
           aria-label="Queue"

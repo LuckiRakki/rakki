@@ -76,6 +76,13 @@
 .np-tabs .iconbtn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
 .np-tabs .iconbtn.on { color: #000; background: #fff; }
 .nowplaying.idle .np-top, .nowplaying.idle .np-tabs { opacity: 0.12; }
+/* Full screen: the artwork, the song and the lyrics, nothing else (Exit Full Screen shows while the mouse moves). */
+.app.np-fs .playerbar { display: none; }
+.nowplaying.fs { inset: 0; }
+.nowplaying.fs.idle { cursor: none; }
+.nowplaying.fs.idle .np-top { opacity: 0; }
+.nowplaying.fs .np-right { padding-bottom: 4vh; }
+.nowplaying.solo .np-body { grid-template-columns: minmax(0, 1fr); }
 
 /* ---- Mini player (layout/MiniPlayer.tsx): the whole window ---- */
 

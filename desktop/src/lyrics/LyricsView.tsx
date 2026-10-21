@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { creditRows, useLyrics } from '@/lyrics/fetch';
+import type { BaseItem } from '@/api/jellyfin';
 import type { Lyrics } from '@/lyrics/types';
 import { useLyricsOffset } from '@/lyrics/offset';
 import { useSettings } from '@/settings/store';
@@ -23,6 +24,12 @@ export function pickLyrics(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } |
   if (ttml?.isSynced) return ttml;
   if (lrc?.isSynced) return lrc;
   return ttml ?? lrc;
+}
+
+/** True once it's known the song has no lyrics (radio never has them here); false while they load. */
+export function useNoLyrics(item: BaseItem | undefined): boolean {
+  const q = useLyrics(item && !item.Radio ? item.Id : undefined);
+  return !!item && (!!item.Radio || (!q.isLoading && !pickLyrics(q.data)));
 }
 
 /** The index of the line being sung at `ms`, or -1 before the first. */

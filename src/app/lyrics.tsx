@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -15,6 +15,7 @@ import { artistLine } from '@/lib/items';
 import { createPlaybackClock } from '@/lyrics/clock';
 import { useLyrics } from '@/lyrics/fetch';
 import { useLyricsOffset } from '@/lyrics/offset';
+import { useLyricsScreen } from '@/lyrics/screen';
 import { SyncPanel } from '@/lyrics/SyncPanel';
 import { LyricsStage, pickLyrics } from '@/lyrics/LyricsStage';
 import { ticksToSeconds } from '@/lib/format';
@@ -22,7 +23,7 @@ import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { useOnAir } from '@/radio/live';
 import { radioPositionMs, useOnAirSong } from '@/radio/sync';
-import { useSettings, type LyricsMode } from '@/settings/store';
+import { useSettings } from '@/settings/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
 import { Marquee } from '@/ui/Marquee';
@@ -57,10 +58,17 @@ export default function LyricsScreen() {
         : createPlaybackClock(),
     [streamUrl, startedAt, songMs],
   );
-  // The visualizer instead of the lyrics (songs without lyrics get it on their own).
-  const [visualizer, setVisualizer] = useState(false);
+  const controls = useSettings((s) => s.lyricsControls);
+  // The visualizer instead of the lyrics (songs without lyrics get it on their own), and the
+  // timing panel: both switched from Lyrics style, so the top is only Close and Lyrics style.
+  const visualizer = useLyricsScreen((s) => s.visualizer);
+  const timing = useLyricsScreen((s) => s.timing);
+  useEffect(() => {
+    useLyricsScreen.getState().set({ visualizer: false, timing: false });
+    return () => useLyricsScreen.getState().set({ visualizer: false, timing: false });
+  }, []);
+  const setTiming = (on: boolean) => useLyricsScreen.getState().set({ timing: on });
   // This song's timing offset (saved on the phone; positive = lyrics later). Not for radio.
-  const [timing, setTiming] = useState(false);
   const offset = useLyricsOffset(streamUrl ? undefined : lyricsFor?.Id);
   const timed = useMemo(
     () => (offset ? { nowMs: () => clock.nowMs() - offset, durationMs: clock.durationMs } : clock),
@@ -69,7 +77,8 @@ export default function LyricsScreen() {
 
   const lyrics = pickLyrics(data, mode);
   const tint = artColor(track && client?.blurhash(track));
-  const footerSpace = FOOTER_H + insets.bottom;
+  const footerSpace = (controls ? FOOTER_H : FOOTER_H - 60) + insets.bottom;
+  const canTime = !!lyrics && !streamUrl && !!lyricsFor;
 
   // The screen covers the app (no sheet): swiping down on the header or the controls closes it,
   // the screen following the finger like the player's sheet (the lyrics themselves scroll).
@@ -96,34 +105,12 @@ export default function LyricsScreen() {
                 <Pressable hitSlop={12} onPress={() => router.back()}>
                   <Ionicons name="chevron-down" size={28} color={t.colors.text} />
                 </Pressable>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
-                  {lyrics ? (
-                    <Pressable
-                      hitSlop={10}
-                      onPress={() => setVisualizer(!visualizer)}
-                      accessibilityLabel={visualizer ? 'Show lyrics' : 'Show visualizer'}
-                      accessibilityState={{ selected: visualizer }}>
-                      <Ionicons
-                        name={visualizer ? 'stats-chart' : 'stats-chart-outline'}
-                        size={21}
-                        color={visualizer ? t.colors.accent : t.colors.text}
-                      />
-                    </Pressable>
-                  ) : null}
-                  {lyrics && !streamUrl && lyricsFor ? (
-                    <Pressable
-                      hitSlop={10}
-                      onPress={() => setTiming(!timing)}
-                      accessibilityLabel="Lyrics timing"
-                      accessibilityState={{ selected: timing }}>
-                      <Ionicons name="timer-outline" size={22} color={timing || offset ? t.colors.accent : t.colors.text} />
-                    </Pressable>
-                  ) : null}
-                  <Pressable hitSlop={10} onPress={() => router.push('/lyrics-style')} accessibilityLabel="Lyrics style">
-                    <Ionicons name="options-outline" size={24} color={t.colors.text} />
-                  </Pressable>
-                  <ModeToggle mode={mode} />
-                </View>
+                <Pressable
+                  hitSlop={10}
+                  onPress={() => router.push({ pathname: '/lyrics-style', params: { from: 'lyrics', lyrics: lyrics ? '1' : '0', timing: canTime ? '1' : '0' } })}
+                  accessibilityLabel="Lyrics Style">
+                  <Ionicons name="options-outline" size={24} color={visualizer || offset ? t.colors.accent : t.colors.text} />
+                </Pressable>
               </View>
               {track ? <NowPlayingHeader track={track} /> : null}
             </View>
@@ -134,22 +121,24 @@ export default function LyricsScreen() {
       {/* Footer: credit (required for Spicy Lyrics API lyrics) + transport */}
       <GestureDetector gesture={swipe.pan()}>
         <View style={[styles.footer, { paddingBottom: insets.bottom + t.space.sm }]} pointerEvents="box-none">
-          {timing && lyrics && lyricsFor ? (
+          {timing && canTime && lyrics && lyricsFor ? (
             <SyncPanel itemId={lyricsFor.Id} lyrics={lyrics} onClose={() => setTiming(false)} />
           ) : (
             <UpNext lyricsEndSec={lyrics?.isSynced && lyrics.lines.length ? (Math.max(...lyrics.lines.map((l) => l.endMs || l.startMs)) + offset) / 1000 : null} />
           )}
-          <View style={styles.transport}>
-            <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
-              <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
-            </Pressable>
-            <Pressable onPress={() => usePlayer.getState().toggle()} style={styles.play}>
-              <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
-            </Pressable>
-            <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()}>
-              <Ionicons name="play-skip-forward" size={26} color={t.colors.text} />
-            </Pressable>
-          </View>
+          {controls ? (
+            <View style={styles.transport}>
+              <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
+                <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
+              </Pressable>
+              <Pressable onPress={() => usePlayer.getState().toggle()} style={styles.play}>
+                <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
+              </Pressable>
+              <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()}>
+                <Ionicons name="play-skip-forward" size={26} color={t.colors.text} />
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </GestureDetector>
     </Animated.View>
@@ -232,24 +221,6 @@ function NowPlayingHeader({ track }: { track: BaseItem }) {
   );
 }
 
-/** One tap between the two lyric systems; remembered as the default. */
-function ModeToggle({ mode }: { mode: LyricsMode }) {
-  const t = useTheme();
-  const styles = useStyles();
-  const set = (m: LyricsMode) => useSettings.getState().set('lyricsMode', m);
-  return (
-    <View style={styles.toggle}>
-      {(['spicy', 'regular'] as const).map((m) => (
-        <Pressable key={m} onPress={() => set(m)} style={[styles.toggleBtn, mode === m && styles.toggleOn]}>
-          <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(12), color: mode === m ? '#000' : t.colors.text }}>
-            {m === 'spicy' ? 'Spicy' : 'Regular'}
-          </T>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 const useStyles = makeStyles((t) => ({
   topBar: {
     flexDirection: 'row',
@@ -284,12 +255,4 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toggle: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: t.radius.pill,
-    padding: 3,
-  },
-  toggleBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
-  toggleOn: { backgroundColor: t.colors.text },
 }));

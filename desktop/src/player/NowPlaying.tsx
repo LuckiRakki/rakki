@@ -2,8 +2,9 @@
 // The artwork blurred behind it all; on the left the artwork large with the song, artists,
 // album and badges (format, year) under it; on the right the queue as a table, related songs,
 // or the lyrics big and left-aligned. Icon buttons bottom right switch between them. The
-// expand button (or F11) makes the window fill the screen. The top fades while the mouse is
-// still. Esc leaves full screen first, then the player.
+// expand button (or F11) makes the window fill the screen: then it's only the artwork, the song
+// and the lyrics (no player bar, tabs or buttons but Exit Full Screen while the mouse moves).
+// The top fades while the mouse is still. Esc leaves full screen first, then the player.
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, Ellipsis, Expand, ListMusic, MicVocal, Radio, Shrink, SlidersHorizontal, Visualizer as VisualizerIcon } from '~/ui/icons';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ import { useLayout, type PlayerTab } from '~/layout/layout';
 import { formatOf } from '~/layout/NowPlayingPanel';
 import { useLyrics } from '@/lyrics/fetch';
 import { useSettings } from '@/settings/store';
-import { LyricsView, pickLyrics } from '~/lyrics/LyricsView';
+import { LyricsView, pickLyrics, useNoLyrics } from '~/lyrics/LyricsView';
 import { SpicyView } from '~/spicy/SpicyView';
 import { LyricsSettings } from '~/lyrics/LyricsSettings';
 import { go } from '~/nav';
@@ -157,11 +158,12 @@ export function NowPlaying() {
   const fullscreen = useLayout((s) => s.fullscreen);
   const chosen = useLayout((s) => s.playerTab);
   const item0 = usePlayer((s) => s.queue[s.index]);
-  const lyricsQ = useLyrics(item0 && !item0.Radio ? item0.Id : undefined);
   // A song without lyrics shows the visualizer in their place; the next song with lyrics shows
   // them again (the chosen tab stays Lyrics).
-  const noLyrics = !!item0 && (!!item0.Radio || (!lyricsQ.isLoading && !pickLyrics(lyricsQ.data)));
-  const tab = chosen === 'lyrics' && noLyrics ? 'visualizer' : chosen;
+  const noLyrics = useNoLyrics(item0);
+  // Full screen is the lyrics' (a song without them: the artwork and song alone, centred).
+  const solo = fullscreen && noLyrics;
+  const tab = fullscreen ? 'lyrics' : chosen === 'lyrics' && noLyrics ? 'visualizer' : chosen;
   const item = usePlayer((s) => s.queue[s.index]);
   const full = useItem(open ? item?.Id : undefined).data;
   const client = useAuth((s) => s.client);
@@ -206,19 +208,23 @@ export function NowPlaying() {
   const l = useLayout.getState();
 
   return (
-    <div className={`nowplaying${idle ? ' idle' : ''}${presence.leaving ? ' leaving' : ''}`} style={{ ['--tint' as string]: tint }}>
+    <div className={`nowplaying${idle ? ' idle' : ''}${fullscreen ? ' fs' : ''}${solo ? ' solo' : ''}${presence.leaving ? ' leaving' : ''}`} style={{ ['--tint' as string]: tint }}>
       <div className="np-solid" />
       <DynamicBackground image={backdrop} active={!presence.leaving} />
       <div className="np-shade" />
       <div className="np-top" data-tauri-drag-region>
-        <button className="iconbtn" aria-label="Close Full Player" title="Close (Esc)" onClick={() => l.setNowPlaying(false)}>
-          <ChevronDown size={24} />
-        </button>
-        <button className="iconbtn" aria-label="Song Options" title="Song Options" onClick={(e) => openMenu(e, songMenu([item]))}>
-          <Ellipsis size={20} />
-        </button>
+        {fullscreen ? null : (
+          <>
+            <button className="iconbtn" aria-label="Close Full Player" title="Close (Esc)" onClick={() => l.setNowPlaying(false)}>
+              <ChevronDown size={24} />
+            </button>
+            <button className="iconbtn" aria-label="Song Options" title="Song Options" onClick={(e) => openMenu(e, songMenu([item]))}>
+              <Ellipsis size={20} />
+            </button>
+          </>
+        )}
         <div style={{ flex: 1 }} data-tauri-drag-region />
-        {tab === 'lyrics' ? <LyricsSettings itemId={item.Radio ? undefined : item.Id} /> : null}
+        {tab === 'lyrics' && !fullscreen ? <LyricsSettings itemId={item.Radio ? undefined : item.Id} /> : null}
         {tab === 'visualizer' ? (
           <button
             className="iconbtn"
@@ -272,25 +278,29 @@ export function NowPlaying() {
             </div>
           </div>
         </div>
-        <div className="np-right">
-          <div key={tab} className="np-tab-pane">
-            {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : tab === 'visualizer' ? <VisualizerTab /> : <RelatedTab item={item} />}
+        {solo ? null : (
+          <div className="np-right">
+            <div key={tab} className="np-tab-pane">
+              {tab === 'queue' ? <QueueTab /> : tab === 'lyrics' ? <PlayerLyrics /> : tab === 'visualizer' ? <VisualizerTab /> : <RelatedTab item={item} />}
+            </div>
           </div>
+        )}
+      </div>
+      {fullscreen ? null : (
+        <div className="np-tabs">
+          {TABS.map(({ tab: t, label, icon: Icon }) => (
+            <button
+              key={t}
+              className={`iconbtn${tab === t ? ' on' : ''}`}
+              aria-label={label}
+              aria-pressed={tab === t}
+              title={t === 'lyrics' && noLyrics ? 'No Lyrics Found' : label}
+              onClick={() => l.setPlayerTab(t)}>
+              <Icon size={19} />
+            </button>
+          ))}
         </div>
-      </div>
-      <div className="np-tabs">
-        {TABS.map(({ tab: t, label, icon: Icon }) => (
-          <button
-            key={t}
-            className={`iconbtn${tab === t ? ' on' : ''}`}
-            aria-label={label}
-            aria-pressed={tab === t}
-            title={t === 'lyrics' && noLyrics ? 'No lyrics for this song' : label}
-            onClick={() => l.setPlayerTab(t)}>
-            <Icon size={19} />
-          </button>
-        ))}
-      </div>
+      )}
     </div>
   );
 }

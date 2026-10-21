@@ -6,6 +6,22 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.22.0 (2026-10-21)
+- **The lyrics screen is only the lyrics.** The artwork, the song and the lyrics, with Close and
+  one Lyrics Style button at the top. The visualizer, the timing button and Spicy / Regular
+  moved into Lyrics Style (opened from the lyrics, it has a Lyrics Screen section: Visualizer,
+  Play Controls and Lyrics Timing; Spicy / Regular is "Lyrics open in"). Previous, play / pause
+  and next under the lyrics are off unless you turn on Play Controls there.
+- **Desktop: the Lyrics button stays in the player bar** (next desktop build). After a music video
+  or controlling another device the bar could think the window was narrow and tuck Lyrics (and
+  Now Playing View) into the More menu for good; it measures itself properly now, and Lyrics
+  never moves to the menu even in a narrow window.
+- **Desktop: "No Lyrics Found"** when you hover the Lyrics button (in the player bar and the full
+  player) on a song without lyrics.
+- **Desktop: full screen is only the artwork, the song and the lyrics.** No player bar, tabs or
+  buttons; Exit Full Screen shows at the top while the mouse moves, and Esc or F11 still leave.
+  A song without lyrics shows its artwork and title alone, centred.
+
 ## 1.21.1 (2026-10-21)
 - **Search never waits.** Results show as you type from what Rakki already has (songs, albums,
   artists and playlists the pages loaded, your downloads, genres) while the full search asks the

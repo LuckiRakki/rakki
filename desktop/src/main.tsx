@@ -67,7 +67,7 @@ function onKey(e: KeyboardEvent) {
 
 function App() {
   const signedIn = useAuth((s) => !!s.client);
-  const { panel, sidebarWidth, panelWidth, nowPlaying, mini, floating, rail } = useLayout();
+  const { panel, sidebarWidth, panelWidth, nowPlaying, fullscreen, mini, floating, rail } = useLayout();
   const routeKey = useNav((s) => `${s.route.name}:${'id' in s.route ? s.route.id : ''}`);
   useApplyTheme();
   useApplyLook();
@@ -142,7 +142,7 @@ function App() {
         <MiniPlayer />
       ) : signedIn ? (
         <div
-          className={`app${panel && !floating ? '' : ' no-panel'}${floating ? ' floating' : ''}${rail ? ' rail' : ''}${nowPlaying ? ' np-open' : ''}`}
+          className={`app${panel && !floating ? '' : ' no-panel'}${floating ? ' floating' : ''}${rail ? ' rail' : ''}${nowPlaying ? ' np-open' : ''}${nowPlaying && fullscreen ? ' np-fs' : ''}`}
           style={{ ['--sidebar' as string]: `${sidebarWidth}px`, ['--panel' as string]: `${panelWidth}px` }}>
           <TitleBar />
           <Sidebar />
