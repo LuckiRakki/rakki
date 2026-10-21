@@ -117,6 +117,9 @@ export interface PlaybackInfo {
   NowPlayingQueue?: QueueItem[];
   /** The playing song's entry in NowPlayingQueue. */
   PlaylistItemId?: string;
+  /** The player's volume (0-100), so a remote's volume slider starts in the right place. */
+  VolumeLevel?: number;
+  IsMuted?: boolean;
 }
 
 /** One place in a reported queue. */
@@ -136,7 +139,7 @@ export interface SessionInfo {
   LastActivityDate?: string;
   LastPlaybackCheckIn?: string;
   NowPlayingItem?: BaseItem;
-  PlayState?: { PositionTicks?: number; IsPaused?: boolean; RepeatMode?: string; PlaybackOrder?: string };
+  PlayState?: { PositionTicks?: number; IsPaused?: boolean; RepeatMode?: string; PlaybackOrder?: string; VolumeLevel?: number; IsMuted?: boolean };
   NowPlayingQueue?: QueueItem[];
   /** The playing song's entry in NowPlayingQueue. */
   PlaylistItemId?: string;

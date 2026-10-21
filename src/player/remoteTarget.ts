@@ -1,7 +1,7 @@
 // Controlling another Rakki from this phone, like Spotify Connect (docs/REMOTE_PLAYBACK.md).
 // Once the music moves to another device (or you pick one that's playing in Connect), the mini
 // player and the player screen show that device's song ("Listening on Rakki Desktop") and their
-// buttons command it: play/pause, skip, seek. Songs picked anywhere in the app play there too,
+// buttons command it: play/pause, skip, seek, volume. Songs picked anywhere in the app play there too,
 // and Play Next / Add to Queue add to its queue (player/store.ts routeToRemote). It's asked how it's doing every two seconds while
 // picked. Picking This Phone (or the device going away) brings the player back to this phone.
 import { useEffect, useReducer } from 'react';
@@ -34,6 +34,9 @@ let poll: ReturnType<typeof setInterval> | null = null;
  * made about halfway between them (checks are 2 s apart, apps report every 10 s or on a change).
  */
 let lastReport = '';
+/** A volume just set here shows until the device has had time to report it (ms since 1970). */
+let volumeHeldUntil = 0;
+const VOLUME_HOLD_MS = 4000;
 
 function timed(fresh: RakkiDevice, prev: RakkiDevice): RakkiDevice {
   const key = `${fresh.item?.Id}|${fresh.paused}|${fresh.reportedSec}`;
@@ -55,7 +58,11 @@ async function refresh() {
   if (fresh === null) {
     showToast(`${t.name} went away. Back on This Phone.`);
     useRemoteTarget.getState().setTarget(null);
-  } else if (fresh) useRemoteTarget.setState({ target: timed(fresh, useRemoteTarget.getState().target ?? t) });
+  } else if (fresh) {
+    const prev = useRemoteTarget.getState().target ?? t;
+    const next = timed(fresh, prev);
+    useRemoteTarget.setState({ target: Date.now() < volumeHeldUntil ? { ...next, volume: prev.volume } : next });
+  }
 }
 
 export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
@@ -64,6 +71,7 @@ export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
     if (poll) clearInterval(poll);
     poll = null;
     lastReport = '';
+    volumeHeldUntil = 0;
     set({ target: d });
     routeToRemote(d ? route : null);
     if (d) poll = setInterval(() => void refresh(), POLL_MS);
@@ -87,7 +95,11 @@ export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
   volume(percent) {
     const c = useAuth.getState().client;
     const t = get().target;
-    if (c && t) void setDeviceVolume(c, t, percent).catch(() => {});
+    if (!c || !t) return;
+    const v = Math.max(0, Math.min(100, Math.round(percent)));
+    volumeHeldUntil = Date.now() + VOLUME_HOLD_MS;
+    set({ target: { ...t, volume: v } });
+    void setDeviceVolume(c, t, v).catch(() => showToast(`Couldn’t reach ${t.name}`));
   },
 }));
 

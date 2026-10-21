@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.21.0 (2026-10-21)
+- **Volume in the remote player.** While the phone controls Rakki on your computer, the player
+  has a volume slider under the controls that sets the computer's volume as you drag. It starts
+  where the computer's volume really is (the next desktop build reports its volume to your other
+  devices; until then it starts at 80).
+- **The desktop's remote volume follows the other device too** (next desktop build): the slider
+  in its "Listening on" bar shows the device's real volume instead of always starting at 80.
+
 ## 1.20.3 (2026-10-21)
 - **Widgets show album art on Clear and Tinted Home Screens.** iOS drew the covers as a flat tint
   there, so they looked empty; now the Now Playing and Jump Back In covers stay in full colour.

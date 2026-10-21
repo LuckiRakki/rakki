@@ -62,6 +62,8 @@ export interface RakkiDevice {
   controllable: boolean;
   /** The general commands it takes (SetVolume...). */
   commands: string[];
+  /** Its volume (0-100) as it last reported, null when it doesn't say. */
+  volume: number | null;
 }
 
 /** Where the other device is in its song now (reported position + time since, while playing). */
@@ -92,6 +94,7 @@ function toDevice(s: SessionInfo, now: number): RakkiDevice {
     repeat: repeat === 'RepeatOne' ? 'one' : repeat === 'RepeatAll' ? 'all' : 'off',
     controllable: !!(s.SupportsRemoteControl || s.Capabilities?.SupportsMediaControl),
     commands: s.Capabilities?.SupportedCommands ?? [],
+    volume: s.PlayState?.IsMuted ? 0 : typeof s.PlayState?.VolumeLevel === 'number' ? s.PlayState.VolumeLevel : null,
   };
 }
 

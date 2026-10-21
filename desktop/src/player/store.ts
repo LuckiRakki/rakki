@@ -95,14 +95,16 @@ function url(item: BaseItem | undefined): string | null {
 let session: { itemId: string; playSessionId: string } | null = null;
 let reportTimer: ReturnType<typeof setInterval> | null = null;
 
-/** What every report carries besides the position: repeat, shuffle and the queue around the
- *  song (so your other Rakki apps can see it; remote/devices.ts). */
+/** What every report carries besides the position: repeat, shuffle, volume and the queue around
+ *  the song (so your other Rakki apps can see it; remote/devices.ts). */
 function reportContext(s: PlayerState): Partial<PlaybackInfo> {
   return {
     CanSeek: true,
     PlayMethod: 'DirectStream',
     RepeatMode: s.repeat === 'one' ? 'RepeatOne' : s.repeat === 'all' ? 'RepeatAll' : 'RepeatNone',
     PlaybackOrder: s.shuffle ? 'Shuffle' : 'Default',
+    VolumeLevel: s.volume,
+    IsMuted: s.volume === 0,
     ...queueReport(s.queue, s.index),
   };
 }
@@ -447,6 +449,13 @@ export function startPlayer() {
   // Pausing and resuming are reported at once (your other devices show it), not at the next tick.
   usePlayer.subscribe((s, prev) => {
     if (s.playing !== prev.playing && s.queue[s.index]?.Id === session?.itemId) reportProgress(s.playing ? 'Unpause' : 'Pause');
+  });
+  // So does the volume once it settles (a remote's slider follows it), not on every step of a drag.
+  let volumeTimer: ReturnType<typeof setTimeout> | null = null;
+  usePlayer.subscribe((s, prev) => {
+    if (s.volume === prev.volume) return;
+    if (volumeTimer) clearTimeout(volumeTimer);
+    volumeTimer = setTimeout(() => reportProgress(usePlayer.getState().playing ? 'TimeUpdate' : 'Pause'), 400);
   });
   void listenEngine({
     onProp(name, value) {

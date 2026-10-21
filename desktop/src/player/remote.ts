@@ -83,6 +83,9 @@ interface RemoteState {
 }
 
 let poll: ReturnType<typeof setInterval> | null = null;
+/** A volume just set here shows until the device has had time to report it (ms since 1970). */
+let volumeHeldUntil = 0;
+const VOLUME_HOLD_MS = 4000;
 
 async function refresh() {
   const c = client();
@@ -93,7 +96,10 @@ async function refresh() {
   if (fresh === null) {
     toast(`${t.name} went away`);
     useRemote.getState().setTarget(null);
-  } else if (fresh) useRemote.setState({ target: fresh });
+  } else if (fresh) {
+    const prev = useRemote.getState().target;
+    useRemote.setState({ target: Date.now() < volumeHeldUntil && prev ? { ...fresh, volume: prev.volume } : fresh });
+  }
 }
 
 export const useRemote = create<RemoteState>((set, get) => ({
@@ -102,6 +108,7 @@ export const useRemote = create<RemoteState>((set, get) => ({
   setTarget(d) {
     if (poll) clearInterval(poll);
     poll = null;
+    volumeHeldUntil = 0;
     set({ target: d });
     if (d) poll = setInterval(() => void refresh(), POLL_MS);
   },
@@ -125,7 +132,11 @@ export const useRemote = create<RemoteState>((set, get) => ({
   volume(percent) {
     const c = client();
     const t = get().target;
-    if (c && t) void setDeviceVolume(c, t, percent).catch(() => {});
+    if (!c || !t) return;
+    const v = Math.max(0, Math.min(100, Math.round(percent)));
+    volumeHeldUntil = Date.now() + VOLUME_HOLD_MS;
+    set({ target: { ...t, volume: v } });
+    void setDeviceVolume(c, t, v).catch(() => toast(`Couldn’t reach ${t.name}`));
   },
   async playHere(d) {
     const c = client();

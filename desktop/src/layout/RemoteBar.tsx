@@ -13,7 +13,6 @@ import { ArtistLinks, Artwork, formatTime, ticksToSeconds } from '~/ui/parts';
 
 export function RemoteBar({ target }: { target: RakkiDevice }) {
   const [, tick] = useState(0);
-  const [volume, setVolume] = useState(80);
   const busy = useRemote((s) => s.busy);
   useEffect(() => {
     if (target.paused) return;
@@ -77,12 +76,9 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
               <Range
                 label="Volume"
                 step={5}
-                value={volume}
+                value={target.volume ?? 80}
                 max={100}
-                onSet={(v) => {
-                  setVolume(v);
-                  r.volume(v);
-                }}
+                onSet={(v) => r.volume(v)}
               />
             </div>
           </div>

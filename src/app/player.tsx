@@ -29,6 +29,7 @@ import { Artwork } from '@/ui/Artwork';
 import { useProgress } from '@/player/useProgress';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Marquee } from '@/ui/Marquee';
+import { Slider } from '@/ui/Slider';
 import { openAlbum } from '@/ui/nav';
 import { openAddToPlaylist, openMenu, openOptions } from '@/ui/overlays';
 import { T } from '@/ui/T';
@@ -58,7 +59,8 @@ export default function PlayerScreen() {
 
 /**
  * Another Rakki's song, like Spotify's Connect player: its cover, title and place, with buttons
- * that command it, and "Listening on {device}" at the bottom (tap for Connect to move it back).
+ * that command it, its volume when it takes volume commands, and "Listening on {device}" at the
+ * bottom (tap for Connect to move it back).
  */
 function RemotePlayer({ target }: { target: RakkiDevice }) {
   const t = useTheme();
@@ -149,6 +151,16 @@ function RemotePlayer({ target }: { target: RakkiDevice }) {
               </Pressable>
             </View>
           </>
+        ) : null}
+
+        {target.commands.includes('SetVolume') ? (
+          <View style={styles.volumeRow} accessibilityLabel={`${target.name}'s volume`}>
+            <Ionicons name="volume-low" size={20} color={t.colors.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <Slider value={target.volume ?? 80} min={0} max={100} step={1} onChange={(v) => r().volume(v)} />
+            </View>
+            <Ionicons name="volume-high" size={20} color={t.colors.textSecondary} />
+          </View>
         ) : null}
 
         <Pressable onPress={() => router.push('/devices')} accessibilityRole="button" accessibilityLabel={`Listening on ${target.name}. Open Connect`} style={styles.listeningOn}>
@@ -467,6 +479,7 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.size(10),
     color: t.colors.accent,
   },
+  volumeRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginTop: t.space.lg },
   listeningOn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, marginTop: t.space.sm },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   side: { flex: 1, flexDirection: 'row', alignItems: 'center' },

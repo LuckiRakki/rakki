@@ -9,7 +9,10 @@ the server's live connection, src/remote/socket.ts; the desktop controls another
 its player bar and moves playback both ways, src/remote/devices.ts + desktop
 src/player/remote.ts), phase 4 (2026-10-13: the desktop's media keys, Windows' media overlay /
 MPRIS, tray menu and tooltip, and Discord follow the device it controls; the phone has its own
-Devices screen, app/devices.tsx; the phone reconnects as soon as it's back in front).
+Devices screen, app/devices.tsx; the phone reconnects as soon as it's back in front), remote
+volume (2026-10-21: the desktop reports `VolumeLevel` with its progress reports and right after
+a change; the phone's remote player and the desktop's remote bar show and set it. The phone
+itself doesn't take volume commands: its volume is the iPhone's own).
 
 Left out on purpose:
 - The phone's lock screen can't show "Playing on {computer}": iOS only shows what the app itself
