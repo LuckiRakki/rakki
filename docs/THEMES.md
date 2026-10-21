@@ -9,7 +9,8 @@ built-in default look.
 Themes work on the desktop app now. The phone app will use the same files later: it will read
 the colours on `:root` (the tokens below). The rest of the CSS only applies on the desktop.
 
-The built-in **Lucid** theme (`desktop/src/themes/lucid.css`) is a good file to copy and start
+The built-in **Lucid** (`desktop/src/themes/lucid.css`, a still blurred cover) and **Kawarp**
+(`desktop/src/themes/kawarp.css`, the cover flowing) themes are good files to copy and start
 from.
 
 ## The file

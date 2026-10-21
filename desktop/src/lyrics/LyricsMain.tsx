@@ -6,6 +6,7 @@
 import { useLyrics } from '@/lyrics/fetch';
 import { artColor } from '@/lib/blurhash';
 import { useSettings } from '@/settings/store';
+import { useActiveTheme } from '~/themes/themes';
 import { useAuth } from '~/auth/session';
 import { useLayout } from '~/layout/layout';
 import { LyricsSettings } from '~/lyrics/LyricsSettings';
@@ -26,12 +27,18 @@ export function LyricsMain() {
   const lyrics = pickLyrics(q.data);
   const tint = item && client ? artColor(client.blurhash(item), '#202024') : '#202024';
   const image = item ? client?.imageUrl(item, 500) : undefined;
+  // A theme that already flows behind the whole app (Kawarp): the lyrics sit on that one.
+  const ownBackground = useActiveTheme().meta.backdrop !== 'flow';
   const l = useLayout.getState();
 
   return (
     <div className="lyrics-main" style={{ ['--tint' as string]: tint }}>
-      <div className="lm-solid" />
-      <DynamicBackground image={image} active={!covered} />
+      {ownBackground ? (
+        <>
+          <div className="lm-solid" />
+          <DynamicBackground image={image} active={!covered} />
+        </>
+      ) : null}
       <div className="lm-shade" />
       <div className="lm-tools">
         {lyrics ? <LyricsSettings itemId={item?.Id} /> : null}

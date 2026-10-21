@@ -6,6 +6,13 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 1.2.1 (2026-10-21, next desktop build)
+- **Kawarp, a new theme:** the whole app over the playing cover flowing like liquid, as on the
+  Spicy Lyrics screen (Settings → Look → Theme). The panels are nearly clear, with white text
+  and frosted cards, menus and dialogs. Settings → Look → Backgrounds sets how lively it is and
+  whether it moves with the music, and it holds still while paused or in the tray. With Kawarp
+  on, the lyrics in the main area sit on the same flow instead of drawing a second one.
+
 ## Desktop 1.2.0 (2026-10-21, desktop build)
 - **Themes, like Spicetify, from a file.** Settings → Look → Theme lists Rakki (the default
   look), Lucid, and themes you import. A theme is one .css file (Import; importing an edited

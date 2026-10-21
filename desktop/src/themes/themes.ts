@@ -6,12 +6,13 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 
 import { parseTheme, ThemeError, type Theme } from './format';
+import kawarpCss from './kawarp.css?raw';
 import lucidCss from './lucid.css?raw';
 
 export const DEFAULT_THEME = 'default';
 
 const RAKKI: Theme = { id: DEFAULT_THEME, meta: { name: 'Rakki', description: "Rakki's own look.", backdrop: 'none' }, css: '', tokens: {}, builtIn: true };
-export const BUILT_IN: Theme[] = [RAKKI, { ...parseTheme(lucidCss, 'Lucid', 'lucid'), builtIn: true }];
+export const BUILT_IN: Theme[] = [RAKKI, { ...parseTheme(lucidCss, 'Lucid', 'lucid'), builtIn: true }, { ...parseTheme(kawarpCss, 'Kawarp', 'kawarp'), builtIn: true }];
 
 const KEY = 'rakki.themes';
 

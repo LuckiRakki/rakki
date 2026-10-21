@@ -1,0 +1,70 @@
+/*
+ * @name Kawarp
+ * @author Rakki
+ * @description The whole app over the cover flowing like liquid, as on the Spicy Lyrics screen.
+ * @version 1.0
+ * @backdrop flow
+ *
+ * The full player's Kawarp background (Settings → Look → Backgrounds sets how lively it is and
+ * whether it moves with the music) stretched behind everything: no panels, just white text and
+ * soft glass where things need edges. It holds still while paused, hidden or in the tray.
+ */
+
+:root {
+  --bg: #050506;
+  /* Panels are barely there: the flow shows through. */
+  --surface: rgba(0, 0, 0, 0.1);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.14);
+  --surface-4: rgba(255, 255, 255, 0.2);
+  --line: rgba(255, 255, 255, 0.12);
+  --text: #fff;
+  --text-2: rgba(255, 255, 255, 0.78);
+  --text-3: rgba(255, 255, 255, 0.62);
+  /* Bright and saturated, like the Spicy Lyrics screen. */
+  --backdrop-brightness: 0.8;
+  --backdrop-saturation: 1.5;
+  --kawarp-glass: rgba(18, 18, 22, 0.55);
+}
+
+/* A light scrim over the flow, like the full player's, so white text reads on bright covers. */
+.theme-backdrop::after { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.14); }
+
+/* ---- No panels: everything sits on the flow ---- */
+
+.panel { background: var(--surface); }
+.navbtn, .navbtn.home, .search { background: rgba(255, 255, 255, 0.1); }
+.search:hover, .navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
+.search:focus-within { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.7); }
+.win:hover { background: rgba(255, 255, 255, 0.12); }
+
+.home-top { background: none; }
+.lib-header, .action-bar { background: none; }
+.quick { background: rgba(255, 255, 255, 0.1); }
+.quick:hover { background: rgba(255, 255, 255, 0.18); }
+.card:hover, .row:hover, .qrow:hover { background: rgba(255, 255, 255, 0.08); }
+.row.on { background: rgba(255, 255, 255, 0.14); }
+
+/* Right sidebar: frosted cards, the lyrics card clear like the lyrics screen. */
+.np-card { background: rgba(255, 255, 255, 0.07); }
+.lyrics-card { background: rgba(0, 0, 0, 0.18); }
+.np-tags span { background: rgba(255, 255, 255, 0.1); }
+
+/* The lyrics in the main area: straight on the flow, edge to edge. */
+.panel.main.lyrics-open { background: none; }
+.lm-shade { background: rgba(0, 0, 0, 0.08); }
+
+.range .bar { background: rgba(255, 255, 255, 0.22); }
+
+/* ---- What floats over the flow ---- */
+
+.menu, .timing-pop, .dialog {
+  background: var(--kawarp-glass);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+}
+.menu-item:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.field { background: rgba(255, 255, 255, 0.1); }
+.select option { background: #1b1b1e; }
+.settings-card { background: rgba(255, 255, 255, 0.06); }
+.server-bar, .tt-head { background: var(--kawarp-glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
