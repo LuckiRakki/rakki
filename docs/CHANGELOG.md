@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.20.3 (2026-10-21)
+- **Widgets show album art on Clear and Tinted Home Screens.** iOS drew the covers as a flat tint
+  there, so they looked empty; now the Now Playing and Jump Back In covers stay in full colour.
+
 ## 1.20.2 (2026-10-20)
 - **The heart is solid when a song is in any of your playlists**, not only in Liked Songs, in the
   player and the remote player (like the desktop and the song lists). Tapping it on a song that's

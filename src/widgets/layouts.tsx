@@ -27,6 +27,7 @@ import {
   progressViewStyle,
   resizable,
   tint,
+  widgetAccentedRenderingMode,
   widgetURL,
 } from '@expo/ui/swift-ui/modifiers';
 import type { WidgetEnvironment } from 'expo-widgets';
@@ -81,6 +82,8 @@ export function NowPlayingLayout(props: NowPlayingProps, env: WidgetEnvironment)
     'widget',
   );
 
+  // Tinted and Clear Home Screens draw images as a flat tint unless told otherwise, which hid
+  // the art; widgetAccentedRenderingMode('fullColor') keeps it a picture.
   const art = (size: number, radius: number) =>
     props.art ? (
       <Image
@@ -90,6 +93,7 @@ export function NowPlayingLayout(props: NowPlayingProps, env: WidgetEnvironment)
           aspectRatio({ contentMode: 'fill' }),
           frame({ width: size, height: size }),
           clipShape('roundedRectangle', radius),
+          widgetAccentedRenderingMode('fullColor'),
         ]}
       />
     ) : (
@@ -235,6 +239,7 @@ export function JumpBackInLayout(props: JumpBackInProps, env: WidgetEnvironment)
               aspectRatio({ contentMode: 'fill' }),
               frame({ width: size, height: size }),
               clipShape('roundedRectangle', 6),
+              widgetAccentedRenderingMode('fullColor'),
             ]}
           />
         ) : (
