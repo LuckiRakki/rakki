@@ -1,16 +1,17 @@
 // Search results: Jellyfin's own search (exact substrings, always up to date) merged with
-// the on-device fuzzy index (typos), then ranked together by one scoring function.
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+// the on-device fuzzy index (typos), then ranked together by one scoring function; the quick
+// search (search/quick.ts) shows until that answers.
+import { keepPreviousData, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import type { BaseItem, GenreCount, JellyfinClient, SearchKind } from '@/api/jellyfin';
 import { useGenreCounts } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { downloadedAlbums, downloadedArtists, downloadedPlaylists, downloadedTracks } from '@/downloads/offline';
 import { useDownloads } from '@/downloads/store';
-import { artistLine } from '@/lib/items';
 import { isOffline, useOffline } from '@/lib/online';
-import { fuzzySearch, prepare, scoreName, type FuzzyIndex, type Kind } from '@/search/fuzzy';
-import { useSearchIndex } from '@/search/index';
+import { fuzzySearch, prepare, scoreName, type FuzzyIndex } from '@/search/fuzzy';
+import { useSearchIndex, whileSearching } from '@/search/index';
+import { entryOf, knownItems } from '@/search/quick';
 
 export type Filter = 'all' | SearchKind | 'genres';
 export const ALL_KINDS: SearchKind[] = ['songs', 'artists', 'albums', 'playlists'];
@@ -32,8 +33,7 @@ const KIND_OF: Record<string, SearchKind | undefined> = {
 };
 
 function score(item: BaseItem, term: string): number {
-  const by = item.Type === 'Audio' ? artistLine(item) : item.Type === 'MusicAlbum' ? item.AlbumArtist : undefined;
-  return scoreName({ id: item.Id, kind: item.Type as Kind, name: item.Name, by }, term);
+  return scoreName(entryOf(item), term);
 }
 
 const genreIndexes = new WeakMap<GenreCount[], FuzzyIndex>();
@@ -46,25 +46,11 @@ function genreIndex(genres: GenreCount[]): FuzzyIndex {
   return index;
 }
 
-/** Offline: the same matching over what's downloaded (no server). */
-function offlineSearch(term: string, filter: Filter): SearchResults {
+/** Matching over items already on hand (no server), ranked the same way. */
+function localSearch(index: FuzzyIndex, byId: Map<string, BaseItem>, term: string, filter: Filter, genres: GenreCount[] = []): SearchResults {
   const limit = filter === 'all' ? 20 : 100;
-  const pools: Record<SearchKind, BaseItem[]> = {
-    songs: downloadedTracks(),
-    albums: downloadedAlbums(),
-    artists: downloadedArtists(),
-    playlists: downloadedPlaylists(),
-  };
   const kinds = filter === 'all' ? ALL_KINDS : filter === 'genres' ? [] : [filter];
-  const byId = new Map<string, BaseItem>();
-  const entries = kinds.flatMap((k) =>
-    pools[k].map((item) => {
-      byId.set(item.Id, item);
-      const by = item.Type === 'Audio' ? artistLine(item) : item.Type === 'MusicAlbum' ? item.AlbumArtist : undefined;
-      return { id: item.Id, kind: item.Type as Kind, name: item.Name, by };
-    }),
-  );
-  const matches = fuzzySearch(prepare(entries), term, limit);
+  const matches = fuzzySearch(index, term, limit).filter((m) => kinds.includes(KIND_OF[m.entry.kind]!) && byId.has(m.entry.id));
   const of = (k: SearchKind) => matches.filter((m) => KIND_OF[m.entry.kind] === k).map((m) => byId.get(m.entry.id)!);
   return {
     top: filter === 'all' && matches[0] ? byId.get(matches[0].entry.id)! : null,
@@ -72,8 +58,30 @@ function offlineSearch(term: string, filter: Filter): SearchResults {
     artists: of('artists'),
     albums: of('albums'),
     playlists: of('playlists'),
-    genres: [],
+    genres: genreHits(genres, term, filter),
   };
+}
+
+function genreHits(genres: GenreCount[], term: string, filter: Filter): GenreCount[] {
+  if (filter !== 'all' && filter !== 'genres') return [];
+  const byName = new Map(genres.map((g) => [g.name, g]));
+  return fuzzySearch(genreIndex(genres), term, filter === 'all' ? 8 : 100).map((m) => byName.get(m.entry.id)!);
+}
+
+/** Offline: the same matching over what's downloaded. */
+function offlineSearch(term: string, filter: Filter): SearchResults {
+  const byId = new Map<string, BaseItem>();
+  for (const item of [...downloadedTracks(), ...downloadedAlbums(), ...downloadedArtists(), ...downloadedPlaylists()]) byId.set(item.Id, item);
+  return localSearch(prepare([...byId.values()].map(entryOf)), byId, term, filter);
+}
+
+const hasAny = (r: SearchResults) => !!(r.songs.length || r.artists.length || r.albums.length || r.playlists.length || r.genres.length);
+
+/** The quick search (search/quick.ts), or null when it finds nothing. */
+function quickSearch(queryClient: QueryClient, term: string, filter: Filter, genres: GenreCount[]): SearchResults | null {
+  const known = knownItems(queryClient);
+  const r = localSearch(known.index, known.byId, term, filter, genres);
+  return hasAny(r) ? r : null;
 }
 
 async function runSearch(client: JellyfinClient, term: string, filter: Filter, genres: GenreCount[]): Promise<SearchResults> {
@@ -84,10 +92,10 @@ async function runSearch(client: JellyfinClient, term: string, filter: Filter, g
   const fuzzy = index ? fuzzySearch(index, term, limit).filter((m) => kinds.includes(KIND_OF[m.entry.kind]!)) : [];
   const fuzzyScore = new Map(fuzzy.map((m) => [m.entry.id, m.score]));
 
-  const [server, fetched] = await Promise.all([
-    kinds.length ? client.search(term, limit, kinds) : null,
-    client.getItemsByIds(fuzzy.map((m) => m.entry.id)),
-  ]);
+  // Index paging waits while this runs, so a search isn't stuck behind a library download.
+  const [server, fetched] = await whileSearching(
+    Promise.all([kinds.length ? client.search(term, limit, kinds) : null, client.getItemsByIds(fuzzy.map((m) => m.entry.id))]),
+  );
 
   const lists: Record<SearchKind, { item: BaseItem; score: number }[]> = { songs: [], artists: [], albums: [], playlists: [] };
   const seen = new Set<string>();
@@ -113,30 +121,30 @@ async function runSearch(client: JellyfinClient, term: string, filter: Filter, g
       ? ([songs[0], artists[0], albums[0], playlists[0]].filter(Boolean).sort((a, b) => b.score - a.score)[0]?.item ?? null)
       : null;
 
-  const byName = new Map(genres.map((g) => [g.name, g]));
-  const genreHits =
-    filter === 'all' || filter === 'genres'
-      ? fuzzySearch(genreIndex(genres), term, filter === 'all' ? 8 : 100).map((m) => byName.get(m.entry.id)!)
-      : [];
-
   return {
     top,
     songs: songs.map((x) => x.item),
     artists: artists.map((x) => x.item),
     albums: albums.map((x) => x.item),
     playlists: playlists.map((x) => x.item),
-    genres: genreHits,
+    genres: genreHits(genres, term, filter),
   };
 }
 
+/**
+ * Results for a search. The full search asks the server; until it answers (or if it can't),
+ * the quick search over what's already on hand shows, so a slow server or an index still
+ * being built never leaves the page waiting. `quick` says which one is showing.
+ */
 export function useSearchResults(term: string, filter: Filter) {
   const client = useAuth((s) => s.client);
   const version = useSearchIndex((s) => s.version);
   const genres = useGenreCounts().data;
   const offline = useOffline();
   const rev = useDownloads((s) => s.rev);
+  const queryClient = useQueryClient();
   const t = term.trim();
-  return useQuery({
+  const full = useQuery({
     queryKey: ['search', client?.session.userId, t.toLowerCase(), filter, version, genres?.length ?? 0, offline ? `offline:${rev}` : 'online'],
     enabled: !!client && t.length > 0,
     networkMode: offline ? 'always' : 'online',
@@ -144,4 +152,16 @@ export function useSearchResults(term: string, filter: Filter) {
     staleTime: 60_000,
     queryFn: () => runSearch(client!, t, filter, genres ?? []),
   });
+  const settled = !!full.data && !full.isPlaceholderData;
+  const quick = !settled && !offline && t.length > 0 ? quickSearch(queryClient, t, filter, genres ?? []) : null;
+  return {
+    data: settled ? full.data : (quick ?? full.data),
+    quick: !!quick,
+    /** The full search is still asking the server. */
+    waiting: full.isFetching,
+    /** Showing the last search's answer while this one loads. */
+    isPlaceholderData: !settled && !quick && full.isPlaceholderData,
+    isLoading: !settled && !quick && full.isLoading,
+    error: settled || quick ? null : full.error,
+  };
 }

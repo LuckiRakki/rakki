@@ -1,5 +1,6 @@
 // Search, as on the phone: Jellyfin's own search merged with the on-device fuzzy index (so
-// typos still find things), ranked together; songs whose lyrics match (the Rakki plugin's
+// typos still find things), ranked together, with quick results from what's on this computer
+// until the server answers (so it never waits on the index or a slow server); songs whose lyrics match (the Rakki plugin's
 // lyrics index); filters; and the results you opened lately while the box is empty.
 import { X } from '~/ui/icons';
 import { useEffect, useState } from 'react';
@@ -170,7 +171,7 @@ export function SearchPage({ term }: { term: string }) {
     );
   }
 
-  const nothing = r && !r.songs.length && !r.albums.length && !r.artists.length && !r.playlists.length && !r.genres.length;
+  const nothing = r && !q.quick && !r.songs.length && !r.albums.length && !r.artists.length && !r.playlists.length && !r.genres.length;
   const genres = (r?.genres ?? []).map((g) => ({ Id: `genre:${g.name}`, Name: g.name, Type: 'Genre', ...(g.album ? { album: g.album } : {}) }));
 
   return (
@@ -181,9 +182,16 @@ export function SearchPage({ term }: { term: string }) {
             {f.label}
           </button>
         ))}
-        {syncing ? <span className="muted small">Updating the search index in the background</span> : null}
+        {q.quick ? (
+          <span className="muted small">
+            {q.waiting ? "Quick results from what's on this computer, the full search is on its way" : "Quick results from what's on this computer (the server didn't answer)"}
+          </span>
+        ) : syncing ? (
+          <span className="muted small">Updating the search index in the background</span>
+        ) : null}
       </div>
       {q.isLoading ? <Loading what={`results for “${t}”`} /> : null}
+      {q.error && !r ? <p className="empty-note">Couldn't search the server just now. Try again in a moment.</p> : null}
       {nothing ? <p className="empty-note">Nothing found for “{t}”. Check the spelling, or try fewer words.</p> : null}
 
       {filter === 'all' && r ? (

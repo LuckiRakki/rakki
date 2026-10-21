@@ -6,6 +6,7 @@ import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { startPlaylistCache } from '@/library/playlistCache';
+import { ensureSearchIndex } from '@/search/index';
 import { restoreCache, startCacheSaving } from '~/lib/cache';
 import { startScrollbars } from '~/ui/scrolling';
 import { syncLastfmKey } from '@/lib/companion';
@@ -119,6 +120,18 @@ function App() {
     startRemoteCommands();
     // What you set up on your other Rakki apps (stations...): a setup screen the first time.
     startSetup();
+    // The search index is built and topped up behind the scenes, not when you first search:
+    // shortly after launch, then every so often and when you come back to the window (it
+    // checks itself and does nothing while it's fresh).
+    const first = setTimeout(() => void ensureSearchIndex(), 8000);
+    const every = setInterval(() => void ensureSearchIndex(), 15 * 60_000);
+    const onFocus = () => void ensureSearchIndex();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearTimeout(first);
+      clearInterval(every);
+      window.removeEventListener('focus', onFocus);
+    };
   }, [signedIn, userId]);
 
   return (

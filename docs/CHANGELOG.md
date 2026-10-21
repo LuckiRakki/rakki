@@ -6,6 +6,15 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.21.1 (2026-10-21)
+- **Search never waits.** Results show as you type from what Rakki already has (songs, albums,
+  artists and playlists the pages loaded, your downloads, genres) while the full search asks the
+  server, and stay if the server is slow or doesn't answer. On the desktop a line says when
+  you're seeing these quick results.
+- **The search index builds itself on the desktop.** Shortly after launch, then every so often
+  and when you come back to the window, instead of only once you open Search. While it downloads
+  the library it steps aside whenever you search, so your search is answered first.
+
 ## 1.21.0 (2026-10-21)
 - **Volume in the remote player.** While the phone controls Rakki on your computer, the player
   has a volume slider under the controls that sets the computer's volume as you drag. It starts

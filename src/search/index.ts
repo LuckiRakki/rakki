@@ -70,8 +70,32 @@ function addRows(items: BaseItem[], rows: Map<string, Row>) {
   }
 }
 
+// Searches running now. Index paging waits for them (up to a few seconds), so the server
+// answers the search first instead of after a page of the whole library.
+let searching = 0;
+const idle: (() => void)[] = [];
+
+/** Run a search's server requests; the index download pauses between pages meanwhile. */
+export async function whileSearching<T>(work: Promise<T>): Promise<T> {
+  searching++;
+  try {
+    return await work;
+  } finally {
+    if (--searching === 0) for (const done of idle.splice(0)) done();
+  }
+}
+
+function searchesDone(): Promise<void> {
+  if (!searching) return Promise.resolve();
+  return new Promise((resolve) => {
+    idle.push(resolve);
+    setTimeout(resolve, 5000);
+  });
+}
+
 async function addAll(client: JellyfinClient, kind: 'Audio' | 'MusicAlbum' | 'Playlist', rows: Map<string, Row>, since?: string) {
   for (let start = 0; ; ) {
+    await searchesDone();
     const page = await client.getIndexPage(kind, start, PAGE, since);
     addRows(page.Items, rows);
     start += page.Items.length;
