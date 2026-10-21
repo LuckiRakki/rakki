@@ -1,0 +1,39 @@
+name: iOS release page
+
+# Keeps the iPhone download page (the ios-latest GitHub Release) in step with the app: every
+# push to main that bumps the version or the changelog rewrites its title ("Rakki <version>")
+# and notes (scripts/ios-release-notes.js, from docs/CHANGELOG.md). Only the page changes;
+# Rakki.ipa is left as it is ("iOS build" → release replaces it).
+on:
+  push:
+    branches: [main]
+    paths:
+      - app.json
+      - docs/CHANGELOG.md
+      - scripts/ios-release-notes.js
+  workflow_dispatch:
+
+concurrency:
+  group: ios-release-page
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # edit the release
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Update the release page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view ios-latest >/dev/null 2>&1 || { echo "No ios-latest release yet"; exit 0; }
+          node scripts/ios-release-notes.js > notes.md
+          VERSION=$(node -p "require('./app.json').expo.version")
+          gh release edit ios-latest --title "Rakki $VERSION" --notes-file notes.md
