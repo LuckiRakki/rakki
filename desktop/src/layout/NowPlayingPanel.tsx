@@ -84,6 +84,7 @@ function AboutArtist({ id }: { id: string }) {
 function NowView({ item }: { item: BaseItem }) {
   const client = useAuth((s) => s.client);
   const radio = !!item.Radio;
+  const lyricsOpen = useLayout((s) => s.lyricsView);
   const full = useItem(radio ? undefined : item.Id).data;
   const { queue, index } = usePlayer();
   const next = queue[index + 1];
@@ -123,17 +124,18 @@ function NowView({ item }: { item: BaseItem }) {
         {format[0] ? <span>{format[0]}</span> : null}
       </div>
 
-      {radio ? null : (
+      {/* Hidden while the lyrics fill the main area, as in Spotify. */}
+      {radio || lyricsOpen ? null : (
         <Card
           title="Lyrics"
           className="lyrics-card"
           style={{ ['--tint' as string]: tint }}
           action={
-            <button className="iconbtn" aria-label="Open Lyrics" title="Open Lyrics" onClick={() => useLayout.getState().setNowPlaying(true, 'lyrics')}>
+            <button className="iconbtn" aria-label="Open Lyrics" title="Open Lyrics" onClick={() => useLayout.getState().setLyricsView(true)}>
               <Maximize2 size={15} />
             </button>
           }>
-          <LyricsView variant="card" onOpen={() => useLayout.getState().setNowPlaying(true, 'lyrics')} />
+          <LyricsView variant="card" onOpen={() => useLayout.getState().setLyricsView(true)} />
         </Card>
       )}
 

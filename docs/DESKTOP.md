@@ -31,6 +31,9 @@ the architecture. The interface shares the phone app's TypeScript wherever it's 
 - **Full player** (after Feishin's): over everything but the player bar, which stays; blurred
   artwork behind; big artwork with title, artists, album and badges; queue table / related /
   big fading lyrics, picked with icons bottom right; a button to fill the screen.
+- **Lyrics** (the player bar's Lyrics button): big lyrics in the main area over the flowing
+  cover, sidebars kept (lyrics/LyricsMain.tsx).
+- **Themes**: .css files imported in Settings → Look → Theme (docs/THEMES.md, themes/).
 - **Right-click menus** on every song, album, artist, playlist and queue entry.
 
 ## Feature checklist

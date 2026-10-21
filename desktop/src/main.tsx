@@ -34,6 +34,9 @@ import { Overlays } from '~/ui/overlays';
 import { ServerBar, refetchFailed } from '~/ui/states';
 import { useApplyTheme } from '~/ui/theme';
 import { useApplyLook } from '~/ui/applyLook';
+import { ThemeBackdrop } from '~/themes/ThemeBackdrop';
+import { useApplyCustomTheme } from '~/themes/themes';
+import { LyricsMain } from '~/lyrics/LyricsMain';
 import { useLook } from '~/settings/look';
 import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
@@ -51,6 +54,8 @@ function onKey(e: KeyboardEvent) {
     return l.setFullscreen(!l.fullscreen);
   }
   if (e.key === 'Escape' && !useLayout.getState().nowPlaying && useLayout.getState().fullscreen) return useLayout.getState().setFullscreen(false);
+  // Esc on the lyrics in the main area: the page again (a menu or dialog open closes first).
+  if (e.key === 'Escape' && !useLayout.getState().nowPlaying && useLayout.getState().lyricsView && !document.querySelector('.menu, .dialog')) return useLayout.getState().setLyricsView(false);
   if (e.altKey && e.key === 'ArrowLeft') return useNav.getState().back();
   if (e.altKey && e.key === 'ArrowRight') return useNav.getState().forward();
   if (typing) return;
@@ -67,10 +72,12 @@ function onKey(e: KeyboardEvent) {
 
 function App() {
   const signedIn = useAuth((s) => !!s.client);
-  const { panel, sidebarWidth, panelWidth, nowPlaying, fullscreen, mini, floating, rail } = useLayout();
+  const { panel, sidebarWidth, panelWidth, nowPlaying, fullscreen, mini, floating, rail, lyricsView } = useLayout();
+  const hasSong = usePlayer((s) => s.queue.length > 0);
   const routeKey = useNav((s) => `${s.route.name}:${'id' in s.route ? s.route.id : ''}`);
   useApplyTheme();
   useApplyLook();
+  useApplyCustomTheme();
   const settingUp = useSetup((s) => s.running);
 
   useEffect(() => {
@@ -144,14 +151,19 @@ function App() {
         <div
           className={`app${panel && !floating ? '' : ' no-panel'}${floating ? ' floating' : ''}${rail ? ' rail' : ''}${nowPlaying ? ' np-open' : ''}${nowPlaying && fullscreen ? ' np-fs' : ''}`}
           style={{ ['--sidebar' as string]: `${sidebarWidth}px`, ['--panel' as string]: `${panelWidth}px` }}>
+          <ThemeBackdrop />
           <TitleBar />
           <Sidebar />
           {rail ? null : <Resizer which="sidebar" />}
-          <main className="panel main" id="main">
+          <main className={`panel main${lyricsView && hasSong ? ' lyrics-open' : ''}`} id="main">
             <ServerBar />
-            <div key={routeKey} className="route">
-              <Page />
-            </div>
+            {lyricsView && hasSong ? (
+              <LyricsMain />
+            ) : (
+              <div key={routeKey} className="route">
+                <Page />
+              </div>
+            )}
           </main>
           {panel && !floating ? <Resizer which="panel" /> : null}
           <NowPlayingPanel />

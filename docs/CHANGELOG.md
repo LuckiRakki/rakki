@@ -6,7 +6,26 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
-## Desktop 1.1.0 (2026-10-21, next desktop build)
+## Desktop 1.2.0 (2026-10-21, desktop build)
+- **Themes, like Spicetify, from a file.** Settings → Look → Theme lists Rakki (the default
+  look), Lucid, and themes you import. A theme is one .css file (Import; importing an edited
+  file with the same name updates it): its first comment names it, and it can put the playing
+  cover behind the whole window, blurred, with the panels see-through over it. How to make one
+  is in docs/THEMES.md. The colours a theme sets on :root are the part the phone app will use
+  when themes come there.
+- **Lucid, the first theme:** Rakki in the look of the Lucid Spicetify theme as it's set up on
+  your Spotify (by Sachu/sanoojes; rewritten for Rakki): the cover behind everything (blur 32,
+  saturation 150%, brightness 40%), see-through panels tinted by the album with a thin light
+  border, Home's top band in the album's colour, glass menus and dialogs.
+- **Lyrics fill the main area.** The Lyrics button now puts big lyrics (Spicy word by word, or
+  Regular) in place of the page, over the cover flowing in its colours, like Spotify with Spicy
+  Lyrics; both sidebars stay, and the right one drops its lyrics card while they're open. Press
+  Lyrics again, Esc or Back, or open any page, to get the page back. Lyrics Settings and Full
+  Screen Lyrics show at the top right on hover; the Next up card at the end opens the queue. In
+  the full player, Lyrics still switches to its lyrics tab.
+- Includes 1.1.0 below (Edit Metadata through MRQ), which wasn't built on its own.
+
+## Desktop 1.1.0 (2026-10-21)
 - **Edit Metadata through MRQ.** Put your Music Review Queue's address in Settings → Connections
   → MRQ (Test shows its version). Then right-click a song, several songs or an album and pick
   Edit Metadata to change the title, artists, album, album artists, genres, year, track and disc

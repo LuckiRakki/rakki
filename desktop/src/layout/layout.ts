@@ -61,6 +61,8 @@ interface LayoutState {
   setWindowWidth(px: number): void;
   sidebarWidth: number;
   panelWidth: number;
+  /** The lyrics in the main area, in place of the page (the Lyrics button, as in Spotify). */
+  lyricsView: boolean;
   /** The full player (over everything but the player bar). */
   nowPlaying: boolean;
   playerTab: PlayerTab;
@@ -72,6 +74,7 @@ interface LayoutState {
   setPanel(p: Panel | null): void;
   togglePanel(p: Panel): void;
   setWidth(which: 'sidebar' | 'panel', px: number): void;
+  setLyricsView(open: boolean): void;
   setNowPlaying(open: boolean, tab?: PlayerTab): void;
   setPlayerTab(tab: PlayerTab): void;
   setFullscreen(on: boolean): void;
@@ -83,6 +86,7 @@ export const useLayout = create<LayoutState>((set, get) => ({
   ...narrow(startWidth),
   sidebarWidth: read('rakki.sidebarWidth', SIDEBAR.default),
   panelWidth: read('rakki.panelWidth', PANEL.default),
+  lyricsView: false,
   nowPlaying: false,
   playerTab: read<PlayerTab>('rakki.playerTab', 'lyrics'),
   fullscreen: false,
@@ -112,6 +116,9 @@ export const useLayout = create<LayoutState>((set, get) => ({
       save('rakki.panelWidth', w);
       set({ panelWidth: w });
     }
+  },
+  setLyricsView(lyricsView) {
+    set({ lyricsView });
   },
   setNowPlaying(nowPlaying, tab) {
     set({ nowPlaying });

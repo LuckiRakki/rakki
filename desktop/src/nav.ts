@@ -1,6 +1,8 @@
 // Where the main area is, with back and forward like a browser (and the mouse's side buttons).
 import { create } from 'zustand';
 
+import { useLayout } from '~/layout/layout';
+
 export type Route =
   | { name: 'home' }
   | { name: 'search'; term?: string }
@@ -33,6 +35,8 @@ export const useNav = create<NavState>((set, get) => ({
   at: 0,
   route: { name: 'home' },
   go(route) {
+    // Going somewhere puts the page back in place of the lyrics.
+    useLayout.getState().setLyricsView(false);
     const { stack, at } = get();
     const next = [...stack.slice(0, at + 1), route].slice(-50);
     set({ stack: next, at: next.length - 1, route });
@@ -40,6 +44,8 @@ export const useNav = create<NavState>((set, get) => ({
   },
   back() {
     const { stack, at } = get();
+    // Back from the lyrics: the page that was under them.
+    if (useLayout.getState().lyricsView) return useLayout.getState().setLyricsView(false);
     if (at > 0) set({ at: at - 1, route: stack[at - 1] });
   },
   forward() {

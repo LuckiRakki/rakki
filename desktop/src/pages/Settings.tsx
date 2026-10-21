@@ -17,7 +17,11 @@ import { mrqVersion, normalizeMrqUrl, useMrq } from '~/mrq/client';
 import { useNav } from '~/nav';
 import { useDiscord } from '~/player/discord';
 import { APP_LOOK, FEISHIN, LYRICS_SIZE, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
-import { Check, ChevronDown, LogOut } from '~/ui/icons';
+import { ThemeError } from '~/themes/format';
+import { allThemes, useThemes } from '~/themes/themes';
+import { openLink } from '~/lib/links';
+import { toast } from '~/ui/overlays';
+import { ArrowDownToLine, Check, ChevronDown, LogOut, Trash2 } from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
 import { Slider } from '~/ui/Slider';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
@@ -110,6 +114,70 @@ function Account() {
   );
 }
 
+const THEMES_HELP = 'https://github.com/LuckiRakki/rakki/blob/main/docs/THEMES.md';
+
+/** Themes: Rakki's own look, the built-in ones, and .css files you import (docs/THEMES.md). */
+function ThemeCard() {
+  const { active, imported, setActive, importFile, remove } = useThemes();
+  const pick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.css,text/css';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      importFile(file).then(
+        (t) => toast(`Using ${t.meta.name}`),
+        (e: unknown) => toast(e instanceof ThemeError ? e.message : "Couldn't import that theme."),
+      );
+    };
+    input.click();
+  };
+  return (
+    <Card title="Theme">
+      {allThemes(imported).map((t) => {
+        const on = t.id === active;
+        return (
+          <div key={t.id} className="setting theme-row">
+            <div className="setting-text">
+              <div className="setting-label">{t.meta.name}</div>
+              <div className="setting-detail">{[t.meta.description, t.meta.author ? `By ${t.meta.author}` : null, t.builtIn ? null : 'Imported'].filter(Boolean).join(' · ')}</div>
+            </div>
+            {t.builtIn ? null : (
+              <button className="iconbtn" aria-label={`Remove ${t.meta.name}`} title="Remove" onClick={() => remove(t.id)}>
+                <Trash2 size={17} />
+              </button>
+            )}
+            <button className={`secondary small${on ? ' on' : ''}`} aria-pressed={on} disabled={on} onClick={() => setActive(t.id)}>
+              {on ? (
+                <>
+                  <Check size={15} /> In Use
+                </>
+              ) : (
+                'Use'
+              )}
+            </button>
+          </div>
+        );
+      })}
+      <div className="setting">
+        <div className="setting-text">
+          <div className="setting-label">Import a Theme</div>
+          <div className="setting-detail">
+            A .css file, like a Spicetify theme. Import an edited file again to update it.{' '}
+            <span className="linkish" role="link" tabIndex={0} onClick={() => openLink(THEMES_HELP)} onKeyDown={(e) => e.key === 'Enter' && openLink(THEMES_HELP)}>
+              How to make one
+            </span>
+          </div>
+        </div>
+        <button className="secondary small" onClick={pick}>
+          <ArrowDownToLine size={15} /> Import
+        </button>
+      </div>
+    </Card>
+  );
+}
+
 function Look() {
   const { accent, lucid, set: setTheme } = useTheme();
   const [custom, setCustom] = useState(accent);
@@ -119,6 +187,7 @@ function Look() {
   const setApp = useLook((s) => s.setApp);
   return (
     <>
+      <ThemeCard />
       <Card title="Colour">
         <Toggle on={lucid} onChange={(v) => setTheme({ lucid: v })} label="Lucid" detail="The accent takes the colour of the album that's playing (your colour when nothing is)." />
         <div className="setting column">

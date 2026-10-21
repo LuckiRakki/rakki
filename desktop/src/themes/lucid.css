@@ -1,0 +1,86 @@
+/*
+ * @name Lucid
+ * @author Sachu (sanoojes), ported to Rakki
+ * @description See-through panels over the playing cover, blurred, as in the Lucid Spicetify theme.
+ * @version 1.0
+ * @backdrop album
+ *
+ * Lucid for Spotify (gitlab.com/sanoojes/spicetify-lucid) with the settings it was set up with:
+ * the background is the player's cover (blur 32, saturation 150%, brightness 40%), panels are
+ * cards 8px apart with a thin light border, colours follow the album (dynamic, tinted), Inter.
+ * It's also the example to start your own theme from: see docs/THEMES.md for what you can set.
+ */
+
+:root {
+  --bg: #060606;
+  /* Panels: the dark of Lucid's surface, see-through, tinted by the playing album. */
+  --surface: color-mix(in srgb, var(--now) 7%, rgba(8, 8, 10, 0.42));
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --surface-3: rgba(255, 255, 255, 0.12);
+  --surface-4: rgba(255, 255, 255, 0.18);
+  --line: rgba(255, 255, 255, 0.1);
+  --text: #f6f6f7;
+  --text-2: rgba(255, 255, 255, 0.74);
+  --text-3: rgba(255, 255, 255, 0.6);
+  --radius: 8px;
+  --radius-sm: 6px;
+  /* The cover behind everything. */
+  --backdrop-blur: 32px;
+  --backdrop-brightness: 0.4;
+  --backdrop-saturation: 1.5;
+  /* Lucid's border: 1px, white at 10%, 20% under the pointer. */
+  --lucid-border: rgba(255, 255, 255, 0.1);
+  --lucid-border-hover: rgba(255, 255, 255, 0.2);
+  /* Glass for what floats over the page (menus, dialogs, the timing panel). */
+  --lucid-glass: color-mix(in srgb, var(--now) 8%, rgba(20, 20, 23, 0.72));
+}
+
+/* ---- Panels: cards over the cover ---- */
+
+.panel { background: var(--surface); border: 1px solid var(--lucid-border); }
+.navbtn { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--lucid-border); }
+.navbtn.home, .search { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--lucid-border); }
+.search:hover, .navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); border-color: var(--lucid-border-hover); }
+.search:focus-within { border-color: rgba(255, 255, 255, 0.6); }
+.win:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* Home's top band in the album's colour, as Lucid's home header. */
+.home-top {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--now) 42%, transparent) 0%, color-mix(in srgb, var(--now) 22%, transparent) 70%, transparent 100%);
+}
+.quick { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--lucid-border); }
+.quick:hover { background: rgba(255, 255, 255, 0.15); }
+.card:hover { background: rgba(255, 255, 255, 0.07); }
+.row:hover, .qrow:hover { background: rgba(255, 255, 255, 0.07); }
+.row.on { background: rgba(255, 255, 255, 0.12); }
+.side-links .link { border: 1px solid var(--lucid-border); }
+
+/* Pages that start in their artwork's colour fade into the cover instead of a solid panel. */
+.lib-header { background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 55%, transparent) 0%, color-mix(in srgb, var(--tint) 18%, transparent) 100%); }
+.action-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 18%, transparent) 0, transparent 240px); }
+
+/* ---- Right sidebar: Lucid's cards ---- */
+
+.np-card { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--lucid-border); }
+.lyrics-card { background: color-mix(in srgb, var(--tint) 55%, rgba(0, 0, 0, 0.35)); }
+.np-tags span { background: rgba(255, 255, 255, 0.08); }
+
+/* ---- The player bar: on the cover, no panel ---- */
+
+.range .bar { background: rgba(255, 255, 255, 0.2); }
+
+/* ---- What floats: menus, dialogs, popovers ---- */
+
+.menu, .timing-pop, .dialog {
+  background: var(--lucid-glass);
+  border: 1px solid var(--lucid-border);
+  -webkit-backdrop-filter: blur(32px) saturate(1.5);
+  backdrop-filter: blur(32px) saturate(1.5);
+}
+.menu-item:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+.field { background: rgba(255, 255, 255, 0.08); border-color: var(--lucid-border); }
+.select option { background: #1b1b1e; }
+.settings-card { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--lucid-border); }
+.server-bar { background: var(--lucid-glass); }
+/* The song table's sticky header: glass, so rows scrolling under it don't show through. */
+.tt-head { background: var(--lucid-glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }

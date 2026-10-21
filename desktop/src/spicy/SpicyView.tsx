@@ -34,6 +34,7 @@ export function SpicyView({
   variant = 'big',
   active = true,
   onOpen,
+  onNextUp,
 }: {
   lyrics: Lyrics;
   itemId?: string;
@@ -41,6 +42,8 @@ export function SpicyView({
   /** Off: the animation rests (the card while the full player covers it). */
   active?: boolean;
   onOpen?(): void;
+  /** The Next up card clicked (default: the full player's queue). */
+  onNextUp?(): void;
 }) {
   const mount = useRef<HTMLDivElement>(null);
   const anim = useRef<LyricsAnimator | null>(null);
@@ -53,6 +56,8 @@ export function SpicyView({
   offsetRef.current = offset;
   const position = usePlayer((s) => s.position);
   const big = variant === 'big';
+  const nextUpRef = useRef(onNextUp);
+  nextUpRef.current = onNextUp;
 
   useEffect(() => {
     const a = new LyricsAnimator(mount.current!);
@@ -79,7 +84,7 @@ export function SpicyView({
     if (!a || !big) return;
     a.setNextUp(
       next && !next.Radio ? { title: next.Name, artist: next.Artists?.join(', ') ?? next.AlbumArtist ?? '', artUrl: client?.imageUrl(next, 120) ?? null } : null,
-      () => useLayout.getState().setPlayerTab('queue'),
+      () => (nextUpRef.current ? nextUpRef.current() : useLayout.getState().setPlayerTab('queue')),
     );
   }, [next?.Id, lyrics, big, client]); // eslint-disable-line react-hooks/exhaustive-deps
 

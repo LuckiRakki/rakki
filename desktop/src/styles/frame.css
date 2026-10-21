@@ -107,3 +107,14 @@
 .app.rail .side-links .link { justify-content: center; padding: 0; height: 44px; }
 .app.rail .side-lists { padding: 4px 8px 12px; scrollbar-width: none; }
 .app.rail .row { justify-content: center; padding: 4px; }
+
+/* ---- A theme's backdrop (themes/ThemeBackdrop.tsx): the playing cover behind the panels ---- */
+
+.app:has(> .theme-backdrop) { isolation: isolate; }
+.theme-backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: var(--bg); }
+.theme-backdrop img {
+  position: absolute; top: -80px; left: -80px; width: calc(100% + 160px); height: calc(100% + 160px); object-fit: cover;
+  filter: blur(var(--backdrop-blur, 32px)) saturate(var(--backdrop-saturation, 1.5)) brightness(var(--backdrop-brightness, 0.4));
+  will-change: transform; animation: fade-in 0.6s var(--ease-out);
+}
+.theme-backdrop .dyn-bg { position: absolute; z-index: auto; filter: saturate(var(--backdrop-saturation, 1.3)) brightness(var(--backdrop-brightness, 0.5)); }

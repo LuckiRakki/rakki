@@ -60,3 +60,27 @@
 .credit-line img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
 .credit-line.linked { cursor: pointer; }
 .credit-line.linked:hover span { text-decoration: underline; }
+
+/* ---- Lyrics in the main area (lyrics/LyricsMain.tsx), as Spotify with Spicy Lyrics ---- */
+
+.panel.main.lyrics-open { overflow: hidden; position: relative; }
+.lyrics-main { position: absolute; inset: 0; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; animation: fade-in 0.3s var(--ease-out); }
+.lm-solid, .lm-shade, .lyrics-main .dyn-bg { position: absolute; pointer-events: none; }
+.lm-solid { inset: 0; z-index: -3; background: color-mix(in srgb, var(--tint) 45%, #000); }
+.lyrics-main .dyn-bg { inset: 0; z-index: -2; }
+.lyrics-main .dyn-bg.fallback { inset: -100px; }
+.lm-shade { inset: 0; z-index: -1; background: rgba(0, 0, 0, 0.2); }
+.lm-tools { position: absolute; top: 12px; right: 12px; z-index: 3; display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+.lyrics-main:hover .lm-tools, .lm-tools:focus-within, .lm-tools:has(.timing-pop) { opacity: 1; }
+.lm-tools .iconbtn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: rgba(255, 255, 255, 0.8); }
+.lm-tools .iconbtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.lm-tools .iconbtn.on { color: #fff; }
+/* The lyrics column: left-aligned, a little in from the edge, sized from its own width. */
+.lm-body { flex: 1; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; padding: 0 clamp(24px, 9%, 160px) 0 clamp(24px, 9%, 160px); }
+.lm-body > .lyrics, .lm-body > .spicy-view { flex: 1; min-height: 0; }
+.lm-body .sl-root { --sl-font-size: calc(clamp(1.25rem, 3.2cqi, 4.5rem) * var(--sl-lyric-scale, 1)); }
+.lm-body .lyrics.big p { font-size: calc(clamp(18px, 3.2cqi, 72px) * var(--lyrics-size, 1.3)); }
+.lm-body .spicy-credit { padding-bottom: 12px; }
+.lm-empty { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: rgba(255, 255, 255, 0.7); padding-bottom: 6vh; }
+.lm-empty h2 { font-size: 26px; font-weight: 900; color: #fff; }
+.lm-empty p { color: rgba(255, 255, 255, 0.65); }

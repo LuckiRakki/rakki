@@ -198,6 +198,7 @@ export function PlayerBar() {
   const panel = useLayout((s) => s.panel);
   const open = useLayout((s) => s.nowPlaying);
   const tab = useLayout((s) => s.playerTab);
+  const lyricsView = useLayout((s) => s.lyricsView);
   const target = useRemote((s) => s.target);
   const video = useVideo((s) => s.video);
   const [fit, bar] = useFit();
@@ -207,7 +208,9 @@ export function PlayerBar() {
   if (video) return <VideoBar video={video} />;
   if (target) return <RemoteBar target={target} />;
 
-  const toggleLyrics = () => (open && tab === 'lyrics' ? l.setNowPlaying(false) : l.setNowPlaying(true, 'lyrics'));
+  // The lyrics take the main area (the full player open: its Lyrics tab, as before).
+  const toggleLyrics = () => (open ? (tab === 'lyrics' ? l.setNowPlaying(false) : l.setPlayerTab('lyrics')) : l.setLyricsView(!lyricsView));
+  const lyricsOn = open ? tab === 'lyrics' : lyricsView;
   const more = (e: React.MouseEvent) => {
     const sleep = sleepMenu();
     const items: MenuItem[] = [
@@ -257,9 +260,9 @@ export function PlayerBar() {
           </button>
         ) : null}
         <button
-          className={`iconbtn${open && tab === 'lyrics' ? ' on dot' : ''}`}
+          className={`iconbtn${lyricsOn ? ' on dot' : ''}`}
           aria-label={noLyrics ? 'Lyrics (No Lyrics Found)' : 'Lyrics'}
-          aria-pressed={open && tab === 'lyrics'}
+          aria-pressed={lyricsOn}
           title={noLyrics ? 'No Lyrics Found' : 'Lyrics'}
           disabled={!now}
           onClick={toggleLyrics}>

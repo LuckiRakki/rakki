@@ -235,3 +235,6 @@
 .hex .field { width: 120px; height: var(--control-sm); }
 .row-form { display: flex; gap: 10px; }
 .row-form .field { flex: 1; height: var(--control); }
+.theme-row .iconbtn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-3); }
+.theme-row .iconbtn:hover { color: var(--text); background: var(--surface-3); }
+.theme-row .secondary.on { border-color: transparent; background: var(--accent-soft); color: var(--accent); opacity: 1; }
