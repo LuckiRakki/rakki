@@ -6,6 +6,16 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.22.1 (2026-10-21)
+- **Spicy lyrics: a crash fix and less work per frame** (from the Oct 18-21 performance logs).
+  The phone closed once right after a few minutes on the lyrics screen (a memory crash in native
+  code, called from JavaScript); old lyric pictures were freed from JavaScript while the screen
+  could still be drawing them, and are now freed on the drawing thread. The lyrics screen also ran
+  at about 50% CPU with 17-45 garbage collections a second: the colour sweep built two colour
+  strings and a gradient for every lit word on every frame, and the edge fade a new paint and
+  gradient every frame. Sung words are now a flat colour, the sweep reuses its colour stops and
+  frees each gradient as soon as it's replaced, and the edge fade is built once.
+
 ## 1.22.0 (2026-10-21)
 - **The lyrics screen is only the lyrics.** The artwork, the song and the lyrics, with Close and
   one Lyrics Style button at the top. The visualizer, the timing button and Spicy / Regular

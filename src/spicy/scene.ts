@@ -20,6 +20,8 @@ import {
   type SkImage,
   type SkMaskFilter,
   type SkPaint,
+  type SkRect,
+  type SkShader,
 } from '@shopify/react-native-skia';
 
 import { creditRows } from '@/lyrics/fetch';
@@ -37,9 +39,9 @@ export { SPICY_DEFAULTS, type SpicySettings } from '@/spicy/settings';
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
 
 /** "#rrggbb" → "r,g,b" (white if unreadable). */
-function hexToRgb(hex: string): string {
+function hexToRgb(hex: string): [number, number, number] {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
-  return m ? `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}` : '255,255,255';
+  return m ? [parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255] : [1, 1, 1];
 }
 
 const WORD_SCALE = new Spline([[0, 0.95], [0.7, 1.0505], [1, 1]]);
@@ -246,8 +248,17 @@ export class SpicyScene {
   private readonly glowPaint: SkPaint;
   private readonly blurCache = new Map<number, SkMaskFilter>();
   private readonly white: SkColor;
-  /** The lyrics colour as "r,g,b" for gradient stops. */
-  private readonly rgb: string;
+  /** The lyrics colour as 0-1 r, g, b for gradient stops. */
+  private readonly rgb: [number, number, number];
+  // Gradient stops, filled in place for each sweep (Skia copies them when it makes the shader).
+  // Building "rgba(...)" strings for every lit word on every frame was most of the lyrics
+  // screen's garbage: the performance logs showed 17-45 collections a second there.
+  private readonly stopA = new Float32Array(4);
+  private readonly stopB = new Float32Array(4);
+  /** The last sweep shader, freed as soon as the next one replaces it (the picture keeps its own). */
+  private sweep: SkShader | null = null;
+  /** The edge fade, rebuilt only when its size changes. */
+  private fade: { key: string; paint: SkPaint; shader: SkShader; rect: SkRect } | null = null;
 
   constructor(
     lyrics: Lyrics,
@@ -995,18 +1006,22 @@ export class SpicyScene {
     if (fading) {
       // Keep the pixels where the mask is opaque: transparent at the very edges.
       const h = this.height;
-      const mask = Skia.Paint();
-      mask.setBlendMode(BlendMode.DstIn);
-      mask.setShader(
-        Skia.Shader.MakeLinearGradient(
+      const key = `${Math.round(fadeTop)}:${Math.round(fadeBottom)}`;
+      if (this.fade?.key !== key) {
+        const mask = this.fade?.paint ?? Skia.Paint();
+        mask.setBlendMode(BlendMode.DstIn);
+        const shader = Skia.Shader.MakeLinearGradient(
           { x: 0, y: 0 },
           { x: 0, y: h },
           [Skia.Color('transparent'), Skia.Color('black'), Skia.Color('black'), Skia.Color('transparent')],
-          [0, Math.min(0.49, fadeTop / h), Math.max(0.51, 1 - fadeBottom / h), 1],
+          [0, Math.min(0.49, Math.round(fadeTop) / h), Math.max(0.51, 1 - Math.round(fadeBottom) / h), 1],
           TileMode.Clamp,
-        ),
-      );
-      canvas.drawRect(Skia.XYWHRect(0, 0, this.width, h), mask);
+        );
+        mask.setShader(shader);
+        this.fade?.shader.dispose();
+        this.fade = { key, paint: mask, shader, rect: this.fade?.rect ?? Skia.XYWHRect(0, 0, this.width, h) };
+      }
+      canvas.drawRect(this.fade.rect, this.fade.paint);
       canvas.restore();
     }
   }
@@ -1147,15 +1162,23 @@ export class SpicyScene {
     const to = from + (w * this.settings.sweepBand) / 100;
     this.paint.setColor(this.white);
     this.paint.setAlphaf(1);
-    this.paint.setShader(
-      Skia.Shader.MakeLinearGradient(
-        { x: from, y: 0 },
-        { x: Math.max(to, from + 0.01), y: 0 },
-        [Skia.Color(`rgba(${this.rgb},${sungA})`), Skia.Color(`rgba(${this.rgb},${unsungA})`)],
-        null,
-        TileMode.Clamp,
-      ),
-    );
+    // Fully sung: one flat colour, no gradient to build.
+    if (gp >= 100) {
+      this.setWhite(this.paint, sungA);
+      return;
+    }
+    this.setSweep({ x: from, y: 0 }, { x: Math.max(to, from + 0.01), y: 0 }, sungA, unsungA);
+  }
+
+  /** Puts a two-stop gradient of the lyrics colour (a → b alpha) on the main paint. */
+  private setSweep(p0: { x: number; y: number }, p1: { x: number; y: number }, a: number, b: number) {
+    const [r, g, bl] = this.rgb;
+    this.stopA[0] = r; this.stopA[1] = g; this.stopA[2] = bl; this.stopA[3] = Math.max(0, Math.min(1, a));
+    this.stopB[0] = r; this.stopB[1] = g; this.stopB[2] = bl; this.stopB[3] = Math.max(0, Math.min(1, b));
+    const shader = Skia.Shader.MakeLinearGradient(p0, p1, [this.stopA, this.stopB], null, TileMode.Clamp);
+    this.paint.setShader(shader);
+    this.sweep?.dispose();
+    this.sweep = shader;
   }
 
   private drawPlainRow(canvas: SkCanvas, row: Row, top: number, glowMul: number) {
@@ -1180,15 +1203,7 @@ export class SpicyScene {
     this.paint.setColor(this.white);
     this.paint.setAlphaf(1);
     this.paint.setMaskFilter(null);
-    this.paint.setShader(
-      Skia.Shader.MakeLinearGradient(
-        { x: 0, y: from },
-        { x: 0, y: Math.max(to, from + 0.01) },
-        [Skia.Color(`rgba(${this.rgb},${SUNG * op})`), Skia.Color(`rgba(${this.rgb},${LINE_UNSUNG * op})`)],
-        null,
-        TileMode.Clamp,
-      ),
-    );
+    this.setSweep({ x: 0, y: from }, { x: 0, y: Math.max(to, from + 0.01) }, SUNG * op, LINE_UNSUNG * op);
     row.lines.forEach((l, i) => this.drawRuns(canvas, l.runs, l.x, top + i * row.lineHeight + row.baseline, this.paint));
     this.paint.setShader(null);
   }

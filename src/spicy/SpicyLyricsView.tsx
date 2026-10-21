@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
 
 import type { Lyrics } from '@/lyrics/types';
 import { useShallow } from 'zustand/react/shallow';
@@ -31,6 +32,15 @@ const SETTLE_MS = 1500;
 const KEEP_PICTURES = 4;
 /** While resting, how often to look for play, a touch or a seek. */
 const REST_CHECK_MS = 50;
+
+/** Frees old pictures on the UI thread, the one that draws them. Freeing them from JavaScript
+ *  could land while the screen was still drawing one (a malloc crash right after a lyrics
+ *  session, 10-21 in the performance log); on the UI thread it's always between draws, and
+ *  after the newer picture has reached the screen. */
+function disposePictures(pictures: SkPicture[]) {
+  'worklet';
+  for (const p of pictures) p.dispose();
+}
 
 /** Credits' profile pictures, kept for the session. */
 const avatarCache = new Map<string, SkImage>();
@@ -117,13 +127,16 @@ export function SpicyLyricsView({
       const next = rec.finishRecordingAsPicture();
       old.push(picture.value);
       picture.value = next;
-      while (old.length > KEEP_PICTURES) old.shift()?.dispose();
+      // Handed over a few at a time so it isn't a trip to the UI thread every frame.
+      if (old.length >= KEEP_PICTURES * 2) scheduleOnUI(disposePictures, old.splice(0, old.length - KEEP_PICTURES));
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
       if (rest) clearTimeout(rest);
+      // The picture on screen stays; the ones behind it were never freed when drawing stopped.
+      if (old.length) scheduleOnUI(disposePictures, old.splice(0));
     };
   }, [scene, active, size.w, size.h, nowMs, durationMs, picture]);
 
