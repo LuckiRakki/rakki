@@ -225,7 +225,8 @@ pub fn run() {
             capture_stop,
             autostart_get,
             autostart_set,
-            mrq::mrq_request
+            mrq::mrq_request,
+            mrq::spotify_album
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

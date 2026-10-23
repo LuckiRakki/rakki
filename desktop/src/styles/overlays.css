@@ -38,6 +38,17 @@
 .meta-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; overflow-y: auto; }
 .meta-field { grid-column: span 6; display: flex; flex-direction: column; gap: 10px; }
 .meta-field.narrow { grid-column: span 2; }
+.field.invalid, .field.invalid:focus { border-color: #ff8a80; }
+/* The album editor: wider, its fields, then a row per song (number, title, artists, Spotify link). */
+.dialog:has(.meta-album) { width: min(980px, calc(100vw - 40px)); }
+.meta-album .meta-grid { overflow: visible; flex: none; }
+.meta-album .meta-field:not(.narrow) { grid-column: span 3; }
+.meta-album .meta-field:last-child { grid-column: span 6; }
+.meta-tracks { overflow-y: auto; min-height: 120px; margin: 0 -4px; padding: 0 4px; }
+.meta-track { display: grid; grid-template-columns: 56px 1.3fr 1fr 1.3fr; gap: 8px; padding: 3px 0; }
+.meta-tracks.discs .meta-track { grid-template-columns: 52px 56px 1.3fr 1fr 1.3fr; }
+.meta-track .field { height: var(--control-sm); padding: 0 10px; font-size: 13px; }
+.meta-track.head { position: sticky; top: 0; z-index: 1; background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--text-3); padding: 0 0 4px; }
 
 /* ---- Forms ---- */
 

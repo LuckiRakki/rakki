@@ -1,6 +1,6 @@
 [package]
 name = "rakki-desktop"
-version = "1.2.1"
+version = "1.3.0"
 description = "Rakki for Windows and Linux: Jellyfin music with word-by-word lyrics"
 authors = ["LuckiRakki"]
 edition = "2024"
@@ -27,8 +27,10 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io
 souvlaki = { version = "0.8", default-features = false, features = ["use_zbus"] }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
-# Talking to MRQ, your tag editor (mrq.rs). Already part of the app through the updater.
+# Talking to MRQ, your tag editor, and Spotify's public album pages (mrq.rs). Both already part
+# of the app through the updater; rustls's ring is the encryption the updater uses too.
 reqwest = { version = "0.13", default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 
 # Windows: WebView2's own settings (memory.rs); the same versions Tauri's webview already uses.
 [target.'cfg(windows)'.dependencies]
