@@ -41,6 +41,7 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
         private readonly SpicyLyricsService     _spicy;
         private readonly LyricsIndex            _index;
         private readonly SongEdits              _made;
+        private readonly LyricsSources          _sources;
         private readonly ILogger<SpicyLyricsController> _logger;
 
         public SpicyLyricsController(
@@ -49,6 +50,7 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
             SpicyLyricsService           spicy,
             LyricsIndex                  index,
             SongEdits                    made,
+            LyricsSources                sources,
             ILogger<SpicyLyricsController> logger)
         {
             _library      = library;
@@ -56,6 +58,7 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
             _spicy        = spicy;
             _index        = index;
             _made         = made;
+            _sources      = sources;
             _logger       = logger;
         }
 
@@ -133,55 +136,17 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
                 return NotFound("Item not found or is not an audio track.");
             }
 
-            // Lyrics made in Rakki (the tap-to-sync maker) come first: someone made them for this song.
-            var madePath = _made.MadeLyricsPath(itemId);
-            if (madePath is not null)
+            // The song's chosen source, else automatic (LyricsSources.cs). A file that can't be
+            // read is a server error, so it gets fixed rather than hidden.
+            try
             {
-                try
-                {
-                    var made = _ttmlProvider.ParseTTMLFile(madePath);
-                    made.Source = "rakki";
-                    var by = _made.MadeLyricsInfo(itemId)?.By;
-                    if (!string.IsNullOrEmpty(by)) made.Attribution = new AttributionDto { Maker = new AttributionPersonDto { Username = by } };
-                    if (made.Lines.Count > 0) return Ok(made);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error parsing lyrics made in Rakki: {Path}", madePath);
-                }
+                var dto = await _sources.ForSongAsync(audioItem, ct).ConfigureAwait(false);
+                if (dto is not null) return Ok(dto);
             }
-
-            var cfg      = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-            var ttmlPath = Sidecars.FindTtml(audioItem);
-
-            // Spicy Lyrics API. When SpicyApiPriority is on it is tried first and
-            // the local sidecar is the fallback; otherwise it only fills gaps for
-            // tracks that have no sidecar. Either way, a track we can't map to a
-            // Spotify ID (or that the API has no lyrics for) falls back to local.
-            if (SpicyLyricsService.IsConfigured(cfg) && (cfg.SpicyApiPriority || ttmlPath is null))
+            catch (Exception ex)
             {
-                var spicy = await _spicy.GetOrFetchAsync(audioItem, cfg, ct).ConfigureAwait(false);
-                var usable = spicy is not null && spicy.Lines.Count > 0;
-                // Anti-downgrade: never replace a sidecar with UNSYNCED API text.
-                // Take the API when it's synced/word-level, or when there is no
-                // sidecar to fall back to.
-                var synced = usable && (spicy!.IsSynced || spicy.Lines.Exists(l => l.Words.Count > 0));
-                if (usable && (synced || ttmlPath is null)) return Ok(spicy);
-            }
-
-            if (ttmlPath is not null)
-            {
-                try
-                {
-                    var dto = _ttmlProvider.ParseTTMLFile(ttmlPath);
-                    return Ok(dto);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error parsing TTML file: {Path}", ttmlPath);
-                    return StatusCode(StatusCodes.Status500InternalServerError,
-                        "Failed to parse TTML file.");
-                }
+                _logger.LogError(ex, "Error reading lyrics for {Item}", audioItem.Name);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Failed to parse TTML file.");
             }
 
             return NotFound("No lyrics found for this item.");

@@ -12,7 +12,9 @@ MPRIS, tray menu and tooltip, and Discord follow the device it controls; the pho
 Devices screen, app/devices.tsx; the phone reconnects as soon as it's back in front), remote
 volume (2026-10-21: the desktop reports `VolumeLevel` with its progress reports and right after
 a change; the phone's remote player and the desktop's remote bar show and set it. The phone
-itself doesn't take volume commands: its volume is the iPhone's own).
+itself doesn't take volume commands: its volume is the iPhone's own). Holding a device in the phone's
+Connect screen (2026-10-25, src/remote/connect.ts) offers each choice instead of the tap's
+guess: play this phone's song there, just remote control it, or play its song here.
 
 Left out on purpose:
 - The phone's lock screen can't show "Playing on {computer}": iOS only shows what the app itself

@@ -4,6 +4,9 @@
 // - GET /Rakki/Edits/{id}: one, or 404. PUT (JSON object, at most 16 KB) sets it, DELETE removes it.
 // - PUT /Rakki/Lyrics/{id}: lyrics made in Rakki (TTML, at most 1 MB). DELETE removes them.
 // - GET /Rakki/Lyrics/{id}/Made: whether the song has some, and who made them.
+// - GET /Rakki/Lyrics/{id}/Sources (0.4): the song's chosen lyrics source and the kinds it has
+//   here; PUT /Rakki/Lyrics/{id}/Source { "Source": "auto|made|spicy|local|jellyfin" } picks one
+//   (SpicyLyrics/LyricsSources.cs).
 
 using System;
 using System.IO;
@@ -25,6 +28,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Rakki.Edits
 {
+    public sealed class LyricsSourceBody
+    {
+        public string Source { get; set; } = string.Empty;
+    }
+
     [ApiController]
     [Route("Rakki")]
     [Authorize]
@@ -35,13 +43,15 @@ namespace Jellyfin.Plugin.Rakki.Edits
         private readonly SongEdits _edits;
         private readonly ILibraryManager _library;
         private readonly TTMLLyricProvider _ttml;
+        private readonly LyricsSources _sources;
         private readonly ILogger<SongEditsController> _logger;
 
-        public SongEditsController(SongEdits edits, ILibraryManager library, TTMLLyricProvider ttml, ILogger<SongEditsController> logger)
+        public SongEditsController(SongEdits edits, ILibraryManager library, TTMLLyricProvider ttml, LyricsSources sources, ILogger<SongEditsController> logger)
         {
             _edits = edits;
             _library = library;
             _ttml = ttml;
+            _sources = sources;
             _logger = logger;
         }
 
@@ -154,6 +164,32 @@ namespace Jellyfin.Plugin.Rakki.Edits
         {
             var info = _edits.MadeLyricsPath(itemId) is null ? null : _edits.MadeLyricsInfo(itemId);
             return new { Made = _edits.MadeLyricsPath(itemId) is not null, By = info?.By ?? string.Empty, Saved = info?.Saved };
+        }
+
+        // ── Which lyrics the song shows (0.4) ────────────────────────────────
+
+        [HttpGet("Lyrics/{itemId}/Sources")]
+        [Produces(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<object>> Sources([FromRoute] Guid itemId, CancellationToken ct)
+        {
+            if (_library.GetItemById(itemId) is not Audio song) return NotFound("Not a song.");
+            var options = await _sources.OptionsAsync(song, ct).ConfigureAwait(false);
+            return new { Choice = _sources.ChoiceFor(itemId), Options = options };
+        }
+
+        [HttpPut("Lyrics/{itemId}/Source")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> SetSource([FromRoute] Guid itemId, [FromBody] LyricsSourceBody body, CancellationToken ct)
+        {
+            if (!IsSong(itemId)) return NotFound("Not a song.");
+            var source = body.Source?.Trim().ToLowerInvariant();
+            if (!LyricsSources.IsKnown(source)) return BadRequest("Unknown source.");
+            await _sources.SetAsync(itemId, source!, ct).ConfigureAwait(false);
+            return NoContent();
         }
     }
 }

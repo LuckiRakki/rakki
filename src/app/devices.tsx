@@ -4,21 +4,16 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
-import { tick } from '@/lib/haptics';
-import { engine } from '@/player/engine';
 import { useRemoteTarget } from '@/player/remoteTarget';
 import { usePlayer } from '@/player/store';
-import { deviceNow, otherRakkiDevices, pullFrom, pushTo, type RakkiDevice } from '@/remote/devices';
-import { showToast } from '@/ui/overlays';
+import { moveHere, tapDevice } from '@/remote/connect';
+import { otherRakkiDevices, type RakkiDevice } from '@/remote/devices';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const REFRESH_MS = 3000;
-/** Music being moved: one at a time. The screen closes at once. */
-let moving = false;
 
 const isPhone = (d: { name: string }) => /iphone|ipad|ios|android|phone/i.test(d.name);
 
@@ -26,50 +21,6 @@ function nowLine(d: RakkiDevice): string {
   if (!d.item) return 'Not playing';
   const who = d.item.Artists?.join(', ') ?? d.item.AlbumArtist;
   return `${d.paused ? 'Paused' : 'Playing'}: ${d.item.Name}${who ? ` · ${who}` : ''}`;
-}
-
-/** Bring the music here from the device that's playing it. */
-async function moveHere(client: JellyfinClient, d: RakkiDevice) {
-  if (moving) return;
-  tick();
-  moving = true;
-  router.back();
-  try {
-    const h = await pullFrom(client, d);
-    useRemoteTarget.getState().setTarget(null);
-    if (!h.items.length) return showToast(`Nothing to take over from ${d.name}`);
-    usePlayer.getState().playQueue(h.items, { startIndex: h.index, shuffle: false });
-    if (h.positionSec > 1) setTimeout(() => usePlayer.getState().seek(h.positionSec), 700);
-    await h.release();
-    showToast(`Playing on This Phone (from ${d.name})`);
-  } catch {
-    showToast(`Couldn’t take over from ${d.name}`);
-  } finally {
-    moving = false;
-  }
-}
-
-/** Move this phone's music to another device. */
-async function moveTo(client: JellyfinClient, d: RakkiDevice) {
-  const p = usePlayer.getState();
-  if (moving) return;
-  if (!p.queue.length) return showToast('Play something here first, then move it');
-  tick();
-  moving = true;
-  router.back();
-  try {
-    const ok = await pushTo(client, d, p.queue.map((e) => e.item), p.index, engine.getProgress().position);
-    if (!ok) return showToast(`${d.name} didn’t start. Open Rakki there and try again.`);
-    if (usePlayer.getState().playing) usePlayer.getState().toggle();
-    // This phone becomes its remote: the player shows that device's song and controls it.
-    const fresh = await deviceNow(client, d.sessionId).catch(() => null);
-    useRemoteTarget.getState().setTarget(fresh ?? d);
-    showToast(`Playing on ${d.name}`);
-  } catch {
-    showToast(`Couldn’t reach ${d.name}`);
-  } finally {
-    moving = false;
-  }
 }
 
 /**
@@ -122,15 +73,7 @@ export default function DevicesScreen() {
     }
   };
   const pick = (d: RakkiDevice) => {
-    if (!client || target?.sessionId === d.sessionId) return;
-    // Nothing here to move: control what's playing there instead.
-    if (!usePlayer.getState().queue.length || (!playingHere && d.item)) {
-      tick();
-      useRemoteTarget.getState().setTarget(d);
-      router.back();
-      return;
-    }
-    void moveTo(client, d);
+    if (client) tapDevice(client, d);
   };
 
   const row = (key: string, icon: keyof typeof Ionicons.glyphMap, name: string, sub: string, lit: boolean, onPress: () => void, disabled = false) => (
