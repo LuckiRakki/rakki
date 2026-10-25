@@ -32,6 +32,8 @@
 .tb-right { display: flex; justify-content: flex-end; height: 100%; }
 .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.02em; margin-right: 10px; }
 .brand b, .wordmark b { color: var(--accent); }
+/* The dev build (npm run app:dev), so it isn't mistaken for the installed Rakki. */
+.brand-dev { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: 3px; background: var(--accent); color: var(--on-accent); }
 .navbtn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); background: var(--surface); transition: background 0.15s, color 0.15s; }
 .navbtn:hover:not(:disabled) { color: var(--text); background: var(--surface-3); }
 .navbtn:disabled { opacity: 0.4; }

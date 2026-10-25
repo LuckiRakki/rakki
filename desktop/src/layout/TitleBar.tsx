@@ -96,6 +96,7 @@ export function TitleBar() {
       <div className="tb-left" data-tauri-drag-region>
         <span className="brand" data-tauri-drag-region>
           Rakki<b>.</b>
+          {import.meta.env.DEV ? <span className="brand-dev">Dev</span> : null}
         </span>
         <button className="navbtn" disabled={at === 0} onClick={() => useNav.getState().back()} aria-label="Back" title="Back">
           <ChevronLeft size={18} />

@@ -30,6 +30,22 @@ npm run tauri dev
 
 `RAKKI_MPV` points at a specific mpv binary if it isn't on the PATH.
 
+### Dev build, side by side with the installed Rakki
+
+```bash
+npm run app:dev
+```
+
+Opens **Rakki Dev** (a "Dev" tag next to the logo) with live reload: interface changes (`src/`,
+and the phone app's `../src`) show up instantly without restarting, and Rust changes
+(`src-tauri/`) rebuild and reopen the app on their own. The first run compiles the Rust side
+(a few minutes); after that it starts in seconds.
+
+It's its own app (`src-tauri/tauri.dev.conf.json`: id `com.luckirakki.rakki.desktop.dev`), so
+it keeps its own sign-in, settings and webview data and never touches the installed Rakki: it
+doesn't check for updates or install them, and can't start with the computer. Both can run at
+once (each starts its own mpv). Stop it with Ctrl+C in the terminal.
+
 ## Installers
 
 `.github/workflows/desktop.yml` builds them on GitHub: a Windows installer with mpv inside, and

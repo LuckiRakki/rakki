@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Rakki Dev",
+  "identifier": "com.luckirakki.rakki.desktop.dev",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Rakki Dev",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "decorations": false,
+        "center": true,
+        "visible": false
+      }
+    ]
+  },
+  "bundle": {
+    "createUpdaterArtifacts": false
+  }
+}
