@@ -39,7 +39,7 @@ import { ThemeBackdrop } from '~/themes/ThemeBackdrop';
 import { useApplyCustomTheme } from '~/themes/themes';
 import { LyricsMain } from '~/lyrics/LyricsMain';
 import { useLook } from '~/settings/look';
-import { handleShortcut } from '~/settings/shortcuts';
+import { handleShortcut, passFocus } from '~/settings/shortcuts';
 import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
 import { DevNotice } from '~/dev/DevNotice';
@@ -91,10 +91,13 @@ function App() {
     };
     window.addEventListener('mouseup', onMouse);
     window.addEventListener('keydown', onKey);
+    // First look at every key: a button or row you clicked doesn't take the shortcuts.
+    window.addEventListener('keydown', passFocus, true);
     window.addEventListener('contextmenu', noMenu);
     return () => {
       window.removeEventListener('mouseup', onMouse);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keydown', passFocus, true);
       window.removeEventListener('contextmenu', noMenu);
       window.removeEventListener('resize', onResize);
     };

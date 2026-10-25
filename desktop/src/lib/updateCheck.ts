@@ -4,7 +4,7 @@
 // title bar; one click downloads it (the button shows how far), installs it and restarts Rakki.
 // Linux .deb installs update through the package instead. The dev build (npm run app:dev) never
 // looks: an update would install the release Rakki over the installed one.
-import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { create } from 'zustand';
 
@@ -61,7 +61,7 @@ export async function installUpdate() {
       }
     });
     // Windows' installer closes Rakki itself; elsewhere, restart into the new version.
-    await relaunch();
+    await invoke('app_restart');
   } catch (e) {
     useUpdate.setState({ progress: null });
     toast(`Couldn’t update: ${e instanceof Error ? e.message : String(e)}`);
