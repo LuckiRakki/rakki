@@ -56,6 +56,9 @@
 .pop-label { font-size: 12px; font-weight: 700; color: var(--text-2); margin-top: 6px; }
 .choice.start { justify-content: flex-start; }
 /* Where this song's lyrics come from: a row per source, the one in use ticked. */
+/* On the panel's own grey, its chips need a lighter fill to show (Regular, the timing steps). */
+.timing-pop .timing-step, .timing-pop .choice button:not(.on) { background: rgba(255, 255, 255, 0.08); }
+.timing-pop .timing-step:hover, .timing-pop .choice button:not(.on):hover { background: rgba(255, 255, 255, 0.14); }
 .source-list { display: flex; flex-direction: column; gap: 2px; margin: 0 -6px; }
 .source-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px; border-radius: var(--radius-sm); text-align: left; transition: background 0.15s; }
 .source-row:hover { background: var(--surface-3); }

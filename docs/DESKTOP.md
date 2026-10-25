@@ -40,6 +40,11 @@ the architecture. The interface shares the phone app's TypeScript wherever it's 
   (audio/AudioEditor.tsx, audio/edits.ts).
 - **Sync Lyrics** (a song's menu, or a song with no lyrics): tap along to make timed lyrics,
   line by line or word by word, kept by the Rakki plugin (lyrics/LyricsMaker.tsx, lyrics/maker.ts).
+- **Edit Artist** (an artist's menu): name (written into the songs by MRQ), sort name, genres,
+  biography and pictures (photo, header, logo, banner; a file or one found online)
+  (mrq/EditArtist.tsx, mrq/artist.ts).
+- **Lyrics source** (Lyrics Settings): which lyrics a song shows when it has more than one,
+  kept by the Rakki plugin for every Rakki (lyrics/source.ts, shared with the phone).
 
 ## Feature checklist
 
@@ -99,7 +104,8 @@ Phone app features, and where the desktop is.
 - [x] Full screen: F11 or the button in the full player; Esc steps back out.
 - [x] Out of sight (tray or minimized): the page sleeps, WebView2 stops rendering and drops to
       its low memory target.
-- [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
+- [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back. It
+      takes the theme in use, backdrop included.
 - [x] Discord presence ("Listening to Rakki", Rakki's own Discord application; your own ID optional),
       with Listen and Rakki on GitHub buttons.
 - [x] Keyboard shortcuts you can change (Settings → Shortcuts; settings/shortcuts.ts).

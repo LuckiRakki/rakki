@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 
 import { AddToPlaylistPanel } from '@/ui/AddToPlaylist';
 import { ContextMenuPanel } from '@/ui/ContextMenu';
+import { DeviceSheetPanel } from '@/ui/DeviceSheet';
 import { OptionsPanel } from '@/ui/OptionsPanel';
 import { useOverlays } from '@/ui/overlays';
 import { CLOSE_MS } from '@/ui/Sheet';
@@ -15,7 +16,7 @@ import { TopLayer } from '@/ui/TopLayer';
  * (menu → Add to playlist) just swaps panels inside it.
  */
 export function OverlayHost() {
-  const open = useOverlays((s) => !!s.menu || !!s.addTo || !!s.options);
+  const open = useOverlays((s) => !!s.menu || !!s.addTo || !!s.options || !!s.device);
   const [mounted, setMounted] = useState(open);
   const dim = useSharedValue(0);
 
@@ -41,6 +42,7 @@ export function OverlayHost() {
         <ContextMenuPanel />
         <AddToPlaylistPanel />
         <OptionsPanel />
+        <DeviceSheetPanel />
       </GestureHandlerRootView>
     </TopLayer>
   );

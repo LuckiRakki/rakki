@@ -4,8 +4,9 @@ import type { LyricsSourceOption, LyricsSources } from '@/lyrics/source';
 
 const KIND = { word: 'Word by word', line: 'Line by line', plain: 'Not synced' } as const;
 
-/** "Word by word · 48 lines". */
+/** "Word by word · 48 lines"; Automatic is whichever wins. */
 export function sourceDetail(o: LyricsSourceOption): string {
+  if (o.source === 'auto' || !o.kind) return 'Made in Rakki first, then your server’s order';
   return o.lines ? `${KIND[o.kind]} · ${o.lines === 1 ? '1 line' : `${o.lines} lines`}` : KIND[o.kind];
 }
 

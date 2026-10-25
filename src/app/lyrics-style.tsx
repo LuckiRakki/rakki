@@ -4,15 +4,20 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { queryClient } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { artColor } from '@/lib/blurhash';
+import { tick } from '@/lib/haptics';
 import { DEMO_LYRICS, LOOP_MS } from '@/lyrics/demo';
 import { LyricsStage } from '@/lyrics/LyricsStage';
 import { useLyricsScreen } from '@/lyrics/screen';
+import { setLyricsSource, useLyricsSources, type LyricsSource } from '@/lyrics/source';
+import { showSourcePicker, sourceDetail } from '@/lyrics/sourceText';
 import { useLyricsStyle, type LyricsStyle } from '@/lyrics/style';
 import { usePlayer } from '@/player/store';
 import { useSettings, type LyricsMode } from '@/settings/store';
 import type { SpicySettings } from '@/spicy/settings';
+import { showToast } from '@/ui/overlays';
 import { Segmented } from '@/ui/Segmented';
 import { Field, SettingSection, Toggle } from '@/ui/SettingRows';
 import { Slider } from '@/ui/Slider';
@@ -28,7 +33,9 @@ const times = (n: number) => `${Math.round(n * 100)}%`;
 /**
  * Customize → Lyrics style: both lyric systems' look, with a live preview of made-up lyrics
  * looping over the album that's playing. Opened from the lyrics screen it also has that
- * screen's buttons (the visualizer, timing, the controls), so the lyrics screen stays clean.
+ * screen's buttons (the visualizer, timing, the controls), so the lyrics screen stays clean,
+ * and, when the song has more than one set of lyrics, where its lyrics come from (kept by the
+ * Rakki plugin for the song, so every Rakki follows it; lyrics/source.ts).
  */
 export default function LyricsStyleScreen() {
   const t = useTheme();
@@ -38,8 +45,16 @@ export default function LyricsStyleScreen() {
   const [mode, setMode] = useState<LyricsMode>(defaultMode);
   const style = useLyricsStyle();
   const s = style.spicy;
-  const params = useLocalSearchParams<{ from?: string; lyrics?: string; timing?: string }>();
+  const params = useLocalSearchParams<{ from?: string; lyrics?: string; timing?: string; song?: string }>();
   const fromLyrics = params.from === 'lyrics';
+  const songId = fromLyrics && params.song ? params.song : undefined;
+  const sources = useLyricsSources(songId).data;
+  // Shows at once (the lyrics switch behind this screen); a toast only if the server refused.
+  const pickSource = (source: LyricsSource) => {
+    if (!songId) return;
+    tick();
+    setLyricsSource(queryClient, songId, source).catch((e: unknown) => showToast(`Couldn’t change where the lyrics come from: ${e instanceof Error ? e.message : 'try again'}`));
+  };
   const visualizer = useLyricsScreen((st) => st.visualizer);
   const controls = useSettings((st) => st.lyricsControls);
 
@@ -49,7 +64,7 @@ export default function LyricsStyleScreen() {
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
         </Pressable>
-        <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Lyrics style</T>
+        <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Lyrics Style</T>
         <View style={{ width: 28 }} />
       </View>
 
@@ -94,6 +109,34 @@ export default function LyricsStyleScreen() {
                 <Ionicons name="timer-outline" size={22} color={t.colors.text} />
               </Pressable>
             ) : null}
+          </SettingSection>
+        ) : null}
+
+        {songId && showSourcePicker(sources) ? (
+          <SettingSection title="Lyrics Source">
+            <T variant="caption" style={{ marginTop: t.space.sm, fontSize: t.size(12) }}>
+              For this song, on every Rakki.
+            </T>
+            {sources.options.map((o) => {
+              const on = sources.choice === o.source;
+              return (
+                <Pressable
+                  key={o.source}
+                  onPress={() => !on && pickSource(o.source)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  accessibilityLabel={`${o.label}, ${sourceDetail(o)}`}
+                  style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]}>
+                  <View style={{ flex: 1 }}>
+                    <T variant="bodyStrong">{o.label}</T>
+                    <T variant="caption" style={{ fontSize: t.size(12) }}>
+                      {sourceDetail(o)}
+                    </T>
+                  </View>
+                  {on ? <Ionicons name="checkmark" size={22} color={t.colors.text} /> : null}
+                </Pressable>
+              );
+            })}
           </SettingSection>
         ) : null}
 

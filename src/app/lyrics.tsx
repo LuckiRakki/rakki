@@ -107,7 +107,9 @@ export default function LyricsScreen() {
                 </Pressable>
                 <Pressable
                   hitSlop={10}
-                  onPress={() => router.push({ pathname: '/lyrics-style', params: { from: 'lyrics', lyrics: lyrics ? '1' : '0', timing: canTime ? '1' : '0' } })}
+                  onPress={() =>
+                    router.push({ pathname: '/lyrics-style', params: { from: 'lyrics', lyrics: lyrics ? '1' : '0', timing: canTime ? '1' : '0', song: !streamUrl && lyricsFor ? lyricsFor.Id : '' } })
+                  }
                   accessibilityLabel="Lyrics Style">
                   <Ionicons name="options-outline" size={24} color={visualizer || offset ? t.colors.accent : t.colors.text} />
                 </Pressable>

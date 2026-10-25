@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { patchItem } from '~/library/actions';
-import { applyOnlineArtistImage, loadArtist, onlineArtistImages, removeArtistImage, saveArtist, setArtistImage, type ArtistChanges, type ArtistDetails, type ArtistImageType, type OnlineImage } from '~/mrq/artist';
+import { applyOnlineArtistImage, loadArtist, onlineArtistImages, removeArtistImage, replaceArtistBackdrop, saveArtist, setArtistImage, type ArtistChanges, type ArtistDetails, type ArtistImageType, type OnlineImage } from '~/mrq/artist';
 import { mrqReady } from '~/mrq/client';
 import { go, useNav } from '~/nav';
 import { usePlayer } from '~/player/store';
@@ -37,7 +37,7 @@ const MAIN_SLOTS = SLOTS.slice(0, 2);
 const MORE_SLOTS = SLOTS.slice(2);
 
 /** A picture waiting for Save: a file from this computer, one found online, or none. */
-type Staged = { kind: 'file'; file: File; url: string } | { kind: 'online'; url: string } | { kind: 'remove' };
+type Staged = { kind: 'file'; file: File; url: string } | { kind: 'online'; url: string; thumb: string } | { kind: 'remove' };
 
 /** Genres typed with ; (or commas) between them. */
 const toList = (v: string) =>
@@ -97,7 +97,8 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
   if (value('sortName').trim() !== start.sortName.trim()) changes.sortName = value('sortName').trim();
   if (value('overview').trim() !== start.overview.trim()) changes.overview = value('overview').trim();
   if (toList(value('genres')).join(';') !== toList(start.genres).join(';')) changes.genres = toList(value('genres'));
-  const dirty = Object.keys(changes).length > 0 || Object.keys(staged).length > 0;
+  // Saving needs the artist as Jellyfin has it (its songs, for a new name).
+  const dirty = !!details && (Object.keys(changes).length > 0 || Object.keys(staged).length > 0);
   const songs = details?.songs.length;
 
   const stage = (type: ArtistImageType, s: Staged | null) =>
@@ -117,7 +118,7 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
         slot={finding}
         onBack={() => setFinding(null)}
         onPick={(img) => {
-          stage(finding.type, { kind: 'online', url: img.url });
+          stage(finding.type, { kind: 'online', url: img.url, thumb: img.thumb });
           setFinding(null);
         }}
         onFile={() => {
@@ -142,13 +143,13 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
       className="meta-edit meta-artist"
       onSubmit={(e) => {
         e.preventDefault();
-        if (dirty) saveAndReport(artist, details, changes, staged);
+        if (dirty && details) saveAndReport(artist, details, changes, staged);
       }}>
       <div className="meta-head">
         <button type="button" className="meta-cover round" onClick={() => pickFile(SLOTS[0])} title="Change Picture" aria-label="Change Picture">
           {staged.Primary && staged.Primary.kind !== 'remove' ? (
             <div className="artwork round">
-              <img src={staged.Primary.url} alt="" />
+              <img src={staged.Primary.kind === 'online' ? staged.Primary.thumb : staged.Primary.url} alt="" />
             </div>
           ) : (
             <Artwork item={artist} size={200} round />
@@ -214,11 +215,12 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
 
 /** One picture: what it is now (or what Save will put there), and how to change it. */
 function PictureSlot({ slot, artist, details, staged, onFile, onFind, onRemove, onUndo }: { slot: Slot; artist: BaseItem; details: ArtistDetails | null; staged?: Staged; onFile(): void; onFind(): void; onRemove(): void; onUndo(): void }) {
-  const now = details?.images.find((i) => i.type === slot.type);
-  const src = staged ? (staged.kind === 'remove' ? null : staged.url) : (now?.url ?? null);
+  // Backdrops are numbered: the first is the one the artist page draws.
+  const now = details?.images.find((i) => i.type === slot.type && i.index === 0);
+  const src = staged ? (staged.kind === 'remove' ? null : staged.kind === 'online' ? staged.thumb : staged.url) : (now?.url ?? null);
   const note = staged?.kind === 'remove' ? 'Removed on Save' : staged ? 'New, kept on Save' : null;
   return (
-    <div className={`art-slot ${slot.shape}`}>
+    <div className={`art-slot art-${slot.shape}`}>
       <button type="button" className="art-preview" onClick={onFile} aria-label={`Change ${slot.label}, ${artist.Name ?? ''}`} title={`Change ${slot.label}`}>
         {src ? <img src={src} alt="" draggable={false} /> : <ImagePlus size={22} />}
       </button>
@@ -292,11 +294,11 @@ function OnlinePicker({ artistId, artistName, slot, onBack, onPick, onFile }: { 
       ) : images.length === 0 ? (
         <Empty icon={ImagePlus} title={`No ${slot.label} Found`} detail={`Your server’s image sources have none for ${artistName}.`} action={{ label: 'Choose File', run: onFile }} />
       ) : (
-        <div className={`art-online-grid ${slot.shape}`}>
+        <div className={`art-online-grid art-${slot.shape}`}>
           {images.map((img) => (
             <button key={img.url} type="button" className="art-online-pick" onClick={() => onPick(img)} title={`Use This ${slot.label}`}>
               <span className="art-online-img">
-                <img src={img.url} alt="" loading="lazy" decoding="async" draggable={false} />
+                <img src={img.thumb} alt="" loading="lazy" decoding="async" draggable={false} />
               </span>
               <span className="muted small ellipsis">
                 {img.provider}
@@ -331,29 +333,42 @@ function renameInSongs(songs: BaseItem[], from: string, to: string) {
 }
 
 /** Close, show the change at once, save behind the screen, say how it went (undo on failure). */
-function saveAndReport(artist: BaseItem, details: ArtistDetails | null, changes: ArtistChanges, staged: Partial<Record<ArtistImageType, Staged>>) {
+function saveAndReport(artist: BaseItem, details: ArtistDetails, changes: ArtistChanges, staged: Partial<Record<ArtistImageType, Staged>>) {
   closeDialog();
-  const was = artist.Name ?? '';
+  const was = details.name || (artist.Name ?? '');
   patchItem(artist.Id, (a) => ({
     ...a,
     ...(changes.name !== undefined ? { Name: changes.name } : null),
     ...(changes.overview !== undefined ? { Overview: changes.overview } : null),
     ...(changes.genres !== undefined ? { Genres: changes.genres } : null),
   }));
-  if (changes.name && details) renameInSongs(details.songs, was, changes.name);
+  if (changes.name) renameInSongs(details.songs, was, changes.name);
   const photo = staged.Primary;
-  if (photo && photo.kind !== 'remove') showLocalPicture(artist.Id, photo.url);
+  if (photo && photo.kind !== 'remove') showLocalPicture(artist.Id, photo.kind === 'online' ? photo.thumb : photo.url);
+  const name = changes.name ?? was;
 
   void (async () => {
     let id = artist.Id;
-    let note = '';
+    let renamed = '';
     if (Object.keys(changes).length) {
-      const r = await saveArtist(artist, changes);
-      id = r.newArtistId ?? id;
-      if (changes.name) note = r.failed.length ? `, but ${r.failed.length} of ${r.retagged + r.failed.length} songs kept the old name (${r.failed[0].song.Name}: ${r.failed[0].why})` : `, renamed in ${r.retagged === 1 ? '1 song' : `${r.retagged} songs`}`;
-      // A new name is a new artist to Jellyfin: their page follows them there.
-      const route = useNav.getState().route;
-      if (id !== artist.Id && route.name === 'artist' && route.id === artist.Id) go({ name: 'artist', id });
+      const r = await saveArtist(details, changes);
+      if (changes.name && !r.retagged) {
+        const why = r.failed[0]?.why ?? 'MRQ didn’t change any files';
+        throw new Error(why);
+      }
+      if (changes.name) {
+        renamed = r.failed.length ? `, renamed in ${r.retagged} of ${r.retagged + r.failed.length} songs (${r.failed[0].song.Name}: ${r.failed[0].why})` : `, renamed in ${r.retagged === 1 ? '1 song' : `${r.retagged} songs`}`;
+        if (r.carryOverPending || !r.newArtistId) {
+          // The files have the new name, but Jellyfin hasn't made the renamed artist yet.
+          setTimeout(() => void queryClient.invalidateQueries(), 4000);
+          toast(`Renamed ${was} to ${name} in ${r.retagged === 1 ? '1 song' : `${r.retagged} songs`}. Jellyfin is still reading them: open Edit Artist on ${name} in a minute to add the biography and pictures again.`);
+          return;
+        }
+        id = r.newArtistId;
+        // A new name is a new artist to Jellyfin: their page follows them there.
+        const route = useNav.getState().route;
+        if (route.name === 'artist' && route.id === artist.Id) go({ name: 'artist', id });
+      }
     }
     // Pictures after the name, so they land on the artist as Jellyfin now has them.
     const failedPics: string[] = [];
@@ -361,19 +376,18 @@ function saveAndReport(artist: BaseItem, details: ArtistDetails | null, changes:
       const s = staged[slot.type];
       if (!s) continue;
       try {
-        if (s.kind === 'file') await setArtistImage(id, slot.type, s.file);
+        // The Header is the first backdrop: a new one takes its place, any others stay.
+        if (s.kind !== 'remove' && slot.type === 'Backdrop') await replaceArtistBackdrop(id, s.kind === 'file' ? s.file : s.url, 0);
+        else if (s.kind === 'file') await setArtistImage(id, slot.type, s.file);
         else if (s.kind === 'online') await applyOnlineArtistImage(id, slot.type, s.url);
-        else {
-          const now = details?.images.find((i) => i.type === slot.type);
-          if (now) await removeArtistImage(id, slot.type, now.index);
-        }
+        else if (details.images.some((i) => i.type === slot.type && i.index === 0)) await removeArtistImage(id, slot.type, 0);
       } catch {
         failedPics.push(slot.label);
       }
     }
     setTimeout(() => void queryClient.invalidateQueries(), changes.name ? 4000 : 0);
-    if (failedPics.length) toast(`Saved ${changes.name ?? was}, but couldn’t change the ${failedPics.join(' and ')}`);
-    else toast(`Saved ${changes.name ?? was}${note}`);
+    if (failedPics.length) toast(`Saved ${name}${renamed}, but couldn’t change the ${failedPics.join(' and ')}`);
+    else toast(`Saved ${name}${renamed}`);
   })().catch((e: unknown) => {
     if (photo) showLocalPicture(artist.Id, null);
     void queryClient.invalidateQueries();

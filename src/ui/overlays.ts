@@ -1,9 +1,11 @@
 // App-wide overlays opened from anywhere: the long-press menu, the Add to playlist sheet, a
-// pick-one options sheet (e.g. Library sort) and short confirmation toasts. Their hosts live once in the root layout.
+// pick-one options sheet (e.g. Library sort), a held device's choices (Connect) and short
+// confirmation toasts. Their hosts live once in the root layout.
 import { create } from 'zustand';
 
 import { thud } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
+import type { RakkiDevice } from '@/remote/devices';
 
 /** Where a menu was opened from, for context-only actions (e.g. remove from this playlist). */
 export interface MenuContext {
@@ -28,6 +30,8 @@ interface Overlays {
   addTo: { items: BaseItem[]; title: string } | null;
   toast: { text: string; id: number } | null;
   options: OptionsSheet | null;
+  /** A device held in Connect: its choices (ui/DeviceSheet.tsx). */
+  device: RakkiDevice | null;
   openMenu(item: BaseItem, context?: MenuContext): void;
   closeMenu(): void;
   /** Songs to add; `title` is what the sheet says it's adding (a song or an album name). */
@@ -39,6 +43,8 @@ interface Overlays {
   /** From the menu straight to an options sheet in one update. */
   menuToOptions(sheet: OptionsSheet): void;
   closeOptions(): void;
+  openDevice(d: RakkiDevice): void;
+  closeDevice(): void;
   closeAll(): void;
   showToast(text: string): void;
 }
@@ -49,6 +55,7 @@ export const useOverlays = create<Overlays>((set) => ({
   addTo: null,
   toast: null,
   options: null,
+  device: null,
   openMenu: (item, context) => set({ menu: item, menuContext: context ?? null }),
   closeMenu: () => set({ menu: null, menuContext: null }),
   openAddToPlaylist: (items, title) => set({ addTo: { items, title } }),
@@ -57,7 +64,9 @@ export const useOverlays = create<Overlays>((set) => ({
   openOptions: (sheet) => set({ options: sheet }),
   menuToOptions: (sheet) => set({ menu: null, menuContext: null, options: sheet }),
   closeOptions: () => set({ options: null }),
-  closeAll: () => set({ menu: null, menuContext: null, addTo: null, options: null }),
+  openDevice: (device) => set({ device }),
+  closeDevice: () => set({ device: null }),
+  closeAll: () => set({ menu: null, menuContext: null, addTo: null, options: null, device: null }),
   showToast: (text) => set({ toast: { text, id: Date.now() } }),
 }));
 
@@ -67,6 +76,11 @@ export const openMenu = (item: BaseItem, context?: MenuContext) => {
   useOverlays.getState().openMenu(item, context);
 };
 export const openOptions = (sheet: OptionsSheet) => useOverlays.getState().openOptions(sheet);
+/** Hold a device in Connect: its choices, with the long-press bump. */
+export const openDeviceSheet = (d: RakkiDevice) => {
+  thud();
+  useOverlays.getState().openDevice(d);
+};
 export const openAddToPlaylist = (items: BaseItem[], title: string) => useOverlays.getState().openAddToPlaylist(items, title);
 export const showToast = (text: string) => useOverlays.getState().showToast(text);
 

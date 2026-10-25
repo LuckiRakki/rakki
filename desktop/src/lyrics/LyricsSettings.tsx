@@ -77,7 +77,7 @@ export function LyricsSettings({ itemId }: { itemId?: string }) {
   // Shows at once (the lyrics switch over); a toast only if the server refused.
   const pickSource = (source: LyricsSource) => {
     if (!itemId) return;
-    setLyricsSource(itemId, source).catch((e: unknown) => toast(`Couldn’t change where the lyrics come from: ${e instanceof Error ? e.message : 'try again'}`));
+    setLyricsSource(queryClient, itemId, source).catch((e: unknown) => toast(`Couldn’t change where the lyrics come from: ${e instanceof Error ? e.message : 'try again'}`));
   };
 
   return (

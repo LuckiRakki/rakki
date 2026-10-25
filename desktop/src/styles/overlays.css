@@ -70,9 +70,9 @@
 .art-preview { display: grid; place-items: center; height: 120px; border-radius: var(--radius-art); background: var(--surface-3); color: var(--text-3); overflow: hidden; }
 .art-preview img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.15s; }
 .art-preview:hover img { opacity: 0.75; }
-.art-slot.round .art-preview { width: 120px; align-self: center; border-radius: 50%; }
-.art-slot.logo .art-preview img { object-fit: contain; padding: 12px; }
-.art-slot.banner .art-preview { height: auto; aspect-ratio: 1000 / 185; }
+.art-slot.art-round .art-preview { width: 120px; align-self: center; border-radius: 50%; }
+.art-slot.art-logo .art-preview img { object-fit: contain; padding: 12px; }
+.art-slot.art-banner .art-preview { height: auto; aspect-ratio: 1000 / 185; }
 .art-slot-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .art-slot-name { font-weight: 700; }
 .art-slot-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -83,15 +83,15 @@
 .art-online-head .iconbtn { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
 .art-online-head .iconbtn:hover { background: var(--surface-3); color: var(--text); }
 .art-online-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; overflow-y: auto; min-height: 160px; margin: 0 -6px; padding: 0 2px; }
-.art-online-grid.wide, .art-online-grid.logo, .art-online-grid.banner { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.art-online-grid.art-wide, .art-online-grid.art-logo, .art-online-grid.art-banner { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .art-online-pick { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 6px; border-radius: var(--radius-sm); text-align: left; }
 .art-online-pick:hover { background: var(--surface-3); }
 .art-online-img { display: block; aspect-ratio: 1; border-radius: var(--radius-art); overflow: hidden; background: var(--surface-3); }
 .art-online-img img { width: 100%; height: 100%; object-fit: cover; }
-.art-online-grid.round .art-online-img { border-radius: 50%; }
-.art-online-grid.wide .art-online-img, .art-online-grid.logo .art-online-img { aspect-ratio: 16 / 9; }
-.art-online-grid.logo .art-online-img img { object-fit: contain; padding: 10px; }
-.art-online-grid.banner .art-online-img { aspect-ratio: 1000 / 185; }
+.art-online-grid.art-round .art-online-img { border-radius: 50%; }
+.art-online-grid.art-wide .art-online-img, .art-online-grid.art-logo .art-online-img { aspect-ratio: 16 / 9; }
+.art-online-grid.art-logo .art-online-img img { object-fit: contain; padding: 10px; }
+.art-online-grid.art-banner .art-online-img { aspect-ratio: 1000 / 185; }
 .art-online-state { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 0; }
 
 /* ---- Forms ---- */

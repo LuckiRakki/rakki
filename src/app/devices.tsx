@@ -10,26 +10,21 @@ import { useRemoteTarget } from '@/player/remoteTarget';
 import { usePlayer } from '@/player/store';
 import { moveHere, tapDevice } from '@/remote/connect';
 import { otherRakkiDevices, type RakkiDevice } from '@/remote/devices';
+import { deviceIcon, nowLine } from '@/ui/DeviceSheet';
+import { openDeviceSheet } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const REFRESH_MS = 3000;
-
-const isPhone = (d: { name: string }) => /iphone|ipad|ios|android|phone/i.test(d.name);
-
-function nowLine(d: RakkiDevice): string {
-  if (!d.item) return 'Not playing';
-  const who = d.item.Artists?.join(', ') ?? d.item.AlbumArtist;
-  return `${d.paused ? 'Paused' : 'Playing'}: ${d.item.Name}${who ? ` · ${who}` : ''}`;
-}
 
 /**
  * Connect, like Spotify's (and the desktop's): this phone and your other Rakki apps on this
  * server (docs/REMOTE_PLAYBACK.md), the one playing lit. Tap a device to listen there: the
  * music moves over at the same moment in the song, and this phone becomes its remote (the player
  * shows that device's song and controls it, player/remoteTarget.ts). With nothing playing here,
- * tapping a device that plays just controls it. Tap This Phone to bring the music back. The
- * screen closes at once; a toast says when it's playing (or why not).
+ * tapping a device that plays just controls it. Tap This Phone to bring the music back. Hold a
+ * device to pick instead (ui/DeviceSheet.tsx): play this phone's song there, remote control it,
+ * or play its song here. The screen closes at once; a toast says when it's playing (or why not).
  */
 export default function DevicesScreen() {
   const t = useTheme();
@@ -76,14 +71,17 @@ export default function DevicesScreen() {
     if (client) tapDevice(client, d);
   };
 
-  const row = (key: string, icon: keyof typeof Ionicons.glyphMap, name: string, sub: string, lit: boolean, onPress: () => void, disabled = false) => (
+  // A device that can't be controlled is dimmed, but holding it still offers playing its song here.
+  const row = (key: string, icon: keyof typeof Ionicons.glyphMap, name: string, sub: string, lit: boolean, onPress: () => void, disabled = false, onHold?: () => void) => (
     <Pressable
       key={key}
-      disabled={disabled}
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      onLongPress={onHold}
       accessibilityRole="button"
       accessibilityState={{ selected: lit, disabled }}
       accessibilityLabel={`${name}, ${sub}`}
+      accessibilityActions={onHold ? [{ name: 'longpress', label: 'More Choices' }] : undefined}
+      onAccessibilityAction={onHold ? (e) => e.nativeEvent.actionName === 'longpress' && onHold() : undefined}
       style={({ pressed }) => [styles.row, lit && { backgroundColor: withAlpha(t.colors.accent, 0.16) }, pressed && { opacity: 0.7 }, disabled && { opacity: 0.5 }]}>
       <Ionicons name={icon} size={26} color={lit ? t.colors.accent : t.colors.text} />
       <View style={{ flex: 1, marginLeft: t.space.lg }}>
@@ -112,14 +110,20 @@ export default function DevicesScreen() {
         {devices?.map((d) =>
           row(
             d.sessionId,
-            isPhone(d) ? 'phone-portrait-outline' : 'laptop-outline',
+            deviceIcon(d),
             d.name,
             d.controllable ? nowLine(d) : 'Update Rakki there to connect to it',
             !litHere && playingElsewhere?.sessionId === d.sessionId,
             () => pick(d),
             !d.controllable,
+            () => openDeviceSheet(d),
           ),
         )}
+        {devices?.length ? (
+          <T variant="caption" style={styles.note}>
+            Hold a device to pick: play this phone’s song there, or just control it.
+          </T>
+        ) : null}
         {devices === null && !error ? (
           <T variant="caption" style={styles.note}>
             Looking for your other Rakki apps

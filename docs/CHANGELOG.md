@@ -6,6 +6,41 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 1.5.0 (2026-10-25, next desktop build; the lyrics source needs the Rakki plugin 0.4)
+- **Edit Artist** (right-click an artist, or More on their page), next to Edit Album: their
+  name, sort name, genres and biography, and their pictures: the photo, the wide header behind
+  their name on their page, and under More Options the logo and banner other Jellyfin apps show.
+  Each picture can come from a file or from the ones your server's image sources have online
+  (Find Online), or be removed. A new name is written into every song's file (artist and album
+  artist) through MRQ, so renaming needs MRQ's address; the biography, genres and pictures are
+  kept by Jellyfin and carried over to the renamed artist. Save closes at once and a toast says
+  how it went. Needs a Jellyfin administrator sign-in.
+- **The mini player takes your theme.** Its colours, any rules a theme writes for it, and the
+  theme's backdrop: with Lucid the blurred cover behind it in a Lucid card, with Kawarp the
+  cover flowing. Theme files can style it too (`.mini` and its parts, docs/THEMES.md).
+- **Pick where a song's lyrics come from** (Lyrics Settings → Source), for when it has more than
+  one set: Automatic, Made in Rakki, Spicy Lyrics, its lyrics file or Jellyfin's own, each
+  saying word by word or line by line and how many lines. Sometimes the Spicy Lyrics API has
+  word-by-word lyrics while the song's own .ttml file is better. The pick is kept by the plugin
+  for the song, so every Rakki shows the same lyrics. With an older plugin it doesn't show.
+- **Only one Rakki at a time:** opening it again brings the running window forward (Rakki Dev
+  still runs beside it).
+- **The Windows installer has Rakki's pictures.** (Signing the installer waits on a signing
+  provider.)
+- **Space and other shortcuts no longer press the button, card or row you last clicked.**
+- Lyrics Settings' Regular and timing buttons show on the panel again (their fill was the
+  panel's own grey).
+- **Server (Rakki plugin 0.4):** keeps each song's lyrics pick and answers the lyrics with it,
+  so older Rakki apps follow the pick too.
+
+## 1.23.0 (2026-10-25)
+- **Hold a device in Connect** to pick what happens: play this phone's song there (it moves over
+  at the same moment and this phone becomes its remote), remote control it (nothing moves), or
+  play its song here. A tap still does the likely one. Choices that can't be picked say why.
+- **Pick where a song's lyrics come from** (the lyrics screen's Lyrics Style button → Lyrics
+  Source), as on the desktop: Automatic, Made in Rakki, Spicy Lyrics, its lyrics file or
+  Jellyfin's own. Every Rakki follows the pick. Needs the Rakki plugin 0.4 on your server.
+
 ## Desktop 1.4.0 (2026-10-25, next desktop build; needs the Rakki plugin 0.3)
 - **Edit Audio** (right-click a song). Drag where the song starts and ends on its waveform, fade
   it in and out, make it louder or quieter, shape it with a ten-band equalizer (or a preset), and
