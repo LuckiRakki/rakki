@@ -11,6 +11,9 @@
 .menu-item.danger .ico { color: #ff8a80; }
 .menu-divider { height: 1px; background: var(--line); margin: 4px 6px; }
 .toast { position: fixed; z-index: 110; left: 50%; bottom: calc(var(--playerbar) + 18px); transform: translateX(-50%); background: #fff; color: #000; font-weight: 700; padding: 10px 18px; border-radius: var(--radius-sm); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: toast-in 0.2s ease-out; }
+/* Rakki Dev: a pulled change needs a close and reopen (dev/DevNotice.tsx). */
+.dev-notice { position: fixed; z-index: 110; left: 50%; top: 56px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: min(720px, calc(100vw - 32px)); background: var(--accent); color: var(--on-accent); font-weight: 700; padding: 8px 8px 8px 14px; border-radius: var(--radius-sm); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.dev-notice .navbtn { color: inherit; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
 .scrim { position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, 0.6); display: grid; place-items: center; animation: fade 0.15s; }
 @keyframes fade { from { opacity: 0; } }

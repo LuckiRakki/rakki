@@ -2,6 +2,9 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Rakki Dev",
   "identifier": "com.luckirakki.rakki.desktop.dev",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --mode app-dev"
+  },
   "app": {
     "windows": [
       {

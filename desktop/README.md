@@ -46,6 +46,18 @@ it keeps its own sign-in, settings and webview data and never touches the instal
 doesn't check for updates or install them, and can't start with the computer. Both can run at
 once (each starts its own mpv). Stop it with Ctrl+C in the terminal.
 
+It also follows GitHub by itself (`autopull.ts`): every 30 seconds it fast-forwards the clone to
+`main`, and says what it pulled in the terminal and as a toast in the app. Only a fast-forward:
+on another branch, with local commits, or with uncommitted edits in the incoming files it stops
+and says so, and never merges or resets.
+
+| Pulled change | What happens |
+| --- | --- |
+| Interface (`desktop/src`, the phone app's `src`, CSS, themes) | Updates live |
+| Rust, `Cargo.toml`, `tauri.conf.json` (every version bump) | Rakki Dev rebuilds and restarts on its own |
+| New or changed packages in `package.json` | Notice in the app: close it, `npm install`, `npm run app:dev` |
+| `tauri.dev.conf.json` or the dev scripts | Notice in the app: close it and run `npm run app:dev` again |
+
 ## Installers
 
 `.github/workflows/desktop.yml` builds them on GitHub: a Windows installer with mpv inside, and

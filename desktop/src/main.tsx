@@ -40,6 +40,7 @@ import { LyricsMain } from '~/lyrics/LyricsMain';
 import { useLook } from '~/settings/look';
 import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
+import { DevNotice } from '~/dev/DevNotice';
 
 /** Keyboard shortcuts that work anywhere (not while typing). */
 function onKey(e: KeyboardEvent) {
@@ -175,6 +176,7 @@ function App() {
         <SignIn />
       )}
       <Overlays />
+      {import.meta.env.DEV ? <DevNotice /> : null}
       <FullscreenHint />
     </>
   );

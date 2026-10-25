@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import process from 'node:process';
 
+import { autoPull } from './autopull';
+
 const host = process.env.TAURI_DEV_HOST;
 const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 /** Desktop stand-ins for the phone app's platform modules (same import paths). */
@@ -31,7 +33,7 @@ function rakkiShared(): Plugin {
 }
 
 export default defineConfig(() => ({
-  plugins: [rakkiShared(), react()],
+  plugins: [rakkiShared(), react(), autoPull()],
   resolve: {
     alias: {
       '~': path.join(here, 'src'),
