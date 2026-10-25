@@ -39,6 +39,8 @@ export interface Lyrics {
   source?: string;
   /** Community-sync credit (source spicy_lyrics). Must be shown (API Terms). */
   attribution?: { uploader?: AttributionPerson; maker?: AttributionPerson };
+  /** The song's picked lyrics (lyrics/source.ts): shown in every mode, over synced Jellyfin lyrics. */
+  chosen?: boolean;
 }
 
 export interface LyricsBundle {
@@ -59,6 +61,8 @@ export interface TtmlDto {
   }[];
   Songwriters?: string[];
   Source?: string;
+  /** The song's picked lyrics (plugin 0.4, lyrics/source.ts): shown over any other kind. */
+  Chosen?: boolean;
   Attribution?: {
     Uploader?: { Username: string; Url: string; Avatar?: string } | null;
     Maker?: { Username: string; Url: string; Avatar?: string } | null;

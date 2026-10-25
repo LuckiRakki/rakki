@@ -48,6 +48,7 @@ export async function fetchTtml(client: JellyfinClient, itemId: string): Promise
     attribution: dto.Attribution
       ? { uploader: person(dto.Attribution.Uploader), maker: person(dto.Attribution.Maker) }
       : undefined,
+    chosen: dto.Chosen || undefined,
   };
 }
 

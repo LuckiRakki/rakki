@@ -62,6 +62,9 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics
         public string            Source      { get; set; } = string.Empty;
         // Community-sync credit; only present when Source is "spicy_lyrics".
         public AttributionDto?   Attribution { get; set; }
+        // True when these are the song's picked lyrics (LyricsSources.cs), so apps show them
+        // even where they'd prefer another kind (synced Jellyfin lyrics over unsynced ones).
+        public bool              Chosen      { get; set; }
     }
 
     public class AttributionDto

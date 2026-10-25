@@ -37,6 +37,8 @@ namespace Jellyfin.Plugin.Rakki
 
             // Audio edits and lyrics made in Rakki, kept apart from the music files.
             serviceCollection.AddSingleton<SongEdits>();
+            // Which lyrics each song shows when it has several kinds (0.4).
+            serviceCollection.AddSingleton<LyricsSources>();
         }
     }
 }

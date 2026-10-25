@@ -20,7 +20,9 @@ import { Loading } from '~/ui/states';
 export function pickLyrics(bundle: { ttml: Lyrics | null; lrc: Lyrics | null } | undefined): Lyrics | null {
   if (!bundle) return null;
   const { ttml, lrc } = bundle;
-  // A synced source beats an unsynced one; TTML first otherwise.
+  // Lyrics picked for the song (lyrics/source.ts) first; then a synced source beats an
+  // unsynced one; TTML first otherwise.
+  if (ttml?.chosen) return ttml;
   if (ttml?.isSynced) return ttml;
   if (lrc?.isSynced) return lrc;
   return ttml ?? lrc;

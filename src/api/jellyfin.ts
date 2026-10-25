@@ -427,6 +427,19 @@ export class JellyfinClient {
     return this.get<TtmlDto>(`/SpicyLyrics/${itemId}/ttml`);
   }
 
+  /**
+   * Rakki plugin 0.4: the song's picked lyrics source and the kinds of lyrics the plugin has for
+   * it (made in Rakki, Spicy Lyrics API, .ttml file). 404 without the plugin (or an older one).
+   */
+  getLyricsSources(itemId: string) {
+    return this.get<{ Choice: string; Options: { Source: string; Kind: string; Lines: number }[] }>(`/Rakki/Lyrics/${itemId}/Sources`);
+  }
+
+  /** Rakki plugin 0.4: pick the song's lyrics source for everyone ('auto' goes back to automatic). */
+  setLyricsSource(itemId: string, source: string) {
+    return this.send('PUT', `/Rakki/Lyrics/${itemId}/Source`, { Source: source });
+  }
+
   /** Jellyfin's own lyrics (LRC or plain; 404 when none). */
   getLyrics(itemId: string) {
     return this.get<JellyfinLyricsDto>(`/Audio/${itemId}/Lyrics`);
@@ -518,10 +531,10 @@ export class JellyfinClient {
     );
   }
 
-  /** Set an item's picture (a playlist cover): base64 image data. */
-  uploadItemImage(itemId: string, base64: string, mimeType: string) {
+  /** Set an item's picture (a playlist cover; an artist's photo, backdrop, logo...): base64 image data. */
+  uploadItemImage(itemId: string, base64: string, mimeType: string, type = 'Primary') {
     const { serverUrl, deviceId, token } = this.session;
-    return request<void>(`${serverUrl}/Items/${itemId}/Images/Primary`, {
+    return request<void>(`${serverUrl}/Items/${itemId}/Images/${type}`, {
       method: 'POST',
       deviceId,
       token,
@@ -529,6 +542,38 @@ export class JellyfinClient {
       headers: { 'Content-Type': mimeType },
       body: base64,
     });
+  }
+
+  /** Remove one of an item's pictures (backdrops are numbered from 0). Administrators only. */
+  deleteItemImage(itemId: string, type: string, index = 0) {
+    return this.send('DELETE', `/Items/${itemId}/Images/${type}/${index}`);
+  }
+
+  /** Pictures for an item that Jellyfin's image providers (TheAudioDB, Fanart...) have online. */
+  getRemoteImages(itemId: string, type: string) {
+    return this.get<{ Images: { Url: string; ProviderName?: string; Width?: number; Height?: number; ThumbnailUrl?: string }[] }>(
+      `/Items/${itemId}/RemoteImages`,
+      { type, includeAllLanguages: true, limit: 60 },
+    );
+  }
+
+  /** Have the server download one of those online pictures for the item. Administrators only. */
+  downloadRemoteImage(itemId: string, type: string, imageUrl: string) {
+    return this.send('POST', `/Items/${itemId}/RemoteImages/Download`, undefined, { type, imageUrl });
+  }
+
+  /** One of an item's pictures by kind and number (artists: Primary, Backdrop 0..n, Logo, Banner). */
+  itemImageUrl(itemId: string, type: string, index: number, tag: string, maxWidth = 1200): string {
+    const at = type === 'Backdrop' ? `/${index}` : '';
+    return `${this.session.serverUrl}/Items/${itemId}/Images/${type}${at}${query({ maxWidth, quality: 90, tag })}`;
+  }
+
+  /**
+   * Save an item's details (overview, genres, sort name, locked fields...): the whole item as
+   * Jellyfin gave it, with the changes. Administrators only.
+   */
+  updateItem(item: { Id: string } & Record<string, unknown>) {
+    return this.send('POST', `/Items/${item.Id}`, item);
   }
 
   /**

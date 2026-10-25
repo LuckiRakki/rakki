@@ -16,11 +16,12 @@ import { Visualizer } from '@/ui/Visualizer';
 /**
  * Which lyrics each mode shows. Spicy prefers word-timed TTML (falling back to LRC, drawn
  * line-by-line in Spicy style); Regular prefers the line-timed LRC, then TTML's lines.
- * Synced always beats unsynced.
+ * Synced always beats unsynced. Lyrics picked for the song (lyrics/source.ts) beat both.
  */
 export function pickLyrics(bundle: LyricsBundle | undefined, mode: LyricsMode): Lyrics | null {
   if (!bundle) return null;
   const { ttml, lrc } = bundle;
+  if (ttml?.chosen) return ttml;
   const order = mode === 'spicy' ? [ttml, lrc] : [lrc, ttml];
   return order.find((l) => l?.isSynced) ?? order.find(Boolean) ?? null;
 }
