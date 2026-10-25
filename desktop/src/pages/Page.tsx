@@ -1,4 +1,6 @@
 // The main area: the page for the current route (nav.ts).
+import { AudioEditor } from '~/audio/AudioEditor';
+import { LyricsMaker } from '~/lyrics/LyricsMaker';
 import { useNav } from '~/nav';
 import { Artist } from '~/pages/Artist';
 import { Album, Liked, Playlist } from '~/pages/Collections';
@@ -43,5 +45,9 @@ export function Page() {
       return <SearchPage term={route.term ?? ''} />;
     case 'settings':
       return <Settings />;
+    case 'editAudio':
+      return <AudioEditor key={route.id} id={route.id} />;
+    case 'makeLyrics':
+      return <LyricsMaker key={route.id} id={route.id} />;
   }
 }

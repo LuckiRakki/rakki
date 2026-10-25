@@ -35,6 +35,11 @@ the architecture. The interface shares the phone app's TypeScript wherever it's 
   cover, sidebars kept (lyrics/LyricsMain.tsx).
 - **Themes**: .css files imported in Settings → Look → Theme (docs/THEMES.md, themes/).
 - **Right-click menus** on every song, album, artist, playlist and queue entry.
+- **Edit Audio** (a song's menu): its start and end on a waveform, fades, volume, a ten-band
+  equalizer, speed, pitch and reverb, kept by the Rakki plugin apart from the file
+  (audio/AudioEditor.tsx, audio/edits.ts).
+- **Sync Lyrics** (a song's menu, or a song with no lyrics): tap along to make timed lyrics,
+  line by line or word by word, kept by the Rakki plugin (lyrics/LyricsMaker.tsx, lyrics/maker.ts).
 
 ## Feature checklist
 
@@ -95,7 +100,9 @@ Phone app features, and where the desktop is.
 - [x] Out of sight (tray or minimized): the page sleeps, WebView2 stops rendering and drops to
       its low memory target.
 - [x] Mini player: the window shrinks to a small player kept on top (pin), and grows back.
-- [x] Discord presence ("Listening to Rakki", Rakki's own Discord application; your own ID optional).
+- [x] Discord presence ("Listening to Rakki", Rakki's own Discord application; your own ID optional),
+      with Listen and Rakki on GitHub buttons.
+- [x] Keyboard shortcuts you can change (Settings → Shortcuts; settings/shortcuts.ts).
 - [x] Start with the computer (installed app): opens quietly in the tray.
 - [x] Packaging: Windows installer with mpv bundled, Linux AppImage/.deb (needs mpv), built by
       .github/workflows/desktop.yml (by hand, or a desktop-v* tag for a draft release).

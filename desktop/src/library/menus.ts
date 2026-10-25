@@ -1,6 +1,7 @@
 // The right-click menu for each kind of thing (the phone app's long-press menus, plus what a
 // desktop expects). `items` is the selection when several songs are selected.
 import {
+  AudioWave,
   Disc3,
   ImagePlus,
   Heart,
@@ -13,6 +14,7 @@ import {
   PlusCircle,
   Radio,
   Shuffle,
+  Stopwatch,
   Tags,
   Trash2,
   User,
@@ -21,7 +23,9 @@ import {
 
 import type { BaseItem } from '@/api/jellyfin';
 import { isMix } from '@/lib/mixes';
+import { openAudioEditor } from '~/audio/AudioEditor';
 import { openAddToPlaylist } from '~/library/AddToPlaylist';
+import { openLyricsMaker } from '~/lyrics/LyricsMaker';
 import { mrqReady } from '~/mrq/client';
 import { openEditMetadata } from '~/mrq/EditMetadata';
 import {
@@ -65,8 +69,15 @@ export function songMenu(items: BaseItem[], ctx: MenuContext = {}): MenuItem[] {
     if (one.AlbumId) menu.push({ label: 'Go to Album', icon: Disc3, run: () => goToAlbum(one) });
     if (one.ArtistItems?.length || one.AlbumArtists?.length) menu.push({ label: 'Go to Artist', icon: User, run: () => goToArtist(one) });
   }
+  // A song's own sound and synced lyrics, kept by the Rakki plugin on the server.
+  if (one && one.Type === 'Audio' && !one.Radio) {
+    menu.push(
+      { label: 'Edit Audio', icon: AudioWave, divider: true, run: () => openAudioEditor(one) },
+      { label: 'Sync Lyrics', icon: Stopwatch, run: () => openLyricsMaker(one) },
+    );
+  }
   // Through MRQ, your tag editor, once its address is in Settings.
-  if (mrqReady() && items.every((i) => i.Type === 'Audio' && !i.Radio)) menu.push({ label: 'Edit Metadata', icon: Tags, divider: true, run: () => openEditMetadata(items) });
+  if (mrqReady() && items.every((i) => i.Type === 'Audio' && !i.Radio)) menu.push({ label: 'Edit Metadata', icon: Tags, divider: !one, run: () => openEditMetadata(items) });
   if (ctx.playlistId) {
     menu.push({ label: 'Remove from This Playlist', icon: Trash2, danger: true, divider: true, run: () => void removeFromPlaylist(ctx.playlistId!, items) });
   }

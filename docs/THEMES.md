@@ -88,4 +88,6 @@ Any CSS works, and the theme comes after Rakki's own styles. Useful class names:
 - `.np-card` cards in the right sidebar; `.lyrics-card` its lyrics card
 - `.lyrics-main` the lyrics in the main area; `.nowplaying` the full player
 - `.menu`, `.dialog`, `.toast`, `.settings-card`
+- Text boxes: `.field` (settings and dialogs), `.search` (the title bar), `.find` (find in a list), `.mk-text` (Sync Lyrics)
+- `.ae-head`, `.ae-card` Edit Audio's top and cards; `.maker` Sync Lyrics
 - `<html data-theme="...">` names the theme in use (`default`, `lucid`, or `file:...`).

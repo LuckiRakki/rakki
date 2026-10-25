@@ -1,10 +1,10 @@
 // Settings, one group at a time (the list on the left): account, look (accent, Lucid, the
-// moving backgrounds), lyrics, the visualizer, playback, connections (Last.fm, Discord, MRQ) and
-// about. Each group shows the everyday choices; the rest folds away under More options.
+// moving backgrounds), lyrics, the visualizer, playback, keyboard shortcuts, connections
+// (Last.fm, Discord, MRQ) and about. Each group shows the everyday choices; the rest folds away under More options.
 // Playback, lyrics and Last.fm are the phone app's settings (shared store), so they behave the
 // same.
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 
 import { checkLastfmKey, LastfmError } from '@/lib/lastfm';
 import { SWATCHES } from '@/appearance/presets';
@@ -15,14 +15,26 @@ import { inTauri } from '~/lib/tauri';
 import { installUpdate, useUpdate } from '~/lib/updateCheck';
 import { mrqVersion, normalizeMrqUrl, useMrq } from '~/mrq/client';
 import { useNav } from '~/nav';
-import { useDiscord } from '~/player/discord';
+import { GITHUB_BUTTON_LABEL, SONG_BUTTON_LABEL, useDiscord } from '~/player/discord';
+import { currentPosition, usePlayer } from '~/player/store';
 import { APP_LOOK, FEISHIN, LYRICS_SIZE, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
+import {
+  comboFromEvent,
+  comboKeys,
+  conflictOf,
+  DEFAULT_BINDINGS,
+  isReserved,
+  SHORTCUT_ACTIONS,
+  useShortcuts,
+  type ShortcutId,
+} from '~/settings/shortcuts';
 import { ThemeError } from '~/themes/format';
 import { allThemes, useThemes } from '~/themes/themes';
 import { openLink } from '~/lib/links';
 import { toast } from '~/ui/overlays';
-import { ArrowDownToLine, Check, ChevronDown, LogOut, Trash2 } from '~/ui/icons';
+import { ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, LogOut, Music, Plus, Trash2, Undo, X, type Icon } from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
+import { Artwork, formatTime } from '~/ui/parts';
 import { Slider } from '~/ui/Slider';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
 import pkg from '../../package.json';
@@ -482,6 +494,185 @@ function Playback() {
   );
 }
 
+// ---- Keyboard shortcuts ----
+
+const sameKeys = (a: string[] = [], b: string[] = []) => a.length === b.length && a.every((k, i) => k === b[i]);
+const actionLabel = (id: ShortcutId) => SHORTCUT_ACTIONS.find((a) => a.id === id)?.label ?? id;
+
+/** The arrow keys, drawn as arrows (settings/shortcuts.ts names them with arrow characters). */
+const ARROW_KEYS: Record<string, { icon: Icon; name: string }> = {
+  '←': { icon: ArrowLeft, name: 'Left Arrow' },
+  '→': { icon: ArrowRight, name: 'Right Arrow' },
+  '↑': { icon: ArrowUp, name: 'Up Arrow' },
+  '↓': { icon: ArrowDown, name: 'Down Arrow' },
+};
+
+/** A shortcut in words, for toasts and screen readers: "Ctrl+Left Arrow". */
+const comboWords = (combo: string) => comboKeys(combo).map((k) => ARROW_KEYS[k]?.name ?? k).join('+');
+
+/** A shortcut as keycaps. */
+function Keys({ combo }: { combo: string }) {
+  return (
+    <span className="keys-caps">
+      {comboKeys(combo).map((k, i) => {
+        const Arrow = ARROW_KEYS[k]?.icon;
+        return (
+          <kbd key={i} aria-label={ARROW_KEYS[k]?.name}>
+            {Arrow ? <Arrow size={14} /> : k}
+          </kbd>
+        );
+      })}
+    </span>
+  );
+}
+
+/**
+ * Waits for the new keys: the shortcut you press is taken as soon as it has a key besides
+ * Ctrl, Alt and Shift (shown as you hold them). Esc or clicking away cancels.
+ */
+function KeyRecorder({ onKeys, onCancel, label }: { onKeys(combo: string): void; onCancel(): void; label: string }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [held, setHeld] = useState<string[]>([]);
+  const [note, setNote] = useState<string | null>(null);
+  // Shortcuts rest while keys are being recorded, so pressing Space here doesn't play.
+  useEffect(() => {
+    ref.current?.focus();
+    useShortcuts.getState().setRecording(true);
+    return () => useShortcuts.getState().setRecording(false);
+  }, []);
+  const mods = (e: ReactKeyboardEvent) => [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift'].filter((m): m is string => !!m);
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    if (e.key === 'Tab') return onCancel();
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === 'Escape' && !e.ctrlKey && !e.altKey && !e.shiftKey) return onCancel();
+    const combo = comboFromEvent(e.nativeEvent);
+    if (!combo) return setHeld(mods(e));
+    if (isReserved(combo)) {
+      setHeld([]);
+      return setNote('Esc, Tab and Enter keep their usual jobs. Try another.');
+    }
+    onKeys(combo);
+  };
+  return (
+    <span className="key-recorder-wrap">
+      <button
+        ref={ref}
+        className="key-chip recording"
+        aria-label={`Press the New Shortcut for ${label}`}
+        onKeyDown={onKeyDown}
+        onKeyUp={(e) => setHeld(mods(e))}
+        onBlur={onCancel}>
+        {held.length ? (
+          <span className="keys-caps">
+            {held.map((k) => (
+              <kbd key={k}>{k}</kbd>
+            ))}
+            <span className="key-wait">…</span>
+          </span>
+        ) : (
+          'Press the Keys'
+        )}
+      </button>
+      {note ? <span className="key-note">{note}</span> : null}
+    </span>
+  );
+}
+
+function ShortcutRow({ id, label }: { id: ShortcutId; label: string }) {
+  const combos = useShortcuts((s) => s.bindings[id] ?? []);
+  /** Which shortcut is being replaced (its place), 'new' for an added one, null when not recording. */
+  const [recording, setRecording] = useState<number | 'new' | null>(null);
+  const changed = !sameKeys(combos, DEFAULT_BINDINGS[id]);
+
+  const take = (combo: string) => {
+    const s = useShortcuts.getState();
+    const mine = s.bindings[id] ?? [];
+    const next = recording === 'new' || recording === null ? [...mine, combo] : mine.map((c, i) => (i === recording ? combo : c));
+    setRecording(null);
+    // Used by another action: it moves here (the other loses it), and a toast says so.
+    const other = conflictOf(combo, id);
+    if (other) {
+      s.setBinding(other, (s.bindings[other] ?? []).filter((c) => c !== combo));
+      toast(`${comboWords(combo)} moved here from ${actionLabel(other)}`);
+    }
+    s.setBinding(id, [...new Set(next)]);
+  };
+  const remove = (i: number) => useShortcuts.getState().setBinding(id, combos.filter((_, j) => j !== i));
+
+  return (
+    <div className="setting shortcut-row">
+      <div className="setting-text">
+        <div className="setting-label">{label}</div>
+      </div>
+      <div className="shortcut-keys">
+        {combos.map((c, i) =>
+          recording === i ? (
+            <KeyRecorder key={c} label={label} onKeys={take} onCancel={() => setRecording(null)} />
+          ) : (
+            <span key={c} className="key-chip-wrap">
+              <button className="key-chip" aria-label={`${label}: ${comboWords(c)}. Change`} title="Change" onClick={() => setRecording(i)}>
+                <Keys combo={c} />
+              </button>
+              <button className="key-remove" aria-label={`Remove ${comboWords(c)} from ${label}`} title="Remove" onClick={() => remove(i)}>
+                <X size={12} />
+              </button>
+            </span>
+          ),
+        )}
+        {recording === 'new' ? (
+          <KeyRecorder label={label} onKeys={take} onCancel={() => setRecording(null)} />
+        ) : combos.length ? (
+          combos.length < 3 ? (
+            <button className="key-add" aria-label={`Add a Shortcut for ${label}`} title="Add Another" onClick={() => setRecording('new')}>
+              <Plus size={15} />
+            </button>
+          ) : null
+        ) : (
+          <button className="key-chip empty" aria-label={`Add a Shortcut for ${label}`} onClick={() => setRecording('new')}>
+            Add Shortcut
+          </button>
+        )}
+        <button
+          className={`key-reset${changed ? '' : ' hidden'}`}
+          aria-label={`Back to the Default for ${label}`}
+          title="Back to the Default"
+          tabIndex={changed ? 0 : -1}
+          aria-hidden={!changed}
+          onClick={() => useShortcuts.getState().resetBinding(id)}>
+          <Undo size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Shortcuts() {
+  const bindings = useShortcuts((s) => s.bindings);
+  const groups = [...new Set(SHORTCUT_ACTIONS.map((a) => a.group))];
+  const changed = SHORTCUT_ACTIONS.some((a) => !sameKeys(bindings[a.id], DEFAULT_BINDINGS[a.id]));
+  return (
+    <>
+      <p className="settings-lead">
+        Click a shortcut and press the keys you want instead; Esc cancels. Keys you give one action leave the one that had them. While you type in a
+        box, most shortcuts wait so the keys can type.
+      </p>
+      {groups.map((g) => (
+        <Card key={g} title={g}>
+          {SHORTCUT_ACTIONS.filter((a) => a.group === g).map((a) => (
+            <ShortcutRow key={a.id} id={a.id} label={a.label} />
+          ))}
+        </Card>
+      ))}
+      <div className="settings-foot">
+        <button className="secondary small" disabled={!changed} onClick={() => useShortcuts.getState().resetAll()}>
+          Back to the Default Shortcuts
+        </button>
+      </div>
+    </>
+  );
+}
+
 function LastfmCard() {
   const s = useSettings();
   const [key, setKey] = useState(s.lastfmApiKey);
@@ -534,9 +725,17 @@ function DiscordCard() {
         on={d.enabled}
         onChange={(v) => d.set({ enabled: v })}
         label="Show What You're Listening To"
-        detail="Your Discord profile shows the song, artists and a time bar while Rakki plays (the Discord app must be open on this computer)."
+        detail={`Your Discord profile shows the song, artists and a time bar while Rakki plays (the Discord app must be open on this computer).${d.enabled && d.connected && !d.error ? ' Connected.' : ''}`}
       />
       {d.error ? <div className="setting-detail error pad">{d.error}</div> : null}
+      <Toggle
+        on={d.songButton}
+        onChange={(v) => d.set({ songButton: v })}
+        label="Song Button"
+        detail="Opens the song on song.link, which has it on every music service (else a Spotify search)."
+      />
+      <Toggle on={d.githubButton} onChange={(v) => d.set({ githubButton: v })} label="Rakki Button" detail="Opens Rakki's page on GitHub, so friends can get it too." />
+      <DiscordPreview />
       <More>
         <div className="setting column">
           <div className="setting-label">Application ID</div>
@@ -562,6 +761,51 @@ function DiscordCard() {
         </div>
       </More>
     </Card>
+  );
+}
+
+/**
+ * Roughly what your friends see on your profile: the song, a time bar and the buttons. Discord
+ * never shows you your own buttons, so this is the only place you see them.
+ */
+function DiscordPreview() {
+  const d = useDiscord();
+  const item = usePlayer((s) => s.queue[s.index]);
+  const duration = usePlayer((s) => s.duration);
+  // A snapshot of where the song is; it doesn't tick (nothing moves while you read settings).
+  const at = usePlayer((s) => Math.floor(currentPosition(s) / 5) * 5);
+  const buttons = [d.songButton ? SONG_BUTTON_LABEL : null, d.githubButton ? GITHUB_BUTTON_LABEL : null].filter((b): b is string => !!b);
+  const artists = item?.Artists?.join(', ') || item?.AlbumArtist;
+  return (
+    <div className={`setting column discord-preview-row${d.enabled ? '' : ' off'}`}>
+      <div className="setting-text">
+        <div className="setting-label">What Friends See</div>
+        <div className="setting-detail">{d.enabled ? "Discord doesn't show you your own buttons; everyone else sees them." : "Turn on Show What You're Listening To first."}</div>
+      </div>
+      <div className="discord-preview" aria-label="Preview of your Discord status">
+        <div className="dp-head">Listening to Rakki</div>
+        <div className="dp-body">
+          {item ? <Artwork item={item} size={120} className="dp-art" /> : <div className="artwork empty dp-art"><Music size={26} /></div>}
+          <div className="dp-text">
+            <div className="dp-title">{item?.Name ?? 'Song Title'}</div>
+            <div className="dp-line">{item ? artists || 'Unknown Artist' : 'Artist'}</div>
+            <div className="dp-line">{item ? (item.Album ?? '') : 'Album'}</div>
+            <div className="dp-time">
+              <span>{formatTime(item ? at : 72)}</span>
+              <div className="dp-bar">
+                <div style={{ width: `${Math.min(100, ((item ? at : 72) / Math.max(1, item ? duration : 214)) * 100)}%` }} />
+              </div>
+              <span>{formatTime(item ? duration : 214)}</span>
+            </div>
+          </div>
+        </div>
+        {buttons.map((b) => (
+          <div key={b} className="dp-button">
+            {b}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -638,6 +882,7 @@ const GROUPS: { id: string; label: string; view: () => ReactNode }[] = [
   { id: 'lyrics', label: 'Lyrics', view: () => <Lyrics /> },
   { id: 'visualizer', label: 'Visualizer', view: () => <VisualizerSettings /> },
   { id: 'playback', label: 'Playback', view: () => <Playback /> },
+  { id: 'shortcuts', label: 'Shortcuts', view: () => <Shortcuts /> },
   {
     id: 'connections',
     label: 'Connections',

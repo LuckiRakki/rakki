@@ -33,13 +33,12 @@
 /* ---- No panels: everything sits on the flow ---- */
 
 .panel { background: var(--surface); }
-.navbtn, .navbtn.home, .search { background: rgba(255, 255, 255, 0.1); }
-.search:hover, .navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
-.search:focus-within { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.7); }
+.navbtn, .navbtn.home { background: rgba(255, 255, 255, 0.1); }
+.navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
 .win:hover { background: rgba(255, 255, 255, 0.12); }
 
 .home-top { background: none; }
-.lib-header, .action-bar { background: none; }
+.lib-header, .action-bar, .ae-head { background: none; }
 .quick { background: rgba(255, 255, 255, 0.1); }
 .quick:hover { background: rgba(255, 255, 255, 0.18); }
 .card:hover, .row:hover, .qrow:hover { background: rgba(255, 255, 255, 0.08); }
@@ -64,7 +63,16 @@
   backdrop-filter: blur(28px) saturate(1.4);
 }
 .menu-item:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
-.field { background: rgba(255, 255, 255, 0.1); }
+
+/* ---- Text boxes: dark wells, so what you type and the hints read on any cover ---- */
+
+.field, .search, .find, .select { background: rgba(0, 0, 0, 0.28); border: 1px solid rgba(255, 255, 255, 0.14); }
+.field:hover, .search:hover, .find:hover, .select:hover { background: rgba(0, 0, 0, 0.34); border-color: rgba(255, 255, 255, 0.32); }
+.field:focus, .search:focus-within { background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.85); }
+.find:focus-within { background: rgba(0, 0, 0, 0.4); }
+::placeholder { color: rgba(255, 255, 255, 0.7); }
+.mk-text { background: rgba(0, 0, 0, 0.28); border-color: rgba(255, 255, 255, 0.14); }
+.mk-text:focus { background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.85); }
 .select option { background: #1b1b1e; }
 .settings-card { background: rgba(255, 255, 255, 0.06); }
 .server-bar, .tt-head { background: var(--kawarp-glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }

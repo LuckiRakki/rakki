@@ -238,3 +238,42 @@
 .theme-row .iconbtn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-3); }
 .theme-row .iconbtn:hover { color: var(--text); background: var(--surface-3); }
 .theme-row .secondary.on { border-color: transparent; background: var(--accent-soft); color: var(--accent); opacity: 1; }
+.settings-lead { color: var(--text-2); line-height: 1.5; max-width: 640px; margin-bottom: 22px; }
+.settings-foot { margin: -8px 0 28px; }
+
+/* Settings → Shortcuts: each action's keys as keycaps; click one to record new keys. */
+.keys-caps { display: inline-flex; align-items: center; gap: 4px; }
+.keys-caps kbd { min-width: 26px; height: 26px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 6px; background: var(--surface-4); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35); font: inherit; font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.shortcut-row { padding: 10px 0; min-height: 56px; }
+.shortcut-keys { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.key-chip-wrap { position: relative; display: inline-flex; }
+.key-chip { height: 34px; padding: 0 4px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; transition: background 0.15s; }
+.key-chip:hover { background: var(--surface-3); }
+.key-chip.empty { padding: 0 12px; border: 1px dashed var(--text-3); color: var(--text-3); font-size: 13px; font-weight: 700; }
+.key-chip.empty:hover { border-color: var(--text); color: var(--text); background: none; }
+.key-chip.recording { padding: 0 12px; min-width: 120px; justify-content: center; background: var(--surface-3); box-shadow: inset 0 0 0 2px var(--focus); color: var(--text); font-size: 13px; font-weight: 700; outline: 0; }
+.key-chip.recording .key-wait { color: var(--text-2); margin-left: 2px; }
+.key-recorder-wrap { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.key-note { font-size: 12px; color: #ff8a80; }
+.key-remove { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-4); color: var(--text); display: grid; place-items: center; opacity: 0; transition: opacity 0.15s, background 0.15s; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
+.key-chip-wrap:hover .key-remove, .key-remove:focus-visible { opacity: 1; }
+.key-remove:hover { background: #e5534b; }
+.key-add, .key-reset { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--text-3); transition: color 0.15s, background 0.15s; }
+.key-add:hover, .key-reset:hover { color: var(--text); background: var(--surface-3); }
+.key-reset.hidden { visibility: hidden; }
+
+/* Settings → Connections → Discord: roughly what friends see on your profile. */
+.discord-preview-row { gap: 12px; }
+.discord-preview { width: 300px; max-width: 100%; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); transition: opacity 0.2s; }
+.discord-preview-row.off .discord-preview { opacity: 0.45; }
+.dp-head { font-size: 12px; font-weight: 800; color: var(--text-2); }
+.dp-body { display: flex; align-items: center; gap: 12px; }
+.dp-art { width: 64px; flex: none; border-radius: var(--radius-sm); }
+.dp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dp-title, .dp-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-title { font-size: 13px; font-weight: 700; }
+.dp-line { font-size: 12px; color: var(--text-2); min-height: 15px; }
+.dp-time { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.dp-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-4); overflow: hidden; }
+.dp-bar div { height: 100%; background: var(--text); }
+.dp-button { height: 32px; border-radius: 6px; background: var(--surface-3); display: grid; place-items: center; font-size: 13px; font-weight: 600; }

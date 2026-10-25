@@ -1,6 +1,6 @@
 [package]
 name = "rakki-desktop"
-version = "1.3.1"
+version = "1.4.0"
 description = "Rakki for Windows and Linux: Jellyfin music with word-by-word lyrics"
 authors = ["LuckiRakki"]
 edition = "2024"

@@ -27,9 +27,14 @@ const GLYPH: Record<string, number> = {
   'add-circle-outline': 0xf105,
   'alert-circle-outline': 0xf114,
   'arrow-down-circle': 0xf12e,
+  'arrow-back': 0xf127,
+  'arrow-down': 0xf12d,
   'arrow-down-circle-outline': 0xf12f,
+  'arrow-forward': 0xf133,
   'arrow-undo-outline': 0xf143,
+  'arrow-up': 0xf145,
   'arrow-up-circle-outline': 0xf147,
+  'backspace-outline': 0xf155,
   'checkmark': 0xf21d,
   'chevron-back': 0xf229,
   'chevron-down': 0xf232,
@@ -40,6 +45,7 @@ const GLYPH: Record<string, number> = {
   'color-palette-outline': 0xf27e,
   'contract': 0xf289,
   'copy-outline': 0xf290,
+  'cut-outline': 0xf29c,
   'desktop-outline': 0xf29f,
   'disc-outline': 0xf2a8,
   'ellipse-outline': 0xf2cc,
@@ -51,8 +57,11 @@ const GLYPH: Record<string, number> = {
   'heart': 0xf36a,
   'heart-dislike-outline': 0xf372,
   'heart-outline': 0xf377,
+  'hand-left-outline': 0xf35c,
   'home': 0xf382,
   'image-outline': 0xf38f,
+  'information-circle-outline': 0xf399,
+  'keypad-outline': 0xf3a7,
   'laptop-outline': 0xf3ad,
   'library-outline': 0xf3b6,
   'list': 0xf3bb,
@@ -71,6 +80,8 @@ const GLYPH: Record<string, number> = {
   'pin': 0xf4ba,
   'pin-outline': 0xf4bb,
   'play': 0xf4c6,
+  'play-back': 0xf4c7,
+  'play-forward': 0xf4d0,
   'play-forward-outline': 0xf4d4,
   'play-skip-back': 0xf4d8,
   'play-skip-forward': 0xf4de,
@@ -85,6 +96,7 @@ const GLYPH: Record<string, number> = {
   'settings-outline': 0xf56c,
   'shuffle': 0xf583,
   'square-outline': 0xf593,
+  'stopwatch-outline': 0xf5a5,
   'swap-vertical': 0xf5b3,
   'time-outline': 0xf5de,
   'timer-outline': 0xf5e1,
@@ -159,9 +171,20 @@ export const Repeat1: Icon = (p) => (
   </span>
 );
 
+/** Edit Audio: a sound wave, bars of different heights. */
+export const AudioWave: Icon = (p) => (
+  <Drawn {...p}>
+    <path d="M96 208v96M176 144v224M256 96v320M336 176v160M416 224v64" />
+  </Drawn>
+);
+
 export const Alert = glyph('alert-circle-outline');
+export const ArrowDown = glyph('arrow-down');
 export const ArrowDownAZ = glyph('swap-vertical');
 export const ArrowDownToLine = glyph('arrow-down-circle-outline');
+export const ArrowLeft = glyph('arrow-back');
+export const ArrowRight = glyph('arrow-forward');
+export const ArrowUp = glyph('arrow-up');
 export const ArrowUpFromLine = glyph('arrow-up-circle-outline');
 export const Blend = glyph('shuffle');
 export const Check = glyph('checkmark');
@@ -174,15 +197,20 @@ export const CircleArrowDown = glyph('arrow-down-circle');
 export const Clock3 = glyph('time-outline');
 export const Copy = glyph('copy-outline');
 export const Disc3 = glyph('disc-outline');
+export const Backspace = glyph('backspace-outline');
 export const Ellipsis = glyph('ellipsis-horizontal');
 export const Expand = glyph('expand');
+export const FastForward = glyph('play-forward');
 export const ExternalLink = glyph('open-outline');
 export const Eye = glyph('eye-outline');
 export const EyeOff = glyph('eye-off-outline');
 export const GripVertical = glyph('reorder-three');
+export const Hand = glyph('hand-left-outline');
 export const HeartOff = glyph('heart-dislike-outline');
 export const Home = glyph('home');
 export const ImagePlus = glyph('image-outline');
+export const Info = glyph('information-circle-outline');
+export const Keyboard = glyph('keypad-outline');
 export const Library = glyph('library-outline');
 export const ListEnd = glyph('list-outline');
 export const ListMusic = glyph('list');
@@ -210,6 +238,7 @@ export const Play = glyph('play');
 export const Plus = glyph('add');
 export const PlusCircle = glyph('add-circle-outline');
 export const Radio = glyph('radio-outline');
+export const Rewind = glyph('play-back');
 export const Refresh = glyph('refresh');
 export const Repeat = glyph('repeat');
 export const Search = glyph('search');
@@ -219,8 +248,10 @@ export const Shuffle = glyph('shuffle');
 export const SkipBack = glyph('play-skip-back');
 export const SkipForward = glyph('play-skip-forward');
 export const SlidersHorizontal = glyph('options-outline');
+export const Scissors = glyph('cut-outline');
 export const Smartphone = glyph('phone-portrait-outline');
 export const Square = glyph('square-outline');
+export const Stopwatch = glyph('stopwatch-outline');
 export const Tags = glyph('pricetags-outline');
 export const Timer = glyph('timer-outline');
 export const Trash2 = glyph('trash-outline');

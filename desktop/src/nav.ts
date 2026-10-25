@@ -19,7 +19,11 @@ export type Route =
   | { name: 'settings'; section?: string }
   | { name: 'album'; id: string }
   | { name: 'artist'; id: string }
-  | { name: 'playlist'; id: string };
+  | { name: 'playlist'; id: string }
+  /** A song's audio editor (audio/AudioEditor.tsx). */
+  | { name: 'editAudio'; id: string }
+  /** The tap-to-sync lyrics maker for a song (lyrics/LyricsMaker.tsx). */
+  | { name: 'makeLyrics'; id: string };
 
 interface NavState {
   stack: Route[];

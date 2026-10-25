@@ -47,6 +47,8 @@ html, body, #root { margin: 0; height: 100%; overflow: hidden; user-select: none
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 button:disabled { cursor: default; }
 input, select { font: inherit; color: inherit; }
+/* Hints in text boxes read at 4.5:1 (the browser's grey doesn't on the surfaces). */
+::placeholder { color: var(--text-3); opacity: 1; }
 img { display: block; }
 h1, h2, h3, p { margin: 0; }
 /* Thumbs show only while scrolling (ui/scrolling.ts) or under the pointer, inset from the

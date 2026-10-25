@@ -6,6 +6,30 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 1.4.0 (2026-10-25, next desktop build; needs the Rakki plugin 0.3)
+- **Edit Audio** (right-click a song). Drag where the song starts and ends on its waveform, fade
+  it in and out, make it louder or quieter, shape it with a ten-band equalizer (or a preset), and
+  change its speed, pitch and reverb (Slowed + Reverb and Sped Up are one click). While the song
+  plays you hear each change as you make it; Save keeps it. The edits live with the Rakki plugin
+  on your server, never in the music file, so the song plays that way on every Rakki and the file
+  stays as it was.
+- **Sync Lyrics** (right-click a song, or the Sync Lyrics button when a song has no lyrics or only
+  plain ones). Paste the words (or start from the lyrics the song has on your server), pick line
+  by line or word by word, then tap Space along with the song. Check every line after, nudge it
+  by a tenth of a second or tap again from there, and save: the plugin keeps them apart from your
+  files and every Rakki shows them, crediting you. Lyrics from the Spicy Lyrics API are never
+  copied in (its terms only allow showing them).
+- **Keyboard shortcuts you can change** (Settings → Shortcuts): click one and press new keys,
+  give an action up to three, or go back to the defaults.
+- **Discord buttons.** Your status can show a Listen button (the song on song.link, which has it
+  on every music service) and a Rakki on GitHub button, each switchable. Settings shows what your
+  friends see, since Discord never shows you your own buttons.
+- **Text boxes in Kawarp are dark wells**, so what you type and the hints in them read on any
+  cover (they were pale glass, and the hints nearly vanished on bright covers). Hints in text
+  boxes read better in every theme too.
+- **Server (Rakki plugin 0.3):** keeps audio edits and made lyrics in its own data folder, never
+  in the music files; made lyrics are served first and found by lyrics search.
+
 ## Desktop 1.3.1 (2026-10-25, next desktop build)
 - **Edit Metadata shows the Spotify links your songs already have.** They were saved but came
   up empty when you opened it again (Rakki misread how MRQ lists a file's tags). Now every song

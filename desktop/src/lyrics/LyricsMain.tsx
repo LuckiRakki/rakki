@@ -14,7 +14,8 @@ import { LyricsView, pickLyrics } from '~/lyrics/LyricsView';
 import { usePlayer } from '~/player/store';
 import { SpicyView } from '~/spicy/SpicyView';
 import { DynamicBackground } from '~/ui/DynamicBackground';
-import { Expand, MicVocal } from '~/ui/icons';
+import { openLyricsMaker } from '~/lyrics/LyricsMaker';
+import { Expand, MicVocal, Stopwatch } from '~/ui/icons';
 import { Loading } from '~/ui/states';
 
 export function LyricsMain() {
@@ -41,6 +42,12 @@ export function LyricsMain() {
       ) : null}
       <div className="lm-shade" />
       <div className="lm-tools">
+        {/* Lyrics without timing: make them sync. */}
+        {item && !item.Radio && lyrics && !lyrics.isSynced ? (
+          <button className="iconbtn" aria-label="Sync These Lyrics" title="Sync These Lyrics" onClick={() => openLyricsMaker(item)}>
+            <Stopwatch size={19} />
+          </button>
+        ) : null}
         {lyrics ? <LyricsSettings itemId={item?.Id} /> : null}
         <button
           className="iconbtn"
@@ -63,7 +70,11 @@ export function LyricsMain() {
         ) : q.isLoading ? (
           <Loading what="lyrics" />
         ) : !lyrics ? (
-          <Empty text="No Lyrics Found" detail="This song has no lyrics on your server." />
+          <Empty
+            text="No Lyrics Found"
+            detail="This song has no lyrics on your server. Paste them and tap along as it plays to make synced ones."
+            action={{ label: 'Sync Lyrics', run: () => openLyricsMaker(item) }}
+          />
         ) : mode === 'spicy' ? (
           <SpicyView key={item.Id} lyrics={lyrics} itemId={item.Id} active={!covered} onNextUp={() => l.setPanel('queue')} />
         ) : (
@@ -74,12 +85,17 @@ export function LyricsMain() {
   );
 }
 
-function Empty({ text, detail }: { text: string; detail?: string }) {
+function Empty({ text, detail, action }: { text: string; detail?: string; action?: { label: string; run(): void } }) {
   return (
     <div className="lm-empty">
       <MicVocal size={40} />
       <h2>{text}</h2>
       {detail ? <p>{detail}</p> : null}
+      {action ? (
+        <button className="lm-action" onClick={action.run}>
+          <Stopwatch size={17} /> {action.label}
+        </button>
+      ) : null}
     </div>
   );
 }

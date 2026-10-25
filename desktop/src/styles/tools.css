@@ -1,0 +1,232 @@
+/* Tools for one song: Edit Audio (audio/AudioEditor.tsx, Waveform.tsx, Equalizer.tsx) and
+   Sync Lyrics (lyrics/LyricsMaker.tsx). */
+
+/* ---- Edit Audio ---- */
+
+.ae-head { display: flex; align-items: flex-end; gap: 20px; margin: -24px -28px 20px; padding: 44px 28px 22px; background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 55%, var(--surface)) 0%, var(--surface) 100%); }
+.ae-art { width: 116px; flex: none; }
+.ae-title { flex: 1; min-width: 0; }
+.ae-title .kind { font-size: 13px; font-weight: 700; }
+.ae-title h1 { font-size: clamp(26px, 3.4vw, 44px); font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; margin: 6px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ae-sub { color: rgba(255, 255, 255, 0.82); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ae-actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.ae-state { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; font-size: 13px; font-weight: 700; color: var(--text-2); }
+.ae-state.dirty { color: var(--text); }
+.ae-state.dirty::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--text); }
+.ae-save { height: var(--control); padding: 0 28px; }
+@container main (max-width: 760px) {
+  .ae-head { flex-wrap: wrap; }
+  .ae-actions { width: 100%; justify-content: flex-end; }
+}
+.ae-note { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 12px 16px; border-radius: var(--radius); background: var(--surface-2); color: var(--text-2); font-size: 13px; line-height: 1.45; }
+.ae-note .ico { color: var(--text); flex: none; }
+.ae-note.error { color: var(--text); }
+.ae-note.error .ico { color: #ff8a80; }
+.ae-card { min-width: 0; margin-bottom: 16px; padding: 18px 20px 20px; border-radius: var(--radius); background: var(--surface-2); }
+.ae-card-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.ae-card-head h2 { font-size: 18px; font-weight: 800; }
+.ae-summary { color: var(--text-3); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ae-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@container main (max-width: 940px) { .ae-grid { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.ae-chips { margin-bottom: 18px; }
+.ae-chips button:disabled { cursor: default; }
+.ae-rows .setting { padding: 12px 0; }
+.ae-rows .setting:first-child { padding-top: 0; }
+.ae-rows .setting:last-child { padding-bottom: 0; }
+.ae-rows .slider > span { width: 58px; white-space: nowrap; }
+.ae-foot { color: var(--text-3); font-size: 13px; line-height: 1.5; margin-top: 2px; }
+
+/* Start and end: the waveform, its handles, and the transport and fades under it. */
+.wave { position: relative; height: 148px; margin: 2px 0 30px; border-radius: var(--radius-sm); background: rgba(0, 0, 0, 0.24); cursor: pointer; touch-action: none; }
+.wave.dragging { cursor: ew-resize; }
+.wave-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.wave.empty:not(.failed)::after { content: 'Reading the song…'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-3); font-size: 13px; font-weight: 600; animation: fade-in 0.3s 0.3s both; pointer-events: none; }
+.wave-head { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--text); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25); pointer-events: none; }
+.wave-hover { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, 0.45); pointer-events: none; }
+.wave-hover span { position: absolute; top: 6px; left: 0; transform: translateX(-50%); padding: 2px 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.72); font-size: 11px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wave-handle { position: absolute; z-index: 2; top: 0; bottom: 0; width: 22px; margin-left: -11px; cursor: ew-resize; outline: none; }
+.wave-handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: 10px; width: 2px; border-radius: 1px; background: #fff; box-shadow: 0 0 6px rgba(0, 0, 0, 0.5); }
+.wave-grip { position: absolute; top: 50%; left: 4px; width: 14px; height: 36px; margin-top: -18px; border-radius: 7px; background: linear-gradient(90deg, transparent 5px, #8e8e96 5px 6px, transparent 6px 8px, #8e8e96 8px 9px, transparent 9px) center / 14px 14px no-repeat, #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); transition: transform 0.15s var(--ease-out); }
+.wave-handle:hover .wave-grip, .wave-handle.on .wave-grip { transform: scale(1.12); }
+.wave-handle:focus-visible .wave-grip { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wave-label { position: absolute; top: calc(100% + 7px); font-size: 12px; font-weight: 700; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wave-handle.start .wave-label { left: 10px; }
+.wave-handle.end .wave-label { right: 10px; }
+.wave-handle.on .wave-label, .wave-handle:focus-visible .wave-label { color: var(--text); }
+.ae-trim-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; }
+.ae-transport { display: flex; align-items: center; gap: 8px; }
+.ae-transport .iconbtn { width: 36px; height: 36px; border-radius: 50%; color: var(--text-2); }
+.ae-transport .iconbtn:hover { background: var(--surface-3); }
+.ae-play { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); transition: transform 0.15s var(--ease-spring), filter 0.15s; }
+.ae-play:hover { transform: scale(1.06); filter: brightness(1.08); }
+.ae-play:active { transform: scale(0.94); }
+.ae-time, .ae-hint { margin-left: 6px; font-size: 13px; }
+.ae-time { color: var(--text-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ae-hint { color: var(--text-3); }
+.ae-fades { display: flex; gap: 12px 28px; flex-wrap: wrap; }
+.ae-fade { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 700; color: var(--text-2); }
+.ae-fade .slider { width: 190px; }
+
+/* The equalizer: ten bands, the curve through them, the scale and the frequencies. */
+.eq-panel { display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-rows: 196px auto; gap: 8px; }
+.eq-scale { position: relative; font-size: 11px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.eq-scale span { position: absolute; right: 0; transform: translateY(-50%); }
+.eq-scale span:nth-child(1) { top: 4%; }
+.eq-scale span:nth-child(2) { top: 50%; }
+.eq-scale span:nth-child(3) { top: 96%; }
+.eq-area { position: relative; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); border-radius: var(--radius-sm); background: rgba(0, 0, 0, 0.24); }
+.eq-curve { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.eq-zero { stroke: rgba(255, 255, 255, 0.2); stroke-width: 1; stroke-dasharray: 4 5; }
+.eq-line { fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; }
+.eq-band { position: relative; cursor: ns-resize; touch-action: none; outline: none; }
+.eq-track { position: absolute; left: 50%; top: 4%; bottom: 4%; width: 2px; margin-left: -1px; border-radius: 1px; background: rgba(255, 255, 255, 0.08); transition: background 0.15s; }
+.eq-band:hover .eq-track { background: rgba(255, 255, 255, 0.16); }
+.eq-knob { position: absolute; left: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); transition: transform 0.15s var(--ease-out); }
+.eq-band:hover .eq-knob, .eq-band.on .eq-knob { transform: scale(1.2); }
+.eq-band:focus-visible .eq-knob { outline: 2px solid var(--focus); outline-offset: 2px; }
+.eq-value { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); padding: 2px 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.75); font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.eq-band:hover .eq-value, .eq-band.on .eq-value, .eq-band:focus-visible .eq-value { opacity: 1; }
+.eq-freqs { grid-column: 2; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); text-align: center; font-size: 11px; font-weight: 600; color: var(--text-3); }
+
+/* ---- Sync Lyrics ---- */
+
+.panel.main:has(> .route > .maker) { overflow: hidden; }
+.maker { position: absolute; inset: 0; isolation: isolate; display: flex; flex-direction: column; color: #fff; animation: fade-in 0.3s var(--ease-out); }
+.maker.own-bg { background: radial-gradient(1100px 640px at 18% -10%, color-mix(in srgb, var(--tint) 75%, #000) 0%, transparent 72%), color-mix(in srgb, var(--tint) 26%, #070708); }
+.maker kbd { min-width: 26px; height: 24px; padding: 0 7px; display: inline-grid; place-items: center; border-radius: 6px; background: rgba(255, 255, 255, 0.14); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3); font: inherit; font-size: 12px; font-weight: 700; color: #fff; }
+.maker .secondary { border-color: rgba(255, 255, 255, 0.45); }
+.maker .secondary:hover { border-color: #fff; }
+.maker .timing-step { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.maker .timing-step:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
+.maker .timing-step:disabled { opacity: 0.35; cursor: default; }
+.mk-top { display: flex; align-items: center; gap: 14px; flex: none; padding: 16px 24px 12px; }
+.mk-back { width: 36px; height: 36px; border-radius: 50%; color: rgba(255, 255, 255, 0.8); }
+.mk-back:hover { background: rgba(255, 255, 255, 0.1); }
+.mk-art { width: 48px; flex: none; }
+.mk-title { flex: 1; min-width: 0; }
+.mk-title .kind { font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.7); }
+.mk-name, .mk-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-name { font-size: 18px; font-weight: 800; }
+.mk-sub { font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+.mk-steps { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.mk-steps li { display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, 0.62); }
+.mk-steps li.on { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.mk-steps li.done { color: rgba(255, 255, 255, 0.85); }
+.mk-step-n { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.12); font-size: 12px; }
+.mk-steps li.on .mk-step-n { background: #fff; color: #000; }
+.mk-steps li.done .mk-step-n { background: rgba(255, 255, 255, 0.22); }
+.mk-body { flex: 1; min-height: 0; display: flex; padding: 8px 24px 24px; }
+.mk-small { font-size: 12px; line-height: 1.45; color: rgba(255, 255, 255, 0.62); }
+
+/* 1. The words */
+.mk-text-step { gap: 20px; }
+.mk-text { flex: 1; min-width: 0; resize: none; padding: 18px 22px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); outline: 0; background: rgba(0, 0, 0, 0.3); color: #fff; font: inherit; font-size: 17px; font-weight: 600; line-height: 1.75; user-select: text; transition: border-color 0.15s; }
+.mk-text:focus { border-color: rgba(255, 255, 255, 0.45); }
+/* The explanations scroll when the window is short; the buttons under them stay in view. */
+.mk-side { width: 320px; flex: none; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.mk-side-main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.mk-side h2 { font-size: 18px; font-weight: 800; }
+.mk-modes { display: flex; flex-direction: column; gap: 8px; }
+.mk-mode { display: flex; gap: 12px; padding: 14px; border: 1px solid transparent; border-radius: var(--radius); background: rgba(255, 255, 255, 0.06); text-align: left; transition: background 0.15s, border-color 0.15s; }
+.mk-mode:hover { background: rgba(255, 255, 255, 0.1); }
+.mk-mode.on { border-color: rgba(255, 255, 255, 0.75); background: rgba(255, 255, 255, 0.1); }
+.mk-mode b { display: block; margin-bottom: 3px; font-size: 14px; }
+.mk-mode > span:last-child > span { font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, 0.7); }
+.mk-radio { width: 18px; height: 18px; flex: none; margin-top: 1px; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; transition: border 0.15s; }
+.mk-mode.on .mk-radio { border: 5px solid #fff; }
+.mk-keys { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: rgba(255, 255, 255, 0.78); }
+.mk-keys li { display: flex; align-items: center; gap: 6px; }
+.mk-keys kbd + kbd { margin-left: -2px; }
+.mk-side-foot { flex: none; display: flex; flex-direction: column; gap: 10px; }
+.mk-side-foot .primary, .mk-side-foot .secondary { width: 100%; }
+@container main (max-width: 760px) {
+  .mk-text-step { flex-direction: column; }
+  .mk-side { width: auto; }
+  .mk-side-main { overflow: visible; }
+  .mk-steps li:not(.on) { font-size: 0; gap: 0; padding-right: 5px; }
+}
+
+/* 2. Tapping */
+.mk-tap-step { flex-direction: column; align-items: center; }
+.mk-stage { flex: 1; min-height: 0; width: 100%; max-width: 1000px; display: flex; flex-direction: column; justify-content: safe center; gap: 16px; overflow: hidden; padding: 0 12px; }
+.mk-line { display: flex; flex-direction: column; gap: 8px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+.mk-line.before { flex-direction: row; align-items: baseline; gap: 14px; font-size: 20px; color: rgba(255, 255, 255, 0.6); }
+/* Coming lines and words not yet tapped: the lyrics view's dim for unsung lines (DESIGN.md's Spicy exception). */
+.mk-line.after { font-size: 22px; color: rgba(255, 255, 255, 0.4); }
+.mk-line.target { font-size: clamp(28px, 4.4cqi, 60px); color: #fff; animation: mk-in 0.28s var(--ease-out); }
+.mk-line.break { flex-direction: row; align-items: center; gap: 12px; }
+.mk-line.break.target { flex-direction: column; align-items: flex-start; }
+.mk-words { color: rgba(255, 255, 255, 0.4); }
+.mk-words span { transition: color 0.12s; }
+.mk-words .lit { color: #fff; }
+.mk-words .next { color: #fff; text-decoration: underline 4px var(--accent); text-underline-offset: 0.2em; }
+.mk-cue { font-size: 13px; font-weight: 700; letter-spacing: 0; color: rgba(255, 255, 255, 0.6); }
+.mk-stamp { font-size: 12px; font-weight: 700; letter-spacing: 0; color: rgba(255, 255, 255, 0.62); font-variant-numeric: tabular-nums; }
+@keyframes mk-in { from { opacity: 0.35; transform: translateY(16px); } }
+.mk-away { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 6px 6px 6px 14px; border-radius: var(--radius); background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 600; }
+.mk-timeline { position: relative; flex: none; width: 100%; max-width: 1000px; height: 6px; margin: 10px 0 22px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
+.mk-timeline-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: rgba(255, 255, 255, 0.32); }
+.mk-mark { position: absolute; top: -3px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: #fff; }
+.mk-pad { display: flex; align-items: center; gap: 28px; flex: none; }
+.mk-pad-side { display: flex; justify-content: flex-end; gap: 10px; width: 170px; }
+.mk-pad-side.right { justify-content: flex-start; }
+.mk-tool { width: 64px; display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: var(--radius-sm); color: rgba(255, 255, 255, 0.78); font-size: 12px; font-weight: 700; transition: color 0.15s; }
+.mk-tool-ico { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.1); transition: background 0.15s, transform 0.15s var(--ease-spring); }
+.mk-tool:hover:not(:disabled) { color: #fff; }
+.mk-tool:hover:not(:disabled) .mk-tool-ico { background: rgba(255, 255, 255, 0.18); }
+.mk-tool:active:not(:disabled) .mk-tool-ico { transform: scale(0.94); }
+.mk-tool:disabled { opacity: 0.4; cursor: default; }
+.mk-tap { position: relative; width: 116px; height: 116px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 900; transition: transform 0.12s var(--ease-spring), filter 0.12s; }
+.mk-tap:hover:not(:disabled) { filter: brightness(1.08); }
+.mk-tap:active:not(:disabled) { transform: scale(0.94); }
+.mk-tap:disabled { opacity: 0.5; cursor: default; }
+/* A ring goes out from the button on each tap (a fresh element per tap, so the button keeps focus). */
+.mk-ring { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; animation: mk-ring 0.4s var(--ease-out) both; }
+@keyframes mk-ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 65%, transparent); } to { box-shadow: 0 0 0 26px transparent; } }
+.mk-count { margin-top: 14px; font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, 0.6); font-variant-numeric: tabular-nums; }
+/* Short windows: a smaller pad, so the line to tap keeps its room; what doesn't fit fades out. */
+@media (max-height: 720px) {
+  .mk-stage { gap: 10px; -webkit-mask-image: linear-gradient(#000 78%, transparent); mask-image: linear-gradient(#000 78%, transparent); }
+  .mk-line.target { font-size: clamp(24px, 3.6cqi, 44px); }
+  .mk-line.before { font-size: 17px; }
+  .mk-line.after { font-size: 18px; }
+  .mk-timeline { margin: 6px 0 14px; }
+  .mk-pad { gap: 20px; }
+  .mk-tap { width: 92px; height: 92px; font-size: 14px; }
+  .mk-tool-ico { width: 44px; height: 44px; }
+  .mk-count { margin-top: 8px; }
+}
+
+/* 3. Checking */
+.mk-check-step { flex-direction: column; gap: 12px; padding-bottom: 14px; }
+.mk-check-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mk-shift { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, 0.75); }
+.mk-shift span { margin-right: 4px; }
+.mk-save { height: var(--control); padding: 0 24px; }
+.mk-banner { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: var(--radius); background: rgba(0, 0, 0, 0.3); font-size: 13px; font-weight: 600; }
+.mk-banner > span:not(.ico) { flex: 1; }
+.mk-list { flex: 1; min-height: 0; margin: 0 -8px; padding: 4px 8px 30vh; overflow-y: auto; list-style: none; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
+.mk-row { display: flex; align-items: center; gap: 8px; padding-right: 8px; border-radius: var(--radius-sm); transition: background 0.15s; }
+.mk-row:hover { background: rgba(255, 255, 255, 0.06); }
+.mk-row.on { background: rgba(255, 255, 255, 0.08); box-shadow: inset 3px 0 0 var(--accent); }
+.mk-row-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 18px; padding: 10px 12px; text-align: left; }
+.mk-row-main:disabled { cursor: default; }
+.mk-row .mk-stamp { width: 64px; flex: none; font-size: 13px; }
+.mk-row.missing .mk-stamp { color: rgba(255, 255, 255, 0.5); }
+.mk-row-text { font-size: 19px; font-weight: 700; line-height: 1.35; color: rgba(255, 255, 255, 0.62); transition: color 0.15s; }
+.mk-row.on .mk-row-text { color: #fff; }
+.mk-row.on .mk-row-text.words { color: rgba(255, 255, 255, 0.55); }
+.mk-row-text .lit { color: #fff; }
+.mk-row-text.break { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: rgba(255, 255, 255, 0.62); }
+.mk-row-tools { display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+.mk-row:hover .mk-row-tools, .mk-row:focus-within .mk-row-tools { opacity: 1; }
+.mk-row-tools .timing-step { height: 28px; padding: 0 8px; font-size: 12px; }
+.mk-row-tools .iconbtn { width: 30px; height: 30px; border-radius: 50%; color: rgba(255, 255, 255, 0.7); }
+.mk-row-tools .iconbtn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.mk-foot { flex: none; font-size: 12px; color: rgba(255, 255, 255, 0.62); }
+
+/* The lyrics view's "No Lyrics Found": Sync Lyrics. */
+.lm-action { display: inline-flex; align-items: center; gap: 8px; height: var(--control); margin-top: 10px; padding: 0 20px; border-radius: 999px; background: #fff; color: #000; font-weight: 800; transition: transform 0.15s var(--ease-out); }
+.lm-action:hover { transform: scale(1.03); }
+.lm-action:active { transform: scale(0.97); }
+.lm-empty p { max-width: 520px; text-wrap: balance; }
