@@ -27,6 +27,7 @@ import { openAudioEditor } from '~/audio/AudioEditor';
 import { openAddToPlaylist } from '~/library/AddToPlaylist';
 import { openLyricsMaker } from '~/lyrics/LyricsMaker';
 import { mrqReady } from '~/mrq/client';
+import { openEditArtist } from '~/mrq/EditArtist';
 import { openEditMetadata } from '~/mrq/EditMetadata';
 import {
   addToQueue,
@@ -110,6 +111,7 @@ export function collectionMenu(item: BaseItem): MenuItem[] {
       item.UserData?.IsFavorite
         ? { label: 'Unfollow', icon: HeartOff, run: () => void setLiked([item], false) }
         : { label: 'Follow', icon: Heart, run: () => void setLiked([item], true) },
+      { label: 'Edit Artist', icon: Pencil, divider: true, run: () => openEditArtist(item) },
     );
   } else if (item.Type === 'Playlist') {
     menu.push({ label: 'Playlist Radio', icon: Radio, run: () => void startRadio(item), divider: true });

@@ -1,7 +1,8 @@
 // The mini player: the window itself shrinks to a small player that stays on top of other
 // windows (a second window would mean a second webview, ~100 MB more). The artwork with the
 // song, the controls and a thin seek bar; drag it anywhere. The expand button (or Esc) grows
-// the window back to the size it was.
+// the window back to the size it was. The theme in use carries over: its colours, its rules
+// for .mini, and its backdrop (the cover, still or flowing) behind the little window too.
 import { LogicalSize } from '@tauri-apps/api/dpi';
 import { Maximize2, Pause, Pin, PinOff, Play, SkipBack, SkipForward } from '~/ui/icons';
 import { useEffect, useState } from 'react';
@@ -12,6 +13,7 @@ import { useLivePosition } from '~/player/position';
 import { Range } from '~/ui/Range';
 import { useLayout, win } from '~/layout/layout';
 import { usePlayer } from '~/player/store';
+import { ThemeBackdrop } from '~/themes/ThemeBackdrop';
 import { ArtistLinks, Artwork, SaveButton } from '~/ui/parts';
 
 export const MINI = { width: 380, height: 132 };
@@ -62,6 +64,7 @@ export function MiniPlayer() {
   const tint = item && client ? artColor(client.blurhash(item), '#1b1b1e') : '#1b1b1e';
   return (
     <div className={`mini${hover ? ' hover' : ''}`} style={{ ['--tint' as string]: tint }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} data-tauri-drag-region>
+      <ThemeBackdrop />
       <Artwork item={item} size={240} className="mini-art" />
       <div className="mini-body" data-tauri-drag-region>
         <div className="mini-top" data-tauri-drag-region>

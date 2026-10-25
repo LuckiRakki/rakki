@@ -86,7 +86,11 @@
 
 /* ---- Mini player (layout/MiniPlayer.tsx): the whole window ---- */
 
-.mini { height: 100vh; display: flex; gap: 12px; padding: 8px; background: color-mix(in srgb, var(--tint) 35%, #0b0b0d); overflow: hidden; }
+/* The theme's colours: --bg tinted by the song. With a theme backdrop, the cover shows through
+   the theme's --surface (a layer over the backdrop), as it does behind the full window's panels. */
+.mini { position: relative; height: 100vh; display: flex; gap: 12px; padding: 8px; background: color-mix(in srgb, var(--tint) 35%, var(--bg)); color: var(--text); overflow: hidden; }
+.mini:has(> .theme-backdrop) { isolation: isolate; background: none; }
+.mini:has(> .theme-backdrop)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--surface); pointer-events: none; }
 .mini-art { width: auto !important; height: 100%; flex: none; border-radius: 6px !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; }
 .mini-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
 .mini-top { display: flex; align-items: flex-start; gap: 2px; }

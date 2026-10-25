@@ -65,6 +65,10 @@
 .lyrics-card { background: color-mix(in srgb, var(--tint) 55%, rgba(0, 0, 0, 0.35)); }
 .np-tags span { background: rgba(255, 255, 255, 0.08); }
 
+/* ---- The mini player: one Lucid card, the window's edge its border ---- */
+
+.mini::after { border: 1px solid var(--lucid-border); }
+
 /* ---- The player bar: on the cover, no panel ---- */
 
 .range .bar { background: rgba(255, 255, 255, 0.2); }

@@ -52,6 +52,47 @@
 .meta-tracks.discs .meta-track { grid-template-columns: 52px 56px 1.3fr 1fr 1.3fr; }
 .meta-track .field { height: var(--control-sm); padding: 0 10px; font-size: 13px; }
 .meta-track.head { position: sticky; top: 0; z-index: 1; background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--text-3); padding: 0 0 4px; }
+/* The artist editor (mrq/EditArtist.tsx): the photo round, fields two to a row, then the
+   pictures; everything between the head and the buttons scrolls. */
+.dialog:has(.meta-artist), .dialog:has(.art-online) { width: min(760px, calc(100vw - 40px)); }
+.meta-cover.round, .meta-cover.round .artwork { border-radius: 50%; }
+.meta-body { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; min-height: 0; margin: 0 -4px; padding: 0 4px 4px; }
+.meta-artist .meta-grid { overflow: visible; flex: none; }
+.meta-artist .meta-field { grid-column: span 3; }
+.meta-field.wide, .meta-artist .meta-field.wide { grid-column: span 6; }
+.field.area { height: auto; min-height: 112px; padding: 10px 14px; line-height: 1.5; resize: vertical; font: inherit; }
+.field:disabled { opacity: 0.55; cursor: not-allowed; }
+.field:disabled:hover { border-color: transparent; }
+/* A picture: its preview (click to choose a file), what it's for, how to change it. */
+.art-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.more-body .art-slots { padding-bottom: 4px; }
+.art-slot { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); }
+.art-preview { display: grid; place-items: center; height: 120px; border-radius: var(--radius-art); background: var(--surface-3); color: var(--text-3); overflow: hidden; }
+.art-preview img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.15s; }
+.art-preview:hover img { opacity: 0.75; }
+.art-slot.round .art-preview { width: 120px; align-self: center; border-radius: 50%; }
+.art-slot.logo .art-preview img { object-fit: contain; padding: 12px; }
+.art-slot.banner .art-preview { height: auto; aspect-ratio: 1000 / 185; }
+.art-slot-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.art-slot-name { font-weight: 700; }
+.art-slot-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.art-slot-actions .iconbtn { margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.art-slot-actions .iconbtn:hover { background: var(--surface-3); color: var(--text); }
+/* Find Online: what Jellyfin's image sources have for the artist; pick one. */
+.art-online-head { display: flex; align-items: center; gap: 8px; }
+.art-online-head .iconbtn { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.art-online-head .iconbtn:hover { background: var(--surface-3); color: var(--text); }
+.art-online-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; overflow-y: auto; min-height: 160px; margin: 0 -6px; padding: 0 2px; }
+.art-online-grid.wide, .art-online-grid.logo, .art-online-grid.banner { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.art-online-pick { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 6px; border-radius: var(--radius-sm); text-align: left; }
+.art-online-pick:hover { background: var(--surface-3); }
+.art-online-img { display: block; aspect-ratio: 1; border-radius: var(--radius-art); overflow: hidden; background: var(--surface-3); }
+.art-online-img img { width: 100%; height: 100%; object-fit: cover; }
+.art-online-grid.round .art-online-img { border-radius: 50%; }
+.art-online-grid.wide .art-online-img, .art-online-grid.logo .art-online-img { aspect-ratio: 16 / 9; }
+.art-online-grid.logo .art-online-img img { object-fit: contain; padding: 10px; }
+.art-online-grid.banner .art-online-img { aspect-ratio: 1000 / 185; }
+.art-online-state { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 0; }
 
 /* ---- Forms ---- */
 

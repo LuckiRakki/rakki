@@ -90,4 +90,8 @@ Any CSS works, and the theme comes after Rakki's own styles. Useful class names:
 - `.menu`, `.dialog`, `.toast`, `.settings-card`
 - Text boxes: `.field` (settings and dialogs), `.search` (the title bar), `.find` (find in a list), `.mk-text` (Sync Lyrics)
 - `.ae-head`, `.ae-card` Edit Audio's top and cards; `.maker` Sync Lyrics
+- `.mini` the mini player (it's the whole window then); `.mini-art`, `.mini-title`, `.mini-by`,
+  `.mini-controls`, `.mini-seek` its parts. It takes the theme's colours and backdrop like the
+  full window: `--bg` tinted by the song without a backdrop, `--surface` over the cover with one
+  (that layer is `.mini::after`).
 - `<html data-theme="...">` names the theme in use (`default`, `lucid`, or `file:...`).

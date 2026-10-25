@@ -1,6 +1,8 @@
 // The full player's Lyrics Settings: one button, one panel, everything about the lyrics in it,
-// so the screen stays clean. Style (Spicy word by word, or Regular line by line), text size,
-// and timing, as on the phone (its Sync panel): move this song's lyrics earlier or later when
+// so the screen stays clean. Style (Spicy word by word, or Regular line by line), where this
+// song's lyrics come from when it has more than one set (Automatic, or the Spicy Lyrics API, a
+// lyrics file, lyrics made in Rakki, Jellyfin's own; kept by the plugin, so every Rakki follows
+// it), text size, and timing, as on the phone (its Sync panel): move this song's lyrics earlier or later when
 // they run ahead of or behind the song. Timing is saved on this computer as you go (shared code:
 // lyrics/offset.ts); Save to Server writes it into the lyrics themselves, so every Rakki has it
 // (not for lyrics from the Spicy Lyrics API, which can't be kept).
@@ -8,11 +10,13 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useLyrics } from '@/lyrics/fetch';
 import { saveOffsetToServer, serverSaveFor, useLyricsOffset, useLyricsOffsets } from '@/lyrics/offset';
+import { setLyricsSource, useLyricsSources, type LyricsSource } from '@/lyrics/source';
+import { showSourcePicker, sourceDetail } from '@/lyrics/sourceText';
 import { useSettings } from '@/settings/store';
 import { pickLyrics } from '~/lyrics/LyricsView';
 import { queryClient } from '~/queries';
 import { LYRICS_SIZE, useLook } from '~/settings/look';
-import { SlidersHorizontal } from '~/ui/icons';
+import { Check, SlidersHorizontal } from '~/ui/icons';
 import { toast } from '~/ui/overlays';
 import { Slider } from '~/ui/Slider';
 
@@ -31,6 +35,7 @@ export function LyricsSettings({ itemId }: { itemId?: string }) {
   const offset = useLyricsOffset(itemId);
   const lyrics = pickLyrics(useLyrics(itemId).data);
   const target = serverSaveFor(lyrics);
+  const sources = useLyricsSources(itemId).data;
   const box = useRef<HTMLDivElement>(null);
   // From the stored value, so quick clicks add up.
   const move = (by: number) => {
@@ -69,6 +74,12 @@ export function LyricsSettings({ itemId }: { itemId?: string }) {
     }
   };
 
+  // Shows at once (the lyrics switch over); a toast only if the server refused.
+  const pickSource = (source: LyricsSource) => {
+    if (!itemId) return;
+    setLyricsSource(itemId, source).catch((e: unknown) => toast(`Couldn’t change where the lyrics come from: ${e instanceof Error ? e.message : 'try again'}`));
+  };
+
   return (
     <div className="timing" ref={box}>
       <button className={`iconbtn${open ? ' on' : ''}`} aria-label="Lyrics Settings" aria-expanded={open} title="Lyrics Settings" onClick={() => setOpen(!open)}>
@@ -86,6 +97,27 @@ export function LyricsSettings({ itemId }: { itemId?: string }) {
               </button>
             ))}
           </div>
+
+          {itemId && showSourcePicker(sources) ? (
+            <>
+              <div className="pop-label">Source</div>
+              <div className="source-list" role="radiogroup" aria-label="Lyrics Source">
+                {sources.options.map((o) => {
+                  const on = sources.choice === o.source;
+                  return (
+                    <button key={o.source} role="radio" aria-checked={on} className={`source-row${on ? ' on' : ''}`} onClick={() => !on && pickSource(o.source)}>
+                      <span className="source-text">
+                        <span className="source-name">{o.label}</span>
+                        <span className="source-kind">{sourceDetail(o)}</span>
+                      </span>
+                      {on ? <Check size={16} /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="pop-note">For this song, on every Rakki.</span>
+            </>
+          ) : null}
 
           <div className="pop-label">Text Size</div>
           <Slider label="Lyrics Text Size" value={size} min={LYRICS_SIZE.min} max={LYRICS_SIZE.max} step={0.05} show={(v) => `${Math.round(v * 100)}%`} onChange={(v) => useLook.getState().setLyricsSize(v)} />
