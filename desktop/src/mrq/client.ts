@@ -134,6 +134,26 @@ export function spotifyId(value: string, kind: 'track' | 'album' = 'track'): str
 
 export const spotifyLink = (id: string, kind: 'track' | 'album' = 'track') => (id ? `https://open.spotify.com/${kind}/${id}` : '');
 
+/**
+ * The Spotify id among a file's tags as MRQ lists them ([name, value] pairs). The tag's name
+ * differs by format: TXXX:SPOTIFY_TRACK_ID (MP3), SPOTIFY_TRACK_ID (FLAC, Ogg), ----:...:SPOTIFY_TRACK_ID (M4A).
+ */
+export function spotifyTag(tags: unknown): string {
+  const pairs: [string, unknown][] = Array.isArray(tags)
+    ? tags.filter((t): t is [string, unknown] => Array.isArray(t) && typeof t[0] === 'string')
+    : tags && typeof tags === 'object'
+      ? Object.entries(tags)
+      : [];
+  for (const [name, value] of pairs) {
+    if (!/spotify/i.test(name)) continue;
+    // One id, a link, or several values joined with " \\ ": the first id wins.
+    const text = String(Array.isArray(value) ? value[0] : value);
+    const id = spotifyId(text) || (/(?:^|[^A-Za-z0-9])([A-Za-z0-9]{22})(?![A-Za-z0-9])/.exec(text)?.[1] ?? '');
+    if (id) return id;
+  }
+  return '';
+}
+
 /** MRQ's name for each song's file, found once per song (Edit Metadata asks, then saves). */
 const paths = new Map<string, string>();
 
@@ -157,9 +177,8 @@ export async function spotifyIdsOf(songs: BaseItem[]): Promise<Map<string, strin
       if (!p) return;
       try {
         const r = await call<{ tags?: unknown }>(`/api/tags/raw?src=L&p=${encodeURIComponent(p)}`);
-        // The tag's name differs by format (TXXX:SPOTIFY_TRACK_ID, SPOTIFY_TRACK_ID, ----:...).
-        const m = /spotify[^"]*"\s*:\s*\[?\s*"(?:spotify:track:)?([A-Za-z0-9]{22})"/i.exec(JSON.stringify(r.tags ?? {}));
-        if (m) out.set(song.Id, m[1]);
+        const id = spotifyTag(r.tags);
+        if (id) out.set(song.Id, id);
       } catch {
         // No link shown; saving still works.
       }

@@ -6,6 +6,13 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 1.3.1 (2026-10-25, next desktop build)
+- **Edit Metadata shows the Spotify links your songs already have.** They were saved but came
+  up empty when you opened it again (Rakki misread how MRQ lists a file's tags). Now every song
+  row, and a single song's Spotify Link field, shows its link.
+- **The album editor remembers the album link** you filled the songs from, so it's there next
+  time (on this computer; the files themselves only hold each song's link).
+
 ## Desktop 1.3.0 (2026-10-23, next desktop build)
 - **Spotify links in Edit Metadata.** One song has a Spotify Link field (paste Share → Copy Song
   Link); MRQ writes it to the file's tags and the .spotify file Spicy Lyrics reads. The field shows

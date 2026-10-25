@@ -269,6 +269,28 @@ function SongsEditor({ songs: given }: { songs: BaseItem[] }) {
 
 // ---- An album ----
 
+/**
+ * The album link you filled the songs from, remembered on this computer (MRQ keeps only each
+ * song's link; files have no album link), so the album editor shows it next time.
+ */
+const ALBUM_LINKS = 'rakki.mrq.albumLinks';
+
+function albumLinks(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(ALBUM_LINKS) ?? '{}') as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function rememberAlbumLink(albumId: string, link: string) {
+  try {
+    localStorage.setItem(ALBUM_LINKS, JSON.stringify({ ...albumLinks(), [albumId]: link }));
+  } catch {
+    // Only a convenience.
+  }
+}
+
 type RowKey = 'tracknumber' | 'discnumber' | 'title' | 'artist';
 const ROW_FIELDS: Record<RowKey, Field> = { tracknumber: field('tracknumber'), discnumber: field('discnumber'), title: field('title'), artist: field('artist') };
 
@@ -281,7 +303,7 @@ function AlbumEditor({ album, songs: given }: { album: BaseItem; songs: BaseItem
   /** Per song: typed numbers, titles, artists and Spotify links. */
   const [rows, setRows] = useState<Record<string, Partial<Record<RowKey | 'spotify', string>>>>({});
   const discs = new Set(songs.map((s) => s.ParentIndexNumber ?? 1)).size > 1;
-  const [albumLink, setAlbumLink] = useState('');
+  const [albumLink, setAlbumLink] = useState(() => albumLinks()[album.Id] ?? '');
   const [matchNote, setMatchNote] = useState<{ text: string; bad?: boolean } | null>(null);
   const [matching, setMatching] = useState(false);
 
@@ -332,7 +354,9 @@ function AlbumEditor({ album, songs: given }: { album: BaseItem; songs: BaseItem
       className="meta-edit meta-album"
       onSubmit={(e) => {
         e.preventDefault();
-        if (dirty) saveAndReport(songs, changes, each, cover, album);
+        if (!dirty) return;
+        if (spotifyId(albumLink, 'album')) rememberAlbumLink(album.Id, albumLink.trim());
+        saveAndReport(songs, changes, each, cover, album);
       }}>
       <Head item={album} cover={cover} pick={pick} title="Edit Album" line={`${album.Name} · ${songs.length} songs`} />
       {problem ? <p className="setting-detail error">{problem}</p> : null}
