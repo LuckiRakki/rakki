@@ -549,6 +549,11 @@ export class JellyfinClient {
     return this.send('DELETE', `/Items/${itemId}/Images/${type}/${index}`);
   }
 
+  /** Move one of an item's numbered pictures (backdrops) to another place. Administrators only. */
+  moveItemImage(itemId: string, type: string, index: number, newIndex: number) {
+    return this.send('POST', `/Items/${itemId}/Images/${type}/${index}/Index`, undefined, { newIndex });
+  }
+
   /** Pictures for an item that Jellyfin's image providers (TheAudioDB, Fanart...) have online. */
   getRemoteImages(itemId: string, type: string) {
     return this.get<{ Images: { Url: string; ProviderName?: string; Width?: number; Height?: number; ThumbnailUrl?: string }[] }>(

@@ -145,11 +145,14 @@ function renamedTags(songs: BaseItem[], from: string, to: string): Map<string, T
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** The artist under its new name, once Jellyfin has read the retagged files (up to ~15 s). */
+/**
+ * The artist under its new name, once Jellyfin has read the retagged files (up to ~2 minutes:
+ * saving runs behind the screen, and a big artist takes a while to read).
+ */
 async function findRenamed(name: string): Promise<(BaseItem & Record<string, unknown>) | null> {
   const c = signedIn();
-  for (let i = 0; i < 10; i++) {
-    await sleep(1500);
+  for (let i = 0; i < 40; i++) {
+    await sleep(i < 10 ? 1500 : 4000);
     try {
       const a = await c.getArtistByName(name);
       if (a?.Id) return (await c.getItem(a.Id)) as BaseItem & Record<string, unknown>;
@@ -232,6 +235,27 @@ export async function setArtistImage(artistId: string, type: ArtistImageType, fi
 export async function removeArtistImage(artistId: string, type: ArtistImageType, index = 0): Promise<void> {
   try {
     await signedIn().deleteItemImage(artistId, type, index);
+  } catch (e) {
+    throw asError(e, 'artist pictures');
+  }
+}
+
+/**
+ * Put a new backdrop in the place of an old one (Backdrop 0 is the header the artist page
+ * draws): the new one is added after the others, moved to `replacing`'s place, and the old one
+ * removed. Other backdrops stay as they are. `source` is a file, or an online picture's url.
+ * Without a backdrop at `replacing`, the new one goes first.
+ */
+export async function replaceArtistBackdrop(artistId: string, source: File | string, replacing = 0): Promise<void> {
+  const c = signedIn();
+  try {
+    const before = (await c.getItem(artistId)).BackdropImageTags?.length ?? 0;
+    if (typeof source === 'string') await c.downloadRemoteImage(artistId, 'Backdrop', source);
+    else await c.uploadItemImage(artistId, await toBase64(source), source.type || 'image/jpeg', 'Backdrop');
+    const target = replacing < before ? replacing : 0;
+    if (before > 0) await c.moveItemImage(artistId, 'Backdrop', before, target);
+    // The old one moved one place along.
+    if (replacing < before) await c.deleteItemImage(artistId, 'Backdrop', replacing + 1);
   } catch (e) {
     throw asError(e, 'artist pictures');
   }
