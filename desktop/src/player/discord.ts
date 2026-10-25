@@ -7,6 +7,11 @@
 // takes no images, and your own server is private), so the cover comes from Apple's public
 // iTunes search by artist and album, else Last.fm (with your key), else the application's own
 // "rakki" picture if you uploaded one in Discord's developer portal. Only while this is on.
+//
+// Two buttons under it (Settings can turn each off): Listen opens the song for whoever clicks
+// it (song.link by the song's Apple Music id, which lists every service; else a Spotify search),
+// and Rakki on GitHub opens the app's page. Discord hides buttons on your own profile; others see
+// them.
 import { invoke } from '@tauri-apps/api/core';
 import { create } from 'zustand';
 
@@ -25,24 +30,39 @@ const validId = (id: string) => /^\d{15,22}$/.test(id);
 /** The application in use: yours if you set one, else Rakki's. */
 export const discordAppId = (appId: string) => (validId(appId.trim()) ? appId.trim() : RAKKI_DISCORD_APP);
 
+/** Rakki's GitHub page (the Rakki button). */
+export const RAKKI_GITHUB = 'https://github.com/LuckiRakki/rakki';
+/** The buttons' words, as your friends see them. */
+export const SONG_BUTTON_LABEL = 'Listen';
+export const GITHUB_BUTTON_LABEL = 'Rakki on GitHub';
+
 interface DiscordPrefs {
   enabled: boolean;
   appId: string;
+  /** A Listen button with a link to the song. */
+  songButton: boolean;
+  /** A Rakki button with a link to Rakki's GitHub. */
+  githubButton: boolean;
 }
+
+const DEFAULTS: DiscordPrefs = { enabled: false, appId: '', songButton: true, githubButton: true };
 
 function load(): DiscordPrefs {
   try {
-    return { enabled: false, appId: '', ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<DiscordPrefs>) };
+    return { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<DiscordPrefs>) };
   } catch {
-    return { enabled: false, appId: '' };
+    return { ...DEFAULTS };
   }
 }
 
-export const useDiscord = create<DiscordPrefs & { error: string | null; set(p: Partial<DiscordPrefs>): void }>((set, get) => ({
+export const useDiscord = create<DiscordPrefs & { error: string | null; connected: boolean; set(p: Partial<DiscordPrefs>): void }>((set, get) => ({
   ...load(),
   error: null,
+  /** Discord answered the last update (it's running and took the application). */
+  connected: false,
   set(p) {
-    const next = { enabled: get().enabled, appId: get().appId, ...p };
+    const { enabled, appId, songButton, githubButton } = get();
+    const next = { enabled, appId, songButton, githubButton, ...p };
     localStorage.setItem(KEY, JSON.stringify(next));
     set({ ...next, error: null });
     void sync(true);
@@ -67,6 +87,31 @@ async function lastfmCover(artist: string, album: string): Promise<string | null
   const images = j.album?.image ?? [];
   const best = images.find((i) => i.size === 'mega') ?? images.find((i) => i.size === 'extralarge');
   return best?.['#text'] || null;
+}
+
+const links = new Map<string, Promise<string>>();
+
+/**
+ * A public link to the song for the Listen button: song.link by its Apple Music id (one page
+ * with every service on it), else a Spotify search for it.
+ */
+function songLink(item: BaseItem): Promise<string> {
+  const artist = item.Artists?.[0] ?? item.AlbumArtist ?? '';
+  const key = `${artist}|${item.Name}`.toLowerCase();
+  let found = links.get(key);
+  if (!found) {
+    const term = encodeURIComponent(`${artist} ${item.Name}`.slice(0, 120));
+    const search = `https://open.spotify.com/search/${term}`;
+    found = fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`)
+      .then((r) => r.json() as Promise<{ results?: { trackId?: number }[] }>)
+      .then((j) => {
+        const id = j.results?.[0]?.trackId;
+        return id ? `https://song.link/i/${id}` : search;
+      })
+      .catch(() => search);
+    links.set(key, found);
+  }
+  return found;
 }
 
 /**
@@ -117,20 +162,25 @@ async function sync(force = false) {
   let activity: Record<string, unknown> | null = null;
   if (show) {
     const start = Date.now() - (t?.item ? positionNow(t) : currentPosition(local)) * 1000;
-    const cover = await coverFor(item);
+    const [cover, link] = await Promise.all([coverFor(item), d.songButton ? songLink(item) : null]);
+    const buttons = [
+      ...(link ? [{ label: SONG_BUTTON_LABEL, url: link }] : []),
+      ...(d.githubButton ? [{ label: GITHUB_BUTTON_LABEL, url: RAKKI_GITHUB }] : []),
+    ];
     activity = {
       type: 2, // Listening
       details: text(item.Name),
       state: text(item.Artists?.join(', ') || item.AlbumArtist || 'Unknown artist'),
       timestamps: p.duration > 0 ? { start: Math.round(start), end: Math.round(start + p.duration * 1000) } : { start: Math.round(start) },
       assets: { large_image: cover ?? 'rakki', large_text: text(item.Album ?? 'Rakki') },
+      ...(buttons.length ? { buttons } : {}),
     };
   }
   try {
     await invoke('discord_set', { appId, activity });
-    if (useDiscord.getState().error) useDiscord.setState({ error: null });
+    useDiscord.setState({ error: null, connected: on });
   } catch (e) {
-    useDiscord.setState({ error: String(e) });
+    useDiscord.setState({ error: String(e), connected: false });
   }
 }
 

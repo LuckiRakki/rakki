@@ -11,9 +11,12 @@ Rakki.
 | Playlist sync | Rakki's playlist cache in one request | `POST /Rakki/Playlists/Sync` |
 | Performance logs | Reads the logs Rakki uploads, on the settings page | `GET /Rakki/PerfLogs`, `/Rakki/PerfLogs/{name}` (admins) |
 | Last.fm key | Shared with the app, so it's entered once | `GET /Rakki/Info`, `GET`/`POST /Rakki/LastFm/Key` (admins) |
+| Audio edits (0.3) | A song cut shorter, louder, with its own EQ, speed, pitch, fades or reverb: a small JSON note per song, never written into the file. Rakki Desktop applies it live in mpv while the song plays, so the server does no audio work. Song-wide: everyone hears the edit | `GET /Rakki/Edits` (all), `GET`/`PUT`/`DELETE /Rakki/Edits/{id}` |
+| Lyrics made in Rakki (0.3) | The desktop tap-to-sync lyrics maker saves TTML here, apart from the music. Served before every other lyrics for the song (source `rakki`, "Synced by" the person who made them) and found by lyrics search | `PUT`/`DELETE /Rakki/Lyrics/{id}`, `GET /Rakki/Lyrics/{id}/Made` |
 
 Data: `/config/data/plugins/Jellyfin.Plugin.Rakki/` (Last.fm cache, skips, Daily Mix history,
-lyrics search index, Spicy Lyrics API cache). Settings:
+lyrics search index, Spicy Lyrics API cache) and `/config/data/rakki/` (per-user data,
+`edits.json` for audio edits, `lyrics/` for lyrics made in Rakki). Settings:
 `/config/data/plugins/configurations/Jellyfin.Plugin.Rakki.xml`.
 
 ## Taking over from Spicy Lyrics TTML

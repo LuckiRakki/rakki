@@ -15,7 +15,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 import { inTauri } from '~/lib/tauri';
 import { engine } from '~/player/engine';
-import { handOverMedia, usePlayer } from '~/player/store';
+import { currentPosition, handOverMedia, usePlayer } from '~/player/store';
 import { useVideo } from '~/player/video';
 import { toast } from '~/ui/overlays';
 
@@ -164,7 +164,7 @@ export const useRemote = create<RemoteState>((set, get) => ({
     if (!c || get().busy || !p.queue.length) return;
     set({ busy: `Moving to ${d.name}…` });
     try {
-      const at = p.playing ? p.position + (performance.now() - p.positionAt) / 1000 : p.position;
+      const at = currentPosition(p);
       const ok = await pushTo(c, d, p.queue, p.index, at);
       if (!ok) return void toast(`${d.name} didn’t start (open Rakki on it and try again)`);
       if (usePlayer.getState().playing) usePlayer.getState().toggle();

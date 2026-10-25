@@ -99,6 +99,10 @@ impl Mpv {
             let mut last_pos: f64 = -1.0;
             while let Ok(Some(line)) = lines.next_line().await {
                 let Ok(msg) = serde_json::from_str::<Value>(&line) else { continue };
+                if let Some(error) = msg.get("error").and_then(Value::as_str).filter(|e| *e != "success") {
+                    let _ = events.emit("player://refused", error.to_string());
+                    continue;
+                }
                 match msg.get("event").and_then(Value::as_str) {
                     Some("property-change") => {
                         let name = msg["name"].as_str().unwrap_or_default().to_string();
@@ -152,25 +156,27 @@ impl Mpv {
         self.command(json!(["set_property", name, value]));
     }
 
-    /// Plays `current` (from `start` seconds), with `next` lined up behind it.
-    pub fn load(&self, current: &str, next: Option<&str>, start: f64, play: bool) {
+    /// Plays `current` (from `start` seconds), with `next` lined up behind it. Each can carry
+    /// mpv options for that song only (a song's audio edit: af, speed, start, end), which mpv
+    /// drops again when the song ends.
+    pub fn load(&self, current: &str, current_options: Option<&FileOptions>, next: Option<&str>, next_options: Option<&FileOptions>, start: f64, play: bool) {
         self.set("pause", json!(!play));
-        let mut load = json!({ "name": "loadfile", "url": current, "flags": "replace" });
+        let mut options = current_options.cloned().unwrap_or_default();
         if start > 0.0 {
-            load["options"] = json!({ "start": format!("{start:.3}") });
+            options.insert("start".into(), json!(format!("{start:.3}")));
         }
-        self.command(load);
+        self.command(loadfile(current, "replace", &options));
         if let Some(next) = next {
-            self.command(json!({ "name": "loadfile", "url": next, "flags": "append" }));
+            self.command(loadfile(next, "append", next_options.unwrap_or(&FileOptions::new())));
         }
     }
 
     /// Replaces whatever is lined up after the current song.
-    pub fn set_next(&self, next: Option<&str>) {
+    pub fn set_next(&self, next: Option<&str>, options: Option<&FileOptions>) {
         // Removes every entry but the one playing.
         self.command(json!(["playlist-clear"]));
         if let Some(next) = next {
-            self.command(json!({ "name": "loadfile", "url": next, "flags": "append" }));
+            self.command(loadfile(next, "append", options.unwrap_or(&FileOptions::new())));
         }
     }
 
@@ -185,6 +191,36 @@ impl Mpv {
             let _ = child.start_kill();
         }
     }
+}
+
+/// mpv options for one song, as mpv's own text values ("af", "speed", "start", "end").
+pub type FileOptions = serde_json::Map<String, Value>;
+
+fn loadfile(url: &str, flags: &str, options: &FileOptions) -> Value {
+    let mut load = json!({ "name": "loadfile", "url": url, "flags": flags });
+    if !options.is_empty() {
+        load["options"] = Value::Object(options.clone());
+    }
+    load
+}
+
+/// The audio filters this mpv has (`mpv --af=help`), so an edit only asks for ones it can do
+/// (pitch needs rubberband, which some mpv builds leave out).
+pub async fn audio_filters(app: &AppHandle) -> Vec<String> {
+    let mut cmd = Command::new(find_binary(app));
+    cmd.args(["--no-config", "--af=help"]).stdin(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+    #[cfg(windows)]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    let Ok(Ok(out)) = tokio::time::timeout(Duration::from_secs(5), cmd.output()).await else { return Vec::new() };
+    // Lines like "  rubberband       Pitch conversion with librubberband".
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter(|l| l.starts_with("  "))
+        .filter_map(|l| l.split_whitespace().next().map(str::to_string))
+        .collect()
 }
 
 /// RAKKI_MPV, else mpv next to the app (bundled on Windows), else a usual Windows install

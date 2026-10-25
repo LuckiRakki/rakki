@@ -24,10 +24,11 @@ import { Page } from '~/pages/Page';
 import { NowPlaying } from '~/player/NowPlaying';
 import { VideoHost } from '~/player/VideoHost';
 import { startUpdateCheck } from '~/lib/updateCheck';
+import { loadSongEdits, startSongEdits } from '~/audio/edits';
 import { startDiscord } from '~/player/discord';
 import { startRemoteCommands, startRemoteMedia, useRemote } from '~/player/remote';
 import { startRadioWatch } from '~/radio/radio';
-import { currentPosition, startPlayer, usePlayer } from '~/player/store';
+import { startPlayer, usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
 import { FullscreenHint } from '~/ui/FullscreenHint';
 import { Overlays } from '~/ui/overlays';
@@ -38,37 +39,18 @@ import { ThemeBackdrop } from '~/themes/ThemeBackdrop';
 import { useApplyCustomTheme } from '~/themes/themes';
 import { LyricsMain } from '~/lyrics/LyricsMain';
 import { useLook } from '~/settings/look';
+import { handleShortcut } from '~/settings/shortcuts';
 import { useVideo } from '~/player/video';
 import { watchServer } from '@/lib/online';
 import { DevNotice } from '~/dev/DevNotice';
 
 /** Keyboard shortcuts that work anywhere (not while typing). */
 function onKey(e: KeyboardEvent) {
-  const el = e.target as HTMLElement | null;
-  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '');
-  // Space on a focused button (or anything acting as one) presses it, not play / pause.
-  const pressable = !!el?.closest?.('button, [role="button"], [role="link"], [role="menuitem"], [role="slider"], [role="separator"], [role="row"], a');
-  const p = usePlayer.getState();
-  if (e.key === 'F11') {
-    e.preventDefault();
-    const l = useLayout.getState();
-    return l.setFullscreen(!l.fullscreen);
-  }
   if (e.key === 'Escape' && !useLayout.getState().nowPlaying && useLayout.getState().fullscreen) return useLayout.getState().setFullscreen(false);
   // Esc on the lyrics in the main area: the page again (a menu or dialog open closes first).
   if (e.key === 'Escape' && !useLayout.getState().nowPlaying && useLayout.getState().lyricsView && !document.querySelector('.menu, .dialog')) return useLayout.getState().setLyricsView(false);
-  if (e.altKey && e.key === 'ArrowLeft') return useNav.getState().back();
-  if (e.altKey && e.key === 'ArrowRight') return useNav.getState().forward();
-  if (typing) return;
-  if (e.code === 'Space' && !pressable) {
-    e.preventDefault();
-    p.toggle();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') p.next();
-  else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') p.previous();
-  else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowUp') p.setVolume(p.volume + 5);
-  else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown') p.setVolume(p.volume - 5);
-  else if (e.shiftKey && e.key === 'ArrowRight') p.seek(currentPosition(p) + 5);
-  else if (e.shiftKey && e.key === 'ArrowLeft') p.seek(Math.max(0, currentPosition(p) - 5));
+  // Everything else is a keyboard shortcut you can change in Settings (settings/shortcuts.ts).
+  handleShortcut(e);
 }
 
 function App() {
@@ -83,6 +65,7 @@ function App() {
 
   useEffect(() => {
     startPlayer();
+    startSongEdits();
     startDiscord();
     startRadioWatch();
     startRemoteMedia();
@@ -123,6 +106,8 @@ function App() {
   useEffect(() => {
     if (!signedIn) return;
     void syncLastfmKey();
+    // Audio edits kept on the server (audio/edits.ts).
+    void loadSongEdits();
     startPlaylistCache();
     // Your other Rakki apps can see and control this one (player/remote.ts).
     startRemoteCommands();

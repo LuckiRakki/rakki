@@ -2,6 +2,7 @@
 // Jellyfin itself; their dependencies are registered here.
 
 using Jellyfin.Plugin.Rakki.DailyMix;
+using Jellyfin.Plugin.Rakki.Edits;
 using Jellyfin.Plugin.Rakki.LastFm;
 using Jellyfin.Plugin.Rakki.Skips;
 using Jellyfin.Plugin.Rakki.SpicyLyrics;
@@ -33,6 +34,9 @@ namespace Jellyfin.Plugin.Rakki
             serviceCollection.AddSingleton<SpicyLyricsClient>();
             serviceCollection.AddSingleton<SpicyLyricsService>();
             serviceCollection.AddSingleton<LyricsIndex>();
+
+            // Audio edits and lyrics made in Rakki, kept apart from the music files.
+            serviceCollection.AddSingleton<SongEdits>();
         }
     }
 }

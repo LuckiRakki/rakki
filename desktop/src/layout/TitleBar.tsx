@@ -6,6 +6,7 @@ import { useAuth } from '~/auth/session';
 import { win } from '~/layout/layout';
 import { installUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav } from '~/nav';
+import { onShortcut } from '~/settings/shortcuts';
 import { ChevronLeft, ChevronRight, CircleArrowDown, Copy, Home as HomeIcon, LogOut, Minus, Search as SearchIcon, Settings2, Square, X } from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
 import { openMenu } from '~/ui/overlays';
@@ -77,19 +78,15 @@ export function TitleBar() {
   const [term, setTerm] = useState(route.name === 'search' ? (route.term ?? '') : '');
   const input = useRef<HTMLInputElement>(null);
 
-  // Ctrl+K / Ctrl+F / "/": search.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
-      if (((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'f')) || (e.key === '/' && !typing)) {
-        e.preventDefault();
+  // The Search shortcut (Ctrl+K, Ctrl+F, "/" unless changed in Settings): the search box.
+  useEffect(
+    () =>
+      onShortcut('search', () => {
         input.current?.focus();
         input.current?.select();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+      }),
+    [],
+  );
 
   return (
     <div className="titlebar" data-tauri-drag-region>

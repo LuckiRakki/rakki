@@ -36,18 +36,26 @@ async fn player_load(
     app: AppHandle,
     player: State<'_, Player>,
     current: String,
+    current_options: Option<mpv::FileOptions>,
     next: Option<String>,
+    next_options: Option<mpv::FileOptions>,
     start: f64,
     play: bool,
 ) -> Result<(), String> {
-    player.get(&app).await?.load(&current, next.as_deref(), start, play);
+    player.get(&app).await?.load(&current, current_options.as_ref(), next.as_deref(), next_options.as_ref(), start, play);
     Ok(())
 }
 
 #[tauri::command]
-async fn player_set_next(app: AppHandle, player: State<'_, Player>, next: Option<String>) -> Result<(), String> {
-    player.get(&app).await?.set_next(next.as_deref());
+async fn player_set_next(app: AppHandle, player: State<'_, Player>, next: Option<String>, options: Option<mpv::FileOptions>) -> Result<(), String> {
+    player.get(&app).await?.set_next(next.as_deref(), options.as_ref());
     Ok(())
+}
+
+/// The audio filters mpv has (audio edits: pitch needs rubberband).
+#[tauri::command]
+async fn player_filters(app: AppHandle) -> Vec<String> {
+    mpv::audio_filters(&app).await
 }
 
 #[tauri::command]
@@ -214,6 +222,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             player_load,
             player_set_next,
+            player_filters,
             player_set,
             player_seek,
             player_stop,

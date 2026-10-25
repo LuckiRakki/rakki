@@ -9,7 +9,7 @@ import { queueReport } from '@/remote/devices';
 import { buildSmartQueue } from '@/player/smartQueue';
 import { useSettings } from '@/settings/store';
 import { client } from '~/auth/session';
-import { engine, listenEngine } from '~/player/engine';
+import { engine, listenEngine, type FileOptions } from '~/player/engine';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -25,6 +25,8 @@ interface PlayerState {
   position: number;
   positionAt: number;
   duration: number;
+  /** Playback speed (an audio edit's speed, audio/edits.ts): song seconds per second. */
+  rate: number;
   volume: number;
   repeat: RepeatMode;
   shuffle: boolean;
@@ -47,6 +49,8 @@ interface PlayerState {
   playNext(items: BaseItem[]): void;
   addToQueue(items: BaseItem[]): void;
   removeAt(index: number): void;
+  /** Song options changed (an audio edit saved): the next song gets them again. */
+  refreshNext(): void;
 }
 
 const VOLUME_KEY = 'rakki.volume';
@@ -62,8 +66,8 @@ function shuffled<T>(list: T[]): T[] {
 }
 
 /** The position right now (it runs on between mpv's reports while playing). */
-export function currentPosition(s: Pick<PlayerState, 'position' | 'positionAt' | 'playing' | 'duration'>): number {
-  const p = s.playing ? s.position + (performance.now() - s.positionAt) / 1000 : s.position;
+export function currentPosition(s: Pick<PlayerState, 'position' | 'positionAt' | 'playing' | 'duration'> & { rate?: number }): number {
+  const p = s.playing ? s.position + ((performance.now() - s.positionAt) / 1000) * (s.rate ?? 1) : s.position;
   return s.duration > 0 ? Math.min(p, s.duration) : p;
 }
 
@@ -78,6 +82,16 @@ function nextIndex(s: Pick<PlayerState, 'queue' | 'index' | 'repeat'>): number |
  * The song's file as it is (mpv plays every format, so nothing needs converting), unless a
  * streaming quality is set in Settings, then the server converts it to AAC at that bitrate.
  */
+/**
+ * mpv options for one song (its audio edit, audio/edits.ts sets this), so they go along when
+ * the song is loaded, including as the next song for gapless playback.
+ */
+let optionsFor: (item: BaseItem | undefined) => FileOptions | null = () => null;
+export function setSongOptions(fn: (item: BaseItem | undefined) => FileOptions | null) {
+  optionsFor = fn;
+}
+const rateOf = (item: BaseItem | undefined) => Number(optionsFor(item)?.speed ?? 1) || 1;
+
 function url(item: BaseItem | undefined): string | null {
   // A radio station: its stream (radio/radio.ts).
   if (item?.Radio) return item.Radio.streamUrl;
@@ -279,8 +293,12 @@ export const usePlayer = create<PlayerState>((set, get) => {
     restoredPending = false;
     reportStopped(currentPosition(s));
     const n = nextIndex({ ...s, index });
-    set({ index, position: start, positionAt: performance.now(), duration: (item.RunTimeTicks ?? 0) / TICKS_PER_SECOND, playing: play, error: null });
-    void engine.load(current, n === null ? null : url(s.queue[n]), start, play).catch((e) => set({ error: String(e), playing: false }));
+    const options = optionsFor(item);
+    // A song edit's start point counts as the song's start.
+    const from = start > 0 ? start : Number(options?.start ?? 0);
+    set({ index, position: from, positionAt: performance.now(), duration: (item.RunTimeTicks ?? 0) / TICKS_PER_SECOND, rate: rateOf(item), playing: play, error: null });
+    const next = n === null ? undefined : s.queue[n];
+    void engine.load(current, options, url(next), optionsFor(next), start, play).catch((e) => set({ error: String(e), playing: false }));
     songStarted(item);
   };
 
@@ -289,7 +307,8 @@ export const usePlayer = create<PlayerState>((set, get) => {
     const s = get();
     if (!s.queue.length) return;
     const n = nextIndex(s);
-    void engine.setNext(n === null ? null : url(s.queue[n])).catch(() => {});
+    const next = n === null ? undefined : s.queue[n];
+    void engine.setNext(url(next), optionsFor(next)).catch(() => {});
   };
 
   return {
@@ -300,12 +319,14 @@ export const usePlayer = create<PlayerState>((set, get) => {
     position: 0,
     positionAt: 0,
     duration: 0,
+    rate: 1,
     volume: Number.isFinite(savedVolume) ? savedVolume : 80,
     repeat: 'off',
     shuffle: false,
     unshuffled: null,
     error: null,
     hidden: false,
+    refreshNext,
 
     playQueue(items, start = 0, opts) {
       if (!items.length) return;
@@ -494,10 +515,11 @@ export function startPlayer() {
       if (n === null) return;
       reportStopped(s.duration);
       const item = s.queue[n];
-      usePlayer.setState({ index: n, position: 0, positionAt: performance.now(), duration: (item.RunTimeTicks ?? 0) / TICKS_PER_SECOND });
+      usePlayer.setState({ index: n, position: Number(optionsFor(item)?.start ?? 0), positionAt: performance.now(), duration: (item.RunTimeTicks ?? 0) / TICKS_PER_SECOND, rate: rateOf(item) });
       songStarted(item);
       const after = nextIndex({ ...s, index: n });
-      void engine.setNext(after === null ? null : url(s.queue[after])).catch(() => {});
+      const next = after === null ? undefined : s.queue[after];
+      void engine.setNext(url(next), optionsFor(next)).catch(() => {});
     },
     onEnd(reason, error) {
       if (reason === 'error') {

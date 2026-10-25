@@ -27,6 +27,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.Rakki.Edits;
 using Jellyfin.Plugin.Rakki.SpicyLyrics.SpicyApi;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
@@ -72,6 +73,7 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.LyricsSearch
         private readonly TTMLLyricProvider _ttml;
         private readonly SpicyLyricsService _spicy;
         private readonly ILogger<LyricsIndex> _logger;
+        private readonly SongEdits _made;
         private readonly SemaphoreSlim _building = new(1, 1);
 
         private Dictionary<Guid, Entry> _entries = new();
@@ -79,8 +81,9 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.LyricsSearch
         private bool _ready;
 
         public LyricsIndex(ILibraryManager library, ILyricManager lyrics, TTMLLyricProvider ttml,
-                           SpicyLyricsService spicy, ILogger<LyricsIndex> logger)
+                           SpicyLyricsService spicy, SongEdits made, ILogger<LyricsIndex> logger)
         {
+            _made    = made;
             _library = library;
             _lyrics  = lyrics;
             _ttml    = ttml;
@@ -196,6 +199,9 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.LyricsSearch
         /// <summary>Where the song's lyrics come from right now, and a stamp that changes when they do.</summary>
         private (string Key, DateTime ApiFetched) KeyOf(Audio item)
         {
+            var made = _made.MadeLyricsPath(item.Id);
+            if (made is not null) return ($"made:{File.GetLastWriteTimeUtc(made).Ticks}", default);
+
             var sidecar = Sidecars.FindTtml(item);
             if (sidecar is not null) return ($"ttml:{File.GetLastWriteTimeUtc(sidecar).Ticks}", default);
 
@@ -220,7 +226,12 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.LyricsSearch
         {
             try
             {
-                if (key.StartsWith("ttml:", StringComparison.Ordinal))
+                if (key.StartsWith("made:", StringComparison.Ordinal))
+                {
+                    var made = _made.MadeLyricsPath(item.Id);
+                    if (made is not null) return Clean(_ttml.ParseTTMLFile(made).Lines.Select(l => l.Text));
+                }
+                else if (key.StartsWith("ttml:", StringComparison.Ordinal))
                 {
                     var sidecar = Sidecars.FindTtml(item);
                     if (sidecar is not null) return Clean(_ttml.ParseTTMLFile(sidecar).Lines.Select(l => l.Text));

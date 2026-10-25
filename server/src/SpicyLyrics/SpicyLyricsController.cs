@@ -11,6 +11,7 @@ using System;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.Rakki.Edits;
 using Jellyfin.Plugin.Rakki.SpicyLyrics;
 using Jellyfin.Plugin.Rakki.Configuration;
 using Jellyfin.Plugin.Rakki.SpicyLyrics.LyricsSearch;
@@ -39,6 +40,7 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
         private readonly TTMLLyricProvider      _ttmlProvider;
         private readonly SpicyLyricsService     _spicy;
         private readonly LyricsIndex            _index;
+        private readonly SongEdits              _made;
         private readonly ILogger<SpicyLyricsController> _logger;
 
         public SpicyLyricsController(
@@ -46,12 +48,14 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
             TTMLLyricProvider            ttmlProvider,
             SpicyLyricsService           spicy,
             LyricsIndex                  index,
+            SongEdits                    made,
             ILogger<SpicyLyricsController> logger)
         {
             _library      = library;
             _ttmlProvider = ttmlProvider;
             _spicy        = spicy;
             _index        = index;
+            _made         = made;
             _logger       = logger;
         }
 
@@ -129,6 +133,24 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
                 return NotFound("Item not found or is not an audio track.");
             }
 
+            // Lyrics made in Rakki (the tap-to-sync maker) come first: someone made them for this song.
+            var madePath = _made.MadeLyricsPath(itemId);
+            if (madePath is not null)
+            {
+                try
+                {
+                    var made = _ttmlProvider.ParseTTMLFile(madePath);
+                    made.Source = "rakki";
+                    var by = _made.MadeLyricsInfo(itemId)?.By;
+                    if (!string.IsNullOrEmpty(by)) made.Attribution = new AttributionDto { Maker = new AttributionPersonDto { Username = by } };
+                    if (made.Lines.Count > 0) return Ok(made);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error parsing lyrics made in Rakki: {Path}", madePath);
+                }
+            }
+
             var cfg      = Plugin.Instance?.Configuration ?? new PluginConfiguration();
             var ttmlPath = Sidecars.FindTtml(audioItem);
 
@@ -181,7 +203,7 @@ namespace Jellyfin.Plugin.Rakki.SpicyLyrics.Api
 
             return Ok(new
             {
-                HasTTML = Sidecars.FindTtml(audioItem) is not null || _spicy.GetCached(audioItem) is not null,
+                HasTTML = _made.MadeLyricsPath(itemId) is not null || Sidecars.FindTtml(audioItem) is not null || _spicy.GetCached(audioItem) is not null,
             });
         }
     }

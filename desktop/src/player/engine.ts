@@ -17,10 +17,15 @@ export interface NowPlaying {
   duration?: number;
 }
 
+/** mpv options for one song only, as text (a song's audio edit: af, speed, start, end). */
+export type FileOptions = Record<string, string>;
+
 export const engine = {
-  load: (current: string, next: string | null, start: number, play: boolean) =>
-    invoke<void>('player_load', { current, next, start, play }),
-  setNext: (next: string | null) => invoke<void>('player_set_next', { next }),
+  load: (current: string, currentOptions: FileOptions | null, next: string | null, nextOptions: FileOptions | null, start: number, play: boolean) =>
+    invoke<void>('player_load', { current, currentOptions, next, nextOptions, start, play }),
+  setNext: (next: string | null, options: FileOptions | null) => invoke<void>('player_set_next', { next, options }),
+  /** The audio filters mpv has ("rubberband", "lavfi"...). */
+  filters: () => invoke<string[] | undefined>('player_filters').then((f) => f ?? []),
   set: (name: string, value: unknown) => invoke<void>('player_set', { name, value }),
   seek: (seconds: number) => invoke<void>('player_seek', { seconds }),
   stop: () => invoke<void>('player_stop'),
