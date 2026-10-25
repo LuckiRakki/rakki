@@ -44,7 +44,10 @@
     "longDescription": "Rakki for Windows and Linux: your Jellyfin music library with synced lyrics, smart radio and Daily Mixes. Plays through mpv.",
     "windows": {
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp"
       }
     },
     "linux": {

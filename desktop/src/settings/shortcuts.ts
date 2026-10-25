@@ -5,12 +5,15 @@
 // "Shift+1", not "!").
 //
 // handleShortcut (main.tsx) runs them. While typing in a field only the actions marked
-// `whileTyping` run, and Space on a focused button presses the button.
+// `whileTyping` run, and Space on a button you reached with the keyboard (Tab) presses the
+// button. A button, card or row you clicked keeps focus but not the keys: shortcuts go past it
+// (passFocus), so Space is Play / Pause, not the last thing clicked.
 import { create } from 'zustand';
 
 import { useLayout } from '~/layout/layout';
 import { go, useNav } from '~/nav';
 import { currentPosition, usePlayer, type RepeatMode } from '~/player/store';
+import { useVideo } from '~/player/video';
 
 export type ShortcutId =
   | 'playPause'
@@ -289,17 +292,45 @@ export function handleShortcut(e: KeyboardEvent): boolean {
   if (!id || useShortcuts.getState().recording) return false;
   // Held down: only the volume and seeking keys repeat.
   if (e.repeat && !HOLDABLE.has(id)) return false;
-  const el = e.target as HTMLElement | null;
-  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '') || !!el?.isContentEditable;
+  const el = e.target instanceof HTMLElement ? e.target : null;
+  const typing = isTextField(el);
   const action = SHORTCUT_ACTIONS.find((a) => a.id === id);
   // A key with no Ctrl / Alt / Win in a field is typing ("/" types a slash there).
   const plain = !e.ctrlKey && !e.altKey && !e.metaKey && !/^F\d+$/.test(e.key);
   if (typing && (!action?.whileTyping || plain)) return false;
-  // Space on a focused button (or anything acting as one) presses it.
-  if (e.code === 'Space' && el?.closest?.('button, [role="button"], [role="link"], [role="menuitem"], [role="slider"], [role="separator"], [role="row"], a')) return false;
+  // Space on a button (or anything acting as one) you reached with the keyboard presses it.
+  if (e.code === 'Space' && el && !clickedFocus(el) && el.closest(CONTROLS)) return false;
   e.preventDefault();
   (handlers.get(id) ?? ACTIONS[id])();
   return true;
+}
+
+/**
+ * The keydown before anything on the page sees it (main.tsx, capture phase): when focus sits on
+ * something you clicked, a shortcut runs and the clicked thing never gets the key (a clicked
+ * card would open again on Space, a clicked row would toggle its selection).
+ */
+export function passFocus(e: KeyboardEvent): void {
+  // A video playing has its own keys (player/VideoHost.tsx).
+  if (useVideo.getState().video) return;
+  if (clickedFocus(e.target) && handleShortcut(e)) e.stopPropagation();
+}
+
+const CONTROLS = 'button, input, [role="button"], [role="link"], [role="menuitem"], [role="slider"], [role="separator"], [role="row"], [role="checkbox"], [role="switch"], [role="tab"], a';
+
+/** Not text: keys there aren't typing. */
+const NOT_TEXT = new Set(['checkbox', 'radio', 'range', 'button', 'submit', 'reset', 'color', 'file', 'image']);
+
+function isTextField(el: HTMLElement | null): boolean {
+  if (!el) return false;
+  if (el instanceof HTMLInputElement) return !NOT_TEXT.has(el.type);
+  return el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+
+/** Focus from a click (no focus ring), not from Tab or arrow keys; never a text field. */
+function clickedFocus(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement) || target === document.body || isTextField(target)) return false;
+  return !target.matches(':focus-visible');
 }
 
 function idFor(e: KeyboardEvent): ShortcutId | null {

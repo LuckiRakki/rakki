@@ -31,6 +31,7 @@ tauri-plugin-process = "2"
 # of the app through the updater; rustls's ring is the encryption the updater uses too.
 reqwest = { version = "0.13", default-features = false }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
+tauri-plugin-single-instance = "2"
 
 # Windows: WebView2's own settings (memory.rs); the same versions Tauri's webview already uses.
 [target.'cfg(windows)'.dependencies]

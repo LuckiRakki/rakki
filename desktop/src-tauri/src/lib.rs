@@ -1,7 +1,8 @@
 // Rakki for Windows and Linux. The window is a web interface (the system's own webview, not a
 // bundled browser); playback is mpv in its own process (mpv.rs); the system's media controls
 // (media.rs) and a tray icon sit alongside. Closing the window only hides it to the tray, where
-// music keeps playing with the interface asleep.
+// music keeps playing with the interface asleep. Only one Rakki runs: opening it again brings the
+// running one forward (Rakki Dev has its own id, so it still runs beside the installed one).
 
 mod autostart;
 mod capture;
@@ -130,6 +131,14 @@ fn tray_tooltip(app: AppHandle, text: String) {
     }
 }
 
+/// Restart into a new version (lib/updateCheck.ts). Lets go of "Rakki is running" first, or the
+/// new one would find the old one still there and close.
+#[tauri::command]
+fn app_restart(app: AppHandle) {
+    tauri_plugin_single_instance::destroy(&app);
+    app.restart();
+}
+
 fn show_window(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.unminimize();
@@ -177,6 +186,13 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Already running: show that window instead of opening a second Rakki (it goes first, so
+        // the second one closes before starting anything). A start with the computer stays quiet.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if !args.iter().any(|a| a == autostart::TRAY_ARG) {
+                show_window(app);
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         // One-click updates from GitHub releases (src/lib/updateCheck.ts), then a restart.
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -234,6 +250,7 @@ pub fn run() {
             capture_stop,
             autostart_get,
             autostart_set,
+            app_restart,
             mrq::mrq_request,
             mrq::spotify_album
         ])
