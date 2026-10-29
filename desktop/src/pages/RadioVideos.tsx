@@ -17,6 +17,8 @@ import { playStation } from '~/radio/radio';
 import { usePlayer } from '~/player/store';
 import { openMenu, toast } from '~/ui/overlays';
 import { activateOnKey } from '~/ui/keys';
+import { Picture } from '~/ui/parts';
+import { Bar, partOf, Reveal, useReveal } from '~/ui/reveal';
 import { Empty, QueryState } from '~/ui/states';
 
 function StationCard({ st }: { st: Station }) {
@@ -108,6 +110,7 @@ export function Videos() {
     const words = find.toLowerCase().split(/\s+/).filter(Boolean);
     return (q.data ?? []).filter((v) => words.every((w) => `${v.Name} ${v.Artists?.join(' ') ?? ''}`.toLowerCase().includes(w)));
   }, [q.data, find]);
+  const [grid] = useReveal([partOf(q.data, { failed: q.isError })]);
   return (
     <div className="page">
       <div className="home-head">
@@ -120,13 +123,16 @@ export function Videos() {
       <QueryState
         q={q}
         what="music videos"
+        placeholders
         empty={<Empty icon={MonitorPlay} title="No Music Videos Yet" detail="Videos in a Music Videos library on your Jellyfin server show up here." />}
       />
-      <div className="video-grid">
-        {shown.map((v) => (
-          <VideoCard key={v.Id} video={v} from={shown} />
-        ))}
-      </div>
+      <Reveal step={grid} placeholder={<VideoGridSkeleton />}>
+        <div className="video-grid">
+          {shown.map((v) => (
+            <VideoCard key={v.Id} video={v} from={shown} />
+          ))}
+        </div>
+      </Reveal>
     </div>
   );
 }
@@ -137,7 +143,7 @@ export function VideoCard({ video, from }: { video: BaseItem; from?: BaseItem[] 
   return (
     <button className="video-card" onClick={() => playVideo(video, from)} title={`Play ${video.Name}`}>
       <div className="video-thumb">
-        {thumb ? <img src={thumb} alt="" loading="lazy" /> : null}
+        {thumb ? <Picture key={thumb} src={thumb} /> : null}
         <span className="video-play">
           <Play size={22} fill="currentColor" />
         </span>
@@ -145,5 +151,20 @@ export function VideoCard({ video, from }: { video: BaseItem; from?: BaseItem[] 
       <div className="name">{video.Name}</div>
       <div className="sub">{video.Artists?.join(', ') ?? video.AlbumArtist ?? ''}</div>
     </button>
+  );
+}
+
+/** Video cards still loading. */
+function VideoGridSkeleton() {
+  return (
+    <div className="video-grid">
+      {Array.from({ length: 9 }, (_, i) => (
+        <div key={i} className="video-card skel-card">
+          <div className="video-thumb skel" />
+          <Bar className="name" width={[70, 54, 62][i % 3]} />
+          <Bar className="sub" width={[40, 32, 46][i % 3]} />
+        </div>
+      ))}
+    </div>
   );
 }

@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, useWindowDimensions, View } from 'react-native';
+import { FlatList, Pressable, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useArtistAlbums, useItem } from '@/api/queries';
 import { isSingleOrEp, releaseKind } from '@/lib/items';
 import { ItemTile } from '@/ui/AlbumTile';
+import { FadeRow, GridSkeleton, Hold, Line, partOf, useReveal, useRowFade } from '@/ui/Reveal';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
@@ -22,13 +23,17 @@ export default function ReleasesScreen() {
   const columns = t.appearance.gridColumns;
   const gap = t.space.lg;
   const tile = Math.floor((width - t.space.lg * 2 - gap * (columns - 1)) / columns);
+  // While they load, placeholder tiles hold the grid's place; then the releases fade in.
+  const [grid] = useReveal([partOf(albums.data, { failed: albums.isError })]);
+  const tileFade = useRowFade(grid);
+  const name = artist.data?.Name;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
       <FlatList
         windowSize={7}
         key={`releases-${columns}`}
-        data={items}
+        data={grid.show === 'content' ? items : []}
         keyExtractor={(a) => a.Id}
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
@@ -41,20 +46,28 @@ export default function ReleasesScreen() {
             <T variant="display" style={{ marginTop: t.space.sm }}>
               {singles ? 'Singles and EPs' : 'Discography'}
             </T>
-            {artist.data?.Name ? (
+            {name ? (
               <T variant="caption" style={{ marginTop: 2, fontSize: t.size(14) }}>
-                {artist.data.Name} · {items.length === 1 ? '1 release' : `${items.length} releases`}
+                {[name, albums.data ? (items.length === 1 ? '1 release' : `${items.length} releases`) : null].filter(Boolean).join(' · ')}
               </T>
+            ) : artist.data === undefined && !artist.isError ? (
+              <Line variant="caption" size={t.size(14)} width="44%" style={{ marginTop: 2 }} />
             ) : null}
           </View>
         }
-        ListEmptyComponent={albums.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
-        renderItem={({ item }) => (
-          <ItemTile
-            item={item}
-            size={tile}
-            subtitle={[item.ProductionYear, releaseKind(item)].filter(Boolean).join(' · ')}
-          />
+        ListEmptyComponent={
+          <Hold step={grid}>
+            <GridSkeleton tile={tile} columns={columns} gap={gap} rowGap={t.space.xl} rows={4} />
+          </Hold>
+        }
+        renderItem={({ item, index }) => (
+          <FadeRow entering={tileFade(index)}>
+            <ItemTile
+              item={item}
+              size={tile}
+              subtitle={[item.ProductionYear, releaseKind(item)].filter(Boolean).join(' · ')}
+            />
+          </FadeRow>
         )}
       />
     </View>

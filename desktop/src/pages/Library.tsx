@@ -1,5 +1,6 @@
 // Your Library's lists: albums, artists, playlists and mixes as grids, every song as a table,
-// and genres (tiles, then a genre's page).
+// and genres (tiles, then a genre's page). While a list loads, placeholders of its cards or rows
+// hold its place, then it fades in there (ui/reveal.tsx).
 import { useMemo, useState } from 'react';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -11,6 +12,7 @@ import { go } from '~/nav';
 import { useAllAlbums, useAllArtists, useAllSongs, useDailyMixes, useGenreAlbums, useGenres, useGenreTopSongs, usePlaylists } from '~/queries';
 import { ArrowDownAZ, Blend, Disc3, ListMusic, Music, Search, Tags, UserRound, type Icon } from '~/ui/icons';
 import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, TrackTable } from '~/ui/parts';
+import { Bar, GridSkeleton, partOf, Reveal, useReveal } from '~/ui/reveal';
 import { Empty, QueryState } from '~/ui/states';
 import { kv } from '~/lib/kv';
 
@@ -44,7 +46,7 @@ interface GridQuery {
   refetch(): unknown;
 }
 
-function LibraryGrid({ title, q, sorts, empty }: { title: string; q: GridQuery; sorts: SortKey[]; empty: { icon: Icon; title: string; detail: string; action?: { label: string; run(): void } } }) {
+function LibraryGrid({ title, q, sorts, empty, round }: { title: string; q: GridQuery; sorts: SortKey[]; empty: { icon: Icon; title: string; detail: string; action?: { label: string; run(): void } }; round?: boolean }) {
   const storeKey = `rakki.sort.${title}`;
   const [sort, setSort] = useState<SortKey>(() => (kv.getItem(storeKey) as SortKey) || sorts[0]);
   const [find, setFind] = useState('');
@@ -57,6 +59,7 @@ function LibraryGrid({ title, q, sorts, empty }: { title: string; q: GridQuery; 
     });
     return sortItems(found, sort);
   }, [items, find, sort]);
+  const [grid] = useReveal([partOf(items, { failed: q.isError })]);
   return (
     <div className="page">
       <div className="page-head">
@@ -86,12 +89,14 @@ function LibraryGrid({ title, q, sorts, empty }: { title: string; q: GridQuery; 
           </label>
         ) : null}
       </div>
-      <QueryState q={q} what={`your ${title.toLowerCase()}`} empty={<Empty {...empty} />} />
-      <div className="grid">
-        {shown.map((i) => (
-          <ItemCard key={i.Id} item={i} />
-        ))}
-      </div>
+      <QueryState q={q} what={`your ${title.toLowerCase()}`} empty={<Empty {...empty} />} placeholders />
+      <Reveal step={grid} placeholder={<GridSkeleton round={round} />}>
+        <div className="grid">
+          {shown.map((i) => (
+            <ItemCard key={i.Id} item={i} />
+          ))}
+        </div>
+      </Reveal>
       {items?.length && !shown.length ? <p className="empty-note">Nothing matches “{find}”.</p> : null}
     </div>
   );
@@ -106,7 +111,7 @@ export const Albums = () => (
   />
 );
 export const Artists = () => (
-  <LibraryGrid title="Artists" q={useAllArtists()} sorts={['name', 'recent']} empty={{ icon: UserRound, title: 'No Artists Yet', detail: 'The artists of your albums show up here.' }} />
+  <LibraryGrid title="Artists" q={useAllArtists()} sorts={['name', 'recent']} round empty={{ icon: UserRound, title: 'No Artists Yet', detail: 'The artists of your albums show up here.' }} />
 );
 export const Playlists = () => (
   <LibraryGrid
@@ -129,6 +134,7 @@ export function Songs() {
   const q = useAllSongs();
   const [find, setFind] = useState('');
   const tracks = useMemo(() => findIn(q.data ?? [], find), [q.data, find]);
+  const [songs] = useReveal([partOf(q.data, { failed: q.isError })]);
   return (
     <div>
       <div className="page" style={{ paddingBottom: 0 }}>
@@ -139,9 +145,9 @@ export function Songs() {
       </div>
       <ActionBar tracks={tracks} find={find} onFind={setFind} />
       <div className="page-states">
-        <QueryState q={q} what="your songs" empty={<Empty icon={Music} title="No Songs Yet" detail="Songs in your Jellyfin music library show up here." />} />
+        <QueryState q={q} what="your songs" placeholders empty={<Empty icon={Music} title="No Songs Yet" detail="Songs in your Jellyfin music library show up here." />} />
       </div>
-      {q.data?.length ? <TrackTable tracks={tracks} plays /> : null}
+      {songs.show !== 'none' ? <TrackTable tracks={tracks} step={songs} holdRows={14} plays /> : null}
     </div>
   );
 }
@@ -149,24 +155,40 @@ export function Songs() {
 export function Genres() {
   const q = useGenres();
   const client = useAuth((s) => s.client);
+  const [tiles] = useReveal([partOf(q.data, { failed: q.isError })]);
   return (
     <div className="page">
       <div className="page-head">
         <h1>Genres</h1>
       </div>
-      <QueryState q={q} what="genres" empty={<Empty icon={Tags} title="No Genres Yet" detail="Genres come from your music’s tags." />} />
-      <div className="genre-grid">
-        {q.data?.map((g) => {
-          const rgb = g.album && client ? blurhashAverage(client.blurhash(g.album)) : null;
-          return (
-            <button key={g.name} className="genre-tile" style={{ background: tileColor(rgb, g.name) }} onClick={() => go({ name: 'genre', id: g.name })}>
-              <span>{g.name}</span>
-              <small>{g.count} albums</small>
-              {g.album ? <Artwork item={g.album} size={160} className="genre-art" /> : null}
-            </button>
-          );
-        })}
-      </div>
+      <QueryState q={q} what="genres" placeholders empty={<Empty icon={Tags} title="No Genres Yet" detail="Genres come from your music’s tags." />} />
+      <Reveal step={tiles} placeholder={<GenreTilesSkeleton />}>
+        <div className="genre-grid">
+          {q.data?.map((g) => {
+            const rgb = g.album && client ? blurhashAverage(client.blurhash(g.album)) : null;
+            return (
+              <button key={g.name} className="genre-tile" style={{ background: tileColor(rgb, g.name) }} onClick={() => go({ name: 'genre', id: g.name })}>
+                <span>{g.name}</span>
+                <small>{g.count} albums</small>
+                {g.album ? <Artwork item={g.album} size={160} className="genre-art" /> : null}
+              </button>
+            );
+          })}
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Genre tiles still loading. */
+export function GenreTilesSkeleton({ count = 16 }: { count?: number }) {
+  return (
+    <div className="genre-grid">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="genre-tile skel-tile">
+          <Bar as="span" width={[58, 44, 66, 50][i % 4]} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -174,8 +196,11 @@ export function Genres() {
 export function Genre({ name }: { name: string }) {
   const albumsQ = useGenreAlbums(name);
   const albums = albumsQ.data;
-  const top = useGenreTopSongs(name).data ?? [];
+  const topQ = useGenreTopSongs(name);
+  const top = topQ.data ?? [];
   const tint = tileColor(null, name);
+  // Your most played (often none: it holds no place), then the albums.
+  const [topStep, albumsStep] = useReveal([partOf(topQ.data, { failed: topQ.isError, reserve: false }), partOf(albums, { failed: albumsQ.isError })]);
   return (
     <div>
       <LibraryHeader
@@ -190,20 +215,22 @@ export function Genre({ name }: { name: string }) {
         }
       />
       <ActionBar tracks={top} color={tint} />
-      {top.length ? (
+      <Reveal step={topStep}>
         <div className="page" style={{ paddingTop: 0, paddingBottom: 0 }}>
           <h2>Your Most Played</h2>
         </div>
-      ) : null}
-      <TrackTable tracks={top} plays />
+        <TrackTable tracks={top} plays />
+      </Reveal>
       <div className="page" style={{ paddingTop: 8 }}>
         <h2 style={{ marginBottom: 12 }}>Albums</h2>
-        <QueryState q={albumsQ} what={`${name} albums`} empty={<Empty icon={Disc3} title={`No ${name} albums`} detail="Albums tagged with this genre show up here." />} />
-        <div className="grid">
-          {albums?.map((a) => (
-            <ItemCard key={a.Id} item={a} />
-          ))}
-        </div>
+        <QueryState q={albumsQ} what={`${name} albums`} placeholders empty={<Empty icon={Disc3} title={`No ${name} albums`} detail="Albums tagged with this genre show up here." />} />
+        <Reveal step={albumsStep} placeholder={<GridSkeleton />}>
+          <div className="grid">
+            {albums?.map((a) => (
+              <ItemCard key={a.Id} item={a} />
+            ))}
+          </div>
+        </Reveal>
       </div>
     </div>
   );

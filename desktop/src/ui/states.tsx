@@ -59,23 +59,26 @@ export function LoadError({ what, error, retry }: { what: string; error: unknown
 
 /**
  * The query's state as a page section: loading, failed, or empty (when `isEmpty`), else null so
- * the page draws its content. A refresh keeps the old content on screen.
+ * the page draws its content. A refresh keeps the old content on screen. `placeholders`: the
+ * page holds the content's place while it loads (ui/reveal.tsx), so no spinner.
  */
 export function QueryState({
   q,
   what,
   empty,
+  placeholders,
 }: {
   q: { isLoading: boolean; isError: boolean; error: unknown; data?: unknown; refetch(): unknown };
   what: string;
   empty?: ReactNode;
+  placeholders?: boolean;
 }) {
   if (q.data !== undefined) {
     const list = Array.isArray(q.data) ? q.data : null;
     return list && !list.length && empty ? <>{empty}</> : null;
   }
   if (q.isError) return <LoadError what={what} error={q.error} retry={() => void q.refetch()} />;
-  if (q.isLoading) return <Loading what={what} />;
+  if (q.isLoading && !placeholders) return <Loading what={what} />;
   return null;
 }
 

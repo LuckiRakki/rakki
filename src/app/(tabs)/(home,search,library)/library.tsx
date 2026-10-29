@@ -50,6 +50,21 @@ import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { usePlayer } from '@/player/store';
 import { TrackRow } from '@/ui/TrackRow';
+import {
+  barWidth,
+  Bone,
+  FadeRow,
+  GridSkeleton,
+  Hold,
+  ItemRowSkeleton,
+  ItemRowsSkeleton,
+  Line,
+  partOf,
+  TileSkeleton,
+  TrackRowsSkeleton,
+  useReveal,
+  useRowFade,
+} from '@/ui/Reveal';
 
 /** Tile width for an n-column grid with the standard side gutters. */
 /** Album grids follow Customize → Album grid columns; `extra` adds columns (artists' round tiles). */
@@ -234,6 +249,16 @@ interface ListProps {
   filter: string;
 }
 
+/**
+ * A tab's list loading in order: placeholders of its tiles or rows (the layout it'll have) hold
+ * the screen while it loads, then the first screenful fades in, one after another. Only the
+ * first time: a list that's already loaded (switching back to a tab) is simply there.
+ */
+function useListReveal(q: { data?: unknown; isError: boolean }) {
+  const [step] = useReveal([partOf(q.data, { failed: q.isError })]);
+  return { step, fade: useRowFade(step) };
+}
+
 /** Shown when a search finds nothing. */
 function NoMatches({ filter }: { filter: string }) {
   const t = useTheme();
@@ -273,6 +298,7 @@ function Albums({ header, sort, layout, filter }: ListProps) {
   const { gap, tile, columns } = useTileSize();
   const subtitle = (a: BaseItem) =>
     sort.key === 'year' && a.ProductionYear ? `${kindLine(a)} · ${a.ProductionYear}` : kindLine(a);
+  const { step, fade } = useListReveal(albums);
   return (
     <FlatList
       windowSize={7}
@@ -284,13 +310,21 @@ function Albums({ header, sort, layout, filter }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
-      ListEmptyComponent={albums.isLoading ? <ActivityIndicator color={t.colors.text} /> : filter ? <NoMatches filter={filter} /> : null}
+      ListEmptyComponent={
+        step.show === 'placeholder' ? (
+          <Hold step={step}>{grid ? <GridSkeleton tile={tile} columns={columns} gap={gap} rowGap={t.space.xl} /> : <ItemRowsSkeleton count={10} />}</Hold>
+        ) : filter ? (
+          <NoMatches filter={filter} />
+        ) : null
+      }
       ListFooterComponent={albums.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
       onEndReachedThreshold={1.5}
       onEndReached={() => {
         if (albums.hasNextPage && !albums.isFetchingNextPage) void albums.fetchNextPage();
       }}
-      renderItem={({ item }) => (grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle={subtitle(item)} />)}
+      renderItem={({ item, index }) => (
+        <FadeRow entering={fade(index)}>{grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle={subtitle(item)} />}</FadeRow>
+      )}
     />
   );
 }
@@ -303,6 +337,7 @@ function Artists({ header, sort, layout, filter }: ListProps) {
   const items = artists.data?.pages.flatMap((p) => p.Items) ?? [];
   const grid = layout === 'grid';
   const { gap, tile, columns } = useTileSize(1);
+  const { step, fade } = useListReveal(artists);
   return (
     <FlatList
       windowSize={7}
@@ -314,13 +349,23 @@ function Artists({ header, sort, layout, filter }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
-      ListEmptyComponent={artists.isLoading ? <ActivityIndicator color={t.colors.text} /> : filter ? <NoMatches filter={filter} /> : null}
+      ListEmptyComponent={
+        step.show === 'placeholder' ? (
+          <Hold step={step}>
+            {grid ? <GridSkeleton tile={tile} columns={columns} gap={gap} rowGap={t.space.lg} rows={4} round /> : <ItemRowsSkeleton count={10} round />}
+          </Hold>
+        ) : filter ? (
+          <NoMatches filter={filter} />
+        ) : null
+      }
       ListFooterComponent={artists.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
       onEndReachedThreshold={1.5}
       onEndReached={() => {
         if (artists.hasNextPage && !artists.isFetchingNextPage) void artists.fetchNextPage();
       }}
-      renderItem={({ item }) => (grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle="Artist" />)}
+      renderItem={({ item, index }) => (
+        <FadeRow entering={fade(index)}>{grid ? <ItemTile item={item} size={tile} /> : <ItemRow item={item} subtitle="Artist" />}</FadeRow>
+      )}
     />
   );
 }
@@ -341,6 +386,7 @@ function Videos({ header, sort, layout, filter }: ListProps) {
     if (sort.key === 'random') return seededShuffle(all, seed);
     return [...all].sort((a, b) => (b.DateCreated ?? '').localeCompare(a.DateCreated ?? ''));
   }, [videos.data, sort.key, seed, filter]);
+  const { step, fade } = useListReveal(videos);
 
   const thumb = (video: BaseItem, w: number) => {
     const uri = client?.videoThumbUrl(video, w * 2);
@@ -362,48 +408,76 @@ function Videos({ header, sort, layout, filter }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
       ListHeaderComponent={header}
       ListEmptyComponent={
-        videos.isLoading ? (
-          <ActivityIndicator color={t.colors.textSecondary} style={{ marginTop: t.space.xl }} />
-        ) : (
+        step.show === 'placeholder' ? (
+          <Hold step={step}>
+            {grid ? (
+              <GridSkeleton tile={tileW} height={Math.round((tileW * 9) / 16)} columns={2} gap={gap} rowGap={t.space.lg} rows={5} />
+            ) : (
+              <VideoRowsSkeleton />
+            )}
+          </Hold>
+        ) : videos.isLoading ? null : (
           <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
             No music videos yet. Add a Music Videos library in Jellyfin and they show up here.
           </T>
         )
       }
-      renderItem={({ item }) =>
+      renderItem={({ item, index }) =>
         grid ? (
-          <Pressable onPress={() => void playMusicVideo(item)} style={({ pressed }) => ({ width: tileW, opacity: pressed ? 0.8 : 1 })}>
-            {thumb(item, tileW)}
-            <T variant="bodyStrong" numberOfLines={1} style={{ marginTop: 6, fontSize: t.size(14) }}>
-              {item.Name}
-            </T>
-            <T variant="caption" numberOfLines={1}>
-              {[item.Artists?.join(', '), item.ProductionYear].filter(Boolean).join(' · ')}
-            </T>
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => void playMusicVideo(item)}
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: t.space.lg,
-              paddingVertical: t.space.sm,
-              backgroundColor: pressed ? t.colors.surface : 'transparent',
-            })}>
-            {thumb(item, 112)}
-            <View style={{ flex: 1, marginLeft: t.space.md }}>
-              <T variant="bodyStrong" numberOfLines={2}>
+          <FadeRow entering={fade(index)}>
+            <Pressable onPress={() => void playMusicVideo(item)} style={({ pressed }) => ({ width: tileW, opacity: pressed ? 0.8 : 1 })}>
+              {thumb(item, tileW)}
+              <T variant="bodyStrong" numberOfLines={1} style={{ marginTop: 6, fontSize: t.size(14) }}>
                 {item.Name}
               </T>
               <T variant="caption" numberOfLines={1}>
                 {[item.Artists?.join(', '), item.ProductionYear].filter(Boolean).join(' · ')}
               </T>
-            </View>
-          </Pressable>
+            </Pressable>
+          </FadeRow>
+        ) : (
+          <FadeRow entering={fade(index)}>
+            <Pressable
+              onPress={() => void playMusicVideo(item)}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: t.space.lg,
+                paddingVertical: t.space.sm,
+                backgroundColor: pressed ? t.colors.surface : 'transparent',
+              })}>
+              {thumb(item, 112)}
+              <View style={{ flex: 1, marginLeft: t.space.md }}>
+                <T variant="bodyStrong" numberOfLines={2}>
+                  {item.Name}
+                </T>
+                <T variant="caption" numberOfLines={1}>
+                  {[item.Artists?.join(', '), item.ProductionYear].filter(Boolean).join(' · ')}
+                </T>
+              </View>
+            </Pressable>
+          </FadeRow>
         )
       }
     />
+  );
+}
+
+/** Music video rows still loading: a wide picture, the title and the artist. */
+function VideoRowsSkeleton() {
+  const t = useTheme();
+  return (
+    <View pointerEvents="none">
+      {Array.from({ length: 8 }, (_, i) => (
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.lg, paddingVertical: t.space.sm }}>
+          <Bone style={{ width: 112, height: 63, borderRadius: t.radius.art }} />
+          <View style={{ flex: 1, marginLeft: t.space.md }}>
+            <Line variant="bodyStrong" width={barWidth(i, 6)} />
+            <Line variant="caption" width={barWidth(i + 3, 30)} />
+          </View>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -475,6 +549,7 @@ function Genres({ header, sort, layout, filter }: ListProps) {
   const grid = layout === 'grid';
   const gap = t.space.md;
   const tile = Math.floor((width - t.space.lg * 2 - gap) / 2);
+  const { step, fade } = useListReveal(genres);
   return (
     <FlatList
       windowSize={7}
@@ -486,10 +561,20 @@ function Genres({ header, sort, layout, filter }: ListProps) {
       contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? gap : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
-      ListEmptyComponent={genres.isLoading ? <ActivityIndicator color={t.colors.text} /> : null}
-      renderItem={({ item }) =>
-        grid ? <GenreTile genre={item} width={tile} height={Math.round(tile * 0.56)} /> : <GenreRow genre={item} />
+      ListEmptyComponent={
+        <Hold step={step}>
+          {grid ? (
+            <GridSkeleton tile={tile} height={Math.round(tile * 0.56)} columns={2} gap={gap} rowGap={gap} rows={7} bare />
+          ) : (
+            <ItemRowsSkeleton count={10} art={48} />
+          )}
+        </Hold>
       }
+      renderItem={({ item, index }) => (
+        <FadeRow entering={fade(index)}>
+          {grid ? <GenreTile genre={item} width={tile} height={Math.round(tile * 0.56)} /> : <GenreRow genre={item} />}
+        </FadeRow>
+      )}
     />
   );
 }
@@ -528,7 +613,12 @@ function Mixes({ header, sort, layout, filter }: ListProps) {
   const refresh = usePullToRefresh(sort, mixes.refetch);
   const { gap, tile, columns } = useTileSize();
   const data = (mixes.data ?? []).filter((x) => matchesSearch(x, filter));
-  const empty = mixes.isLoading ? null : filter ? (
+  const { step, fade } = useListReveal(mixes);
+  const empty = step.show === 'placeholder' ? (
+    <Hold step={step}>
+      {layout === 'grid' ? <GridSkeleton tile={tile} columns={columns} gap={gap} rowGap={t.space.xl} rows={2} /> : <ItemRowsSkeleton count={6} />}
+    </Hold>
+  ) : mixes.isLoading ? null : filter ? (
     <NoMatches filter={filter} />
   ) : (
     <T variant="caption" style={{ textAlign: 'center', padding: t.space.xl }}>
@@ -549,7 +639,11 @@ function Mixes({ header, sort, layout, filter }: ListProps) {
         refreshControl={refresh}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
-        renderItem={({ item }) => <ItemTile item={item} size={tile} />}
+        renderItem={({ item, index }) => (
+          <FadeRow entering={fade(index)}>
+            <ItemTile item={item} size={tile} />
+          </FadeRow>
+        )}
       />
     );
   }
@@ -563,12 +657,18 @@ function Mixes({ header, sort, layout, filter }: ListProps) {
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
-      renderItem={({ item }) => <ItemRow item={item} subtitle={mixArtists(item)} />}
+      renderItem={({ item, index }) => (
+        <FadeRow entering={fade(index)}>
+          <ItemRow item={item} subtitle={mixArtists(item)} />
+        </FadeRow>
+      )}
     />
   );
 }
 
 const LIKED: BaseItem = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
+/** Places for your playlists while they load, after Liked Songs (which is there at once). */
+const PLACES: BaseItem[] = Array.from({ length: 8 }, (_, i) => ({ Id: `place-${i}`, Name: '', Type: 'Placeholder' }));
 
 function Playlists({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
@@ -590,8 +690,17 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
             ? (b.DateCreated ?? '').localeCompare(a.DateCreated ?? '')
             : a.Name.localeCompare(b.Name, undefined, { sensitivity: 'base' }),
         );
+  const { step, fade } = useListReveal(playlists);
+  const loading = step.show === 'placeholder';
   // Liked Songs is always first, like Spotify's pinned playlist (and found by a search too).
-  const data: BaseItem[] = [...(matchesSearch(LIKED, filter) ? [LIKED] : []), ...sorted];
+  const data: BaseItem[] = [...(matchesSearch(LIKED, filter) ? [LIKED] : []), ...(loading ? PLACES : sorted)];
+  // A playlist's place while they load (fading in a beat after another), or the playlist fading in.
+  const place = (item: BaseItem, index: number, drawn: ReactElement) =>
+    item.Type === 'Placeholder' ? (
+      <Hold step={{ ...step, delay: step.delay + index * 40 }}>{grid ? <TileSkeleton size={tile} i={index} /> : <ItemRowSkeleton i={index} />}</Hold>
+    ) : (
+      <FadeRow entering={fade(index)}>{drawn}</FadeRow>
+    );
 
   if (grid) {
     return (
@@ -605,7 +714,7 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
         contentContainerStyle={{ paddingBottom: t.space.xl, gap: t.space.xl }}
         refreshControl={refresh}
         ListHeaderComponent={header}
-        renderItem={({ item }) =>
+        renderItem={({ item, index }) =>
           item.Id === LIKED.Id ? (
             <Pressable onPress={() => router.push('/liked')} style={({ pressed }) => ({ width: tile, opacity: pressed ? 0.7 : 1 })}>
               <LikedArt size={tile} />
@@ -617,7 +726,7 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
               </T>
             </Pressable>
           ) : (
-            <ItemTile item={item} size={tile} />
+            place(item, index, <ItemTile item={item} size={tile} />)
           )
         }
       />
@@ -634,7 +743,7 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListFooterComponent={
-        offline ? null : (
+        offline || loading ? null : (
           <Pressable
             onPress={() => void createPlaylist()}
             style={({ pressed }) => ({
@@ -661,11 +770,11 @@ function Playlists({ header, sort, layout, filter }: ListProps) {
           </Pressable>
         )
       }
-      renderItem={({ item }) =>
+      renderItem={({ item, index }) =>
         item.Id === LIKED.Id ? (
           <ItemRow item={item} subtitle={likedLine} art={<LikedArt size={56} />} onPress={() => router.push('/liked')} />
         ) : (
-          <ItemRow item={item} subtitle={`Playlist · ${songCount(item.ChildCount ?? 0)}`} />
+          place(item, index, <ItemRow item={item} subtitle={`Playlist · ${songCount(item.ChildCount ?? 0)}`} />)
         )
       }
     />
@@ -780,6 +889,7 @@ function Songs({ header, sort, filter }: ListProps) {
   const items = tracks.data?.pages.flatMap((p) => p.Items) ?? [];
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
+  const { step, fade } = useListReveal(tracks);
   return (
     <FlatList
       windowSize={7}
@@ -811,20 +921,30 @@ function Songs({ header, sort, filter }: ListProps) {
           </Pressable>
         </View>
       }
-      ListEmptyComponent={tracks.isLoading ? <ActivityIndicator color={t.colors.text} /> : filter ? <NoMatches filter={filter} /> : null}
+      ListEmptyComponent={
+        step.show === 'placeholder' ? (
+          <Hold step={step}>
+            <TrackRowsSkeleton count={12} art />
+          </Hold>
+        ) : filter ? (
+          <NoMatches filter={filter} />
+        ) : null
+      }
       ListFooterComponent={tracks.isFetchingNextPage ? <ActivityIndicator color={t.colors.textMuted} /> : null}
       onEndReachedThreshold={1.5}
       onEndReached={() => {
         if (tracks.hasNextPage && !tracks.isFetchingNextPage) void tracks.fetchNextPage();
       }}
       renderItem={({ item, index }) => (
-        <TrackRow
-          track={item}
-          art
-          active={item.Id === currentId}
-          playing={playing}
-          onPress={() => usePlayer.getState().playQueue(items, { startIndex: index, source: { type: 'tracks', name: 'Your songs' } })}
-        />
+        <FadeRow entering={fade(index)}>
+          <TrackRow
+            track={item}
+            art
+            active={item.Id === currentId}
+            playing={playing}
+            onPress={() => usePlayer.getState().playQueue(items, { startIndex: index, source: { type: 'tracks', name: 'Your songs' } })}
+          />
+        </FadeRow>
       )}
     />
   );

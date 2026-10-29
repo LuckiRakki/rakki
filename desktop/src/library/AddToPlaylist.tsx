@@ -101,7 +101,7 @@ function AddToPlaylist({ songs }: { songs: BaseItem[] }) {
           failed.push(displayName(p));
         }
       }
-      void queryClient.invalidateQueries({ predicate: (q) => ['playlists', 'playlistItems'].includes(q.queryKey[0] as string) });
+      void queryClient.invalidateQueries({ predicate: (q) => ['allPlaylists', 'playlistItems'].includes(q.queryKey[0] as string) });
       emitPlaylistsChanged(work.map((w) => w.p.Id));
       const names = (list: string[]) => (list.length === 1 ? list[0] : `${list.length} playlists`);
       if (failed.length) toast(`Couldn’t change ${names(failed)}. Try again.`);

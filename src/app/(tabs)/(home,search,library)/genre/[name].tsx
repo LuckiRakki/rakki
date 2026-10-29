@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, useWindowDimensions, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -13,6 +13,7 @@ import { Artwork } from '@/ui/Artwork';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { useGenreColor } from '@/ui/GenreTile';
+import { FadeRow, GridSkeleton, Line, partOf, Reveal, ShelfSkeleton, useReveal, useRowFade } from '@/ui/Reveal';
 import { SectionTitle, Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
@@ -84,6 +85,20 @@ export default function GenreScreen() {
   const columns = t.appearance.gridColumns;
   const tile = Math.floor((width - t.space.lg * 2 - gap * (columns - 1)) / columns);
 
+  // Top to bottom: your top songs (often none: they hold no place), the artists, the albums.
+  const [topStep, artistsStep, albumsStep] = useReveal([
+    partOf(top.data, { failed: top.isError, reserve: false }),
+    partOf(artists.data, { failed: artists.isError }),
+    partOf(albums.data, { failed: albums.isError }),
+  ]);
+  const tileFade = useRowFade(albumsStep);
+  const counts = [
+    genre ? `${genre.count} album${genre.count === 1 ? '' : 's'}` : '',
+    artistList.length ? `${artistList.length} artist${artistList.length === 1 ? '' : 's'}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   const header = (
     <View>
       <CollectionHeader
@@ -91,21 +106,13 @@ export default function GenreScreen() {
         art={<Mosaic albums={albumList} color={color} />}
         tint={withAlpha(color, 0.9)}
         title={name}
-        lines={[
-          'Genre',
-          [
-            genre ? `${genre.count} album${genre.count === 1 ? '' : 's'}` : '',
-            artistList.length ? `${artistList.length} artist${artistList.length === 1 ? '' : 's'}` : '',
-          ]
-            .filter(Boolean)
-            .join(' · '),
-        ]}
+        lines={['Genre', counts || (artists.data === undefined && !artists.isError ? null : '')]}
         playing={isThis && playing}
         onPlay={() => void play()}
         onShuffle={() => toggleShuffleFor(isThis)}
         shuffleOn={shuffleOn}
       />
-      {topList.length ? (
+      <Reveal step={topStep}>
         <View style={{ marginTop: t.space.lg }}>
           <SectionTitle title="Your top songs" />
           {topList.map((track, i) => (
@@ -120,15 +127,26 @@ export default function GenreScreen() {
             />
           ))}
         </View>
-      ) : null}
-      <Shelf title="Artists" items={artistList} size={120} />
-      {albumList.length ? (
+      </Reveal>
+      <Reveal step={artistsStep} placeholder={<ShelfSkeleton size={120} round />}>
+        <Shelf title="Artists" items={artistList} size={120} />
+      </Reveal>
+      <Reveal
+        step={albumsStep}
+        placeholder={
+          <View style={{ marginTop: t.space.xl }}>
+            <Line variant="heading" width="30%" style={{ marginHorizontal: t.space.lg, marginBottom: t.space.md }} />
+            {/* The list puts its gap between the header and the first row. */}
+            <View style={{ marginTop: t.space.xl }}>
+              <GridSkeleton tile={tile} columns={columns} gap={gap} rowGap={t.space.xl} rows={2} />
+            </View>
+          </View>
+        }>
         <View style={{ marginTop: t.space.xl }}>
           <SectionTitle title="Albums" />
         </View>
-      ) : null}
-      {albums.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
-      {!albums.isLoading && albumList.length === 0 ? (
+      </Reveal>
+      {albums.data && albumList.length === 0 ? (
         <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
           Nothing in your library is tagged {name} anymore.
         </T>
@@ -142,14 +160,18 @@ export default function GenreScreen() {
         windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        data={albumList}
+        data={albumsStep.show === 'content' ? albumList : []}
         keyExtractor={(a) => a.Id}
         key={`genre-albums-${columns}`}
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
         contentContainerStyle={{ gap: t.space.xl, paddingBottom: t.space.xl }}
         ListHeaderComponent={header}
-        renderItem={({ item }) => <ItemTile item={item} size={tile} />}
+        renderItem={({ item, index }) => (
+          <FadeRow entering={tileFade(index)}>
+            <ItemTile item={item} size={tile} />
+          </FadeRow>
+        )}
       />
       <StickyTitleBar y={y} title={name} color={t.tint(color)} />
       <BackButton onPress={() => router.back()} />

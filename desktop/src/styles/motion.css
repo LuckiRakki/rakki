@@ -37,6 +37,14 @@
 .side-links-fold.folded { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
 .side-head-chev { transition: transform 0.3s var(--ease-out); }
 
+/* Loading in order (ui/reveal.tsx): placeholders fade in one after another down the page, then
+   each part in its place on its beat, then the pictures inside them. Opacity only. */
+@keyframes reveal-in { from { opacity: 0; } }
+.reveal-in { animation: reveal-in 0.34s var(--ease-out) backwards; }
+.skel-in { animation: reveal-in 0.3s var(--ease-out) backwards; }
+.artwork img, .hero-img, .video-thumb img { transition: opacity 0.4s var(--ease-out); }
+.artwork img.loading, .hero-img.loading, .video-thumb img.loading { opacity: 0; }
+
 /* Things respond to the hand: press, hover. */
 .iconbtn:active:not(:disabled) { transform: scale(0.9); }
 .pp { transition: transform 0.18s var(--ease-spring); }

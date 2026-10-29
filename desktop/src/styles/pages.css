@@ -83,7 +83,7 @@
 .lib-meta h1 { font-size: clamp(36px, 6vw, 88px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; margin: 8px 0 18px; overflow-wrap: anywhere; }
 .lib-meta h1.medium { font-size: clamp(32px, 4.4vw, 60px); }
 .lib-meta h1.small { font-size: clamp(26px, 3vw, 40px); }
-.lib-meta .meta { color: rgba(255, 255, 255, 0.85); font-weight: 500; }
+.lib-meta .meta { color: rgba(255, 255, 255, 0.85); font-weight: 500; min-height: 1lh; } /* holds its line while the details load */
 .lib-meta .meta b { font-weight: 700; color: var(--text); }
 .overview-line { margin-bottom: 4px; font-weight: 600; color: var(--text-2); }
 .genre-cover { font-size: 110px; font-weight: 900; color: rgba(255, 255, 255, 0.9); }
@@ -104,9 +104,11 @@
 .badge { position: absolute; top: -7px; right: -10px; font-size: 10px; font-weight: 800; background: var(--text); color: #000; border-radius: 6px; padding: 1px 4px; }
 
 .artist-hero { min-height: 120px; }
-.artist-hero.with-image { height: 340px; background-size: cover; background-position: center 25%; display: flex; align-items: flex-end; position: relative; }
-.artist-hero.with-image::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.65)); }
-.artist-name { position: relative; padding: 0 28px 26px; }
+.artist-hero.with-image { height: 340px; display: flex; align-items: flex-end; position: relative; overflow: hidden; }
+/* The backdrop fades in over the artist's colour once it has loaded (ui/parts.tsx Picture). */
+.artist-hero .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+.artist-hero.with-image::before { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.65)); }
+.artist-name { position: relative; z-index: 2; padding: 0 28px 26px; }
 .artist-name h1 { font-size: clamp(44px, 7vw, 96px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; margin: 6px 0 12px; }
 .artist-name .meta { color: rgba(255, 255, 255, 0.85); font-weight: 600; }
 

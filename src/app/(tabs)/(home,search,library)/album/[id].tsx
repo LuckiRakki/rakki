@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,12 +19,16 @@ import { GenreChips } from '@/ui/GenreChips';
 import { Artwork } from '@/ui/Artwork';
 import { StickyTitleBar, useCoverStyle, useScrollY } from '@/ui/CollapsingHeader';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
+import { Bone, FadeRow, Hold, Line, partOf, Reveal, TrackRowsSkeleton, useReveal, useRowFade, type Part } from '@/ui/Reveal';
 import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { TrackRow } from '@/ui/TrackRow';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const ART = 232;
+
+/** Song placeholders to hold while the songs load: as many as the album has, up to a screenful. */
+const holdFor = (count?: number) => Math.min(Math.max(count || 10, 1), 12);
 
 export default function AlbumScreen() {
   const t = useTheme();
@@ -49,6 +53,13 @@ export default function AlbumScreen() {
   const tint = artColor(album.data && client?.blurhash(album.data));
   const source = { type: 'album' as const, id, name: album.data?.Name ?? 'Album' };
 
+  // Top to bottom: the name (there at once when a list had the album), its genres (only the
+  // full album has them, and often there are none, so they hold no place), then Play and the songs.
+  const genres = album.data?.Genres;
+  const genrePart: Part = genres ? (genres.length ? 'ready' : 'empty') : album.data === null ? 'empty' : 'waiting';
+  const [head, chips, body] = useReveal([partOf(album.data), genrePart, partOf(tracks.data, { failed: !!tracks.error })]);
+  const rowFade = useRowFade(body);
+
   const shuffleOn = usePlayer((s) => s.shuffleMode);
 
   /** Play (in shuffled order while the shuffle toggle is on). */
@@ -70,54 +81,84 @@ export default function AlbumScreen() {
         colors={[t.tint(tint), t.colors.bg]}
         style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
         <Animated.View style={cover}>
-          <Artwork item={album.data ?? undefined} size={ART} style={styles.artShadow} />
+          {album.data ? (
+            <Artwork item={album.data} size={ART} style={styles.artShadow} />
+          ) : (
+            <Bone style={{ width: ART, height: ART, borderRadius: t.radius.art }} />
+          )}
         </Animated.View>
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>
-        <T variant="title">{album.data?.Name ?? ' '}</T>
-        <View style={styles.artistRow}>
-          {artists.length ? (
-            <Pressable onPress={() => openArtist(artists[0].Id)} hitSlop={6}>
-              <Artwork item={firstArtist.data ?? undefined} size={24} rounded={12} />
-            </Pressable>
-          ) : null}
-          <ArtistLinks artists={artists} fallback={album.data?.AlbumArtist} style={{ flex: 1 }} />
-        </View>
-        <T variant="caption" style={{ marginTop: t.space.xs }}>
-          {['Album', album.data?.ProductionYear, list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : null]
-            .filter(Boolean)
-            .join(' · ')}
-        </T>
-        <GenreChips genres={album.data?.Genres ?? []} />
-        <View style={styles.actions}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
-            <Pressable
-              hitSlop={8}
-              onPress={() => toggleShuffleFor(isThisAlbum)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: shuffleOn }}
-              accessibilityLabel="Shuffle"
-              style={{ alignItems: 'center' }}>
-              <Ionicons name="shuffle" size={28} color={shuffleOn ? t.colors.accent : t.colors.textSecondary} />
-              {shuffleOn ? (
-                <View style={{ position: 'absolute', bottom: -6, width: 4, height: 4, borderRadius: 2, backgroundColor: t.colors.accent }} />
-              ) : null}
-            </Pressable>
-            {album.data && list.length ? <DownloadButton kind="album" item={album.data} /> : null}
+        <Reveal
+          step={head}
+          placeholder={
+            <>
+              <Line variant="title" width="62%" />
+              <View style={styles.artistRow}>
+                <Bone style={{ width: 24, height: 24, borderRadius: 12 }} />
+                <Line variant="bodyStrong" width="38%" style={{ flex: 1 }} />
+              </View>
+              <Line variant="caption" width="46%" style={{ marginTop: t.space.xs }} />
+            </>
+          }>
+          <T variant="title">{album.data?.Name ?? ' '}</T>
+          <View style={styles.artistRow}>
+            {artists.length ? (
+              <Pressable onPress={() => openArtist(artists[0].Id)} hitSlop={6}>
+                {firstArtist.data ? <Artwork item={firstArtist.data} size={24} rounded={12} /> : <Bone style={{ width: 24, height: 24, borderRadius: 12 }} />}
+              </Pressable>
+            ) : null}
+            <ArtistLinks artists={artists} fallback={album.data?.AlbumArtist} style={{ flex: 1 }} />
           </View>
-          <Pressable
-            onPress={() => play()}
-            style={({ pressed }) => [styles.playBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
-            <Ionicons
-              name={isThisAlbum && playing ? 'pause' : 'play'}
-              size={28}
-              color="#000"
-              style={{ marginLeft: isThisAlbum && playing ? 0 : 3 }}
-            />
-          </Pressable>
-        </View>
+          <T variant="caption" style={{ marginTop: t.space.xs }}>
+            {['Album', album.data?.ProductionYear, list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : null]
+              .filter(Boolean)
+              .join(' · ')}
+          </T>
+        </Reveal>
+        <Reveal step={chips}>
+          <GenreChips genres={genres ?? []} />
+        </Reveal>
+        <Reveal
+          step={body}
+          placeholder={
+            <View style={styles.actions}>
+              <Bone style={{ width: 28, height: 28, borderRadius: 14 }} />
+              <Bone style={{ width: 56, height: 56, borderRadius: 28 }} />
+            </View>
+          }>
+          <View style={styles.actions}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
+              <Pressable
+                hitSlop={8}
+                onPress={() => toggleShuffleFor(isThisAlbum)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: shuffleOn }}
+                accessibilityLabel="Shuffle"
+                style={{ alignItems: 'center' }}>
+                <Ionicons name="shuffle" size={28} color={shuffleOn ? t.colors.accent : t.colors.textSecondary} />
+                {shuffleOn ? (
+                  <View style={{ position: 'absolute', bottom: -6, width: 4, height: 4, borderRadius: 2, backgroundColor: t.colors.accent }} />
+                ) : null}
+              </Pressable>
+              {album.data && list.length ? <DownloadButton kind="album" item={album.data} /> : null}
+            </View>
+            <Pressable
+              onPress={() => play()}
+              style={({ pressed }) => [styles.playBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
+              <Ionicons
+                name={isThisAlbum && playing ? 'pause' : 'play'}
+                size={28}
+                color="#000"
+                style={{ marginLeft: isThisAlbum && playing ? 0 : 3 }}
+              />
+            </Pressable>
+          </View>
+        </Reveal>
       </View>
-      {tracks.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
+      <Hold step={body}>
+        <TrackRowsSkeleton count={holdFor(album.data?.ChildCount)} />
+      </Hold>
       {tracks.error ? (
         <T variant="caption" style={{ padding: t.space.lg }}>
           Couldn’t load tracks: {tracks.error.message}
@@ -132,7 +173,7 @@ export default function AlbumScreen() {
         windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        data={list}
+        data={body.show === 'content' ? list : []}
         keyExtractor={(t) => t.Id}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: t.space.xl }}
@@ -140,7 +181,7 @@ export default function AlbumScreen() {
           const disc = item.ParentIndexNumber ?? 1;
           const newDisc = multiDisc && (index === 0 || (list[index - 1].ParentIndexNumber ?? 1) !== disc);
           return (
-            <>
+            <FadeRow entering={rowFade(index)}>
               {newDisc ? (
                 <View style={styles.disc}>
                   <Ionicons name="disc-outline" size={16} color={t.colors.textSecondary} />
@@ -157,7 +198,7 @@ export default function AlbumScreen() {
                 onPress={() => usePlayer.getState().playQueue(list, { startIndex: index, source })}
                 onLongPress={() => openMenu(item)}
               />
-            </>
+            </FadeRow>
           );
         }}
       />
@@ -193,6 +234,7 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: t.space.sm,
     marginTop: t.space.sm,
+    minHeight: 24,
   },
   actions: {
     flexDirection: 'row',
