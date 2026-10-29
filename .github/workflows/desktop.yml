@@ -3,8 +3,9 @@ name: Desktop
 # Rakki desktop installers: Windows (an NSIS installer with mpv inside) and Linux (an
 # AppImage, and a .deb that installs mpv with it). Run it by hand for test builds (the files
 # are on the run's page), or push a desktop-v* tag to release them: the release is published
-# and the rolling "desktop-updates" release gets a fresh latest.json, which is what Rakki's
-# Update button installs from. Installers are signed with the updater key (repository secret
+# with a latest.json and marked Latest, which is what Rakki's Update button installs from
+# (releases/latest/download/latest.json), and the older desktop releases are removed so the
+# Releases page shows just this one beside the iPhone build (their desktop-v* tags stay). Installers are signed with the updater key (repository secret
 # TAURI_SIGNING_PRIVATE_KEY; its public half is in tauri.conf.json), so only these builds install.
 on:
   workflow_dispatch:
@@ -128,17 +129,28 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Rakki desktop ${{ github.ref_name }}
-          make_latest: false
+          make_latest: true
           files: |
             dist/*.exe
             dist/*.AppImage
             dist/*.deb
-      - name: Point the Update button at it
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: desktop-updates
-          name: Rakki desktop updates
-          body: Where Rakki desktop's Update button looks for the newest version (latest.json). Not an install page; see the desktop-v* releases.
-          prerelease: true
-          make_latest: false
-          files: latest.json
+            latest.json
+      # Desktop 1.5.0 and older look for updates on the old "desktop-updates" release: keep it
+      # current while it exists. Delete that release once every install is past 1.5.0.
+      - name: Older installs' Update button
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view desktop-updates >/dev/null 2>&1; then
+            gh release upload desktop-updates latest.json --clobber
+          fi
+      # One desktop release on the page: drop the older ones, keeping their tags.
+      - name: Remove older desktop releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release list --limit 100 --json tagName --jq '.[].tagName' \
+            | grep '^desktop-v' | grep -vxF "$GITHUB_REF_NAME" \
+            | while read -r tag; do echo "Removing release $tag (tag kept)"; gh release delete "$tag" --yes; done

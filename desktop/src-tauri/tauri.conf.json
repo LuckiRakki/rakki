@@ -63,7 +63,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY5MzU5RTZBMzc1MDUwQTEKUldTaFVGQTNhcDQxK1VVeU00NVFXcjhxQ21WZTE3NW1KcXlONWhpTTlhYkwyR042TnQ5U3g0VloK",
       "endpoints": [
-        "https://github.com/LuckiRakki/rakki/releases/download/desktop-updates/latest.json"
+        "https://github.com/LuckiRakki/rakki/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

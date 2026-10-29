@@ -20,6 +20,7 @@ on:
       - '**/*.md'
       - '.github/workflows/ios.yml'
       - '.github/workflows/ios-release-page.yml'
+      - '.github/workflows/desktop.yml'
       - 'scripts/ios-release-notes.js'
       - 'server/**'
       - 'desktop/**'
