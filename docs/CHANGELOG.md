@@ -6,6 +6,45 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 1.6.0 (2026-10-29, next desktop build)
+- **Desktop: your data in one folder you can open.** Settings, lyric timings
+  (`lyrics-offsets.json`), tap-to-sync drafts (`lyrics-drafts/`), the queue and caches now live
+  as readable files in `%LOCALAPPDATA%\Rakki` (Rakki Dev: `Rakki Dev`) instead of WebView2's
+  browser storage. The first launch moves everything over, then empties the old storage. The
+  sign-in token is kept in Windows' Credential Manager, never in a file. Settings → About →
+  Your Data shows the folder.
+- **Desktop Discord status when paused** (Settings → Connections → Discord → When Paused): Show
+  Paused keeps the song up without the time bar and with a pause badge on the cover; Clear
+  removes it. A pause of over 15 minutes clears it either way.
+- **Desktop: pages load in order.** Home, album, playlist, Liked Songs, artist, the library
+  grids, Songs, Genres, Videos and the sidebar's playlists: faint placeholders hold each part's
+  place and fade in one after another, then the content, then the pictures. Album and artist
+  pictures fade in over their colour instead of popping in.
+- **Desktop: faster search,** the same way as the phone (below), and it waits for a short pause
+  in typing before asking the server. Quick results still update with every key.
+- **Desktop: smaller interlude dots** in the lyrics card beside the player.
+
+## 1.24.0 (2026-10-29)
+- **Screens load in order, top to bottom.** While a section loads, a faint placeholder the same
+  size holds its place; the placeholders fade in one after another, then the real content, and
+  pictures last, so nothing jumps around. Home (quick picks and every shelf), album, playlist,
+  Liked Songs, artist, genre, Discography / Singles and EPs, and every Library tab. Their
+  loading spinners are gone, Home remembers which shelves were empty last time so they don't
+  flash a placeholder, and a page opened from a list draws its name and cover right away. This
+  replaces Home's "panels rise into place" opening.
+- **Faster search.** Songs, albums and playlists come back in one request the way Jellyfin's own
+  apps ask, without the server counting every match first. A search you type over is cancelled,
+  typo matching is about 4x faster and runs while the server answers, matches already loaded
+  aren't downloaded again, and the phone waits 180 ms after typing instead of 220 ms.
+- **Less memory in the background.** The queue screen no longer redoes its whole list at every
+  song change while Rakki is in the background, a song change saves only which song is on (not
+  the whole queue again), and controlling another device in Connect only asks about that device
+  and stops asking in the background (it pulled 15-18 MB a minute). The player also stops
+  updating under the queue and lyrics screens.
+- Switching Library tabs keeps the tab row where you scrolled it instead of jumping back to the
+  first tab.
+- The performance log's description no longer says it's there to look into battery drain.
+
 ## Desktop 1.5.0 (2026-10-25, next desktop build; the lyrics source needs the Rakki plugin 0.4)
 - **Edit Artist** (right-click an artist, or More on their page), next to Edit Album: their
   name, sort name, genres and biography, and their pictures: the photo, the wide header behind
