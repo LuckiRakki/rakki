@@ -17,6 +17,7 @@ import { queryClient } from '~/queries';
 import { ImagePlus } from '~/ui/icons';
 import { closeDialog, showDialog, toast } from '~/ui/overlays';
 import { Artwork, showLocalPicture } from '~/ui/parts';
+import { kv } from '~/lib/kv';
 
 type Key = 'title' | 'artist' | 'album' | 'albumartist' | 'date' | 'genre' | 'tracknumber' | 'discnumber';
 
@@ -277,7 +278,7 @@ const ALBUM_LINKS = 'rakki.mrq.albumLinks';
 
 function albumLinks(): Record<string, string> {
   try {
-    return JSON.parse(localStorage.getItem(ALBUM_LINKS) ?? '{}') as Record<string, string>;
+    return JSON.parse(kv.getItem(ALBUM_LINKS) ?? '{}') as Record<string, string>;
   } catch {
     return {};
   }
@@ -285,7 +286,7 @@ function albumLinks(): Record<string, string> {
 
 function rememberAlbumLink(albumId: string, link: string) {
   try {
-    localStorage.setItem(ALBUM_LINKS, JSON.stringify({ ...albumLinks(), [albumId]: link }));
+    kv.setItem(ALBUM_LINKS, JSON.stringify({ ...albumLinks(), [albumId]: link }));
   } catch {
     // Only a convenience.
   }

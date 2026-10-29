@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { AwayImage as Image } from '@/ui/AwayImage';
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -83,6 +83,12 @@ export default function LibraryScreen() {
     setText('');
   };
 
+  // Each tab's list draws its own copy of this header, so switching tabs makes a new tab row:
+  // put it back where it was scrolled to instead of at the first tab.
+  const tabRow = useRef<ScrollView>(null);
+  const tabRowX = useRef(0);
+  const restoreTabRow = () => tabRow.current?.scrollTo({ x: tabRowX.current, animated: false });
+
   const chooseSort = () =>
     openOptions({
       title: 'Sort by',
@@ -104,8 +110,14 @@ export default function LibraryScreen() {
         )}
       </View>
       <ScrollView
+        ref={tabRow}
         horizontal
         showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={32}
+        onScroll={(e) => {
+          tabRowX.current = e.nativeEvent.contentOffset.x;
+        }}
+        onContentSizeChange={restoreTabRow}
         style={{ marginTop: t.space.md, flexGrow: 0 }}
         contentContainerStyle={{ gap: t.space.sm, paddingHorizontal: t.space.lg }}>
         {tabOrder.map((key) => (

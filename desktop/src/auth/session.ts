@@ -1,16 +1,18 @@
-// The signed-in Jellyfin account, kept between launches (localStorage, in the app's own data
-// folder). The client is Rakki's shared one (src/api/jellyfin.ts in the phone app).
+// The signed-in Jellyfin account, kept between launches (settings.json in Rakki's data folder,
+// its token in Windows' Credential Manager: lib/kv.ts). The client is Rakki's shared one
+// (src/api/jellyfin.ts in the phone app).
 import { create } from 'zustand';
 
 import { JellyfinClient, type Session } from '@/api/jellyfin';
 import { clearCache } from '~/lib/cache';
+import { kv } from '~/lib/kv';
 
 const SESSION_KEY = 'rakki.session';
 const DEVICE_KEY = 'rakki.deviceId';
 
 function readSession(): Session | null {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null') as Session | null;
+    return JSON.parse(kv.getItem(SESSION_KEY) ?? 'null') as Session | null;
   } catch {
     return null;
   }
@@ -18,10 +20,10 @@ function readSession(): Session | null {
 
 /** This install's id for Jellyfin (its Devices list), made once. */
 export function deviceId(): string {
-  let id = localStorage.getItem(DEVICE_KEY);
+  let id = kv.getItem(DEVICE_KEY);
   if (!id) {
     id = `rakki-desktop-${crypto.randomUUID()}`;
-    localStorage.setItem(DEVICE_KEY, id);
+    kv.setItem(DEVICE_KEY, id);
   }
   return id;
 }
@@ -39,12 +41,12 @@ export const useAuth = create<AuthState>((set) => ({
   session: initial,
   client: initial ? new JellyfinClient(initial) : null,
   signIn(session) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    kv.setItem(SESSION_KEY, JSON.stringify(session));
     set({ session, client: new JellyfinClient(session) });
   },
   signOut() {
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem('rakki.lastQueue');
+    kv.removeItem(SESSION_KEY);
+    kv.removeItem('rakki.lastQueue');
     clearCache();
     set({ session: null, client: null });
   },

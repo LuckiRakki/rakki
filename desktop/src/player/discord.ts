@@ -1,5 +1,7 @@
 // Discord's "Listening to ..." (src-tauri/src/discord.rs talks to the Discord app). On while
-// playing, with the song, artists, album and a time bar; cleared when paused or stopped.
+// playing, with the song, artists, album and a time bar. Paused, it either says so (the song
+// without the time bar, a pause badge on the cover) or clears, as Settings says; a pause of
+// more than 15 minutes clears it either way, and so does stopping.
 // Updates only when the song changes, playback pauses or resumes, or you seek (Discord allows
 // about five updates in 20 seconds).
 //
@@ -21,6 +23,7 @@ import { inTauri } from '~/lib/tauri';
 import { positionNow } from '@/remote/devices';
 import { useRemote } from '~/player/remote';
 import { currentPosition, usePlayer } from '~/player/store';
+import { kv } from '~/lib/kv';
 
 const KEY = 'rakki.discord';
 
@@ -35,6 +38,10 @@ export const RAKKI_GITHUB = 'https://github.com/LuckiRakki/rakki';
 /** The buttons' words, as your friends see them. */
 export const SONG_BUTTON_LABEL = 'Listen';
 export const GITHUB_BUTTON_LABEL = 'Rakki on GitHub';
+/** The pause badge on the cover while paused (public, so Discord's servers can fetch it). */
+const PAUSED_BADGE = 'https://raw.githubusercontent.com/LuckiRakki/rakki/main/docs/images/discord-paused.png';
+/** A pause longer than this clears the status even when it shows pauses. */
+const PAUSE_CLEARS_MS = 15 * 60_000;
 
 interface DiscordPrefs {
   enabled: boolean;
@@ -43,13 +50,15 @@ interface DiscordPrefs {
   songButton: boolean;
   /** A Rakki button with a link to Rakki's GitHub. */
   githubButton: boolean;
+  /** Paused: show the song as paused, or clear the status. */
+  whenPaused: 'show' | 'clear';
 }
 
-const DEFAULTS: DiscordPrefs = { enabled: false, appId: '', songButton: true, githubButton: true };
+const DEFAULTS: DiscordPrefs = { enabled: false, appId: '', songButton: true, githubButton: true, whenPaused: 'show' };
 
 function load(): DiscordPrefs {
   try {
-    return { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<DiscordPrefs>) };
+    return { ...DEFAULTS, ...(JSON.parse(kv.getItem(KEY) ?? '{}') as Partial<DiscordPrefs>) };
   } catch {
     return { ...DEFAULTS };
   }
@@ -61,9 +70,9 @@ export const useDiscord = create<DiscordPrefs & { error: string | null; connecte
   /** Discord answered the last update (it's running and took the application). */
   connected: false,
   set(p) {
-    const { enabled, appId, songButton, githubButton } = get();
-    const next = { enabled, appId, songButton, githubButton, ...p };
-    localStorage.setItem(KEY, JSON.stringify(next));
+    const { enabled, appId, songButton, githubButton, whenPaused } = get();
+    const next = { enabled, appId, songButton, githubButton, whenPaused, ...p };
+    kv.setItem(KEY, JSON.stringify(next));
     set({ ...next, error: null });
     void sync(true);
   },
@@ -139,6 +148,9 @@ const text = (s: string | undefined) => {
 };
 
 let last = '';
+/** When playback paused (0 while playing, and before anything has played since Rakki opened). */
+let pausedAt = 0;
+let played = false;
 
 async function sync(force = false) {
   if (!inTauri) return;
@@ -152,9 +164,12 @@ async function sync(force = false) {
   const item = p.queue[p.index];
   const appId = discordAppId(d.appId);
   const on = d.enabled;
-  const show = on && item && p.playing;
+  if (p.playing) [pausedAt, played] = [0, true];
+  else if (!pausedAt && played) pausedAt = Date.now();
+  const paused = !p.playing;
+  const show = on && item && (p.playing || (d.whenPaused === 'show' && pausedAt > 0 && Date.now() - pausedAt < PAUSE_CLEARS_MS));
   // What would be shown, to skip repeats (the time bar is checked separately below).
-  const what = show ? `${item.Id}|${Math.round(t?.item ? positionNow(t) : currentPosition(local))}` : 'off';
+  const what = show ? `${item.Id}|${paused ? 'paused' : Math.round(t?.item ? positionNow(t) : currentPosition(local))}` : 'off';
   if (!force && what === last) return;
   if (!on && last === 'off') return;
   last = what;
@@ -171,8 +186,13 @@ async function sync(force = false) {
       type: 2, // Listening
       details: text(item.Name),
       state: text(item.Artists?.join(', ') || item.AlbumArtist || 'Unknown artist'),
-      timestamps: p.duration > 0 ? { start: Math.round(start), end: Math.round(start + p.duration * 1000) } : { start: Math.round(start) },
-      assets: { large_image: cover ?? 'rakki', large_text: text(item.Album ?? 'Rakki') },
+      // Paused: no time bar (Discord would keep it running).
+      ...(paused ? {} : { timestamps: p.duration > 0 ? { start: Math.round(start), end: Math.round(start + p.duration * 1000) } : { start: Math.round(start) } }),
+      assets: {
+        large_image: cover ?? 'rakki',
+        large_text: text(item.Album ?? 'Rakki'),
+        ...(paused ? { small_image: PAUSED_BADGE, small_text: 'Paused' } : {}),
+      },
       ...(buttons.length ? { buttons } : {}),
     };
   }
@@ -203,9 +223,10 @@ export function startDiscord() {
     lastExpected = pos;
     if (changed || seeked) void sync(true);
   });
-  // Keep the expected position moving, and catch anything missed, every 15 seconds.
+  // Keep the expected position moving, and clear a long pause, every 15 seconds.
   setInterval(() => {
     lastExpected = currentPosition(usePlayer.getState());
+    if (pausedAt && last !== 'off' && Date.now() - pausedAt >= PAUSE_CLEARS_MS) void sync(true);
   }, 15_000);
   void sync(true);
 }

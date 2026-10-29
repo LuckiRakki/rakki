@@ -35,6 +35,8 @@ tauri-plugin-single-instance = "2"
 
 # Windows: WebView2's own settings (memory.rs); the same versions Tauri's webview already uses.
 [target.'cfg(windows)'.dependencies]
+# The sign-in token in Windows' Credential Manager (data.rs).
+keyring = { version = "3", features = ["windows-native"] }
 webview2-com = "0.39"
 windows-core = "0.62"
 # Recording mpv's sound for the visualizer (capture.rs): process loopback.

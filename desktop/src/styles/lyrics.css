@@ -47,6 +47,8 @@
 .spicy-view.card { height: 230px; flex: none; cursor: pointer; }
 .spicy-view.card .sl-root { --sl-font-size: 19px; --sl-line-gap: 4px; }
 .spicy-view.card .sl-scroller { padding: 40px 0 120px; }
+/* The interlude dots are sized for the big lyrics view (1.5rem); next to 19px lines they read as huge. */
+.spicy-view.card #spicy-lyrics-dots { font-size: 10px; margin: 6px 0; }
 .spicy-view.card .spicy-mount { -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 82%, transparent); }
 .spicy-view.card .spicy-credit { font-size: 11px; padding-top: 4px; }
 

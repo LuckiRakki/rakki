@@ -13,6 +13,7 @@ import { create } from 'zustand';
 import type { BaseItem } from '@/api/jellyfin';
 import { client } from '~/auth/session';
 import { inTauri } from '~/lib/tauri';
+import { kv } from '~/lib/kv';
 
 const KEY = 'rakki.mrq';
 
@@ -26,7 +27,7 @@ export function normalizeMrqUrl(input: string): string {
 
 function load(): { url: string } {
   try {
-    return { url: '', ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as { url?: string }) };
+    return { url: '', ...(JSON.parse(kv.getItem(KEY) ?? '{}') as { url?: string }) };
   } catch {
     return { url: '' };
   }
@@ -36,7 +37,7 @@ export const useMrq = create<{ url: string; setUrl(url: string): void }>((set) =
   ...load(),
   setUrl(url) {
     const next = normalizeMrqUrl(url);
-    localStorage.setItem(KEY, JSON.stringify({ url: next }));
+    kv.setItem(KEY, JSON.stringify({ url: next }));
     prefix = null;
     paths.clear();
     set({ url: next });

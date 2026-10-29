@@ -3,6 +3,7 @@
 // line graph with a faint mirror under it, audioMotion-analyzer's same settings), coloured by
 // the accent, so it follows Lucid; Feishin's white and grey is one of the colour choices.
 import { create } from 'zustand';
+import { kv } from '~/lib/kv';
 
 export type VisualizerStyle = 'line' | 'bars';
 export type VisualizerColors = 'mono' | 'accent' | 'prism' | 'rainbow';
@@ -86,7 +87,7 @@ const KEY = 'rakki.look';
 function saved(): Pick<LookState, 'visualizer' | 'background' | 'lyricsSize' | 'app'> {
   const fallback = { visualizer: FEISHIN, background: { motion: 'lively' as const, followMusic: true }, lyricsSize: LYRICS_SIZE.default, app: APP_LOOK };
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<LookState> & { v?: number };
+    const v = JSON.parse(kv.getItem(KEY) ?? '{}') as Partial<LookState> & { v?: number };
     const visualizer = { ...fallback.visualizer, ...v.visualizer };
     // Version 2: the line visualizer is one line (peak marks off).
     if ((v.v ?? 1) < 2) visualizer.peaks = false;
@@ -105,7 +106,7 @@ export const useLook = create<LookState>((set, get) => {
   const save = () => {
     const { visualizer, background, lyricsSize, app } = get();
     try {
-      localStorage.setItem(KEY, JSON.stringify({ v: 2, visualizer, background, lyricsSize, app }));
+      kv.setItem(KEY, JSON.stringify({ v: 2, visualizer, background, lyricsSize, app }));
     } catch {
       // Kept for this session only.
     }

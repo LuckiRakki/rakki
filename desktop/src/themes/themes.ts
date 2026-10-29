@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import { parseTheme, ThemeError, type Theme } from './format';
 import kawarpCss from './kawarp.css?raw';
 import lucidCss from './lucid.css?raw';
+import { kv } from '~/lib/kv';
 
 export const DEFAULT_THEME = 'default';
 
@@ -23,7 +24,7 @@ interface Saved {
 
 function load(): { active: string; imported: Theme[] } {
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Saved>;
+    const v = JSON.parse(kv.getItem(KEY) ?? '{}') as Partial<Saved>;
     const imported = (v.imported ?? []).flatMap((t) => {
       try {
         return [parseTheme(t.css, t.fileName, t.id)];
@@ -52,7 +53,7 @@ export const useThemes = create<ThemesState>((set, get) => {
     const { active, imported } = get();
     const data: Saved = { active, imported: imported.map((t) => ({ id: t.id, fileName: t.meta.name, css: t.css })) };
     try {
-      localStorage.setItem(KEY, JSON.stringify(data));
+      kv.setItem(KEY, JSON.stringify(data));
     } catch {
       // Full: kept for this session only.
     }

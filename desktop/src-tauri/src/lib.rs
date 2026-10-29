@@ -6,6 +6,7 @@
 
 mod autostart;
 mod capture;
+mod data;
 mod discord;
 mod media;
 mod memory;
@@ -203,6 +204,7 @@ pub fn run() {
         .setup(|app| {
             let handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("main window");
+            app.manage(data::Data::new(&handle));
             app.manage(Media::new(&handle, &window));
             setup_tray(&handle)?;
             // Started with the computer: stay in the tray (asleep); otherwise open the window.
@@ -252,7 +254,11 @@ pub fn run() {
             autostart_set,
             app_restart,
             mrq::mrq_request,
-            mrq::spotify_album
+            mrq::spotify_album,
+            data::data_load,
+            data::data_read,
+            data::data_write,
+            data::data_token
         ])
         .run(tauri::generate_context!())
         .expect("error while running Rakki");

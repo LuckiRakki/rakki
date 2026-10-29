@@ -12,6 +12,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import type { LyricLine } from '@/lyrics/types';
 import { queryClient } from '~/queries';
 import { PluginError, pluginRequest, pluginVersion, versionAtLeast } from '~/lib/plugin';
+import { kv } from '~/lib/kv';
 
 export { useEditsAvailable } from '~/lib/plugin';
 
@@ -234,7 +235,7 @@ const draftKey = (itemId: string) => `rakki.lyricsDraft.${itemId}`;
 /** The draft you were working on for this song, or null. */
 export function loadDraft(itemId: string): Draft | null {
   try {
-    const d = JSON.parse(localStorage.getItem(draftKey(itemId)) ?? 'null') as Draft | null;
+    const d = JSON.parse(kv.getItem(draftKey(itemId)) ?? 'null') as Draft | null;
     return d?.lines ? d : null;
   } catch {
     return null;
@@ -243,7 +244,7 @@ export function loadDraft(itemId: string): Draft | null {
 
 export function saveDraftLocal(d: Draft) {
   try {
-    localStorage.setItem(draftKey(d.itemId), JSON.stringify(d));
+    kv.setItem(draftKey(d.itemId), JSON.stringify(d));
   } catch {
     // Storage full: the draft lasts until Rakki closes.
   }
@@ -251,7 +252,7 @@ export function saveDraftLocal(d: Draft) {
 
 export function clearDraftLocal(itemId: string) {
   try {
-    localStorage.removeItem(draftKey(itemId));
+    kv.removeItem(draftKey(itemId));
   } catch {
     // Nothing kept.
   }

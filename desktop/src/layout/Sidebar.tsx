@@ -13,12 +13,13 @@ import { Blend, ChevronDown, ChevronUp, Disc3, Heart, Library, ListMusic, Monito
 import { openMenu } from '~/ui/overlays';
 import { Artwork } from '~/ui/parts';
 import { activateOnKey } from '~/ui/keys';
+import { kv } from '~/lib/kv';
 
 /** Your Library's buttons: folded away or not, and the ones you closed (remembered). */
 const useLibraryTabs = create<{ open: boolean; hidden: string[]; set(p: Partial<{ open: boolean; hidden: string[] }>): void }>((set, get) => {
   let saved: { open?: boolean; hidden?: string[] } = {};
   try {
-    saved = JSON.parse(localStorage.getItem('rakki.libraryTabs') ?? '{}');
+    saved = JSON.parse(kv.getItem('rakki.libraryTabs') ?? '{}');
   } catch {
     // Defaults.
   }
@@ -27,7 +28,7 @@ const useLibraryTabs = create<{ open: boolean; hidden: string[]; set(p: Partial<
     hidden: saved.hidden ?? [],
     set(p) {
       const next = { open: get().open, hidden: get().hidden, ...p };
-      localStorage.setItem('rakki.libraryTabs', JSON.stringify(next));
+      kv.setItem('rakki.libraryTabs', JSON.stringify(next));
       set(next);
     },
   };
