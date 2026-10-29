@@ -83,7 +83,7 @@ export default function SearchScreen() {
 
   // Search once typing pauses; clearing the box is instant.
   useEffect(() => {
-    const id = setTimeout(() => setTerm(text.trim()), text.trim() ? 220 : 0);
+    const id = setTimeout(() => setTerm(text.trim()), text.trim() ? 180 : 0);
     return () => clearTimeout(id);
   }, [text]);
 

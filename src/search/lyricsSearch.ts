@@ -25,15 +25,16 @@ export function useLyricsSearch(term: string) {
     enabled: !!client && !offline && looksLikeLyrics(text),
     staleTime: 10 * 60_000,
     retry: false,
-    queryFn: async (): Promise<LyricsMatch[]> => {
+    queryFn: async ({ signal }): Promise<LyricsMatch[]> => {
       let found: { Ready: boolean; Items: { ItemId: string; Line: string }[] };
       try {
-        found = await client!.searchLyrics(text, 12);
-      } catch {
+        found = await client!.searchLyrics(text, 12, signal);
+      } catch (e) {
+        if (signal.aborted) throw e; // typed over
         return []; // no plugin (or an older one) on this server
       }
       if (!found.Items.length) return [];
-      const tracks = await client!.getItemsByIds(found.Items.map((h) => h.ItemId));
+      const tracks = await client!.getItemsByIds(found.Items.map((h) => h.ItemId), signal);
       const byId = new Map(tracks.map((t) => [t.Id, t]));
       return found.Items.flatMap((h) => {
         const track = byId.get(h.ItemId);

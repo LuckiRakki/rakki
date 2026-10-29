@@ -2,6 +2,7 @@
 // the on-device fuzzy index (typos), then ranked together by one scoring function; the quick
 // search (search/quick.ts) shows until that answers.
 import { keepPreviousData, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 import type { BaseItem, GenreCount, JellyfinClient, SearchKind } from '@/api/jellyfin';
 import { useGenreCounts } from '@/api/queries';
@@ -84,22 +85,32 @@ function quickSearch(queryClient: QueryClient, term: string, filter: Filter, gen
   return hasAny(r) ? r : null;
 }
 
-async function runSearch(client: JellyfinClient, term: string, filter: Filter, genres: GenreCount[]): Promise<SearchResults> {
+async function runSearch(
+  client: JellyfinClient,
+  queryClient: QueryClient,
+  term: string,
+  filter: Filter,
+  signal: AbortSignal,
+): Promise<Omit<SearchResults, 'genres'>> {
   if (isOffline()) return offlineSearch(term, filter);
   const limit = filter === 'all' ? 20 : 100;
   const kinds = filter === 'all' ? ALL_KINDS : filter === 'genres' ? [] : [filter];
+  // The server is asked first, so the typo matching below happens while it answers. Index
+  // paging waits meanwhile, so a search isn't stuck behind a library download.
+  const asking = whileSearching(kinds.length ? client.search(term, limit, kinds, signal) : Promise.resolve(null));
   const index = useSearchIndex.getState().index;
   const fuzzy = index ? fuzzySearch(index, term, limit).filter((m) => kinds.includes(KIND_OF[m.entry.kind]!)) : [];
   const fuzzyScore = new Map(fuzzy.map((m) => [m.entry.id, m.score]));
-
-  // Index paging waits while this runs, so a search isn't stuck behind a library download.
-  const [server, fetched] = await whileSearching(
-    Promise.all([kinds.length ? client.search(term, limit, kinds) : null, client.getItemsByIds(fuzzy.map((m) => m.entry.id))]),
-  );
+  // Typo matches the pages have already loaded aren't asked for again (usually most of them).
+  const known = knownItems(queryClient).byId;
+  const onHand = fuzzy.flatMap((m) => known.get(m.entry.id) ?? []);
+  const missing = fuzzy.filter((m) => !known.has(m.entry.id)).map((m) => m.entry.id);
+  const [server, fetched] = await Promise.all([asking, whileSearching(client.getItemsByIds(missing, signal))]);
 
   const lists: Record<SearchKind, { item: BaseItem; score: number }[]> = { songs: [], artists: [], albums: [], playlists: [] };
   const seen = new Set<string>();
-  const all = [...fetched, ...(server ? [...server.songs, ...server.albums, ...server.artists, ...server.playlists] : [])];
+  // Fresh copies from the server first, so they win over what was on hand.
+  const all = [...(server ? [...server.songs, ...server.albums, ...server.artists, ...server.playlists] : []), ...fetched, ...onHand];
   for (const item of all) {
     const kind = KIND_OF[item.Type];
     if (!kind || !kinds.includes(kind) || seen.has(item.Id)) continue;
@@ -127,16 +138,29 @@ async function runSearch(client: JellyfinClient, term: string, filter: Filter, g
     artists: artists.map((x) => x.item),
     albums: albums.map((x) => x.item),
     playlists: playlists.map((x) => x.item),
-    genres: genreHits(genres, term, filter),
   };
+}
+
+/** `value`, once it has stopped changing for `ms`. */
+export function useSettled<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(value), Math.max(0, ms));
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return ms <= 0 ? value : settled;
 }
 
 /**
  * Results for a search. The full search asks the server; until it answers (or if it can't),
  * the quick search over what's already on hand shows, so a slow server or an index still
  * being built never leaves the page waiting. `quick` says which one is showing.
+ *
+ * `settleMs`: wait for typing to pause this long before asking the server (the quick search
+ * still follows every key). A search that's typed over is cancelled, so it doesn't hold up
+ * the next one.
  */
-export function useSearchResults(term: string, filter: Filter) {
+export function useSearchResults(term: string, filter: Filter, { settleMs = 0 }: { settleMs?: number } = {}) {
   const client = useAuth((s) => s.client);
   const version = useSearchIndex((s) => s.version);
   const genres = useGenreCounts().data;
@@ -144,24 +168,29 @@ export function useSearchResults(term: string, filter: Filter) {
   const rev = useDownloads((s) => s.rev);
   const queryClient = useQueryClient();
   const t = term.trim();
+  const asked = useSettled(t, t ? settleMs : 0);
   const full = useQuery({
-    queryKey: ['search', client?.session.userId, t.toLowerCase(), filter, version, genres?.length ?? 0, offline ? `offline:${rev}` : 'online'],
-    enabled: !!client && t.length > 0,
+    queryKey: ['search', client?.session.userId, asked.toLowerCase(), filter, version, offline ? `offline:${rev}` : 'online'],
+    enabled: !!client && asked.length > 0,
     networkMode: offline ? 'always' : 'online',
     placeholderData: keepPreviousData,
     staleTime: 60_000,
-    queryFn: () => runSearch(client!, t, filter, genres ?? []),
+    queryFn: ({ signal }) => runSearch(client!, queryClient, asked, filter, signal),
   });
-  const settled = !!full.data && !full.isPlaceholderData;
+  const current = asked.toLowerCase() === t.toLowerCase();
+  const settled = current && !!full.data && !full.isPlaceholderData;
   const quick = !settled && !offline && t.length > 0 ? quickSearch(queryClient, t, filter, genres ?? []) : null;
+  // Genres are matched on the device, so they follow the box without a server round trip.
+  const withGenres = (r: Omit<SearchResults, 'genres'>): SearchResults => ({ ...r, genres: genreHits(genres ?? [], t, filter) });
+  const data = settled ? withGenres(full.data!) : (quick ?? (full.data ? withGenres(full.data) : undefined));
   return {
-    data: settled ? full.data : (quick ?? full.data),
+    data,
     quick: !!quick,
     /** The full search is still asking the server. */
-    waiting: full.isFetching,
+    waiting: full.isFetching || !current,
     /** Showing the last search's answer while this one loads. */
-    isPlaceholderData: !settled && !quick && full.isPlaceholderData,
-    isLoading: !settled && !quick && full.isLoading,
+    isPlaceholderData: !settled && !quick && (full.isPlaceholderData || !current),
+    isLoading: !settled && !quick && (full.isLoading || (!current && !full.data)),
     error: settled || quick ? null : full.error,
   };
 }

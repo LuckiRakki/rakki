@@ -80,32 +80,55 @@ function allowance(len: number): number {
   return len <= 3 ? 0 : len <= 6 ? 1 : 2;
 }
 
+// Rows for distance(), reused: a search runs it for thousands of words, and fresh arrays for
+// each one were most of its cost on the phone.
+let rowA = new Int32Array(32);
+let rowB = new Int32Array(32);
+let rowC = new Int32Array(32);
+
 /** Optimal-string-alignment distance, or max + 1 as soon as it's clearly above `max`. */
 export function distance(a: string, b: string, max: number): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
   if (a === b) return 0;
   const n = b.length;
-  let prev2: number[] = [];
-  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  if (n >= rowA.length) {
+    rowA = new Int32Array(n * 2);
+    rowB = new Int32Array(n * 2);
+    rowC = new Int32Array(n * 2);
+  }
+  let prev2 = rowA;
+  let prev = rowB;
+  let cur = rowC;
+  for (let j = 0; j <= n; j++) prev[j] = j;
   for (let i = 1; i <= a.length; i++) {
-    const cur = [i];
+    const ai = a.charCodeAt(i - 1);
+    const aPrev = i > 1 ? a.charCodeAt(i - 2) : -1;
+    cur[0] = i;
     let rowMin = i;
     for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
-      cur.push(v);
+      const bj = b.charCodeAt(j - 1);
+      let v = prev[j - 1] + (ai === bj ? 0 : 1);
+      if (prev[j] + 1 < v) v = prev[j] + 1;
+      if (cur[j - 1] + 1 < v) v = cur[j - 1] + 1;
+      if (j > 1 && ai === b.charCodeAt(j - 2) && aPrev === bj && prev2[j - 2] + 1 < v) v = prev2[j - 2] + 1;
+      cur[j] = v;
       if (v < rowMin) rowMin = v;
     }
     if (rowMin > max) return max + 1;
+    const spare = prev2;
     prev2 = prev;
     prev = cur;
+    cur = spare;
   }
   return prev[n];
 }
 
-/** How well query word `q` matches word `w` (0 = not at all, 1 = exactly). */
-function wordScore(q: string, w: string, last: boolean): number {
+/**
+ * How well query word `q` matches word `w` (0 = not at all, 1 = exactly). `prefixes` keeps
+ * the still-typing comparisons for this query word: thousands of words start the same way,
+ * so each distinct start is compared once.
+ */
+function wordScore(q: string, w: string, last: boolean, prefixes: Map<string, number>): number {
   if (w === q) return 1;
   if (w.startsWith(q)) return last ? 0.9 : 0.7;
   const k = allowance(q.length);
@@ -114,11 +137,16 @@ function wordScore(q: string, w: string, last: boolean): number {
   if (d <= k) return 0.85 - 0.12 * d;
   if (last && w.length > q.length) {
     // Still typing: compare against the start of the word, give or take a letter.
-    const p = Math.min(
-      distance(q, w.slice(0, q.length), k),
-      distance(q, w.slice(0, q.length + 1), k),
-      q.length > 1 ? distance(q, w.slice(0, q.length - 1), k) : k + 1,
-    );
+    const start = w.slice(0, q.length + 1);
+    let p = prefixes.get(start);
+    if (p === undefined) {
+      p = Math.min(
+        distance(q, start.slice(0, q.length), k),
+        distance(q, start, k),
+        q.length > 1 ? distance(q, start.slice(0, q.length - 1), k) : k + 1,
+      );
+      prefixes.set(start, p);
+    }
     if (p <= k) return 0.7 - 0.12 * p;
   }
   return 0;
@@ -168,7 +196,8 @@ function scoreTable(vocab: string[], qWords: string[]): Float64Array[] {
   return qWords.map((q, i) => {
     const last = i === qWords.length - 1;
     const row = new Float64Array(vocab.length);
-    for (let v = 0; v < vocab.length; v++) row[v] = wordScore(q, vocab[v], last);
+    const prefixes = new Map<string, number>();
+    for (let v = 0; v < vocab.length; v++) row[v] = wordScore(q, vocab[v], last, prefixes);
     return row;
   });
 }

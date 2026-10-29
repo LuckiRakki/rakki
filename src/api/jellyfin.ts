@@ -201,12 +201,17 @@ async function request<T>(
   url: string,
   init: RequestInit & { deviceId: string; token?: string; timeoutMs?: number },
 ): Promise<T> {
-  const { deviceId, token, timeoutMs = 15000, headers, ...rest } = init;
+  const { deviceId, token, timeoutMs = 15000, headers, signal, ...rest } = init;
   // Offline: fail at once rather than wait out a timeout (signed-in requests only, so signing
   // in is never blocked).
   if (token && isOffline()) throw new JellyfinError("You're offline.");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // The caller gave up (a search that was typed over): drop the request so it stops holding
+  // one of the few connections to the server.
+  const cancel = () => controller.abort();
+  signal?.addEventListener('abort', cancel);
+  if (signal?.aborted) controller.abort();
   let res: Response;
   try {
     res = await fetch(url, {
@@ -220,6 +225,7 @@ async function request<T>(
       },
     });
   } catch (e) {
+    if (signal?.aborted) throw new JellyfinError('Cancelled.');
     const aborted = e instanceof Error && e.name === 'AbortError';
     if (token) reportConnectionFailure();
     throw new JellyfinError(
@@ -229,6 +235,7 @@ async function request<T>(
     );
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
   }
   if (token) reportConnectionSuccess();
   if (!res.ok) {
@@ -338,9 +345,9 @@ const ALBUM_FIELDS = 'DateCreated,ChildCount';
 export class JellyfinClient {
   constructor(readonly session: Session) {}
 
-  private get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}) {
+  private get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}, signal?: AbortSignal) {
     const { serverUrl, deviceId, token } = this.session;
-    return request<T>(`${serverUrl}${path}${query(params)}`, { deviceId, token });
+    return request<T>(`${serverUrl}${path}${query(params)}`, { deviceId, token, signal });
   }
 
   private send<T = void>(
@@ -446,11 +453,12 @@ export class JellyfinClient {
   }
 
   /** Spicy Lyrics plugin: songs whose lyrics contain the words (Ready=false while it indexes). */
-  searchLyrics(text: string, limit = 20) {
-    return this.get<{ Ready: boolean; Items: { ItemId: string; Line: string }[] }>(`/SpicyLyrics/Search`, {
-      query: text,
-      limit,
-    });
+  searchLyrics(text: string, limit = 20, signal?: AbortSignal) {
+    return this.get<{ Ready: boolean; Items: { ItemId: string; Line: string }[] }>(
+      `/SpicyLyrics/Search`,
+      { query: text, limit },
+      signal,
+    );
   }
 
   /** Spicy Lyrics plugin: move a song's .ttml sidecar by `offsetMs` (positive = later). */
@@ -952,33 +960,59 @@ export class JellyfinClient {
   }
 
   // ---- Search (Jellyfin matches substrings of names; typos are handled on the device) ----
+  // Asked the way Jellyfin's own apps ask: songs, albums and playlists in one request (one
+  // round trip, one of the few connections to the server), without a total count (Jellyfin
+  // otherwise counts every match in a second query) and with one picture per item.
 
-  async search(term: string, limit = 20, kinds: SearchKind[] = ['songs', 'albums', 'artists', 'playlists']) {
+  async search(term: string, limit = 20, kinds: SearchKind[] = ['songs', 'albums', 'artists', 'playlists'], signal?: AbortSignal) {
     const want = (k: SearchKind) => kinds.includes(k);
     const none = Promise.resolve({ Items: [] as BaseItem[] });
-    const [songs, albums, playlists, artists] = await Promise.all([
-      want('songs') ? this.items({ searchTerm: term, IncludeItemTypes: 'Audio', Limit: limit }) : none,
-      want('albums') ? this.items({ searchTerm: term, IncludeItemTypes: 'MusicAlbum', Limit: limit }) : none,
-      want('playlists')
-        ? this.items({ searchTerm: term, IncludeItemTypes: 'Playlist', Limit: limit, Fields: 'ChildCount' })
+    const types = [want('songs') && 'Audio', want('albums') && 'MusicAlbum', want('playlists') && 'Playlist'].filter(Boolean);
+    const lean = { EnableTotalRecordCount: false, EnableImageTypes: 'Primary', ImageTypeLimit: 1 };
+    const [items, artists] = await Promise.all([
+      types.length
+        ? this.get<ItemsResult>(
+            '/Items',
+            {
+              userId: this.session.userId,
+              Recursive: true,
+              searchTerm: term,
+              IncludeItemTypes: types.join(','),
+              // Best matches first (exact, then starts with, then contains), so each kind's
+              // best few fit even when one kind has far more matches.
+              Limit: limit * types.length,
+              Fields: 'ChildCount',
+              ...lean,
+            },
+            signal,
+          )
         : none,
       want('artists')
-        ? this.get<ItemsResult>('/Artists', {
-            userId: this.session.userId,
-            searchTerm: term,
-            Limit: limit,
-            EnableImageTypes: 'Primary',
-            ImageTypeLimit: 1,
-          })
+        ? this.get<ItemsResult>('/Artists', { userId: this.session.userId, searchTerm: term, Limit: limit, ...lean }, signal)
         : none,
     ]);
-    return { songs: songs.Items, albums: albums.Items, playlists: playlists.Items, artists: artists.Items };
+    const of = (type: string) => items.Items.filter((i) => i.Type === type);
+    return { songs: of('Audio'), albums: of('MusicAlbum'), playlists: of('Playlist'), artists: artists.Items };
   }
 
   /** Full items for a list of ids (any type), in no particular order. Missing ids are skipped. */
-  async getItemsByIds(ids: string[]): Promise<BaseItem[]> {
+  async getItemsByIds(ids: string[], signal?: AbortSignal): Promise<BaseItem[]> {
     if (ids.length === 0) return [];
-    return (await this.items({ Ids: ids.join(','), Fields: 'ChildCount' })).Items;
+    return (
+      await this.get<ItemsResult>(
+        '/Items',
+        {
+          userId: this.session.userId,
+          Recursive: true,
+          Ids: ids.join(','),
+          Fields: 'ChildCount',
+          EnableImageTypes: 'Primary,Backdrop',
+          ImageTypeLimit: 1,
+          EnableTotalRecordCount: false,
+        },
+        signal,
+      )
+    ).Items;
   }
 
   /**

@@ -36,10 +36,21 @@ export function entryOf(item: BaseItem): Entry {
 }
 
 let known: { at: number; byId: Map<string, BaseItem>; index: FuzzyIndex } | null = null;
+// Whether anything loaded since the last collection. Walking every cached page and indexing
+// it is a noticeable pause on the phone, so it's only redone when there's something new.
+let changed = true;
+const watching = new WeakSet<QueryClient>();
 
 /** What's on hand, by id, and its fuzzy index (rebuilt every few seconds at most). */
 export function knownItems(queryClient: QueryClient): { byId: Map<string, BaseItem>; index: FuzzyIndex } {
-  if (known && Date.now() - known.at < FRESH_MS) return known;
+  if (!watching.has(queryClient)) {
+    watching.add(queryClient);
+    queryClient.getQueryCache().subscribe((e) => {
+      if (e.type === 'updated' && (e.action.type === 'success' || e.action.type === 'setState')) changed = true;
+    });
+  }
+  if (known && (!changed || Date.now() - known.at < FRESH_MS)) return known;
+  changed = false;
   const byId = new Map<string, BaseItem>();
   for (const item of [...downloadedTracks(), ...downloadedAlbums(), ...downloadedArtists(), ...downloadedPlaylists()]) byId.set(item.Id, item);
   for (const q of queryClient.getQueryCache().getAll()) collect(q.state.data, byId, 0);
