@@ -3,8 +3,11 @@
 // player and the player screen show that device's song ("Listening on Rakki Desktop") and their
 // buttons command it: play/pause, skip, seek, volume. Songs picked anywhere in the app play there too,
 // and Play Next / Add to Queue add to its queue (player/store.ts routeToRemote). It's asked how it's doing every two seconds while
-// picked. Picking This Phone (or the device going away) brings the player back to this phone.
+// picked and Rakki is on screen (not in the background: each answer is the device's report with
+// its queue, close to a megabyte, and 15-18 MB came in within a minute, perf log 10-26).
+// Picking This Phone (or the device going away) brings the player back to this phone.
 import { useEffect, useReducer } from 'react';
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -53,7 +56,7 @@ async function refresh() {
   const c = useAuth.getState().client;
   const t = useRemoteTarget.getState().target;
   if (!c || !t) return;
-  const fresh = await deviceNow(c, t.sessionId).catch(() => undefined);
+  const fresh = await deviceNow(c, t).catch(() => undefined);
   if (useRemoteTarget.getState().target?.sessionId !== t.sessionId) return;
   if (fresh === null) {
     showToast(`${t.name} went away. Back on This Phone.`);
@@ -65,16 +68,25 @@ async function refresh() {
   }
 }
 
+function stopPolling() {
+  if (poll) clearInterval(poll);
+  poll = null;
+}
+
+function startPolling() {
+  if (poll || !useRemoteTarget.getState().target || AppState.currentState !== 'active') return;
+  poll = setInterval(() => void refresh(), POLL_MS);
+}
+
 export const useRemoteTarget = create<RemoteTargetState>((set, get) => ({
   target: null,
   setTarget(d) {
-    if (poll) clearInterval(poll);
-    poll = null;
+    stopPolling();
     lastReport = '';
     volumeHeldUntil = 0;
     set({ target: d });
     routeToRemote(d ? route : null);
-    if (d) poll = setInterval(() => void refresh(), POLL_MS);
+    startPolling();
   },
   command(cmd) {
     const c = useAuth.getState().client;
@@ -124,6 +136,14 @@ const route = {
     if (c && t) void queueOn(c, t, items, where).catch(() => showToast(`Couldn’t reach ${t.name}`));
   },
 };
+
+// Back on screen: catch up at once, then every two seconds again.
+AppState.addEventListener('change', (state) => {
+  if (state !== 'active') return stopPolling();
+  if (!useRemoteTarget.getState().target) return;
+  void refresh();
+  startPolling();
+});
 
 // Playing something on this phone makes it the player again.
 usePlayer.subscribe((s, prev) => {

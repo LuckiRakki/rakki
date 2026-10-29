@@ -50,7 +50,7 @@ export async function moveTo(client: JellyfinClient, d: RakkiDevice) {
     if (!ok) return showToast(`${d.name} didn’t start. Open Rakki there and try again.`);
     if (usePlayer.getState().playing) usePlayer.getState().toggle();
     // This phone becomes its remote: the player shows that device's song and controls it.
-    const fresh = await deviceNow(client, d.sessionId).catch(() => null);
+    const fresh = await deviceNow(client, d).catch(() => null);
     useRemoteTarget.getState().setTarget(fresh ?? d);
     showToast(`Playing on ${d.name}`);
   } catch {

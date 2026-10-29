@@ -252,6 +252,22 @@ async function request<T>(
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+type MediaSource = NonNullable<BaseItem['MediaSources']>[number];
+type MediaStream = NonNullable<MediaSource['MediaStreams']>[number] & { SampleRate?: number; BitDepth?: number; BitRate?: number };
+
+/** A music video's file: its container and its picture and sound streams, nothing else. */
+function slimSource({ Id, Container, Bitrate, MediaStreams }: MediaSource): MediaSource {
+  const streams = (MediaStreams ?? []) as MediaStream[];
+  return {
+    Id,
+    Container,
+    Bitrate,
+    MediaStreams: streams
+      .filter((m) => m.Type === 'Video' || m.Type === 'Audio')
+      .map(({ Type, Codec, Width, Height, SampleRate, BitDepth, BitRate }) => ({ Type, Codec, Width, Height, SampleRate, BitDepth, BitRate })),
+  };
+}
+
 function query(params: Record<string, string | number | boolean | undefined>): string {
   const q = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== '')
@@ -383,8 +399,8 @@ export class JellyfinClient {
    * for an administrator). Not ControllableByUserId: Jellyfin then leaves out every app that
    * doesn't accept remote control.
    */
-  getSessions(withinSeconds = 960) {
-    return this.get<SessionInfo[]>('/Sessions', { ActiveWithinSeconds: withinSeconds });
+  getSessions(withinSeconds = 960, deviceId?: string) {
+    return this.get<SessionInfo[]>('/Sessions', { ActiveWithinSeconds: withinSeconds, DeviceId: deviceId });
   }
 
   /** Pause, resume, skip, seek or stop another app (remote/devices.ts). */
@@ -720,7 +736,9 @@ export class JellyfinClient {
   /** Every music video (the Music Videos library), with what's needed to play them. */
   async getMusicVideos(): Promise<BaseItem[]> {
     const r = await this.items({ IncludeItemTypes: 'MusicVideo', Fields: 'MediaSources,DateCreated', SortBy: 'SortName', Limit: 2000 });
-    return r.Items;
+    // The list stays loaded for as long as Rakki runs: of each file's details only what playing
+    // and the badges use is kept (the server sends every stream with every detail).
+    return r.Items.map((v) => ({ ...v, MediaSources: v.MediaSources?.slice(0, 1).map(slimSource) }));
   }
 
   /**

@@ -2,7 +2,7 @@
 // isn't: in the background React Native runs requestAnimationFrame as setTimeout(0), with no
 // frame pacing, so a frame loop becomes a busy loop, and iOS kills an app that keeps the CPU
 // busy in the background for about a minute (that's what stopped the music when locked).
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 function subscribe(onChange: () => void) {
@@ -27,4 +27,18 @@ const isBackground = () => AppState.currentState === 'background';
  */
 export function useInBackground(): boolean {
   return useSyncExternalStore(subscribe, isBackground, () => false);
+}
+
+/**
+ * `value`, held at what it was when Rakki went to the background until it comes back. For
+ * screens that redo a lot of work on every change: nobody sees them in the background, and
+ * the queue screen, re-laying out its whole list at each song change there, grew by about
+ * 24 MB a song (perf log 10-27). Back on screen it catches up at once.
+ */
+export function useHeldWhileAway<T>(value: T): T {
+  const away = useInBackground();
+  const [held, setHeld] = useState<{ value: T } | null>(null);
+  if (away && !held) setHeld({ value });
+  if (!away && held) setHeld(null);
+  return held ? held.value : value;
 }

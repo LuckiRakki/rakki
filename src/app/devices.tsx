@@ -5,6 +5,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/auth/store';
+import { useAppActive } from '@/lib/appActive';
 import { withAlpha } from '@/lib/color';
 import { useRemoteTarget } from '@/player/remoteTarget';
 import { usePlayer } from '@/player/store';
@@ -38,8 +39,10 @@ export default function DevicesScreen() {
   const playingHere = usePlayer((s) => s.playing);
   const target = useRemoteTarget((s) => s.target);
 
+  // Checked every few seconds while on screen only (each answer can be a megabyte or more).
+  const active = useAppActive();
   useEffect(() => {
-    if (!client) return;
+    if (!client || !active) return;
     let alive = true;
     const load = () =>
       otherRakkiDevices(client)
@@ -51,7 +54,7 @@ export default function DevicesScreen() {
       alive = false;
       clearInterval(id);
     };
-  }, [client]);
+  }, [client, active]);
 
   // Where the music is: this phone while it plays (or has nothing elsewhere to defer to), else
   // the device that's playing.

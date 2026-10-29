@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -191,7 +191,9 @@ function LocalPlayer() {
   const shuffle = usePlayer((s) => s.shuffle);
   const repeat = usePlayer((s) => s.repeat);
   const error = usePlayer((s) => s.error);
-  const { position, duration } = useProgress(250);
+  // Only while it's the screen on top (the queue and the lyrics open over it).
+  const focused = useIsFocused();
+  const { position, duration } = useProgress(250, focused);
   const sleepLabel = useSleepLabel();
   const videos = useMusicVideos();
   const video = track && videos.data ? findVideoFor(track, videos.data) : undefined;

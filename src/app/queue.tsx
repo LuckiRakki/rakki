@@ -5,7 +5,9 @@ import { Pressable, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
 import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useShallow } from 'zustand/react/shallow';
 
+import { useHeldWhileAway } from '@/lib/appActive';
 import { thud } from '@/lib/haptics';
 import { artistLine } from '@/lib/items';
 import { queueRows, reorderedUpcoming } from '@/player/queueRows';
@@ -23,10 +25,11 @@ export default function QueueScreen() {
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const queue = usePlayer((s) => s.queue);
-  const index = usePlayer((s) => s.index);
-  const source = usePlayer((s) => s.source);
-  const playing = usePlayer((s) => s.playing);
+  // Held still in the background (lib/appActive.ts): each song change there re-laid out the
+  // whole list for nobody, and Rakki's memory grew with every one.
+  const { queue, index, source, playing } = useHeldWhileAway(
+    usePlayer(useShallow((s) => ({ queue: s.queue, index: s.index, source: s.source, playing: s.playing }))),
+  );
 
   const current = queue[index];
   // Songs already played in this queue: one row until opened, so Now playing stays in view.
