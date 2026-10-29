@@ -11,6 +11,8 @@ import { playMusicVideo } from '@/video/musicVideos';
 
 const WIDTH = 240;
 const HEIGHT = Math.round((WIDTH * 9) / 16);
+/** The size of a video tile (the Home placeholder matches it). */
+export const VIDEO_TILE = { width: WIDTH, height: HEIGHT };
 
 /** A row of music videos (16:9 thumbnails). Renders nothing when there are none. */
 export function VideoShelf({ title, videos, onShowAll }: { title: string; videos: BaseItem[]; onShowAll?: () => void }) {

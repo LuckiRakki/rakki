@@ -1,4 +1,6 @@
 // An album, a playlist (or Daily Mix), and Liked Songs: a header, the action bar and the songs.
+// They load in order (ui/reveal.tsx): the header at once from the list it was opened from (or
+// placeholders), then the songs into rows that were holding their place, then what's below.
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
@@ -12,7 +14,11 @@ import { go } from '~/nav';
 import { useAlbumTracks, useArtistAlbums, useItem, useLiked, usePlaylistTracks } from '~/queries';
 import { ArrowDownAZ, Heart, ImagePlus, ListMusic } from '~/ui/icons';
 import { ActionBar, Artwork, findIn, LibraryHeader, Shelf, totalLength, TrackTable } from '~/ui/parts';
+import { partOf, Reveal, useReveal } from '~/ui/reveal';
 import { Empty, QueryState } from '~/ui/states';
+
+/** Placeholder rows for a list of `count` songs (as many as fit on screen). */
+const holdFor = (count?: number) => Math.max(1, Math.min(count || 10, 14));
 
 /** Worldwide plays for an album's songs from Last.fm (when there's a key), a few at a time. */
 function useAlbumLastfmPlays(album: BaseItem | undefined, tracks: BaseItem[]) {
@@ -43,14 +49,22 @@ export function Album({ id }: { id: string }) {
   const tracksQ = useAlbumTracks(id);
   const tracks = tracksQ.data ?? [];
   const lastfm = useAlbumLastfmPlays(item, tracks).data;
-  const more = useArtistAlbums(item?.AlbumArtists?.[0]?.Id ?? '').data?.filter((a) => a.Id !== id);
+  const artistId = item?.AlbumArtists?.[0]?.Id ?? '';
+  const more = useArtistAlbums(artistId, !!artistId).data?.filter((a) => a.Id !== id);
   const [find, setFind] = useState('');
   const shown = useMemo(() => findIn(tracks, find), [tracks, find]);
   const discs = new Set(tracks.map((t) => t.ParentIndexNumber ?? 1)).size;
+  // The header, the songs, then the notes and the artist's other albums at the bottom.
+  const [header, songs, below] = useReveal([
+    partOf(item, { failed: itemQ.isError }),
+    partOf(tracksQ.data, { failed: tracksQ.isError }),
+    item?.Overview || more?.length ? 'ready' : more === undefined && !itemQ.isError ? 'waiting' : 'empty',
+  ]);
   if (itemQ.isError && !item) return <div className="page"><QueryState q={itemQ} what="this album" /></div>;
   return (
     <div>
       <LibraryHeader
+        step={header}
         item={item}
         kind={item ? releaseKind(item) : 'Album'}
         meta={
@@ -80,17 +94,25 @@ export function Album({ id }: { id: string }) {
         onFind={setFind}
       />
       <div className="page-states">
-        <QueryState q={tracksQ} what="the songs" />
+        <QueryState q={tracksQ} what="the songs" placeholders />
       </div>
-      <TrackTable tracks={shown} album={false} art={false} trackNumbers discs plays={!!lastfm} playsOf={lastfm ? (t) => lastfm[t.Id] : undefined} />
-      <div className="page">
-        {item?.Overview ? <p className="overview">{item.Overview}</p> : null}
-        <Shelf
-          title={`More by ${item?.AlbumArtist ?? 'this artist'}`}
-          items={more}
-          onShowAll={item?.AlbumArtists?.[0] ? () => go({ name: 'artist', id: item.AlbumArtists![0].Id }) : undefined}
-        />
-      </div>
+      <TrackTable
+        tracks={shown}
+        step={songs}
+        holdRows={holdFor(item?.ChildCount)}
+        album={false}
+        art={false}
+        trackNumbers
+        discs
+        plays={!!lastfm}
+        playsOf={lastfm ? (t) => lastfm[t.Id] : undefined}
+      />
+      <Reveal step={below}>
+        <div className="page">
+          {item?.Overview ? <p className="overview">{item.Overview}</p> : null}
+          <Shelf title={`More by ${item?.AlbumArtist ?? 'this artist'}`} items={more} onShowAll={artistId ? () => go({ name: 'artist', id: artistId }) : undefined} />
+        </div>
+      </Reveal>
     </div>
   );
 }
@@ -114,10 +136,12 @@ export function Playlist({ id }: { id: string }) {
     return found;
   }, [tracks, find, sort]);
   const mix = item ? isMix(item) : false;
+  const [header, songs] = useReveal([partOf(item, { failed: itemQ.isError }), partOf(tracksQ.data, { failed: tracksQ.isError })]);
   if (itemQ.isError && !item) return <div className="page"><QueryState q={itemQ} what="this playlist" /></div>;
   return (
     <div>
       <LibraryHeader
+        step={header}
         item={item}
         kind={mix ? 'Daily Mix' : 'Playlist'}
         art={
@@ -160,6 +184,7 @@ export function Playlist({ id }: { id: string }) {
         <QueryState
           q={tracksQ}
           what="the songs"
+          placeholders
           empty={
             <Empty
               icon={ListMusic}
@@ -172,6 +197,8 @@ export function Playlist({ id }: { id: string }) {
       </div>
       <TrackTable
         tracks={shown}
+        step={songs}
+        holdRows={holdFor(item?.ChildCount)}
         menu={mix ? undefined : { playlistId: id }}
         onMove={!mix && sort === 'custom' && !find ? (from, to) => void movePlaylistSong(id, from, to) : undefined}
       />
@@ -184,6 +211,7 @@ export function Liked() {
   const tracks = q.data ?? [];
   const [find, setFind] = useState('');
   const shown = useMemo(() => findIn(tracks, find), [tracks, find]);
+  const [songs] = useReveal([partOf(q.data, { failed: q.isError })]);
   return (
     <div>
       <LibraryHeader
@@ -202,6 +230,7 @@ export function Liked() {
         <QueryState
           q={q}
           what="your liked songs"
+          placeholders
           empty={
             <Empty
               icon={Heart}
@@ -212,7 +241,7 @@ export function Liked() {
           }
         />
       </div>
-      {tracks.length ? <TrackTable tracks={shown} /> : null}
+      {tracks.length || songs.show === 'placeholder' ? <TrackTable tracks={shown} step={songs} holdRows={12} /> : null}
     </div>
   );
 }

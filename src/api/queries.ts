@@ -1,6 +1,7 @@
 import { keepPreviousData, QueryClient, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { cachedItem } from '@/api/cachedItem';
 import type { BaseItem, ItemsResult, JellyfinClient } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
 import {
@@ -51,7 +52,7 @@ function useModeKey(): string {
 function useUserQuery<T>(
   key: unknown[],
   fn: (client: JellyfinClient) => Promise<T>,
-  opts: { enabled?: boolean; offline?: () => T; staleTime?: number } = {},
+  opts: { enabled?: boolean; offline?: () => T; staleTime?: number; placeholder?: T extends Function ? never : T } = {},
 ) {
   const client = useClient();
   const mode = useModeKey();
@@ -62,6 +63,7 @@ function useUserQuery<T>(
     staleTime: offline ? Infinity : opts.staleTime,
     networkMode: offline ? 'always' : 'online',
     queryFn: () => (offline ? Promise.resolve(opts.offline!()) : fn(client!)),
+    placeholderData: opts.placeholder,
   });
 }
 
@@ -182,12 +184,18 @@ export const useRecentlyAdded = () =>
 export const useRecentlyPlayed = () =>
   useUserQuery(['recentlyPlayed'], (c) => c.getRecentlyPlayedAlbums(14), { offline: downloadedAlbums });
 
-/** Any item's page header. Offline: null when none of it is on the phone. */
-export const useItem = (id: string | undefined) =>
-  useUserQuery(['item', id], (c): Promise<BaseItem | null> => c.getItem(id!), {
+/**
+ * Any item's page header. Offline: null when none of it is on the phone. Until the full item is
+ * here, the page draws it as the list it was opened from has it (api/cachedItem.ts).
+ */
+export function useItem(id: string | undefined) {
+  const seen = useMemo(() => cachedItem(queryClient, id), [id]);
+  return useUserQuery(['item', id], (c): Promise<BaseItem | null> => c.getItem(id!), {
     enabled: !!id,
     offline: () => offlineItem(id!),
+    placeholder: seen,
   });
+}
 
 /**
  * Pictures for an artist that has none (or no backdrop): Jellyfin can have the same artist

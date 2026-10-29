@@ -6,12 +6,14 @@ import Animated, { useSharedValue, type SharedValue } from 'react-native-reanima
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCoverStyle } from '@/ui/CollapsingHeader';
+import { barWidth, Line } from '@/ui/Reveal';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 /**
  * The top of a playlist / Liked Songs / album page: big art on an art-coloured gradient,
- * title, details, and the Shuffle / Play (and optional "…") buttons.
+ * title, details, and the Shuffle / Play (and optional "…") buttons. A title or line that's
+ * still loading (null) holds its place with a placeholder, so nothing under it moves when it comes.
  */
 export function CollectionHeader({
   art,
@@ -29,8 +31,10 @@ export function CollectionHeader({
 }: {
   art: ReactNode;
   tint: string;
-  title: string;
-  lines: string[];
+  /** null: still loading. */
+  title: string | null;
+  /** Lines under the title ('': none; null: still loading). */
+  lines: (string | null)[];
   playing: boolean;
   onPlay: () => void;
   /** The shuffle toggle (a dot under it while on); Play follows it. */
@@ -54,14 +58,26 @@ export function CollectionHeader({
         <Animated.View style={[styles.artShadow, cover]}>{art}</Animated.View>
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>
-        <T variant="title" numberOfLines={2}>
-          {title}
-        </T>
-        {lines.filter(Boolean).map((line, i) => (
-          <T key={i} variant={i === 0 ? 'bodyStrong' : 'caption'} style={{ marginTop: i === 0 ? t.space.sm : 2 }}>
-            {line}
+        {title === null ? (
+          <Line variant="title" width="58%" />
+        ) : (
+          <T variant="title" numberOfLines={2}>
+            {title}
           </T>
-        ))}
+        )}
+        {lines
+          .filter((line) => line !== '')
+          .map((line, i) => {
+            const variant = i === 0 ? 'bodyStrong' : 'caption';
+            const style = { marginTop: i === 0 ? t.space.sm : 2 };
+            return line === null ? (
+              <Line key={i} variant={variant} width={barWidth(i + 2, 20)} style={style} />
+            ) : (
+              <T key={i} variant={variant} style={style}>
+                {line}
+              </T>
+            );
+          })}
         <View style={styles.actions}>
           <Pressable
             hitSlop={8}

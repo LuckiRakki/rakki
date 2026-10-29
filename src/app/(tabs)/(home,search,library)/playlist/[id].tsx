@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -22,6 +22,7 @@ import { openMenu, openOptions } from '@/ui/overlays';
 import { readPref, writePref } from '@/lib/prefs';
 import { seededShuffle } from '@/library/view';
 import { PlaylistEditor } from '@/ui/PlaylistEditor';
+import { Bone, FadeRow, Hold, Line, partOf, Reveal, TrackRowsSkeleton, useReveal, useRowFade } from '@/ui/Reveal';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
@@ -96,6 +97,12 @@ export default function PlaylistScreen() {
   // playing a found song still plays the whole (sorted) playlist from there.
   const ordered = sortPlaylist(list, sortKey, seed);
   const shown = find.trim() ? ordered.filter((x) => matchesSearch(x, find.trim())) : ordered;
+  // The header (there at once when a list had the playlist), then Find and the songs. While the
+  // songs load, placeholders of them (as many as it has, up to a screenful) hold their place.
+  const known = p?.ChildCount;
+  const [body] = useReveal([partOf(items.data, { failed: !!items.error })]);
+  const rowFade = useRowFade(body);
+  const songsLine = items.data ? (list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : '') : known === 0 ? '' : null;
   const chooseSort = () =>
     openOptions({
       title: 'Sort playlist',
@@ -125,13 +132,10 @@ export default function PlaylistScreen() {
   const header = (
     <View>
       <CollectionHeader
-        art={<Artwork item={p} size={232} />}
+        art={p ? <Artwork item={p} size={232} /> : <Bone style={{ width: 232, height: 232, borderRadius: t.radius.art }} />}
         tint={artColor(p && client?.blurhash(p))}
-        title={p ? displayName(p) : ' '}
-        lines={[
-          'Playlist',
-          list.length ? `${songCount(list.length)}, ${formatLength(seconds)}` : '',
-        ]}
+        title={p ? displayName(p) : null}
+        lines={['Playlist', songsLine]}
         playing={isThis && playing}
         onPlay={() => {
           if (isThis) return usePlayer.getState().toggle();
@@ -144,8 +148,17 @@ export default function PlaylistScreen() {
         scrollY={y}
         download={p && list.length ? <DownloadButton kind="playlist" item={p} /> : undefined}
       />
-      {list.length > 1 ? <FindBar value={find} onChange={setFind} placeholder="Find in playlist" /> : null}
-      {list.length > 1 ? (
+      <Hold step={body}>
+        {known === undefined || known > 1 ? (
+          <>
+            <Bone style={{ height: 36, marginHorizontal: t.space.lg, marginTop: t.space.md, marginBottom: t.space.sm, borderRadius: t.radius.card }} />
+            <Line size={t.size(13)} width={96} style={{ width: 96, marginHorizontal: t.space.lg, marginBottom: t.space.sm }} />
+          </>
+        ) : null}
+        <TrackRowsSkeleton art count={Math.min(Math.max(known || 10, 1), 12)} />
+      </Hold>
+      <Reveal step={list.length > 1 ? body : { ...body, show: 'none' }}>
+        <FindBar value={find} onChange={setFind} placeholder="Find in playlist" />
         <Pressable
           hitSlop={8}
           onPress={chooseSort}
@@ -154,14 +167,13 @@ export default function PlaylistScreen() {
           <Ionicons name="swap-vertical" size={16} color={t.colors.text} />
           <T style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13) }}>{PLAYLIST_SORTS.find((x) => x.key === sortKey)?.label}</T>
         </Pressable>
-      ) : null}
-      {items.isLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
+      </Reveal>
       {find.trim() && !shown.length ? (
         <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
           {`Nothing in this playlist matches “${find.trim()}”`}
         </T>
       ) : null}
-      {!items.isLoading && list.length === 0 ? (
+      {items.data && list.length === 0 ? (
         <T variant="caption" style={{ padding: t.space.xl, textAlign: 'center' }}>
           This playlist is empty. Long-press any song and choose Add to playlist.
         </T>
@@ -175,21 +187,23 @@ export default function PlaylistScreen() {
         windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        data={shown}
+        data={body.show === 'content' ? shown : []}
         keyExtractor={(x, i) => x.PlaylistItemId ?? `${x.Id}-${i}`}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: t.space.xl }}
         renderItem={({ item, index }) => (
-          <TrackRow
-            track={item}
-            art
-            active={item.Id === currentId}
-            playing={playing}
-            onPress={() => usePlayer.getState().playQueue(ordered, { startIndex: shown === ordered ? index : ordered.indexOf(item), source })}
-            onLongPress={() => openMenu(item, { playlistId: id, entryId: item.PlaylistItemId })}
-          />
+          <FadeRow entering={rowFade(index)}>
+            <TrackRow
+              track={item}
+              art
+              active={item.Id === currentId}
+              playing={playing}
+              onPress={() => usePlayer.getState().playQueue(ordered, { startIndex: shown === ordered ? index : ordered.indexOf(item), source })}
+              onLongPress={() => openMenu(item, { playlistId: id, entryId: item.PlaylistItemId })}
+            />
+          </FadeRow>
         )}
       />
       <StickyTitleBar y={y} title={p ? displayName(p) : ''} color={t.tint(artColor(p && client?.blurhash(p)))} />

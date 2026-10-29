@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { syncLastfmKey } from '@/lib/companion';
 import { startStationSync } from '@/radio/stationSync';
 import { useAuth } from '~/auth/session';
-import { queryClient } from '~/queries';
+import { allPlaylistsKey, queryClient } from '~/queries';
 import { Check } from '~/ui/icons';
 import { kv } from '~/lib/kv';
 
@@ -28,7 +28,7 @@ function steps(): Step[] {
     { label: 'Your Last.fm Key', run: () => syncLastfmKey() },
     {
       label: 'Your Playlists and Mixes',
-      run: () => queryClient.prefetchQuery({ queryKey: ['playlists', uid], queryFn: () => c.getPlaylists().then((r) => r.Items) }),
+      run: () => queryClient.prefetchQuery({ queryKey: [allPlaylistsKey, uid], queryFn: () => c.getPlaylists().then((r) => r.Items) }),
     },
     { label: 'Your Home', run: () => queryClient.prefetchQuery({ queryKey: ['recentlyPlayed', uid], queryFn: () => c.getRecentlyPlayedAlbums(12) }) },
   ];

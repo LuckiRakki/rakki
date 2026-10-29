@@ -117,7 +117,7 @@ export function goToArtist(item: BaseItem) {
 }
 
 function playlistsChanged(ids: string[] | null) {
-  void queryClient.invalidateQueries({ predicate: (q) => ['playlists', 'playlistItems', 'mixes', 'item'].includes(q.queryKey[0] as string) });
+  void queryClient.invalidateQueries({ predicate: (q) => ['allPlaylists', 'playlistItems', 'item'].includes(q.queryKey[0] as string) });
   emitPlaylistsChanged(ids);
 }
 

@@ -9,6 +9,7 @@ import { collectionMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout } from '~/layout/layout';
 import { go, useNav, type Route } from '~/nav';
 import { useDailyMixes, usePlaylists } from '~/queries';
+import { partOf, revealProps, RowsSkeleton, useReveal } from '~/ui/reveal';
 import { Blend, ChevronDown, ChevronUp, Disc3, Heart, Library, ListMusic, MonitorPlay, Music, Plus, Radio, Tags, UserRound, X } from '~/ui/icons';
 import { openMenu } from '~/ui/overlays';
 import { Artwork } from '~/ui/parts';
@@ -107,8 +108,11 @@ function LibraryHead() {
 export function Sidebar() {
   const libOpen = useLibraryTabs((s) => s.open);
   const hiddenTabs = useLibraryTabs((s) => s.hidden);
-  const playlists = usePlaylists().data;
+  const playlistsQ = usePlaylists();
+  const playlists = playlistsQ.data;
   const mixes = useDailyMixes().data;
+  // Your playlists: placeholder rows hold their place until they're here.
+  const [lists] = useReveal([partOf(playlists, { failed: playlistsQ.isError })]);
   const route = useNav((s) => s.route);
   const current = route.name === 'playlist' ? route.id : null;
   return (
@@ -131,10 +135,16 @@ export function Sidebar() {
             <div className="sub">Playlist</div>
           </div>
         </button>
-        {[...(mixes ?? []), ...(playlists ?? [])].map((p) => (
+        {lists.show === 'placeholder' ? (
+          <div {...revealProps(lists)}>
+            <RowsSkeleton />
+          </div>
+        ) : null}
+        {[...(mixes ?? []), ...(playlists ?? [])].map((p, i) => (
           <button
             key={p.Id}
-            className={`row${current === p.Id ? ' on' : ''}`}
+            className={[`row${current === p.Id ? ' on' : ''}`, revealProps({ ...lists, delay: lists.delay + Math.min(i, 12) * 25 }).className].filter(Boolean).join(' ')}
+            style={revealProps({ ...lists, delay: lists.delay + Math.min(i, 12) * 25 }).style}
             title={displayName(p)}
             onClick={() => go({ name: 'playlist', id: p.Id })}
             onContextMenu={(e) => openMenu(e, collectionMenu(p), displayName(p))}>

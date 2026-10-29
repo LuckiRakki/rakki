@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,6 +32,7 @@ import { artistGenres, GenreChips } from '@/ui/GenreChips';
 import { openReleases } from '@/ui/nav';
 import { openOptions, showToast } from '@/ui/overlays';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
+import { Bone, gaveUp, Line, Reveal, ShelfSkeleton, TrackRowsSkeleton, useReveal, type Part } from '@/ui/Reveal';
 import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -87,7 +88,7 @@ export default function ArtistScreen() {
     ? lastfm.data!.map((x) => ({ track: x.track, subtitle: `${formatCount(x.playcount)} plays` }))
     : (top.data ?? []).map((track) => ({ track, subtitle: myPlays(track) }));
   const popular = rows.map((r) => r.track);
-  const popularLoading = popularSort === 'lastfm' && hasKey && !offline ? lastfm.isLoading : top.isLoading;
+  const wantLastfm = popularSort === 'lastfm' && hasKey && !offline;
 
   function chooseSort() {
     openOptions({
@@ -105,6 +106,28 @@ export default function ArtistScreen() {
   }
   const full = albums.data?.filter((x) => !isSingleOrEp(x)) ?? [];
   const singles = albums.data?.filter((x) => isSingleOrEp(x)) ?? [];
+  const genres = artistGenres(a?.Genres, albums.data);
+  const artistVideos = videosByArtist(a?.Name, videos.data);
+  // The full artist (not just what a list had): its genres and About are known.
+  const isFull = !!a && !artist.isPlaceholderData;
+
+  // Top to bottom, each in its turn. Popular and Discography hold their place while they load;
+  // what's often missing (genres, singles, videos, Appears on, Fans also like, About) holds none.
+  const settled = (q: { isError: boolean; isLoading: boolean; data?: unknown }) => q.data !== undefined || gaveUp(q);
+  const list = (items: unknown[] | undefined, q: { isError: boolean; isLoading: boolean; data?: unknown }): Part =>
+    items?.length ? 'ready' : settled(q) ? 'empty' : 'waiting';
+  const parts: Part[] = [
+    a ? 'ready' : gaveUp(artist) ? 'empty' : 'loading',
+    isFull && settled(albums) ? (genres.length ? 'ready' : 'empty') : gaveUp(artist) ? 'empty' : 'waiting',
+    (wantLastfm && (lastfm.isLoading || (!a && !gaveUp(artist)))) || top.isLoading ? 'loading' : rows.length ? 'ready' : 'empty',
+    full.length ? 'ready' : settled(albums) ? 'empty' : 'loading',
+    list(singles, albums),
+    artistVideos.length ? 'ready' : settled(videos) && (a || gaveUp(artist)) ? 'empty' : 'waiting',
+    list(appearsOn.data, appearsOn),
+    list(similar.data, similar),
+    isFull ? (a?.Overview ? 'ready' : 'empty') : gaveUp(artist) ? 'empty' : 'waiting',
+  ];
+  const [nameStep, chipsStep, popularStep, albumsStep, singlesStep, videosStep, appearsStep, similarStep, aboutStep] = useReveal(parts);
 
   function play() {
     if (isThisArtist) return usePlayer.getState().toggle();
@@ -138,9 +161,17 @@ export default function ArtistScreen() {
             </Animated.View>
           ) : null}
           <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.25)', t.colors.bg]} locations={[0, 0.6, 1]} style={StyleHero} />
-          <T style={styles.name} numberOfLines={2}>
-            {a?.Name ?? ' '}
-          </T>
+          <Reveal
+            step={nameStep}
+            placeholder={
+              <View style={[styles.namePlace, { height: t.size(48) + t.space.md }]}>
+                <Bone style={{ width: '58%', height: t.size(30), borderRadius: 6 }} />
+              </View>
+            }>
+            <T style={styles.name} numberOfLines={2}>
+              {a?.Name ?? ' '}
+            </T>
+          </Reveal>
         </View>
 
         <View style={styles.actions}>
@@ -165,12 +196,22 @@ export default function ArtistScreen() {
             />
           </Pressable>
         </View>
-        <View style={{ paddingHorizontal: t.space.lg, marginTop: -t.space.sm }}>
-          <GenreChips genres={artistGenres(a?.Genres, albums.data)} />
-        </View>
+        <Reveal step={chipsStep}>
+          <View style={{ paddingHorizontal: t.space.lg, marginTop: -t.space.sm }}>
+            <GenreChips genres={genres} />
+          </View>
+        </Reveal>
 
-        {popularLoading ? <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} /> : null}
-        {popular.length ? (
+        <Reveal
+          step={popularStep}
+          placeholder={
+            <View style={{ marginTop: t.space.lg }}>
+              <Line variant="heading" width="34%" style={{ marginHorizontal: t.space.lg, marginBottom: t.space.md }} />
+              <TrackRowsSkeleton count={5} art rank />
+              <Line variant="caption" width={64} style={[styles.seeMore, { width: 64 }]} />
+              {wantLastfm ? <Line variant="caption" size={t.size(11)} width="40%" style={{ marginHorizontal: t.space.lg, marginTop: t.space.sm }} /> : null}
+            </View>
+          }>
           <View style={{ marginTop: t.space.lg }}>
             <View style={styles.popularHead}>
               <T variant="heading" style={{ flex: 1 }}>
@@ -214,26 +255,36 @@ export default function ArtistScreen() {
               </T>
             ) : null}
           </View>
-        ) : null}
+        </Reveal>
 
-        <Shelf title="Discography" items={full} onShowAll={full.length > 3 ? () => openReleases(id, 'albums') : undefined} />
-        <Shelf
-          title="Singles and EPs"
-          items={singles}
-          onShowAll={singles.length > 3 ? () => openReleases(id, 'singles') : undefined}
-        />
-        <VideoShelf title="Music videos" videos={videosByArtist(a?.Name, videos.data)} />
-        <Shelf title="Appears on" items={appearsOn.data} />
-        <Shelf title="Fans also like" items={similar.data} size={130} />
+        <Reveal step={albumsStep} placeholder={<ShelfSkeleton />}>
+          <Shelf title="Discography" items={full} onShowAll={full.length > 3 ? () => openReleases(id, 'albums') : undefined} />
+        </Reveal>
+        <Reveal step={singlesStep}>
+          <Shelf
+            title="Singles and EPs"
+            items={singles}
+            onShowAll={singles.length > 3 ? () => openReleases(id, 'singles') : undefined}
+          />
+        </Reveal>
+        <Reveal step={videosStep}>
+          <VideoShelf title="Music videos" videos={artistVideos} />
+        </Reveal>
+        <Reveal step={appearsStep}>
+          <Shelf title="Appears on" items={appearsOn.data} />
+        </Reveal>
+        <Reveal step={similarStep}>
+          <Shelf title="Fans also like" items={similar.data} size={130} />
+        </Reveal>
 
-        {a?.Overview ? (
+        <Reveal step={aboutStep}>
           <View style={{ marginTop: t.space.xl }}>
             <SectionTitle title="About" />
             <T variant="caption" style={{ paddingHorizontal: t.space.lg, lineHeight: t.size(20) }}>
-              {a.Overview}
+              {a?.Overview}
             </T>
           </View>
-        ) : null}
+        </Reveal>
       </Animated.ScrollView>
       <StickyTitleBar y={y} title={a?.Name ?? ''} color={t.tint(tint)} showAt={300} />
 
@@ -288,6 +339,7 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'center',
   },
   seeMore: { alignSelf: 'flex-start', marginLeft: t.space.lg, marginTop: t.space.sm, paddingVertical: t.space.xs },
+  namePlace: { paddingHorizontal: t.space.lg, paddingBottom: t.space.md, justifyContent: 'center' },
   popularHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.lg, marginBottom: t.space.md },
   sort: { flexDirection: 'row', alignItems: 'center', gap: t.space.xs },
   source: { paddingHorizontal: t.space.lg, marginTop: t.space.sm, fontSize: t.size(11), color: t.colors.textMuted },

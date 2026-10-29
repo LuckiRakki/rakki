@@ -82,6 +82,22 @@ h1, h2, h3, p { margin: 0; }
 .state .secondary { margin-top: 8px; }
 .state.failed .ico { color: #ff8a80; }
 .page-states { padding: 0 28px; }
+
+/* ---- Placeholders (ui/reveal.tsx): the real elements with soft bars where the text goes, so a
+   part is exactly its own size before it loads and nothing moves when it arrives ---- */
+:root { --skel: rgba(255, 255, 255, 0.07); }
+.skel-line { position: relative; color: transparent !important; user-select: none; }
+.skel-line::before { content: ''; position: absolute; left: 0; top: 50%; width: var(--w, 60%); height: 0.7em; transform: translateY(-50%); border-radius: 4px; background: var(--skel); }
+.skel-line.center::before { left: calc((100% - var(--w, 60%)) / 2); }
+.artwork.skel { background: var(--skel); }
+.skel-card, .skel-quick, .skel-rowitem, .skel-rows { pointer-events: none; }
+.shelf-head > .skel-line, .skel-quick > .skel-line { flex: 1; }
+.skel-tool { display: block; width: 28px; height: 28px; }
+.skel-row { overflow: hidden; }
+.skel-thumb { width: 40px; flex: none; border-radius: 4px; aspect-ratio: 1; background: var(--skel); }
+.genre-tile.skel-tile { background: var(--skel); pointer-events: none; }
+.skel-tile .skel-line { display: block; }
+.video-thumb.skel { background: var(--skel); }
 .server-bar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 10px; padding: 10px 20px; background: var(--surface-3); color: var(--text); font-size: 13px; font-weight: 600; }
 .server-bar span { flex: 1; min-width: 0; }
 .server-bar .text-btn { color: var(--text); }

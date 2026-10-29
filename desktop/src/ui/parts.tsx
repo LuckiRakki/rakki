@@ -18,6 +18,7 @@ import { usePlayer } from '~/player/store';
 import { useLook } from '~/settings/look';
 import { activateOnKey } from '~/ui/keys';
 import { openMenu } from '~/ui/overlays';
+import { Bar, revealProps, type Step } from '~/ui/reveal';
 
 /** Pictures picked on this computer, shown while they upload (library/actions.ts). */
 const useLocalPictures = create<Record<string, string>>(() => ({}));
@@ -40,12 +41,32 @@ export function Artwork({ item, size = 300, round, className }: { item?: BaseIte
   const bg = item && client ? artColor(client.blurhash(item), '#2a2a2e') : undefined;
   return (
     <div className={`artwork${round ? ' round' : ''}${src && !failed ? '' : ' empty'}${className ? ` ${className}` : ''}`} style={bg ? { background: bg } : undefined}>
-      {src && !failed ? (
-        <img src={src} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setFailed(true)} />
-      ) : (
-        <Music2 size={22} />
-      )}
+      {src && !failed ? <Picture key={src} src={src} onError={() => setFailed(true)} /> : <Music2 size={22} />}
     </div>
+  );
+}
+
+/**
+ * A picture that fades in over its colour once it has loaded, after the page's parts are in
+ * place (ui/reveal.tsx). One that's already in the cache is simply there.
+ */
+export function Picture({ src, className, onError }: { src: string; className?: string; onError?: () => void }) {
+  const [loaded, setLoaded] = useState(false);
+  const classes = [className, loaded ? '' : 'loading'].filter(Boolean).join(' ');
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      className={classes || undefined}
+      ref={(el) => {
+        if (el?.complete && el.naturalWidth && !loaded) setLoaded(true);
+      }}
+      onLoad={() => setLoaded(true)}
+      onError={onError}
+    />
   );
 }
 
@@ -221,6 +242,9 @@ export interface TrackTableProps {
   playsOf?: (t: BaseItem) => number | undefined;
   /** Drag rows to reorder (a playlist in its own order): called with the old and new index. */
   onMove?: (from: number, to: number) => void;
+  /** Its turn on the page (ui/reveal.tsx): until then `holdRows` placeholder rows keep its place. */
+  step?: Step;
+  holdRows?: number;
 }
 
 /**
@@ -232,7 +256,7 @@ export interface TrackTableProps {
 const ROW_HEIGHT = { comfortable: 56, compact: 44 };
 const DISC_H = 48;
 
-export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, discs = false, menu, playsOf, onMove }: TrackTableProps) {
+export function TrackTable({ tracks, album = true, art = true, plays = false, trackNumbers = false, discs = false, menu, playsOf, onMove, step, holdRows = 8 }: TrackTableProps) {
   const parent = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const ROW_H = ROW_HEIGHT[useLook((l) => l.app.density)];
@@ -359,6 +383,8 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
 
   const cols = ['num', 'title', ...(album ? ['album'] : []), ...(plays ? ['plays'] : []), 'like', 'len'];
   const grid = cols.map((c) => ({ num: '40px', title: 'minmax(0, 5fr)', album: 'minmax(0, 3fr)', plays: '110px', like: '36px', len: '56px' })[c]).join(' ');
+  const holding = step?.show === 'placeholder';
+  const fade = step && step.show !== 'none' ? revealProps(step) : {};
 
   return (
     <div
@@ -383,9 +409,10 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
           <Clock3 size={15} />
         </div>
       </div>
-      <div ref={body} style={{ height: rows.getTotalSize(), position: 'relative' }}>
+      <div ref={body} className={fade.className} style={{ ...fade.style, height: holding ? holdRows * ROW_H : rows.getTotalSize(), position: 'relative' }}>
+        {holding ? <PlaceholderRows count={holdRows} height={ROW_H} grid={grid} art={art} album={album} plays={plays} /> : null}
         {drag ? <div className="tt-drop" style={{ top: drag.gap * ROW_H - 1 }} /> : null}
-        {rows.getVirtualItems().map((row) => {
+        {(holding ? [] : rows.getVirtualItems()).map((row) => {
           const slot = slots[row.index];
           if ('disc' in slot) {
             return (
@@ -475,7 +502,34 @@ export function TrackTable({ tracks, album = true, art = true, plays = false, tr
   );
 }
 
-/** The top of an album, artist or playlist page: the picture and name over the item's colour. */
+/** Song rows still loading: the table's own rows and columns, with bars for the words. */
+function PlaceholderRows({ count, height, grid, art, album, plays }: { count: number; height: number; grid: string; art: boolean; album: boolean; plays: boolean }) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="tt-row skel-rows" style={{ gridTemplateColumns: grid, height, transform: `translateY(${i * height}px)` }} aria-hidden>
+          <div className="num" />
+          <div className="who">
+            {art ? <div className="skel-thumb" /> : null}
+            <div className="tt-text" style={{ flex: 1 }}>
+              <Bar className="name" width={[46, 34, 52, 40, 30, 44][i % 6]} />
+              <Bar className="by" width={[24, 18, 28, 20, 26, 16][i % 6]} />
+            </div>
+          </div>
+          {album ? <Bar className="album" width={[40, 54, 34, 48][i % 4]} /> : null}
+          {plays ? <div /> : null}
+          <div />
+          <Bar className="len" width="30px" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+/**
+ * The top of an album, artist or playlist page: the picture and name over the item's colour.
+ * Until the item is known, bars keep the name's place; `step` fades the words in on their turn.
+ */
 export function LibraryHeader({
   item,
   kind,
@@ -483,6 +537,7 @@ export function LibraryHeader({
   meta,
   art,
   color,
+  step,
 }: {
   item?: BaseItem;
   kind: string;
@@ -490,18 +545,32 @@ export function LibraryHeader({
   meta?: ReactNode;
   art?: ReactNode;
   color?: string;
+  step?: Step;
 }) {
   const client = useAuth((s) => s.client);
   const tint = color ?? (item && client ? artColor(client.blurhash(item), '#3a3a3e') : '#3a3a3e');
   const name = title ?? (item ? displayName(item) : '');
   const size = name.length > 40 ? 'small' : name.length > 18 ? 'medium' : '';
+  const fade = step ? revealProps(step) : {};
   return (
     <div className="lib-header" style={{ ['--tint' as string]: tint }}>
-      <div className="lib-cover">{art ?? <Artwork item={item} size={500} round={item?.Type === 'MusicArtist'} />}</div>
+      <div className="lib-cover">{art ?? (item ? <Artwork item={item} size={500} round={item.Type === 'MusicArtist'} /> : <div className="artwork skel" />)}</div>
       <div className="lib-meta">
         <div className="kind">{kind}</div>
-        <h1 className={size}>{name}</h1>
-        <div className="meta">{meta}</div>
+        {name ? (
+          <h1 className={[size, fade.className].filter(Boolean).join(' ') || undefined} style={fade.style}>
+            {name}
+          </h1>
+        ) : (
+          <Bar as="h1" className="medium" width={56} />
+        )}
+        {name ? (
+          <div className={['meta', fade.className].filter(Boolean).join(' ')} style={fade.style}>
+            {meta}
+          </div>
+        ) : (
+          <Bar className="meta" width={26} />
+        )}
       </div>
     </div>
   );
