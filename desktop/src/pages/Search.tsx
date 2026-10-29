@@ -11,7 +11,7 @@ import { tileColor } from '@/lib/color';
 import { ensureSearchIndex, useSearchIndex } from '@/search/index';
 import { useLyricsSearch } from '@/search/lyricsSearch';
 import { loadRecentSearches, useRecentSearches } from '@/search/recent';
-import { useSearchResults, type Filter } from '@/search/useSearch';
+import { useSearchResults, useSettled, type Filter } from '@/search/useSearch';
 import { useAuth } from '~/auth/session';
 import { songMenu } from '~/library/menus';
 import { go, openItem, useNav } from '~/nav';
@@ -105,7 +105,7 @@ function Recent() {
 }
 
 function LyricsMatches({ term }: { term: string }) {
-  const q = useLyricsSearch(term);
+  const q = useLyricsSearch(useSettled(term, 180));
   const hits = q.data ?? [];
   if (!hits.length) return null;
   return (
@@ -140,7 +140,8 @@ export function SearchPage({ term }: { term: string }) {
   const session = useAuth((s) => s.session);
   const syncing = useSearchIndex((s) => s.syncing);
   const t = term.trim();
-  const q = useSearchResults(t, filter);
+  // Asks the server once typing pauses; the quick results follow every key meanwhile.
+  const q = useSearchResults(t, filter, { settleMs: 180 });
   const r = q.data;
 
   // The fuzzy index: loaded from disk, topped up in the background (it throttles itself).
@@ -171,7 +172,7 @@ export function SearchPage({ term }: { term: string }) {
     );
   }
 
-  const nothing = r && !q.quick && !r.songs.length && !r.albums.length && !r.artists.length && !r.playlists.length && !r.genres.length;
+  const nothing = r && !q.quick && !q.isPlaceholderData && !r.songs.length && !r.albums.length && !r.artists.length && !r.playlists.length && !r.genres.length;
   const genres = (r?.genres ?? []).map((g) => ({ Id: `genre:${g.name}`, Name: g.name, Type: 'Genre', ...(g.album ? { album: g.album } : {}) }));
 
   return (
