@@ -11,6 +11,7 @@ import * as Network from 'expo-network';
 import * as SQLite from 'expo-sqlite';
 import { AppState, Platform } from 'react-native';
 
+import { queryClient } from '@/api/queries';
 import { useAppearance } from '@/appearance/store';
 import { useAuth } from '@/auth/store';
 import { isOffline } from '@/lib/online';
@@ -135,6 +136,9 @@ async function sample() {
       dlKB: Math.round(takeDownloadBytes() / 1024),
       streamKB: streamed.length ? Math.round(streamed.reduce((n, x) => n + x.bytes, 0) / 1024) : undefined,
       songs: streamed.length || undefined,
+      // How much is held: songs in the queue and server answers kept (memory leads, 10-29).
+      queue: usePlayer.getState().queue.length || undefined,
+      queries: queryClient.getQueryCache().getAll().length,
       ...hermes(),
       ...hw,
     };

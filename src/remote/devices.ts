@@ -109,10 +109,13 @@ export async function otherRakkiDevices(client: JellyfinClient): Promise<RakkiDe
     .sort((a, b) => Number(!!b.item && !b.paused) - Number(!!a.item && !a.paused) || b.reportedAt - a.reportedAt);
 }
 
-/** One device, fresh (null when it's gone). */
-export async function deviceNow(client: JellyfinClient, sessionId: string): Promise<RakkiDevice | null> {
-  const sessions = await client.getSessions();
-  const s = sessions.find((x) => x.Id === sessionId);
+/**
+ * One device, fresh (null when it's gone). Only its own sessions are asked for: the server sends
+ * every app's report with each song of its queue in full, so all of them was megabytes a check.
+ */
+export async function deviceNow(client: JellyfinClient, d: Pick<RakkiDevice, 'sessionId' | 'deviceId'>): Promise<RakkiDevice | null> {
+  const sessions = await client.getSessions(960, d.deviceId || undefined);
+  const s = sessions.find((x) => x.Id === d.sessionId);
   return s ? toDevice(s, Date.now()) : null;
 }
 
@@ -157,7 +160,7 @@ export async function pullFrom(client: JellyfinClient, d: RakkiDevice): Promise<
     // Its paused report comes within a moment.
     for (let i = 0; i < 8; i++) {
       await sleep(250);
-      const fresh = await deviceNow(client, d.sessionId).catch(() => null);
+      const fresh = await deviceNow(client, d).catch(() => null);
       if (fresh?.paused) {
         now = fresh;
         break;
@@ -201,7 +204,7 @@ export async function pushTo(client: JellyfinClient, d: RakkiDevice, items: Base
   await client.sessionPlay(d.sessionId, window, at - first, positionSec * TICKS_PER_SECOND);
   for (let i = 0; i < 24; i++) {
     await sleep(400);
-    const fresh = await deviceNow(client, d.sessionId).catch(() => null);
+    const fresh = await deviceNow(client, d).catch(() => null);
     if (fresh?.item?.Id === wanted && !fresh.paused) return true;
   }
   return false;

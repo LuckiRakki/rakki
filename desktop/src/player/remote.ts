@@ -91,7 +91,7 @@ async function refresh() {
   const c = client();
   const t = useRemote.getState().target;
   if (!c || !t) return;
-  const fresh = await deviceNow(c, t.sessionId).catch(() => undefined);
+  const fresh = await deviceNow(c, t).catch(() => undefined);
   if (useRemote.getState().target?.sessionId !== t.sessionId) return;
   if (fresh === null) {
     toast(`${t.name} went away`);
@@ -168,7 +168,7 @@ export const useRemote = create<RemoteState>((set, get) => ({
       const ok = await pushTo(c, d, p.queue, p.index, at);
       if (!ok) return void toast(`${d.name} didn’t start (open Rakki on it and try again)`);
       if (usePlayer.getState().playing) usePlayer.getState().toggle();
-      const fresh = await deviceNow(c, d.sessionId).catch(() => null);
+      const fresh = await deviceNow(c, d).catch(() => null);
       get().setTarget(fresh ?? d);
       toast(`Playing on ${d.name}`);
     } catch {

@@ -61,6 +61,7 @@ function send(kind: 'start' | 'progress' | 'stopped', body: PlaybackInfo, onFail
 
 function info(c: Current, position: number, extra: Partial<PlaybackInfo> = {}): PlaybackInfo {
   const repeat = ctx?.repeat() ?? 'off';
+  const queue = ctx?.queue?.();
   return {
     ItemId: c.itemId,
     PlaySessionId: c.playSessionId,
@@ -71,7 +72,7 @@ function info(c: Current, position: number, extra: Partial<PlaybackInfo> = {}): 
     RepeatMode: repeat === 'one' ? 'RepeatOne' : repeat === 'all' ? 'RepeatAll' : 'RepeatNone',
     PlaybackOrder: ctx?.shuffle() ? 'Shuffle' : 'Default',
     IsPaused: !(ctx?.playing() ?? false),
-    ...(ctx?.queue ? queueReport(ctx.queue().items, ctx.queue().index) : {}),
+    ...(queue ? queueReport(queue.items, queue.index) : {}),
     ...extra,
   };
 }

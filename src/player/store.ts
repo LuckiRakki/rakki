@@ -520,11 +520,14 @@ useSettings.subscribe((s, prev) => {
 });
 
 // ---- Remember the queue across restarts --------------------------------------------------
-// The queue (with shuffle, repeat and where it came from) is saved when it changes; the
-// position every 10 s while playing and when Rakki goes to the background. On launch it comes
-// back paused where you left off.
+// The queue (with shuffle, repeat and where it came from) is saved when it changes; which song
+// of it is on, on its own at every song change (writing out a long queue at each one was
+// megabytes for the phone to build and store every few minutes); the position every 10 s
+// while playing and when Rakki goes to the background. On launch it comes back paused where
+// you left off.
 
 const queueKey = (userId: string) => `rakki.queue.${userId}`;
+const placeKey = (userId: string) => `rakki.queuePlace.${userId}`;
 const positionKey = (userId: string) => `rakki.queuePosition.${userId}`;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let restored = false;
@@ -597,6 +600,15 @@ function writeQueue(id: string) {
   if (radioPlaying()) return;
   const { queue, index, shuffle, repeat, source } = usePlayer.getState();
   writePref(queueKey(id), JSON.stringify({ v: 1, queue: queue.map(slimEntry), index, shuffle, repeat, source, unshuffledKeys }));
+  writePlace(id);
+}
+
+/** The song that's on, by its entry (found in the saved queue whatever moved around it). */
+function writePlace(id: string) {
+  if (radioPlaying()) return;
+  const { queue, index } = usePlayer.getState();
+  const key = queue[index]?.key;
+  if (key) writePref(placeKey(id), key);
 }
 
 function saveQueueSoon() {
@@ -606,6 +618,15 @@ function saveQueueSoon() {
     const id = userId();
     if (id) writeQueue(id);
   }, 1000);
+}
+
+/** A queue change waiting to be saved: now (Rakki is leaving the screen and may be closed). */
+function flushQueueSave() {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  const id = userId();
+  if (id) writeQueue(id);
 }
 
 /**
@@ -645,7 +666,9 @@ export function restoreQueue(forUser: string) {
       unshuffledKeys?: string[] | null;
     } | null;
     if (saved?.v !== 1 || !saved.queue?.length) return;
-    const index = Math.min(Math.max(saved.index ?? 0, 0), saved.queue.length - 1);
+    const place = readPref(placeKey(forUser));
+    const at = place ? saved.queue.findIndex((e) => e.key === place) : -1;
+    const index = at >= 0 ? at : Math.min(Math.max(saved.index ?? 0, 0), saved.queue.length - 1);
     const position = Number(readPref(positionKey(forUser)) ?? 0) || 0;
     unshuffledKeys = saved.unshuffledKeys ?? null;
     usePlayer.setState({
@@ -665,8 +688,11 @@ export function restoreQueue(forUser: string) {
 }
 
 usePlayer.subscribe((s, prev) => {
-  if (s.queue !== prev.queue || s.index !== prev.index || s.shuffle !== prev.shuffle || s.repeat !== prev.repeat) {
+  if (s.queue !== prev.queue || s.shuffle !== prev.shuffle || s.repeat !== prev.repeat) {
     saveQueueSoon();
+  } else if (s.index !== prev.index && restored) {
+    const id = userId();
+    if (id) writePlace(id);
   }
   // After the change has settled, so a radio that's just started builds its own queue first.
   if (s.index !== prev.index || s.queue !== prev.queue) setTimeout(() => void maybeAutoplay(), 0);
@@ -677,7 +703,7 @@ setInterval(() => {
 AppState.addEventListener('change', (state) => {
   if (state !== 'active') {
     savePosition();
-    saveQueueSoon();
+    flushQueueSave();
   }
 });
 
