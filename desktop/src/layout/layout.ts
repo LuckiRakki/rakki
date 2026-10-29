@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { create } from 'zustand';
 
 import { inTauri } from '~/lib/tauri';
+import { kv } from '~/lib/kv';
 
 export const win = inTauri ? getCurrentWindow() : null;
 
@@ -33,13 +34,13 @@ export type PlayerTab = 'queue' | 'related' | 'lyrics' | 'visualizer';
 
 const read = <T,>(key: string, fallback: T): T => {
   try {
-    const v = localStorage.getItem(key);
+    const v = kv.getItem(key);
     return v === null ? fallback : (JSON.parse(v) as T);
   } catch {
     return fallback;
   }
 };
-const save = (key: string, value: unknown) => localStorage.setItem(key, JSON.stringify(value));
+const save = (key: string, value: unknown) => kv.setItem(key, JSON.stringify(value));
 
 export const SIDEBAR = { min: 200, max: 460, default: 290 };
 export const PANEL = { min: 280, max: 560, default: 360 };

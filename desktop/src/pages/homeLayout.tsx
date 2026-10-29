@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { create } from 'zustand';
 
 import { closeDialog, showDialog } from '~/ui/overlays';
+import { kv } from '~/lib/kv';
 
 export type HomeSection = 'quick' | 'mixes' | 'jump' | 'added' | 'playlists' | 'artists' | 'most' | 'rediscover' | 'random';
 
@@ -30,7 +31,7 @@ interface Saved {
 
 function load(): Saved {
   try {
-    const s = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Saved | null;
+    const s = JSON.parse(kv.getItem(KEY) ?? 'null') as Saved | null;
     if (!s) return { order: DEFAULT_ORDER, hidden: [] };
     // Sections added in an update join at the end.
     const order = [...s.order.filter((x) => DEFAULT_ORDER.includes(x)), ...DEFAULT_ORDER.filter((x) => !s.order.includes(x))];
@@ -43,11 +44,11 @@ function load(): Saved {
 export const useHomeLayout = create<Saved & { set(next: Saved): void; reset(): void }>((set) => ({
   ...load(),
   set(next) {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    kv.setItem(KEY, JSON.stringify(next));
     set(next);
   },
   reset() {
-    localStorage.removeItem(KEY);
+    kv.removeItem(KEY);
     set({ order: DEFAULT_ORDER, hidden: [] });
   },
 }));

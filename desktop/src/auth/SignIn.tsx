@@ -13,9 +13,10 @@ import {
 } from '@/api/jellyfin';
 import { deviceId, useAuth } from '~/auth/session';
 import { WindowButtons } from '~/layout/TitleBar';
+import { kv } from '~/lib/kv';
 
 export function SignIn() {
-  const [server, setServer] = useState(localStorage.getItem('rakki.lastServer') ?? '');
+  const [server, setServer] = useState(kv.getItem('rakki.lastServer') ?? '');
   const [found, setFound] = useState<{ url: string; name: string; quick: boolean } | null>(null);
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +31,7 @@ export function SignIn() {
     try {
       const url = normalizeServerUrl(server);
       const info = await getPublicInfo(url, deviceId());
-      localStorage.setItem('rakki.lastServer', url);
+      kv.setItem('rakki.lastServer', url);
       setFound({ url, name: info.ServerName, quick: await quickConnectEnabled(url, deviceId()) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't reach that server.");

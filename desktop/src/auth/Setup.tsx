@@ -11,6 +11,7 @@ import { startStationSync } from '@/radio/stationSync';
 import { useAuth } from '~/auth/session';
 import { queryClient } from '~/queries';
 import { Check } from '~/ui/icons';
+import { kv } from '~/lib/kv';
 
 const DONE = (userId: string) => `rakki.setUp.${userId}`;
 const LONGEST_MS = 8000;
@@ -38,7 +39,7 @@ export function startSetup() {
   const c = useAuth.getState().client;
   if (!c) return;
   const key = DONE(c.session.userId);
-  if (localStorage.getItem(key)) {
+  if (kv.getItem(key)) {
     void startStationSync(c);
     return;
   }
@@ -54,7 +55,7 @@ export function SettingUp() {
     const finish = () => {
       if (!alive) return;
       alive = false;
-      localStorage.setItem(DONE(c.session.userId), '1');
+      kv.setItem(DONE(c.session.userId), '1');
       useSetup.setState({ running: false });
     };
     const timer = setTimeout(finish, LONGEST_MS);

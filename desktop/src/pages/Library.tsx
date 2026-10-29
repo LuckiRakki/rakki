@@ -12,6 +12,7 @@ import { useAllAlbums, useAllArtists, useAllSongs, useDailyMixes, useGenreAlbums
 import { ArrowDownAZ, Blend, Disc3, ListMusic, Music, Search, Tags, UserRound, type Icon } from '~/ui/icons';
 import { ActionBar, Artwork, findIn, ItemCard, LibraryHeader, TrackTable } from '~/ui/parts';
 import { Empty, QueryState } from '~/ui/states';
+import { kv } from '~/lib/kv';
 
 type SortKey = 'name' | 'recent' | 'artist' | 'year';
 const SORT_LABEL: Record<SortKey, string> = { name: 'Alphabetical', recent: 'Recently Added', artist: 'Artist', year: 'Release year' };
@@ -45,7 +46,7 @@ interface GridQuery {
 
 function LibraryGrid({ title, q, sorts, empty }: { title: string; q: GridQuery; sorts: SortKey[]; empty: { icon: Icon; title: string; detail: string; action?: { label: string; run(): void } } }) {
   const storeKey = `rakki.sort.${title}`;
-  const [sort, setSort] = useState<SortKey>(() => (localStorage.getItem(storeKey) as SortKey) || sorts[0]);
+  const [sort, setSort] = useState<SortKey>(() => (kv.getItem(storeKey) as SortKey) || sorts[0]);
   const [find, setFind] = useState('');
   const items = q.data;
   const shown = useMemo(() => {
@@ -74,7 +75,7 @@ function LibraryGrid({ title, q, sorts, empty }: { title: string; q: GridQuery; 
               value={sort}
               onChange={(e) => {
                 setSort(e.target.value as SortKey);
-                localStorage.setItem(storeKey, e.target.value);
+                kv.setItem(storeKey, e.target.value);
               }}>
               {sorts.map((s) => (
                 <option key={s} value={s}>

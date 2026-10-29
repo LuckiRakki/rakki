@@ -10,6 +10,7 @@ import { buildSmartQueue } from '@/player/smartQueue';
 import { useSettings } from '@/settings/store';
 import { client } from '~/auth/session';
 import { engine, listenEngine, type FileOptions } from '~/player/engine';
+import { kv } from '~/lib/kv';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -54,7 +55,7 @@ interface PlayerState {
 }
 
 const VOLUME_KEY = 'rakki.volume';
-const savedVolume = Number(localStorage.getItem(VOLUME_KEY) ?? 80);
+const savedVolume = Number(kv.getItem(VOLUME_KEY) ?? 80);
 
 function shuffled<T>(list: T[]): T[] {
   const a = [...list];
@@ -257,7 +258,7 @@ interface SavedQueue {
 
 function saveQueue(s: PlayerState) {
   try {
-    if (!s.queue.length) return localStorage.removeItem(QUEUE_KEY);
+    if (!s.queue.length) return kv.removeItem(QUEUE_KEY);
     const from = Math.max(0, s.index - 100);
     const saved: SavedQueue = {
       queue: s.queue.slice(from, from + KEEP),
@@ -266,7 +267,7 @@ function saveQueue(s: PlayerState) {
       repeat: s.repeat,
       shuffle: s.shuffle,
     };
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(saved));
+    kv.setItem(QUEUE_KEY, JSON.stringify(saved));
   } catch {
     // Storage full: the queue just isn't kept this time.
   }
@@ -274,7 +275,7 @@ function saveQueue(s: PlayerState) {
 
 function readQueue(): SavedQueue | null {
   try {
-    const v = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? 'null') as SavedQueue | null;
+    const v = JSON.parse(kv.getItem(QUEUE_KEY) ?? 'null') as SavedQueue | null;
     return v?.queue?.length ? v : null;
   } catch {
     return null;
@@ -386,7 +387,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     setVolume(volume) {
       const v = Math.max(0, Math.min(100, Math.round(volume)));
       set({ volume: v });
-      localStorage.setItem(VOLUME_KEY, String(v));
+      kv.setItem(VOLUME_KEY, String(v));
       void engine.set('volume', v).catch(() => {});
     },
 

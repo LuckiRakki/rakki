@@ -371,7 +371,7 @@ function PerfLogSettings() {
       <View style={[styles.card, { paddingTop: t.space.xs }]}>
         <Toggle
           label="Keep a performance log"
-          detail="About once a minute: what Rakki is doing, CPU, memory, heat and battery. Sent to your server every 12 hours to look into battery drain"
+          detail="About once a minute: what Rakki is doing, CPU, memory, heat and battery. Sent to your server every 12 hours"
           value={on}
           onChange={(v) => useSettings.getState().set('perfLog', v)}
         />

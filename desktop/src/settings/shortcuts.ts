@@ -14,6 +14,7 @@ import { useLayout } from '~/layout/layout';
 import { go, useNav } from '~/nav';
 import { currentPosition, usePlayer, type RepeatMode } from '~/player/store';
 import { useVideo } from '~/player/video';
+import { kv } from '~/lib/kv';
 
 export type ShortcutId =
   | 'playPause'
@@ -155,7 +156,7 @@ const KEY = 'rakki.shortcuts';
 
 function load(): Partial<Record<ShortcutId, string[]>> {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Record<ShortcutId, string[]>>;
+    return JSON.parse(kv.getItem(KEY) ?? '{}') as Partial<Record<ShortcutId, string[]>>;
   } catch {
     return {};
   }
@@ -180,7 +181,7 @@ let changed = load();
 function save(next: Partial<Record<ShortcutId, string[]>>) {
   changed = next;
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    kv.setItem(KEY, JSON.stringify(next));
   } catch {
     // Storage full: the change lasts until Rakki closes.
   }
