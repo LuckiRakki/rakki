@@ -7,6 +7,10 @@ an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the
 says otherwise.
 
 ## Desktop 1.6.0 (2026-10-29, next desktop build)
+- **Desktop on Linux: Update works after Gear Lever or AppImageLauncher moves Rakki.** Those
+  apps move the AppImage into their own folder right after its first launch, which left Update
+  with nothing to replace and no way to restart. Rakki now finds where its AppImage went (from
+  the menu entry it was given) before installing and restarting.
 - **Desktop: your data in one folder you can open.** Settings, lyric timings
   (`lyrics-offsets.json`), tap-to-sync drafts (`lyrics-drafts/`), the queue and caches now live
   as readable files in `%LOCALAPPDATA%\Rakki` (Rakki Dev: `Rakki Dev`) instead of WebView2's

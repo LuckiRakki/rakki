@@ -12,6 +12,7 @@ mod media;
 mod memory;
 mod mpv;
 mod mrq;
+mod update;
 
 use capture::Capture;
 use discord::Discord;
@@ -132,12 +133,10 @@ fn tray_tooltip(app: AppHandle, text: String) {
     }
 }
 
-/// Restart into a new version (lib/updateCheck.ts). Lets go of "Rakki is running" first, or the
-/// new one would find the old one still there and close.
+/// Restart Rakki (update.rs: lets go of "Rakki is running" first, and finds a moved AppImage).
 #[tauri::command]
 fn app_restart(app: AppHandle) {
-    tauri_plugin_single_instance::destroy(&app);
-    app.restart();
+    update::restart(&app);
 }
 
 fn show_window(app: &AppHandle) {
@@ -195,12 +194,13 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
-        // One-click updates from GitHub releases (src/lib/updateCheck.ts), then a restart.
+        // One-click updates from GitHub releases (update.rs, src/lib/updateCheck.ts), then a restart.
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(Player::default())
         .manage(Discord::default())
         .manage(Capture::default())
+        .manage(update::Pending::default())
         .setup(|app| {
             let handle = app.handle().clone();
             let window = app.get_webview_window("main").expect("main window");
@@ -253,6 +253,8 @@ pub fn run() {
             autostart_get,
             autostart_set,
             app_restart,
+            update::update_check,
+            update::update_install,
             mrq::mrq_request,
             mrq::spotify_album,
             data::data_load,
