@@ -29,7 +29,7 @@
 .titlebar { grid-area: title; display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center; height: var(--titlebar); }
 .tb-left { display: flex; align-items: center; gap: 8px; height: 100%; padding-left: 10px; }
 .tb-center { display: flex; align-items: center; gap: 8px; height: 100%; }
-.tb-right { display: flex; justify-content: flex-end; height: 100%; }
+.tb-right { display: flex; align-items: center; justify-content: flex-end; height: 100%; }
 .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.02em; margin-right: 10px; }
 .brand b, .wordmark b { color: var(--accent); }
 /* The dev build (npm run app:dev), so it isn't mistaken for the installed Rakki. */
