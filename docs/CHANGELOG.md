@@ -11,6 +11,9 @@ says otherwise.
   apps move the AppImage into their own folder right after its first launch, which left Update
   with nothing to replace and no way to restart. Rakki now finds where its AppImage went (from
   the menu entry it was given) before installing and restarting.
+- **Desktop on Linux: a clear message when mpv is missing.** The AppImage plays through the
+  system's mpv, so without it Rakki now says to install it (with the command for Arch/CachyOS,
+  Debian/Ubuntu and Fedora) instead of a bare "not found".
 - **Desktop: your data in one folder you can open.** Settings, lyric timings
   (`lyrics-offsets.json`), tap-to-sync drafts (`lyrics-drafts/`), the queue and caches now live
   as readable files in `%LOCALAPPDATA%\Rakki` (Rakki Dev: `Rakki Dev`) instead of WebView2's

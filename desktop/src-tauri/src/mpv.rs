@@ -77,7 +77,18 @@ impl Mpv {
         }
         let child = cmd
             .spawn()
-            .map_err(|e| format!("Couldn't start mpv ({}): {}", binary.display(), e))?;
+            .map_err(|e| {
+                // On Linux Rakki plays through the system's mpv (the .deb installs it with Rakki;
+                // an AppImage can't): say how to get it.
+                if cfg!(target_os = "linux") && e.kind() == std::io::ErrorKind::NotFound {
+                    "mpv isn't installed. Rakki plays through it: install the mpv package \
+                     (Arch/CachyOS: sudo pacman -S mpv, Debian/Ubuntu: sudo apt install mpv, \
+                     Fedora: sudo dnf install mpv), then play again."
+                        .to_string()
+                } else {
+                    format!("Couldn't start mpv ({}): {}", binary.display(), e)
+                }
+            })?;
 
         let (reader, mut writer) = connect(&ipc).await?;
         let (tx, mut rx) = mpsc::unbounded_channel::<String>();
