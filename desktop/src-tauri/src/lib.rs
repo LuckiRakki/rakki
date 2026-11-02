@@ -9,6 +9,8 @@ mod capture;
 mod data;
 mod discord;
 mod media;
+#[cfg(target_os = "linux")]
+mod mpris;
 mod memory;
 mod mpv;
 mod mrq;
@@ -85,8 +87,8 @@ fn media_now_playing(media: State<'_, Media>, now: Option<NowPlaying>) {
 }
 
 #[tauri::command]
-fn media_playback(media: State<'_, Media>, playing: bool, position: f64) {
-    media.set_playback(playing, position);
+fn media_playback(media: State<'_, Media>, playing: bool, position: f64, rate: Option<f64>) {
+    media.set_playback(playing, position, rate.unwrap_or(1.0));
 }
 
 /// Discord's "Listening to" (discord.rs); None clears it.

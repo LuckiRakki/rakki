@@ -7,6 +7,11 @@ an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the
 says otherwise.
 
 ## Desktop 1.6.0 (2026-10-29, next desktop build)
+- **Desktop on Linux: Rakki shows in your desktop's media widget** (Caelestia's dashboard,
+  Noctalia, waybar, KDE and GNOME's media controls, playerctl). Rakki now runs its own MPRIS
+  player: the song from last time shows, paused, as soon as Rakki opens (Play there picks it
+  up), the widget gets Rakki's icon and name from its menu entry, and progress bars follow seeks,
+  song changes and a song edit's speed.
 - **Desktop on Linux: Update works after Gear Lever or AppImageLauncher moves Rakki.** Those
   apps move the AppImage into their own folder right after its first launch, which left Update
   with nothing to replace and no way to restart. Rakki now finds where its AppImage went (from

@@ -3194,6 +3194,7 @@ dependencies = [
  "webview2-com",
  "windows 0.62.2",
  "windows-core",
+ "zbus 5.19.0",
 ]
 
 [[package]]

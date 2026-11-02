@@ -23,8 +23,6 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io-util", "net", "sync", "time"] }
-# System media controls: Windows' media overlay (SMTC) and Linux's MPRIS.
-souvlaki = { version = "0.8", default-features = false, features = ["use_zbus"] }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 # Talking to MRQ, your tag editor, and Spotify's public album pages (mrq.rs). Both already part
@@ -32,6 +30,15 @@ tauri-plugin-process = "2"
 reqwest = { version = "0.13", default-features = false }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 tauri-plugin-single-instance = "2"
+
+# System media controls on Windows (media.rs): the media overlay (SMTC) and media keys.
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+souvlaki = { version = "0.8", default-features = false, features = ["use_zbus"] }
+
+# Linux: Rakki's own MPRIS player for desktop shells' media widgets (mpris.rs); already in the app
+# through Tauri's plugins.
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = "5"
 
 # Windows: WebView2's own settings (memory.rs); the same versions Tauri's webview already uses.
 [target.'cfg(windows)'.dependencies]

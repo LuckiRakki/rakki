@@ -30,7 +30,8 @@ export const engine = {
   seek: (seconds: number) => invoke<void>('player_seek', { seconds }),
   stop: () => invoke<void>('player_stop'),
   nowPlaying: (now: NowPlaying | null) => invoke<void>('media_now_playing', { now }).catch(() => {}),
-  playback: (playing: boolean, position: number) => invoke<void>('media_playback', { playing, position }).catch(() => {}),
+  /** Playing or paused, where (seconds) and how fast (a song edit's speed; 1 when left out). */
+  playback: (playing: boolean, position: number, rate?: number) => invoke<void>('media_playback', { playing, position, rate: rate ?? 1 }).catch(() => {}),
 };
 
 export interface EngineEvents {

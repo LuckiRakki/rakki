@@ -173,7 +173,7 @@ export function handOverMedia(override: ((command: string) => boolean) | null) {
 
 const media = {
   nowPlaying: (...args: Parameters<typeof engine.nowPlaying>) => (remoteOwnsMedia ? undefined : engine.nowPlaying(...args)),
-  playback: (playing: boolean, position: number) => (remoteOwnsMedia ? undefined : engine.playback(playing, position)),
+  playback: (playing: boolean, position: number, rate?: number) => (remoteOwnsMedia ? undefined : engine.playback(playing, position, rate)),
 };
 
 function localNowPlaying(item: BaseItem) {
@@ -192,7 +192,7 @@ export function showLocalMedia() {
   const s = usePlayer.getState();
   const item = s.queue[s.index];
   void engine.nowPlaying(item ? localNowPlaying(item) : null);
-  if (item) void engine.playback(s.playing, currentPosition(s));
+  if (item) void engine.playback(s.playing, currentPosition(s), s.rate);
 }
 
 /** A new song is on: tell Jellyfin and the system's media controls. */
@@ -210,6 +210,9 @@ function songStarted(item: BaseItem | undefined) {
     reportStart(item);
   }
   void media.nowPlaying(localNowPlaying(item));
+  // The new song's own position (and speed), so widgets' progress bars start over with it.
+  const s = usePlayer.getState();
+  void media.playback(s.playing, currentPosition(s), s.rate);
 }
 
 // ---- Autoplay ----
@@ -382,6 +385,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     seek(seconds) {
       set({ position: seconds, positionAt: performance.now() });
       if (!restoredPending) void engine.seek(seconds);
+      void media.playback(get().playing, seconds, get().rate);
     },
 
     setVolume(volume) {
@@ -457,6 +461,12 @@ export function startPlayer() {
       shuffle: last.shuffle,
       playing: false,
     });
+    // Show it, paused, in the system's media controls too (Linux shells' media widgets, Windows'
+    // overlay), so Play there picks it up just like Play here.
+    if (item) {
+      void media.nowPlaying(localNowPlaying(item));
+      void media.playback(false, last.position, rateOf(item));
+    }
   }
   // Kept as it changes: at once for the queue, every 10 s for the place in the song, and on the way out.
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -488,7 +498,7 @@ export function startPlayer() {
           if (!s.queue.length) return;
           const playing = value === false;
           usePlayer.setState({ playing, position: currentPosition(s), positionAt: now });
-          void media.playback(playing, currentPosition(s));
+          void media.playback(playing, currentPosition(s), s.rate);
           break;
         }
         case 'time-pos':

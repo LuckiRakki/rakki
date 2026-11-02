@@ -1,18 +1,43 @@
 // The system's media controls: media keys, Windows' media overlay (SMTC) and Linux's MPRIS
 // (desktop widgets, playerctl). The interface tells this what's playing; button presses go back
-// to the interface as "media://control", which owns the queue.
+// to the interface as "media://control", which owns the queue. Windows goes through souvlaki;
+// Linux has Rakki's own MPRIS player (mpris.rs).
 
 use serde::Deserialize;
+#[cfg(not(target_os = "linux"))]
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, MediaPosition, PlatformConfig, SeekDirection};
+#[cfg(not(target_os = "linux"))]
 use std::sync::Mutex;
+#[cfg(not(target_os = "linux"))]
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, WebviewWindow};
+#[cfg(not(target_os = "linux"))]
+use tauri::Emitter;
+use tauri::{AppHandle, WebviewWindow};
 
+#[cfg(target_os = "linux")]
+pub struct Media(crate::mpris::Mpris);
+
+#[cfg(target_os = "linux")]
+impl Media {
+    pub fn new(app: &AppHandle, _window: &WebviewWindow) -> Self {
+        Media(crate::mpris::Mpris::new(app))
+    }
+
+    pub fn set_now_playing(&self, now: Option<NowPlaying>) {
+        self.0.set_now_playing(now);
+    }
+
+    pub fn set_playback(&self, playing: bool, position: f64, rate: f64) {
+        self.0.set_playback(playing, position, rate);
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
 pub struct Media {
     controls: Mutex<Option<MediaControls>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct NowPlaying {
     pub title: String,
     pub artist: String,
@@ -21,6 +46,7 @@ pub struct NowPlaying {
     pub duration: Option<f64>,
 }
 
+#[cfg(not(target_os = "linux"))]
 impl Media {
     pub fn new(app: &AppHandle, window: &WebviewWindow) -> Self {
         #[cfg(windows)]
@@ -79,7 +105,7 @@ impl Media {
         }
     }
 
-    pub fn set_playback(&self, playing: bool, position: f64) {
+    pub fn set_playback(&self, playing: bool, position: f64, _rate: f64) {
         let Ok(mut guard) = self.controls.lock() else { return };
         let Some(controls) = guard.as_mut() else { return };
         let progress = Some(MediaPosition(Duration::from_secs_f64(position.max(0.0))));
