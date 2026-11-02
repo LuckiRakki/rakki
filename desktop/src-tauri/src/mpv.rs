@@ -67,15 +67,17 @@ impl Mpv {
         .arg(format!("--input-ipc-server={}", ipc))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
+        // Kept to tell what went wrong when mpv stops at once (start_error); drained after.
+        .stderr(std::process::Stdio::piped())
         .kill_on_drop(true);
+        crate::host::system_env(cmd.as_std_mut());
         #[cfg(windows)]
         {
             // No console window flashing up for mpv.
             const CREATE_NO_WINDOW: u32 = 0x0800_0000;
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
-        let child = cmd
+        let mut child = cmd
             .spawn()
             .map_err(|e| {
                 // On Linux Rakki plays through the system's mpv (the .deb installs it with Rakki;
@@ -90,7 +92,12 @@ impl Mpv {
                 }
             })?;
 
-        let (reader, mut writer) = connect(&ipc).await?;
+        let (reader, mut writer) = connect(&ipc, &mut child).await?;
+        if let Some(mut err) = child.stderr.take() {
+            tauri::async_runtime::spawn(async move {
+                let _ = tokio::io::copy(&mut err, &mut tokio::io::sink()).await;
+            });
+        }
         let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
         // Writer: commands from the interface, one JSON line each.
@@ -220,6 +227,7 @@ fn loadfile(url: &str, flags: &str, options: &FileOptions) -> Value {
 pub async fn audio_filters(app: &AppHandle) -> Vec<String> {
     let mut cmd = Command::new(find_binary(app));
     cmd.args(["--no-config", "--af=help"]).stdin(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+    crate::host::system_env(cmd.as_std_mut());
     #[cfg(windows)]
     {
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -235,7 +243,8 @@ pub async fn audio_filters(app: &AppHandle) -> Vec<String> {
 }
 
 /// RAKKI_MPV, else mpv next to the app (bundled on Windows), else a usual Windows install
-/// folder, else whatever `mpv` is on PATH (Linux: the system's mpv package).
+/// folder, else whatever `mpv` is on PATH (Linux: the system's mpv package, looked up without
+/// the AppImage's own folders: host.rs).
 fn find_binary(app: &AppHandle) -> PathBuf {
     if let Ok(custom) = std::env::var("RAKKI_MPV") {
         return PathBuf::from(custom);
@@ -257,7 +266,7 @@ fn find_binary(app: &AppHandle) -> PathBuf {
             return c;
         }
     }
-    PathBuf::from(name)
+    crate::host::which(name).unwrap_or_else(|| PathBuf::from(name))
 }
 
 fn ipc_path() -> String {
@@ -279,9 +288,25 @@ type IpcRead = tokio::net::unix::OwnedReadHalf;
 #[cfg(unix)]
 type IpcWrite = tokio::net::unix::OwnedWriteHalf;
 
-/// mpv takes a moment to open its pipe: try for up to 5 seconds.
-async fn connect(path: &str) -> Result<(IpcRead, IpcWrite), String> {
+/// mpv's last words when it stopped before opening its pipe.
+async fn start_error(child: &mut Child, status: std::process::ExitStatus) -> String {
+    let mut text = String::new();
+    if let Some(mut err) = child.stderr.take() {
+        use tokio::io::AsyncReadExt;
+        let _ = tokio::time::timeout(Duration::from_secs(1), err.read_to_string(&mut text)).await;
+    }
+    match text.lines().rev().map(str::trim).find(|l| !l.is_empty()) {
+        Some(line) => format!("mpv stopped as it started ({status}): {line}"),
+        None => format!("mpv stopped as it started ({status})."),
+    }
+}
+
+/// mpv takes a moment to open its pipe: try for up to 5 seconds, unless it stops first.
+async fn connect(path: &str, child: &mut Child) -> Result<(IpcRead, IpcWrite), String> {
     for _ in 0..50 {
+        if let Ok(Some(status)) = child.try_wait() {
+            return Err(start_error(child, status).await);
+        }
         #[cfg(windows)]
         {
             if let Ok(pipe) = tokio::net::windows::named_pipe::ClientOptions::new().open(path) {

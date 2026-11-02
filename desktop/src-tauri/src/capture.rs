@@ -204,7 +204,7 @@ mod platform {
 
     /// mpv's playback stream on PulseAudio / PipeWire (its sink input), found by process id.
     fn sink_input(pid: u32) -> Option<String> {
-        let out = Command::new("pactl").args(["-f", "json", "list", "sink-inputs"]).output().ok()?;
+        let out = crate::host::system_env(Command::new("pactl").args(["-f", "json", "list", "sink-inputs"])).output().ok()?;
         let list: serde_json::Value = serde_json::from_slice(&out.stdout).ok()?;
         list.as_array()?.iter().find_map(|s| {
             let props = s.get("properties")?;
@@ -224,7 +224,7 @@ mod platform {
             }
             std::thread::sleep(std::time::Duration::from_millis(500));
         };
-        let mut child = Command::new("parec")
+        let mut child = crate::host::system_env(&mut Command::new("parec"))
             .args([
                 &format!("--monitor-stream={index}"),
                 "--format=float32le",

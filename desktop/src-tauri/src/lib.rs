@@ -8,6 +8,7 @@ mod autostart;
 mod capture;
 mod data;
 mod discord;
+mod host;
 mod media;
 #[cfg(target_os = "linux")]
 mod mpris;

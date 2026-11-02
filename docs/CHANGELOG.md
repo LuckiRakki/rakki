@@ -20,6 +20,11 @@ says otherwise.
   system's mpv, so without it Rakki now says to install it (with the command for Arch/CachyOS,
   Debian/Ubuntu and Fedora) instead of a bare "not found".
 - **Desktop: the Update button sits in the middle of the title bar** instead of stuck to its top edge.
+- **Desktop on Linux: the AppImage plays music on newer distros.** It started the system's mpv
+  with its own bundled (Ubuntu 22.04) libraries, so on Arch/CachyOS mpv died at once and Rakki
+  said "mpv started but didn't answer on its control pipe". mpv (and pactl/parec for the
+  visualizer) now start with the system's own environment, and if mpv does stop at launch Rakki
+  shows mpv's own error instead of waiting 5 seconds.
 - **Desktop: your data in one folder you can open.** Settings, lyric timings
   (`lyrics-offsets.json`), tap-to-sync drafts (`lyrics-drafts/`), the queue and caches now live
   as readable files in `%LOCALAPPDATA%\Rakki` (Rakki Dev: `Rakki Dev`) instead of WebView2's

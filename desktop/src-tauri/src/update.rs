@@ -69,7 +69,8 @@ pub fn restart(app: &AppHandle) -> ! {
     // Tauri restarts an AppImage from $APPIMAGE, which may be gone (above).
     if let Some(path) = appimage() {
         let args: Vec<_> = std::env::args_os().skip(1).collect();
-        if std::process::Command::new(&path).args(args).spawn().is_ok() {
+        let mut cmd = std::process::Command::new(&path);
+        if crate::host::system_env(&mut cmd).args(args).spawn().is_ok() {
             app.cleanup_before_exit();
             std::process::exit(0);
         }
