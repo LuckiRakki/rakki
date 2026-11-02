@@ -14,6 +14,7 @@ says otherwise.
 - **Desktop on Linux: a clear message when mpv is missing.** The AppImage plays through the
   system's mpv, so without it Rakki now says to install it (with the command for Arch/CachyOS,
   Debian/Ubuntu and Fedora) instead of a bare "not found".
+- **Desktop: the Update button sits in the middle of the title bar** instead of stuck to its top edge.
 - **Desktop: your data in one folder you can open.** Settings, lyric timings
   (`lyrics-offsets.json`), tap-to-sync drafts (`lyrics-drafts/`), the queue and caches now live
   as readable files in `%LOCALAPPDATA%\Rakki` (Rakki Dev: `Rakki Dev`) instead of WebView2's
