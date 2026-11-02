@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""rakki-vis: Rakki's visualizer in a terminal, like cava.
+
+Draws what Rakki Desktop's default visualizer draws (desktop/src/audio/Visualizer.tsx with the
+"Line" look in desktop/src/settings/look.ts): one thin line across the spectrum, 20 Hz to
+22 kHz on a log scale, -85 to -25 dB, smoothed like the Web Audio analyser (0.6), with a faint
+mirror of it underneath taking half the height. In white, no accent.
+
+The line is drawn with braille dots (2 x 4 per character), so it stays thin at any size.
+It listens to whatever the computer is playing (the default output's monitor) through
+PipeWire/PulseAudio: `parec`, or `pw-record` if that's missing. Needs python-numpy.
+
+  rakki-vis                 the Rakki look
+  rakki-vis --mirror 0      no mirror
+  rakki-vis --help          everything else
+
+Quit with q or Ctrl+C.
+"""
+import argparse
+import os
+import select
+import shutil
+import signal
+import subprocess
+import sys
+import termios
+import threading
+import time
+import tty
+
+try:
+    import numpy as np
+except ImportError:
+    sys.exit("rakki-vis needs numpy: sudo pacman -S python-numpy")
+
+RATE = 48000
+
+# Braille: dot bits by (column 0-1, row 0-3 from the top).
+DOTS = ((0x01, 0x02, 0x04, 0x40), (0x08, 0x10, 0x20, 0x80))
+
+
+def args():
+    p = argparse.ArgumentParser(prog="rakki-vis", description="Rakki's line visualizer in the terminal.")
+    p.add_argument("--min-freq", type=float, default=20, help="lowest frequency, Hz (20)")
+    p.add_argument("--max-freq", type=float, default=22050, help="highest frequency, Hz (22050)")
+    p.add_argument("--min-db", type=float, default=-85, help="quietest level shown, dB (-85)")
+    p.add_argument("--max-db", type=float, default=-25, help="loudest level shown, dB (-25)")
+    p.add_argument("--smoothing", type=float, default=0.6, help="0-0.9, how much it smooths between frames (0.6)")
+    p.add_argument("--fft", type=int, default=16384, help="FFT size (16384, as in Rakki)")
+    p.add_argument("--reflection", type=float, default=0.5, help="0-0.5, how much of the height the mirror takes (0.5)")
+    p.add_argument("--mirror", type=float, default=0.25,
+                   help="0-1, the mirror's brightness (0.25; Rakki uses 0.1, which a thin terminal line barely shows)")
+    p.add_argument("--color", default="ffffff", help="the line's colour as hex (ffffff)")
+    p.add_argument("--fps", type=float, default=60, help="frames per second (60)")
+    p.add_argument("--source", default="@DEFAULT_MONITOR@", help="the PulseAudio source to listen to (the default output)")
+    return p.parse_args()
+
+
+def rgb(hexcolor, scale=1.0):
+    h = hexcolor.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return f"\x1b[38;2;{round(r * scale)};{round(g * scale)};{round(b * scale)}m"
+
+
+class Listener:
+    """Reads the computer's sound into a ring buffer (mono, float) on a thread."""
+
+    def __init__(self, size, source):
+        self.buf = np.zeros(size, dtype=np.float32)
+        self.lock = threading.Lock()
+        self.proc = self._start(source)
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def _start(self, source):
+        if shutil.which("parec"):
+            cmd = ["parec", f"--device={source}", "--format=s16le", f"--rate={RATE}", "--channels=2",
+                   "--latency-msec=10", "--raw"]
+        elif shutil.which("pw-record"):
+            cmd = ["pw-record", "-P", "{ stream.capture.sink = true }", "--format", "s16", "--rate", str(RATE),
+                   "--channels", "2", "--raw", "-"]
+        else:
+            sys.exit("rakki-vis needs parec (libpulse) or pw-record (pipewire) to hear the sound")
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0)
+
+    def _read(self):
+        out = self.proc.stdout
+        rest = b""
+        while True:
+            chunk = out.read(4096)
+            if not chunk:
+                return
+            chunk = rest + chunk
+            usable = len(chunk) - len(chunk) % 4
+            rest = chunk[usable:]
+            frames = np.frombuffer(chunk[:usable], dtype="<i2").reshape(-1, 2)
+            mono = frames.mean(axis=1, dtype=np.float32) / 32768.0
+            n = len(mono)
+            with self.lock:
+                if n >= len(self.buf):
+                    self.buf[:] = mono[-len(self.buf):]
+                else:
+                    self.buf[:-n] = self.buf[n:]
+                    self.buf[-n:] = mono
+
+    def samples(self):
+        with self.lock:
+            return self.buf.copy()
+
+    def stop(self):
+        self.proc.terminate()
+
+
+class Analyser:
+    """The Web Audio AnalyserNode's maths: Blackman window, |FFT| / N, smoothed, in dB."""
+
+    def __init__(self, a):
+        self.n = a.fft
+        self.window = np.blackman(self.n).astype(np.float32)
+        self.smooth = np.zeros(self.n // 2, dtype=np.float32)
+        self.tau = min(max(a.smoothing, 0.0), 0.99)
+        self.min_db, self.max_db = a.min_db, a.max_db
+        self.freqs = np.arange(self.n // 2) * RATE / self.n
+
+    def levels(self, samples):
+        mag = np.abs(np.fft.rfft(samples * self.window))[: self.n // 2] / self.n
+        self.smooth = self.tau * self.smooth + (1 - self.tau) * mag
+        db = 20 * np.log10(np.maximum(self.smooth, 1e-12))
+        return np.clip((db - self.min_db) / (self.max_db - self.min_db), 0, 1)
+
+
+class Graph:
+    """Turns the bins into one height per dot column, like audioMotion's log-scale graph:
+    bins that land on the same column keep the highest, sparse low bins are joined by lines."""
+
+    def __init__(self, a, freqs):
+        self.a, self.freqs, self.width = a, freqs, 0
+
+    def resize(self, width):
+        self.width = width
+        lo, hi = np.log(self.a.min_freq), np.log(self.a.max_freq)
+        inside = (self.freqs >= self.a.min_freq) & (self.freqs <= self.a.max_freq)
+        self.bins = np.nonzero(inside)[0]
+        x = (np.log(self.freqs[self.bins]) - lo) / (hi - lo) * (width - 1)
+        self.col = np.round(x).astype(int)
+        self.cols = np.unique(self.col)  # columns with at least one bin
+
+    def heights(self, levels):
+        top = np.zeros(self.width, dtype=np.float32)
+        np.maximum.at(top, self.col, levels[self.bins])
+        return np.interp(np.arange(self.width), self.cols, top[self.cols])
+
+
+def draw(heights, rows, flip):
+    """Braille rows for a line through `heights` (0-1) in `rows` text rows; flipped for the mirror."""
+    w = len(heights)
+    h = rows * 4
+    y = np.round((1 - heights) * (h - 1)).astype(int)  # 0 is the top dot
+    if flip:
+        y = h - 1 - y
+    cells = np.zeros((rows, (w + 1) // 2), dtype=np.int32)
+    prev = y[0]
+    for x in range(w):
+        # The column's own dot, plus the run back toward the last column's (an unbroken line).
+        cur = y[x]
+        run = range(prev + 1, cur + 1) if prev < cur else range(cur, prev) if prev > cur else (cur,)
+        for yy in run:
+            cells[yy >> 2, x >> 1] |= DOTS[x & 1][yy & 3]
+        prev = y[x]
+    return ["".join(chr(0x2800 + c) for c in row) for row in cells]
+
+
+def main():
+    a = args()
+    if not sys.stdout.isatty():
+        sys.exit("rakki-vis draws in a terminal")
+    listener = Listener(a.fft, a.source)
+    analyser = Analyser(a)
+    graph = Graph(a, analyser.freqs)
+    line_color, mirror_color, reset = rgb(a.color), rgb(a.color, a.mirror), "\x1b[0m"
+
+    stdin = sys.stdin.fileno()
+    old = termios.tcgetattr(stdin)
+    tty.setcbreak(stdin)
+    out = sys.stdout
+    out.write("\x1b[?1049h\x1b[?25l\x1b[2J")
+    quit_ = threading.Event()
+    signal.signal(signal.SIGTERM, lambda *_: quit_.set())
+    size = None
+    try:
+        frame = 1 / a.fps
+        next_t = time.monotonic()
+        while not quit_.is_set():
+            cols, rows = shutil.get_terminal_size()
+            if (cols, rows) != size:
+                size = (cols, rows)
+                graph.resize(cols * 2)
+                out.write("\x1b[2J")
+            mirror_rows = round(rows * min(max(a.reflection, 0), 0.5)) if a.mirror > 0 else 0
+            main_rows = rows - mirror_rows
+            heights = graph.heights(analyser.levels(listener.samples()))
+            lines = [line_color + r for r in draw(heights, main_rows, False)]
+            if mirror_rows:
+                # The mirror is the graph flipped and squeezed into its rows.
+                lines += [mirror_color + r for r in draw(heights, mirror_rows, True)]
+            out.write("\x1b[H" + "\r\n".join(lines) + reset)
+            out.flush()
+
+            next_t += frame
+            wait = next_t - time.monotonic()
+            if wait < 0:
+                next_t = time.monotonic()
+                wait = 0
+            ready, _, _ = select.select([stdin], [], [], wait)
+            if ready and os.read(stdin, 32).lower().find(b"q") >= 0:
+                break
+    except KeyboardInterrupt:
+        pass
+    finally:
+        out.write(reset + "\x1b[?25h\x1b[?1049l")
+        out.flush()
+        termios.tcsetattr(stdin, termios.TCSADRAIN, old)
+        listener.stop()
+
+
+if __name__ == "__main__":
+    main()
