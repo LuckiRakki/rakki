@@ -3,7 +3,9 @@
 Read these first; they override the generic Expo guidance below where they differ.
 
 - **Docs:** the plan and decisions are in `docs/FRAMEWORK.md`, what changed per version in
-  `docs/CHANGELOG.md` (add an entry with every version bump; the a.b.c scheme is FRAMEWORK §10).
+  `docs/CHANGELOG.md` (add an entry with every version bump; the a.b.c scheme is FRAMEWORK §10). iOS playback
+  error codes (CoreMediaErrorDomain numbers, FourCCs like 'nope') are decoded in
+  `docs/MEDIA_ERRORS.md`; keep `src/player/mediaErrors.ts` in step with it.
 - **Builds don't use `eas build`.** iOS builds run on GitHub Actions (`.github/workflows/ios.yml`,
   variants `release` / `dev` / `check`), unsigned, and are installed with SideStore. JS changes
   ship as over-the-air updates: every push to `main` runs `update.yml` (`eas update`).

@@ -20,6 +20,7 @@ import { measureBurst, noteRadioConnect } from '@/radio/sync';
 import { reporter } from '@/player/reporting';
 import { buildSmartQueue } from '@/player/smartQueue';
 import { notePerf } from '@/perf/events';
+import { decodeMediaError, describeMediaError } from '@/player/mediaErrors';
 import { useSettings } from '@/settings/store';
 import { showToast } from '@/ui/overlays';
 
@@ -129,6 +130,13 @@ function shuffled<T>(arr: T[]): T[] {
   return a;
 }
 
+/**
+ * Songs whose file wouldn't play on this phone, and which converted stream they play from now
+ * (1 = AAC over HLS, 2 = MP3), for the rest of the session.
+ */
+const fallbacks = new Map<string, 1 | 2>();
+const fallbackStep = (id: string) => fallbacks.get(id) ?? 0;
+
 function maxKbps(): number {
   const s = useSettings.getState();
   return onCellular ? s.cellularBitrate : s.wifiBitrate;
@@ -169,8 +177,11 @@ function toTracks(queue: QueueEntry[]): RakkiTrack[] {
     return {
       key,
       id: item.Id,
-      // Downloaded songs play from the phone, even when online.
-      url: localAudioUri(item.Id) ?? client.streamUrl(item.Id, kbps),
+      // Downloaded songs play from the phone, even when online, unless the file wouldn't play
+      // (then it's converted on the server: see recoverFromError).
+      url: fallbacks.has(item.Id)
+        ? client.fallbackStreamUrl(item.Id, fallbacks.get(item.Id)!, kbps)
+        : (localAudioUri(item.Id) ?? client.streamUrl(item.Id, kbps)),
       title: item.Name,
       artist: artistLine(item),
       album: item.Album ?? '',
@@ -482,9 +493,60 @@ engine.subscribe({
     usePlayer.setState({ index: found >= 0 ? found : s.index, error: null });
   },
   onError(e) {
-    usePlayer.setState({ error: e.message });
+    if (heldForVideo) return;
+    recoverFromError(e.key, e.message);
   },
 });
+
+/**
+ * A song failed to play. iOS's queue player has already moved on to the next song, which is
+ * what made songs "skip" (e.g. CoreMediaErrorDomain 1852797029 = 'nope', the decoder refusing
+ * a file the server offered as-is). Instead, play the same song again converted on the
+ * server, first as AAC, then as MP3; only after both fail does it stay skipped, with the error
+ * named (src/player/mediaErrors.ts, docs/MEDIA_ERRORS.md).
+ */
+function recoverFromError(key: string | null, message: string) {
+  const s = usePlayer.getState();
+  const at = key ? s.queue.findIndex((q) => q.key === key) : -1;
+  const entry = at >= 0 ? s.queue[at] : undefined;
+  const info = decodeMediaError(message);
+  const step = entry ? fallbackStep(entry.item.Id) : 0;
+  const retry = !!entry && !entry.item.Radio && step < 2 && !isOffline() && !remote;
+  notePerf('playError', {
+    id: entry?.item.Id ?? null,
+    container: entry?.item.Container ?? null,
+    domain: info?.domain ?? null,
+    code: info?.code ?? null,
+    fourcc: info?.fourcc ?? null,
+    step,
+    retry,
+    message,
+  });
+  if (!entry || !retry) {
+    usePlayer.setState({ error: describeMediaError(message, entry?.item.Name) });
+    return;
+  }
+  fallbacks.set(entry.item.Id, (step + 1) as 1 | 2);
+  // The failed song is the one playing (or the one just left because it failed), or one of the
+  // songs buffering ahead.
+  const current = at === s.index || at === s.index - 1;
+  if (!current && at < s.index) return;
+  const position = at === s.index ? engine.getProgress().position : 0;
+  // A new key, so the engine builds a fresh player item for it (with the converted stream)
+  // instead of keeping the failed one.
+  const queue = s.queue.slice();
+  const fresh = newKey();
+  queue[at] = { ...entry, key: fresh };
+  if (unshuffledKeys) unshuffledKeys = unshuffledKeys.map((k) => (k === entry.key ? fresh : k));
+  usePlayer.setState({ queue, index: current ? at : s.index, error: null });
+  void (async () => {
+    await engine.updateQueue(toTracks(queue));
+    if (!current) return;
+    await engine.skipTo(at);
+    if (position > 1) await engine.seekTo(position);
+    if (usePlayer.getState().playing) await engine.play();
+  })().catch(() => {});
+}
 
 // Wi-Fi vs cellular decides the bitrate cap for songs queued from now on.
 function refreshUpcoming() {

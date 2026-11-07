@@ -6,6 +6,17 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.24.1 (2026-11-07)
+- **Songs that iOS can't decode play instead of skipping.** Some files Jellyfin sends as they
+  are (certain FLAC, WAV, ALAC or MP3 files) make iOS's decoder fail with
+  "CoreMediaErrorDomain error 1852797029" ('nope'), and the player jumped to the next song. Now
+  the same song starts again, converted on the server to AAC (then MP3 if that fails too), from
+  where it stopped, and later plays of it go straight to the converted stream.
+- **Playback errors say what they mean.** Instead of a bare number the player shows e.g.
+  "iOS's audio decoder refused this file (Illegal audio operation, CoreMediaErrorDomain
+  1852797029 'nope')", and each failure goes into the performance log as a `playError` event.
+  Every code is listed in docs/MEDIA_ERRORS.md.
+
 ## Desktop 1.6.0 (2026-10-29, next desktop build)
 - **Desktop on Linux: Rakki shows in your desktop's media widget** (Caelestia's dashboard,
   Noctalia, waybar, KDE and GNOME's media controls, playerctl). Rakki now runs its own MPRIS

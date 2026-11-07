@@ -1242,4 +1242,28 @@ export class JellyfinClient {
       MaxStreamingBitrate: maxKbps > 0 ? maxKbps * 1000 : 140000000,
     })}`;
   }
+
+  /**
+   * The song converted on the server, for when the file itself won't play on the phone (iOS's
+   * decoder refuses some files Jellyfin offers for direct play). Step 1: AAC over HLS (the
+   * direct-play list names no audio file container, so the server always converts or remuxes).
+   * Step 2: a plain MP3 stream, in case the HLS conversion fails too.
+   */
+  fallbackStreamUrl(trackId: string, step: 1 | 2, maxKbps = 0): string {
+    const { serverUrl, userId, deviceId, token } = this.session;
+    const kbps = maxKbps > 0 ? Math.min(maxKbps, 320) : 320;
+    if (step === 2) {
+      return `${serverUrl}/Audio/${trackId}/stream.mp3${query({ AudioCodec: 'mp3', AudioBitRate: kbps * 1000, AudioChannels: 2, ApiKey: token })}`;
+    }
+    return `${serverUrl}/Audio/${trackId}/universal${query({
+      UserId: userId,
+      DeviceId: deviceId,
+      ApiKey: token,
+      Container: 'ts|aac',
+      TranscodingContainer: 'ts',
+      TranscodingProtocol: 'hls',
+      AudioCodec: 'aac',
+      MaxStreamingBitrate: kbps * 1000,
+    })}`;
+  }
 }
