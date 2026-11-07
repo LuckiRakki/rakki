@@ -268,6 +268,14 @@ function slimSource({ Id, Container, Bitrate, MediaStreams }: MediaSource): Medi
   };
 }
 
+/**
+ * A new value in every stream link, so each one is a different address: iOS can't reuse an old
+ * answer for it (a redirect to an HLS conversion the server has since deleted).
+ */
+function playSessionId(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function query(params: Record<string, string | number | boolean | undefined>): string {
   const q = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== '')
@@ -1235,6 +1243,7 @@ export class JellyfinClient {
       UserId: userId,
       DeviceId: deviceId,
       ApiKey: token,
+      PlaySessionId: playSessionId(),
       Container: 'mp3,aac,m4a|aac,m4b|aac,flac,alac,m4a|alac,wav',
       TranscodingContainer: 'ts',
       TranscodingProtocol: 'hls',
@@ -1259,6 +1268,7 @@ export class JellyfinClient {
       UserId: userId,
       DeviceId: deviceId,
       ApiKey: token,
+      PlaySessionId: playSessionId(),
       Container: 'ts|aac',
       TranscodingContainer: 'ts',
       TranscodingProtocol: 'hls',

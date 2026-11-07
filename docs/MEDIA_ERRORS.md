@@ -34,6 +34,13 @@ AVQueuePlayer drops a failed item and moves to the next one, which is what looke
 2. **Step 2**: MP3 (`/Audio/{id}/stream.mp3`).
 3. After that it stays skipped and the player shows the named error.
 
+Seen 2026-11-07: a run of 'nope' on almost every converted (HLS) song after the app resumed
+from hours paused or relaunched, while the same files played fine before. The player still
+held HLS links whose conversions the server had deleted (404s for old segments in the Jellyfin
+log). Since 1.24.2 a resume after 5+ minutes paused rebuilds the queue with fresh links, and
+every stream link carries a new `PlaySessionId`. So 'nope' on many songs at once means stale
+streams; 'nope' on one song every time means that file.
+
 The step a song reached is remembered until the app restarts, so it plays from the working
 stream straight away next time. Radio stations, offline mode and remote playback (Connect) are
 not retried. Codes marked **convert** below are the ones a conversion normally fixes.

@@ -6,6 +6,15 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.24.2 (2026-11-07)
+- **Songs stop skipping after a long pause or a relaunch.** The server stops converting a song
+  (and deletes its pieces) a while after the phone stops asking for it, but the player held on
+  to the old stream links. Resuming hours later, or reopening the app, asked for pieces that
+  were gone, and then every song in a row failed with 'nope' and skipped (28 of 30 songs on
+  Nov 7, all of them converted streams, old songs as much as new ones). Play after more than
+  5 minutes paused, or coming back to the app paused, now rebuilds the queue with fresh streams
+  at the same place, and every stream link is new so iOS can't reuse an old one.
+
 ## 1.24.1 (2026-11-07)
 - **Songs that iOS can't decode play instead of skipping.** Some files Jellyfin sends as they
   are (certain FLAC, WAV, ALAC or MP3 files) make iOS's decoder fail with

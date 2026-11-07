@@ -364,6 +364,10 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       void afterVideo().then(() => engine.play());
       return;
     }
+    if (!s.playing && streamsAreStale()) {
+      rebuildStreams(true);
+      return;
+    }
     void engine.togglePlayPause();
   },
 
@@ -473,6 +477,8 @@ engine.subscribe({
         reporter.pausedChanged(!e.playing, position);
       }
     }
+    if (e.playing) pausedAt = null;
+    else if (s.playing) pausedAt = Date.now();
     usePlayer.setState({
       playing: e.playing,
       buffering: e.buffering,
@@ -497,6 +503,32 @@ engine.subscribe({
     recoverFromError(e.key, e.message);
   },
 });
+
+/**
+ * When playback was paused. The server stops a song's conversion (and deletes its HLS segments)
+ * a while after the phone stops asking for it, but the player keeps the old stream links: after
+ * a long pause, resuming asked for segments that were gone and every song failed with
+ * CoreMediaErrorDomain 1852797029 ('nope') until the queue was rebuilt.
+ */
+let pausedAt: number | null = null;
+const STALE_AFTER_MS = 5 * 60_000;
+
+function streamsAreStale(): boolean {
+  if (pausedAt === null || Date.now() - pausedAt < STALE_AFTER_MS || heldForVideo || remote) return false;
+  const s = usePlayer.getState();
+  const item = s.queue[s.index]?.item;
+  return !!item && !item.Radio && !isOffline();
+}
+
+/** The same queue and place with fresh stream links (and fresh player items). */
+function rebuildStreams(autoplay: boolean) {
+  const s = usePlayer.getState();
+  if (!s.queue.length) return;
+  pausedAt = null;
+  const position = engine.getProgress().position;
+  notePerf('streamsRebuilt', { autoplay, position });
+  void engine.setQueue(toTracks(s.queue), s.index, position, autoplay);
+}
 
 /**
  * A song failed to play. iOS's queue player has already moved on to the next song, which is
@@ -766,6 +798,9 @@ AppState.addEventListener('change', (state) => {
   if (state !== 'active') {
     savePosition();
     flushQueueSave();
+  } else if (!usePlayer.getState().playing && streamsAreStale()) {
+    // Back after a long pause: fresh streams now, so Play (here or on the lock screen) works.
+    rebuildStreams(false);
   }
 });
 
