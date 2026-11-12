@@ -1,5 +1,5 @@
 // Runs when Jellyfin starts: takes over the old Spicy Lyrics plugin's settings (once), starts
-// noting skips, and makes today's Daily Mixes if the night's run didn't (the server was off at
+// noting skips and plays (History and Stats), and makes today's Daily Mixes if the night's run didn't (the server was off at
 // midnight, or the run failed).
 
 using System;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Rakki.DailyMix;
+using Jellyfin.Plugin.Rakki.History;
 using Jellyfin.Plugin.Rakki.Skips;
 using MediaBrowser.Common.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -18,14 +19,16 @@ namespace Jellyfin.Plugin.Rakki
     {
         private readonly IApplicationPaths _paths;
         private readonly SkipTracker _skips;
+        private readonly HistoryTracker _history;
         private readonly MixService _mixes;
         private readonly ILogger<StartupService> _logger;
         private readonly CancellationTokenSource _stopping = new();
 
-        public StartupService(IApplicationPaths paths, SkipTracker skips, MixService mixes, ILogger<StartupService> logger)
+        public StartupService(IApplicationPaths paths, SkipTracker skips, HistoryTracker history, MixService mixes, ILogger<StartupService> logger)
         {
             _paths = paths;
             _skips = skips;
+            _history = history;
             _mixes = mixes;
             _logger = logger;
         }
@@ -34,6 +37,7 @@ namespace Jellyfin.Plugin.Rakki
         {
             Migration.ImportSpicyLyrics(_paths, _logger);
             _skips.Start();
+            _history.Start();
             _ = CatchUpDailyMixesAsync(_stopping.Token);
             return Task.CompletedTask;
         }
@@ -65,6 +69,7 @@ namespace Jellyfin.Plugin.Rakki
         {
             _stopping.Cancel();
             _skips.Save();
+            _history.Save();
             return Task.CompletedTask;
         }
     }

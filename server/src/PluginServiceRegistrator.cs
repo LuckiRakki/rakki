@@ -3,6 +3,7 @@
 
 using Jellyfin.Plugin.Rakki.DailyMix;
 using Jellyfin.Plugin.Rakki.Edits;
+using Jellyfin.Plugin.Rakki.History;
 using Jellyfin.Plugin.Rakki.LastFm;
 using Jellyfin.Plugin.Rakki.Skips;
 using Jellyfin.Plugin.Rakki.SpicyLyrics;
@@ -24,6 +25,8 @@ namespace Jellyfin.Plugin.Rakki
             serviceCollection.AddSingleton<MixService>();
             serviceCollection.AddSingleton<MixPublisher>();
             serviceCollection.AddSingleton<SkipTracker>();
+            // Every play, for History and Stats (2.0).
+            serviceCollection.AddSingleton<HistoryTracker>();
             serviceCollection.AddHostedService<StartupService>();
 
             // Lyrics (merged from the Spicy Lyrics TTML plugin): .ttml sidecars, the Spicy
