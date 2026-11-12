@@ -151,11 +151,6 @@ export function useCollectionStatus(collectionId: string): CollectionStatus {
   return { state: s as CollectionStatus['state'], done: +done, total: +total, fraction: +pct / 100 };
 }
 
-/** Collection id for an item: albums and playlists by id, single songs as "song:<id>". */
-export function collectionIdFor(item: BaseItem): string {
-  return item.Type === 'Audio' ? `song:${item.Id}` : item.Id;
-}
-
 // Web dev preview only: lets tests show download states (downloads themselves need the phone).
 if (__DEV__ && typeof window !== 'undefined') {
   (globalThis as { __rakkiDownloads?: typeof useDownloads }).__rakkiDownloads = useDownloads;

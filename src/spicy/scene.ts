@@ -1079,7 +1079,6 @@ export class SpicyScene {
     const unsungA = bg ? BG_UNSUNG : UNSUNG;
     const lit = row.phase === 'active';
     const op = row.opacity;
-    const font = row.font;
     const s = this.settings;
     const mf = lit ? null : this.maskFor(row.blur);
 

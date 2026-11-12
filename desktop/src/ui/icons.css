@@ -12,7 +12,7 @@
 /* Rakki's own icons (2.0), built by scripts/icons/build.py; see ui/icons.tsx. */
 @font-face {
   font-family: 'RakkiIcons';
-  src: url('../assets/RakkiIcons.ttf') format('truetype');
+  src: url('../../../assets/fonts/RakkiIcons.ttf') format('truetype');
   font-display: block;
 }
 .ico.ico-r { font-family: 'RakkiIcons'; }

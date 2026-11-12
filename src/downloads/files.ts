@@ -141,20 +141,6 @@ export function removeOldLayout() {
   }
 }
 
-/** Remove every downloaded file (Settings → Remove all downloads). */
-export function deleteAllFiles() {
-  if (!downloadsSupported) return;
-  for (const name of [MUSIC, INTERNAL, OLD]) {
-    try {
-      const d = new Directory(Paths.document, name);
-      if (d.exists) d.delete();
-    } catch {
-      // Nothing to delete.
-    }
-  }
-  dirs = null;
-}
-
 /** Free space on the phone, in bytes (null in the web preview). */
 export function freeSpace(): number | null {
   if (!downloadsSupported) return null;

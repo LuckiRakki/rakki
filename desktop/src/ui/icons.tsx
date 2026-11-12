@@ -1,12 +1,12 @@
 // Rakki's icons (2.0): the hand-drawn set both apps share (24 point grid, round strokes), built
-// into a font by scripts/icons/build.py (assets/RakkiIcons.ttf + ui/iconGlyphs.json), so the
-// phone and the desktop show the same picture for the same action. Each icon is one character
-// of the font, coloured by the text around it. Names are the Ionicons ones the screens already
-// used; one the set doesn't have yet falls back to the Ionicons font. Exports keep their old
-// (lucide) names, so screens read the same.
+// into one font by scripts/icons/build.py (assets/fonts/RakkiIcons.ttf + src/ui/iconGlyphs.json
+// at the repo root), so the phone and the desktop show the same picture for the same action.
+// Each icon is one character of the font, coloured by the text around it. Names are the Ionicons
+// ones the screens already used; one the set doesn't have yet falls back to the Ionicons font.
+// Exports keep their old (lucide) names, so screens read the same.
 import type { CSSProperties } from 'react';
 
-import glyphs from './iconGlyphs.json';
+import glyphs from '@/ui/iconGlyphs.json';
 import './icons.css';
 
 const RAKKI = glyphs as Record<string, number>;

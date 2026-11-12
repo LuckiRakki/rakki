@@ -9,7 +9,6 @@ import type { ComponentProps } from 'react';
 
 import glyphs from '@/ui/iconGlyphs.json';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const Drawn = createIconSet(glyphs as Record<keyof typeof glyphs, number>, 'RakkiIcons', require('../../assets/fonts/RakkiIcons.ttf'));
 
 type Props = ComponentProps<typeof Fallback>;

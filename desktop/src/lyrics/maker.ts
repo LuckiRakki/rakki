@@ -329,17 +329,3 @@ export async function uploadLyrics(itemId: string, ttml: string): Promise<void> 
   clearDraftLocal(itemId);
   await queryClient.invalidateQueries({ queryKey: ['lyrics'] });
 }
-
-/** Removes the lyrics you made for the song (it goes back to its other lyrics, if any). */
-export async function removeMadeLyrics(itemId: string): Promise<void> {
-  await ready();
-  await pluginRequest('DELETE', `/Rakki/Lyrics/${itemId}`);
-  await queryClient.invalidateQueries({ queryKey: ['lyrics'] });
-}
-
-/** Whether the song has lyrics made in Rakki (to offer Remove). */
-export async function hasMadeLyrics(itemId: string): Promise<boolean> {
-  if (!versionAtLeast(await pluginVersion(), '0.3')) return false;
-  const r = await pluginRequest<{ Made: boolean }>('GET', `/Rakki/Lyrics/${itemId}/Made`).catch(() => null);
-  return !!r?.Made;
-}

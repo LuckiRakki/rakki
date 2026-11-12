@@ -36,7 +36,6 @@ import {
   sortFor,
   useLibraryView,
   type LibraryLayout,
-  type LibraryTab,
   type SortOption,
 } from '@/library/view';
 import { ItemTile } from '@/ui/AlbumTile';

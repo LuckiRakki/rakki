@@ -232,15 +232,3 @@ export function GridSkeleton({
     </View>
   );
 }
-
-/** Genre pills still loading (GenreChips' row). */
-export function ChipsSkeleton() {
-  const t = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', gap: t.space.sm, marginTop: t.space.md }} pointerEvents="none">
-      {[74, 92, 64].map((w) => (
-        <Bone key={w} style={{ width: w, height: 28, borderRadius: t.radius.pill }} />
-      ))}
-    </View>
-  );
-}

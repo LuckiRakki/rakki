@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Builds Rakki's icon font from scripts/icons/icons.py.
 
-Writes RakkiIcons.ttf and its glyph map (icon name -> code point) for both apps:
-  assets/fonts/RakkiIcons.ttf + src/ui/iconGlyphs.json            (phone, via @expo/vector-icons)
-  desktop/src/assets/RakkiIcons.ttf + desktop/src/ui/iconGlyphs.json (desktop, ui/icons.tsx)
+Writes RakkiIcons.ttf and its glyph map (icon name -> code point), which both apps use:
+  assets/fonts/RakkiIcons.ttf + src/ui/iconGlyphs.json
+(the phone through @expo/vector-icons, the desktop through desktop/src/ui/icons.tsx and icons.css).
 
 Strokes are turned into outlines (round caps and joins), overlaps merged and cut-outs removed,
 so the font draws exactly what the 24 point drawing shows. Needs: pip install fonttools skia-pathops
@@ -11,7 +11,6 @@ Run from the repo root: python3 scripts/icons/build.py
 """
 import json
 import os
-import shutil
 import sys
 import xml.etree.ElementTree as ET
 
@@ -113,11 +112,9 @@ def main():
     phone_font = os.path.join(root, 'assets', 'fonts', 'RakkiIcons.ttf')
     os.makedirs(os.path.dirname(phone_font), exist_ok=True)
     fb.save(phone_font)
-    shutil.copyfile(phone_font, os.path.join(root, 'desktop', 'src', 'assets', 'RakkiIcons.ttf'))
-    for out in (os.path.join(root, 'src', 'ui', 'iconGlyphs.json'), os.path.join(root, 'desktop', 'src', 'ui', 'iconGlyphs.json')):
-        with open(out, 'w') as f:
-            json.dump(glyph_map, f, indent=2)
-            f.write('\n')
+    with open(os.path.join(root, 'src', 'ui', 'iconGlyphs.json'), 'w') as f:
+        json.dump(glyph_map, f, indent=2)
+        f.write('\n')
     print(f'{len(names)} icons -> {phone_font}')
 
 

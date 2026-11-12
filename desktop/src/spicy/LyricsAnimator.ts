@@ -27,8 +27,8 @@
 import type { LyricLine, Lyrics as LyricsPayload, WordCue } from '@/lyrics/types';
 
 import { Settings } from './settings';
-import { Spline } from './Spline';
-import { Spring } from './Spring';
+import { Spline } from '@/spicy/Spline';
+import { Spring } from '@/spicy/Spring';
 
 const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
