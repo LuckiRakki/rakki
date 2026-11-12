@@ -165,22 +165,38 @@ function ContextMenu() {
 
 // ---- Toasts ----
 
-export const useToast = create<{ text: string | null; at: number }>(() => ({ text: null, at: 0 }));
+export interface ToastAction {
+  label: string;
+  run(): void;
+}
 
-export function toast(text: string) {
-  useToast.setState({ text, at: Date.now() });
+export const useToast = create<{ text: string | null; at: number; action?: ToastAction }>(() => ({ text: null, at: 0 }));
+
+/** A short message above the player bar; with an action (Undo), it stays a little longer. */
+export function toast(text: string, action?: ToastAction) {
+  useToast.setState({ text, at: Date.now(), action });
 }
 
 function Toast() {
-  const { text, at } = useToast();
+  const { text, at, action } = useToast();
   useEffect(() => {
     if (!text) return;
-    const id = setTimeout(() => useToast.setState({ text: null }), 2600);
+    const id = setTimeout(() => useToast.setState({ text: null, action: undefined }), action ? 7000 : 2600);
     return () => clearTimeout(id);
-  }, [text, at]);
+  }, [text, at, action]);
   return text ? (
-    <div className="toast" key={at}>
+    <div className={`toast${action ? ' has-action' : ''}`} key={at} role="status">
       {text}
+      {action ? (
+        <button
+          className="toast-action"
+          onClick={() => {
+            useToast.setState({ text: null, action: undefined });
+            action.run();
+          }}>
+          {action.label}
+        </button>
+      ) : null}
     </div>
   ) : null;
 }

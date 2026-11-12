@@ -44,21 +44,48 @@ export const useMrq = create<{ url: string; setUrl(url: string): void }>((set) =
   },
 }));
 
-/** Edit Metadata is offered: in the app, with an MRQ address. */
-export const mrqReady = () => inTauri && !!useMrq.getState().url;
+/**
+ * Edit Metadata and Tagging are offered: with an MRQ address, in the app. (A plain browser tab
+ * testing the interface with `npm run dev` asks MRQ directly, which only works when something
+ * in between allows it, such as a test's routes.)
+ */
+export const mrqReady = () => !!useMrq.getState().url && (inTauri || import.meta.env.DEV);
 
 export class MrqError extends Error {}
 
-async function call<T>(path: string, init: { method?: 'GET' | 'POST'; json?: unknown; body?: Uint8Array; contentType?: string } = {}, base = useMrq.getState().url): Promise<T> {
+export interface CallInit {
+  method?: 'GET' | 'POST';
+  json?: unknown;
+  body?: Uint8Array;
+  contentType?: string;
+}
+
+/** One request to MRQ (through the app's native side, since MRQ doesn't answer other sites). */
+export async function call<T>(path: string, init: CallInit = {}, base = useMrq.getState().url): Promise<T> {
   if (!base) throw new MrqError('Add your MRQ address in Settings first.');
   const method = init.method ?? (init.json !== undefined || init.body ? 'POST' : 'GET');
   const body = init.body ?? new TextEncoder().encode(init.json === undefined ? '' : JSON.stringify(init.json));
+  const contentType = init.contentType ?? 'application/json';
   let raw: ArrayBuffer;
   try {
-    raw = await invoke<ArrayBuffer>('mrq_request', body, {
-      headers: { 'mrq-url': `${base}${path}`, 'mrq-method': method, 'content-type': init.contentType ?? 'application/json' },
-    });
+    if (inTauri) {
+      raw = await invoke<ArrayBuffer>('mrq_request', body, { headers: { 'mrq-url': `${base}${path}`, 'mrq-method': method, 'content-type': contentType } });
+    } else {
+      const res = await fetch(`${base}${path}`, { method, body: method === 'POST' ? (body as BodyInit) : undefined, headers: method === 'POST' ? { 'Content-Type': contentType } : undefined });
+      const buf = await res.arrayBuffer();
+      if (!res.ok) {
+        let said = '';
+        try {
+          said = (JSON.parse(new TextDecoder().decode(buf)) as { error?: string }).error ?? '';
+        } catch {
+          // Not MRQ's own explanation.
+        }
+        throw new MrqError(said || `MRQ answered ${res.status}`);
+      }
+      raw = buf;
+    }
   } catch (e) {
+    if (e instanceof MrqError) throw e;
     throw new MrqError(typeof e === 'string' ? e : e instanceof Error ? e.message : 'MRQ refused it.');
   }
   const text = new TextDecoder().decode(raw);
@@ -127,7 +154,7 @@ export async function withPaths(songs: BaseItem[]): Promise<BaseItem[]> {
 // ---- Spotify links ----
 
 /** The 22-character Spotify id in a track (or album) link, URI or bare id; '' when there isn't one. */
-export function spotifyId(value: string, kind: 'track' | 'album' = 'track'): string {
+export function spotifyId(value: string, kind: 'track' | 'album' | 'playlist' = 'track'): string {
   const v = value.trim();
   const m = new RegExp(`${kind}[/:]([A-Za-z0-9]{22})`).exec(v) ?? /^([A-Za-z0-9]{22})$/.exec(v);
   return m ? m[1] : '';
@@ -158,7 +185,7 @@ export function spotifyTag(tags: unknown): string {
 /** MRQ's name for each song's file, found once per song (Edit Metadata asks, then saves). */
 const paths = new Map<string, string>();
 
-async function pathOf(song: BaseItem): Promise<string | null> {
+export async function pathOf(song: BaseItem): Promise<string | null> {
   const known = paths.get(song.Id);
   if (known) return known;
   const p = song.Path ? await mrqPath(song.Path) : null;

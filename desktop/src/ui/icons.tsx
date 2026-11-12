@@ -148,6 +148,66 @@ export const TheaterMode: Icon = ({ size = 24, className, style, color }) => (
   </svg>
 );
 
+/** Tagging's own icons (desktop only), drawn on the same 24 grid with round strokes. */
+const svg = (paths: React.ReactNode): Icon =>
+  function SvgIcon({ size = 24, className, style, color }) {
+    return (
+      <svg className={`ico-svg${className ? ` ${className}` : ''}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden>
+        {paths}
+      </svg>
+    );
+  };
+
+/** Auto-Fill and look-ups: a big four-point spark and a small one. */
+export const Sparkles = svg(
+  <>
+    <path d="M10 3.5c.6 3.6 2.4 5.4 6 6-3.6.6-5.4 2.4-6 6-.6-3.6-2.4-5.4-6-6 3.6-.6 5.4-2.4 6-6z" />
+    <path d="M18 14.5c.3 1.6 1 2.3 2.5 2.5-1.5.2-2.2 1-2.5 2.5-.3-1.5-1-2.3-2.5-2.5 1.5-.2 2.2-.9 2.5-2.5z" />
+  </>,
+);
+
+/** Tagging: a tag with its hole. */
+export const TagIcon = svg(
+  <>
+    <path d="M3.5 12.2V4.8c0-.7.6-1.3 1.3-1.3h7.4c.4 0 .7.1.9.4l7.4 7.4c.5.5.5 1.3 0 1.8l-7.4 7.4c-.5.5-1.3.5-1.8 0l-7.4-7.4c-.3-.2-.4-.5-.4-.9z" />
+    <circle cx="8.2" cy="8.2" r="1.4" />
+  </>,
+);
+
+/** The inbox (MRQ's review queue): a tray with an arrow coming in. */
+export const InboxIcon = svg(
+  <>
+    <path d="M3.5 13.5h4.2l1.6 2.5h5.4l1.6-2.5h4.2" />
+    <path d="M5.2 6.5 3.5 13.5v4.2c0 .7.6 1.3 1.3 1.3h14.4c.7 0 1.3-.6 1.3-1.3v-4.2l-1.7-7" />
+    <path d="M12 3.5v7M9.5 8l2.5 2.5L14.5 8" />
+  </>,
+);
+
+/** Tidy Up: a shield with a check (Big Brother keeps Jellyfin matching the files). */
+export const ShieldCheck = svg(
+  <>
+    <path d="M12 3.5 5 6v5.5c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6z" />
+    <path d="m8.8 12 2.2 2.2 4.2-4.4" />
+  </>,
+);
+
+/** Merging two spellings into one. */
+export const Merge = svg(
+  <>
+    <path d="M7.5 3.5v17" />
+    <path d="M16.5 3.5v3.5c0 4.5-9 4.5-9 9" />
+  </>,
+);
+
+/** History of edits: a clock with an arrow going back round it. */
+export const HistoryIcon = svg(
+  <>
+    <path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5" />
+    <path d="M4 4v4.5h4.5" />
+    <path d="M12 8v4l2.8 2" />
+  </>,
+);
+
 /** Edit Audio: a sound wave, bars of different heights. */
 export const AudioWave: Icon = (p) => <Glyph name="rakki-wave" {...p} />;
 
