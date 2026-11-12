@@ -115,6 +115,11 @@ public class RakkiAudioModule: Module {
       self.ensurePlayer().setUserVolume(volume)
     }.runOnQueue(.main)
 
+    /// Settings → Playback → Equalizer: on or off, and a gain in dB per band (31 Hz to 16 kHz).
+    Function("setEqualizer") { (enabled: Bool, gains: [Double]) in
+      RakkiEqualizer.shared.set(enabled: enabled, gains: gains)
+    }
+
     AsyncFunction("stop") {
       self.ensurePlayer().stop()
     }.runOnQueue(.main)

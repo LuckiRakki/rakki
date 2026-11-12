@@ -8,6 +8,7 @@ import { StyleSheet } from 'react-native';
 
 import { FONTS } from '@/appearance/fonts';
 import { APPEARANCE_DEFAULTS, type Appearance } from '@/appearance/store';
+import type { ThemeColors } from '@/appearance/themes';
 import { mix } from '@/lib/color';
 
 const DENSITY = { compact: 0.8, comfortable: 1, spacious: 1.2 } as const;
@@ -15,11 +16,13 @@ const DENSITY = { compact: 0.8, comfortable: 1, spacious: 1.2 } as const;
 /** Surface steps above the background (0–255 towards white), before the contrast setting. */
 const STEPS = { dark: [6, 18, 24], oled: [14, 26, 34] } as const;
 
-export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean } = {}) {
+export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean; theme?: ThemeColors | null } = {}) {
   const d = DENSITY[a.density];
-  const r = Math.max(0, a.roundness);
-  const base = a.background === 'oled' ? '#000000' : '#121212';
-  const bg = a.background === 'tinted' ? mix(base, a.accent, 0.07) : base;
+  const file = env.theme ?? {};
+  // A theme file's corners replace Rakki's (its --radius is the card corner).
+  const r = file.radius !== undefined ? file.radius / 8 : Math.max(0, a.roundness);
+  const base = file.bg ?? (a.background === 'oled' ? '#000000' : '#121212');
+  const bg = a.background === 'tinted' && !file.bg ? mix(base, a.accent, 0.07) : base;
   const steps = STEPS[a.background === 'oled' ? 'oled' : 'dark'];
   const surface = (i: number) => mix(bg, '#ffffff', (steps[i] * a.surfaceContrast) / 255);
   const faces = FONTS[a.font]?.faces ?? FONTS.inter.faces;
@@ -28,13 +31,13 @@ export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean } 
     appearance: a,
     colors: {
       bg,
-      surface: surface(0),
-      surface2: surface(1),
-      surface3: surface(2),
-      text: '#FFFFFF',
-      textSecondary: 'rgba(255,255,255,0.70)',
-      textMuted: 'rgba(255,255,255,0.50)',
-      border: 'rgba(255,255,255,0.10)',
+      surface: file.surface ?? surface(0),
+      surface2: file.surface2 ?? surface(1),
+      surface3: file.surface3 ?? surface(2),
+      text: file.text ?? '#FFFFFF',
+      textSecondary: file.textSecondary ?? 'rgba(255,255,255,0.70)',
+      textMuted: file.textMuted ?? 'rgba(255,255,255,0.50)',
+      border: file.border ?? 'rgba(255,255,255,0.10)',
       /** Rakki's accent (a "spicy" orange by default, or Lucid's album colour). */
       accent: a.accent,
       danger: '#FF5470',

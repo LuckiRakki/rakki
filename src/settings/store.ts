@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { readPref, writePref } from '@/lib/prefs';
+import { FLAT_EQ } from '@/settings/equalizer';
 
 /** Max streaming bitrate in kbps; 0 = original file (direct play whenever iOS can). */
 export type Bitrate = 0 | 320 | 256 | 192 | 128 | 96;
@@ -63,6 +64,9 @@ interface Settings {
   videoBackgroundAudio: boolean;
   /** Keep the performance log (src/perf/log.ts) and send it to the server now and then. */
   perfLog: boolean;
+  /** Settings → Playback → Equalizer (settings/equalizer.ts): on, and a gain in dB per band. */
+  equalizer: boolean;
+  equalizerBands: number[];
 }
 
 // Bump when a default changes in a way that should reset stored values (like the web mod's _v).
@@ -87,6 +91,8 @@ const DEFAULTS: Settings = {
   videoQueueSize: 3,
   videoBackgroundAudio: true,
   perfLog: true,
+  equalizer: false,
+  equalizerBands: FLAT_EQ,
 };
 
 function load(): Settings {

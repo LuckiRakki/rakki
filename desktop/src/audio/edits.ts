@@ -15,6 +15,8 @@ import { listen } from '@tauri-apps/api/event';
 import { create } from 'zustand';
 
 import type { BaseItem } from '@/api/jellyfin';
+import { EQ_BANDS } from '@/settings/equalizer';
+import { useSettings } from '@/settings/store';
 import { inTauri } from '~/lib/tauri';
 import { PluginError, pluginRequest, pluginVersion, versionAtLeast } from '~/lib/plugin';
 import { engine, type FileOptions } from '~/player/engine';
@@ -41,19 +43,13 @@ export interface SongEdit {
   reverb?: number;
 }
 
-/** The EQ's bands, in Hz. */
-export const EQ_BANDS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+export { EQ_BANDS, EQ_PRESETS as EDIT_PRESETS } from '@/settings/equalizer';
 
-export const EDIT_PRESETS: { id: string; label: string; eq: number[] }[] = [
-  { id: 'flat', label: 'Flat', eq: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 'bass', label: 'Bass Boost', eq: [6, 5, 4, 2, 0, 0, 0, 0, 0, 0] },
-  { id: 'treble', label: 'Treble Boost', eq: [0, 0, 0, 0, 0, 1, 2, 4, 5, 6] },
-  { id: 'vocal', label: 'Vocal', eq: [-2, -2, -1, 0, 2, 4, 4, 2, 0, -1] },
-  { id: 'loudness', label: 'Loudness', eq: [5, 4, 2, 0, -1, -1, 0, 2, 4, 5] },
-  { id: 'acoustic', label: 'Acoustic', eq: [3, 3, 2, 1, 1, 1, 2, 3, 2, 1] },
-  { id: 'electronic', label: 'Electronic', eq: [4, 4, 1, 0, -2, 1, 0, 1, 4, 5] },
-  { id: 'late-night', label: 'Late Night', eq: [-3, -2, -1, 0, 1, 2, 2, 1, -1, -3] },
-];
+/** Settings → Playback → Equalizer (the phone's setting, kept per computer): its gains while on, else null. */
+function globalEq(): number[] | null {
+  const { equalizer, equalizerBands } = useSettings.getState();
+  return equalizer && equalizerBands.some((g) => g) ? equalizerBands : null;
+}
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const num = (v: number) => String(Math.round(v * 1000) / 1000);
@@ -89,14 +85,16 @@ function audioFilter(e: SongEdit, songEnd: number): string {
   const end = e.end ?? songEnd;
   if (e.fadeIn) chain.push(`afade=t=in:st=${num(e.start ?? 0)}:d=${num(e.fadeIn)}`);
   if (e.fadeOut && end > 0) chain.push(`afade=t=out:st=${num(Math.max(0, end - e.fadeOut))}:d=${num(e.fadeOut)}`);
+  const eq = globalEq();
   e.eq?.forEach((g, i) => g && chain.push(`equalizer=f=${EQ_BANDS[i]}:t=o:w=1:g=${num(g)}`));
+  eq?.forEach((g, i) => g && chain.push(`equalizer=f=${EQ_BANDS[i]}:t=o:w=1:g=${num(g)}`));
   if (e.reverb) {
     const r = e.reverb;
     chain.push(`aecho=0.8:0.9:40|80|120:${num(0.5 * r)}|${num(0.35 * r)}|${num(0.2 * r)}`);
   }
   if (e.gain) chain.push(`volume=${num(e.gain)}dB`);
   // Anything made louder: a limiter keeps it from clipping.
-  if ((e.gain ?? 0) > 0 || e.eq?.some((g) => g > 0) || e.reverb) chain.push('alimiter=limit=0.97:level=0');
+  if ((e.gain ?? 0) > 0 || e.eq?.some((g) => g > 0) || eq?.some((g) => g > 0) || e.reverb) chain.push('alimiter=limit=0.97:level=0');
   const af: string[] = [];
   if (e.pitch && canPitch()) af.push(`rubberband=pitch-scale=${num(Math.pow(2, e.pitch / 12))}`);
   if (chain.length) af.push(`lavfi=[${chain.join(',')}]`);
@@ -107,8 +105,8 @@ const songEnd = (item: BaseItem | undefined) => (item?.RunTimeTicks ?? 0) / 10_0
 
 /** mpv options for the song's saved edit, or null when it has none. */
 function optionsFor(item: BaseItem | undefined): FileOptions | null {
-  const e = item?.Id ? useSongEdits.getState().byId[item.Id] : undefined;
-  if (!e || isEmptyEdit(e)) return null;
+  const e = (item?.Id ? useSongEdits.getState().byId[item.Id] : undefined) ?? {};
+  if (isEmptyEdit(e) && !globalEq()) return null;
   const o: FileOptions = {};
   const af = audioFilter(e, songEnd(item));
   if (af) o.af = af;
@@ -250,6 +248,13 @@ export function startSongEdits() {
   if (started) return;
   started = true;
   setSongOptions(optionsFor);
+  // The equalizer setting changed: the playing song hears it at once, the next one gets it.
+  useSettings.subscribe((s, prev) => {
+    if (s.equalizer === prev.equalizer && s.equalizerBands === prev.equalizerBands) return;
+    const item = playing();
+    if (!previewing) applyNow(item ? (useSongEdits.getState().byId[item.Id] ?? null) : null, false);
+    usePlayer.getState().refreshNext();
+  });
   void engine.filters().then((f) => {
     filters = f.length ? f : null;
   });

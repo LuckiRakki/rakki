@@ -6,8 +6,15 @@ Importing a file with the same name again replaces the old copy, so you can edit
 import it again to see the change. **Use** switches between themes. **Kawarp** is the theme
 Rakki starts on (since desktop 1.7.0), and **Rakki** is its own plain look.
 
-Themes work on the desktop app now. The phone app will use the same files later: it will read
-the colours on `:root` (the tokens below). The rest of the CSS only applies on the desktop.
+Both apps use the same files. On the desktop the whole file applies. On the phone
+(**Customize → Theme**, paste the CSS or a link to the file) only the colours on `:root` apply
+(the tokens below); the rest of the CSS is for the desktop.
+
+On the desktop you can also write one in the app: **Settings → Look → Theme → New Theme**, or
+the pencil on any theme (built-in ones open as a copy). The CSS goes on the left and its
+colours as pickers on the right, and the whole window shows every change as you type. **Save**
+keeps it as one of your themes; **Copy CSS** puts the file on the clipboard to share or use on
+the phone.
 
 The built-in **Lucid** (`desktop/src/themes/lucid.css`, a still blurred cover) and **Kawarp**
 (`desktop/src/themes/kawarp.css`, the cover flowing) themes are good files to copy and start
@@ -45,7 +52,8 @@ can still come from the web with `url(...)`.
 
 ## Tokens (both apps)
 
-Set these on `:root`:
+Set these on `:root` (plain colours: `#hex`, `rgb()` or `rgba()`; the phone skips `var()` and
+`color-mix()` and keeps Rakki's colour there):
 
 | Token | What it colours |
 |---|---|
@@ -54,7 +62,12 @@ Set these on `:root`:
 | `--surface-2`, `--surface-3`, `--surface-4` | Raised things: cards, chips, buttons, hover. |
 | `--line` | Dividers and borders. |
 | `--text`, `--text-2`, `--text-3` | Text: main, secondary, faint. |
-| `--radius` | Corner size of cards and panels. |
+| `--radius` | Corner size of cards and panels (in `px`). |
+
+On the phone, `--bg` is the background, `--surface-2`, `--surface-3` and `--surface-4` are its
+cards, raised things and hover (see-through colours are laid over `--bg`), and `--line` and the
+three text colours are used as they are. `--surface` (the desktop's panels) isn't used there:
+a phone screen is one panel.
 
 The accent stays yours: Settings → Look → Colour (your colour, or Lucid's album colour) sets
 `--accent` over any theme. Colours Rakki sets while it runs, for a theme to use:

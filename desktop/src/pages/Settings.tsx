@@ -9,7 +9,9 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, 
 
 import { checkLastfmKey, LastfmError } from '@/lib/lastfm';
 import { SWATCHES } from '@/appearance/presets';
+import { EQ_BANDS, EQ_PRESETS, eqPreset } from '@/settings/equalizer';
 import { BITRATE_OPTIONS, useSettings, type Bitrate } from '@/settings/store';
+import { Equalizer } from '~/audio/Equalizer';
 import { Visualizer } from '~/audio/Visualizer';
 import { useAuth } from '~/auth/session';
 import { dataFolder } from '~/lib/kv';
@@ -31,10 +33,11 @@ import {
   type ShortcutId,
 } from '~/settings/shortcuts';
 import { ThemeError } from '~/themes/format';
+import { openThemeEditor } from '~/themes/ThemeEditor';
 import { allThemes, useThemes } from '~/themes/themes';
 import { openLink } from '~/lib/links';
 import { toast } from '~/ui/overlays';
-import { ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, LogOut, Music, Plus, Trash2, Undo, X, type Icon } from '~/ui/icons';
+import { ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, LogOut, Music, Pencil, Plus, Trash2, Undo, X, type Icon } from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
 import { Artwork, formatTime } from '~/ui/parts';
 import { Slider } from '~/ui/Slider';
@@ -157,6 +160,9 @@ function ThemeCard() {
               <div className="setting-label">{t.meta.name}</div>
               <div className="setting-detail">{[t.meta.description, t.meta.author ? `By ${t.meta.author}` : null, t.builtIn ? null : 'Imported'].filter(Boolean).join(' · ')}</div>
             </div>
+            <button className="iconbtn" aria-label={t.builtIn ? `Edit a copy of ${t.meta.name}` : `Edit ${t.meta.name}`} title={t.builtIn ? 'Edit a Copy' : 'Edit'} onClick={() => openThemeEditor(t.id)}>
+              <Pencil size={17} />
+            </button>
             {t.builtIn ? null : (
               <button className="iconbtn" aria-label={`Remove ${t.meta.name}`} title="Remove" onClick={() => remove(t.id)}>
                 <Trash2 size={17} />
@@ -176,17 +182,22 @@ function ThemeCard() {
       })}
       <div className="setting">
         <div className="setting-text">
-          <div className="setting-label">Import a Theme</div>
+          <div className="setting-label">Make or Import a Theme</div>
           <div className="setting-detail">
-            A .css file, like a Spicetify theme. Import an edited file again to update it.{' '}
+            Write one here with a live preview, or import a .css file like a Spicetify theme.{' '}
             <span className="linkish" role="link" tabIndex={0} onClick={() => openLink(THEMES_HELP)} onKeyDown={(e) => e.key === 'Enter' && openLink(THEMES_HELP)}>
               How to make one
             </span>
           </div>
         </div>
-        <button className="secondary small" onClick={pick}>
-          <ArrowDownToLine size={15} /> Import
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="secondary small" onClick={() => openThemeEditor()}>
+            <Plus size={15} /> New Theme
+          </button>
+          <button className="secondary small" onClick={pick}>
+            <ArrowDownToLine size={15} /> Import
+          </button>
+        </div>
       </div>
     </Card>
   );
@@ -471,9 +482,40 @@ function StartupToggle() {
   );
 }
 
+/** One EQ over every song (a song's own Edit Audio EQ still adds to it). */
+function EqualizerCard() {
+  const on = useSettings((s) => s.equalizer);
+  const bands = useSettings((s) => s.equalizerBands);
+  const set = useSettings((s) => s.set);
+  const preset = eqPreset(bands);
+  return (
+    <Card>
+      <Toggle on={on} onChange={(v) => set('equalizer', v)} label="Equalizer" detail="Shapes the sound of every song. A song's own EQ in Edit Audio adds to it." />
+      {on ? (
+        <>
+          <div className="choice start ae-chips" role="radiogroup" aria-label="Equalizer Presets">
+            {EQ_PRESETS.map((p) => (
+              <button key={p.id} role="radio" aria-checked={preset === p.id} className={preset === p.id ? 'on' : ''} onClick={() => set('equalizerBands', [...p.eq])}>
+                {p.label}
+              </button>
+            ))}
+            {preset ? null : (
+              <button role="radio" aria-checked className="on" disabled>
+                Yours
+              </button>
+            )}
+          </div>
+          <Equalizer bands={EQ_BANDS} values={bands} onChange={(next) => set('equalizerBands', next)} />
+        </>
+      ) : null}
+    </Card>
+  );
+}
+
 function Playback() {
   const s = useSettings();
   return (
+    <>
     <Card>
       <Row label="Streaming Quality" detail="Original plays the file as it is (mpv plays every format). Lower qualities are converted to AAC by your server.">
         <label className="select">
@@ -493,6 +535,8 @@ function Playback() {
         <StartupToggle />
       </More>
     </Card>
+    <EqualizerCard />
+    </>
   );
 }
 

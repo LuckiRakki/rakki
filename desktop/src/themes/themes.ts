@@ -2,7 +2,7 @@
 // files you import. The theme's CSS goes in one <style> after Rakki's own, so it can change any
 // colour or rule; its @backdrop puts the playing cover behind the whole window (ThemeBackdrop).
 // Imported themes are kept on this computer with the rest of the settings.
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 
 import { parseTheme, ThemeError, type Theme } from './format';
@@ -53,6 +53,11 @@ interface ThemesState {
   /** Reads a .css file and switches to it. A theme with the same name is replaced (an edited file imported again). */
   importFile(file: File): Promise<Theme>;
   remove(id: string): void;
+  /** The theme editor's CSS, shown live instead of the theme in use while it's open (null: closed). */
+  draft: string | null;
+  setDraft(css: string | null): void;
+  /** Keeps CSS from the editor: replaces the imported theme `id`, else adds it (or replaces one of the same name), and uses it. */
+  saveCss(css: string, id?: string): Theme;
 }
 
 export const useThemes = create<ThemesState>((set, get) => {
@@ -65,6 +70,14 @@ export const useThemes = create<ThemesState>((set, get) => {
       // Full: kept for this session only.
     }
   };
+  /** Adds or replaces an imported theme (`id`, else one with the same name) and switches to it. */
+  const keep = (parsed: Theme, id?: string): Theme => {
+    const same = id ?? get().imported.find((t) => t.meta.name.toLowerCase() === parsed.meta.name.toLowerCase())?.id;
+    const theme = { ...parsed, id: same ?? `file:${Date.now().toString(36)}` };
+    set({ imported: same ? get().imported.map((t) => (t.id === same ? theme : t)) : [...get().imported, theme], active: theme.id });
+    save();
+    return theme;
+  };
   return {
     ...load(),
     setActive(active) {
@@ -75,12 +88,14 @@ export const useThemes = create<ThemesState>((set, get) => {
       const text = await file.text().catch(() => {
         throw new ThemeError("Couldn't read that file.");
       });
-      const parsed = parseTheme(text, file.name, '');
-      const same = get().imported.find((t) => t.meta.name.toLowerCase() === parsed.meta.name.toLowerCase());
-      const theme = { ...parsed, id: same?.id ?? `file:${Date.now().toString(36)}` };
-      set({ imported: same ? get().imported.map((t) => (t.id === same.id ? theme : t)) : [...get().imported, theme], active: theme.id });
-      save();
-      return theme;
+      return keep(parseTheme(text, file.name, ''));
+    },
+    draft: null,
+    setDraft(draft) {
+      set({ draft });
+    },
+    saveCss(css, id) {
+      return keep(parseTheme(css, 'My Theme', ''), get().imported.some((t) => t.id === id) ? id : undefined);
     },
     remove(id) {
       const { active, imported } = get();
@@ -94,11 +109,20 @@ export function allThemes(imported: Theme[]): Theme[] {
   return [...BUILT_IN, ...imported];
 }
 
-/** The theme in use. */
+/** The theme in use (the editor's draft while it's open). */
 export function useActiveTheme(): Theme {
   const active = useThemes((s) => s.active);
   const imported = useThemes((s) => s.imported);
-  return allThemes(imported).find((t) => t.id === active) ?? RAKKI;
+  const draft = useThemes((s) => s.draft);
+  return useMemo(() => {
+    const inUse = allThemes(imported).find((t) => t.id === active) ?? RAKKI;
+    if (draft === null) return inUse;
+    try {
+      return parseTheme(draft, 'Draft', 'draft');
+    } catch {
+      return inUse;
+    }
+  }, [active, imported, draft]);
 }
 
 /** Puts the theme's CSS on the page and names it on <html> (data-theme) for anything that asks. */

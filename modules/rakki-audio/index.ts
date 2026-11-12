@@ -76,6 +76,8 @@ declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
   seekTo(seconds: number): Promise<void>;
   setRepeatMode(mode: RepeatMode): Promise<void>;
   setVolume(volume: number): Promise<void>;
+  /** The equalizer (gains in dB, one per band of EQ_BANDS). Builds before 2.0.0 don't have it. */
+  setEqualizer?(enabled: boolean, gains: number[]): void;
   stop(): Promise<void>;
   /** Synchronous; cheap enough to call every frame. */
   getProgress(): Progress;

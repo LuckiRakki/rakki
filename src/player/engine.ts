@@ -18,6 +18,7 @@ import {
   type StateEvent,
   type TrackChangeEvent,
 } from '../../modules/rakki-audio';
+import { useSettings } from '@/settings/store';
 
 export type { Progress, RakkiTrack, RepeatMode, StateEvent, TrackChangeEvent, ErrorEvent };
 
@@ -259,3 +260,16 @@ export function reclaimAudioSession() {
     () => {},
   );
 }
+
+/** Whether this build's engine has the equalizer (native builds from 2.0.0). */
+export const hasEqualizer = !!RakkiAudio?.setEqualizer;
+
+/** Settings → Playback → Equalizer into the engine, now and whenever it changes. */
+function applyEqualizer() {
+  const s = useSettings.getState();
+  RakkiAudio?.setEqualizer?.(s.equalizer, s.equalizerBands);
+}
+applyEqualizer();
+useSettings.subscribe((s, prev) => {
+  if (s.equalizer !== prev.equalizer || s.equalizerBands !== prev.equalizerBands) applyEqualizer();
+});

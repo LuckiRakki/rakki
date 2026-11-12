@@ -16,6 +16,7 @@ import {
   type Appearance,
   type ShelfId,
 } from '@/appearance/store';
+import { usePhoneThemes } from '@/appearance/themes';
 import { isHexColor } from '@/lib/color';
 import { tick } from '@/lib/haptics';
 import { AppIconPicker } from '@/ui/AppIconPicker';
@@ -40,6 +41,7 @@ export default function CustomizeScreen() {
   const a = t.appearance;
   const custom = useAppearance((s) => s.accent);
   const [hex, setHex] = useState(custom);
+  const themeName = usePhoneThemes((s) => s.imported.find((x) => x.id === s.active)?.meta.name ?? 'Rakki');
 
   const resetAll = () =>
     Alert.alert('Reset everything?', 'All of Customize goes back to how Rakki looks out of the box.', [
@@ -93,6 +95,17 @@ export default function CustomizeScreen() {
             </Pressable>
           ))}
         </ScrollView>
+
+        <Pressable onPress={() => router.push('/themes')} style={({ pressed }) => [styles.card, styles.linkRow, { marginTop: t.space.xl, paddingBottom: t.space.lg }, pressed && { opacity: 0.7 }]}>
+          <Ionicons name="color-palette-outline" size={22} color={t.colors.accent} />
+          <View style={{ flex: 1, marginHorizontal: t.space.md }}>
+            <T variant="bodyStrong">Theme</T>
+            <T variant="caption" style={{ fontSize: t.size(12) }}>
+              {themeName}
+            </T>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={t.colors.textMuted} />
+        </Pressable>
 
         <AppIconPicker />
 

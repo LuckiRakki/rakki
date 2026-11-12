@@ -304,6 +304,8 @@ fileprivate final class TapContext {
   let token: Int
   let levels: RakkiLevels
   var format = TapFormat()
+  /// The equalizer's filters for this song (RakkiEqualizer).
+  let eq = RakkiEqualizerState()
 
   init(token: Int, levels: RakkiLevels) {
     self.token = token
@@ -339,5 +341,6 @@ private let tapProcess: MTAudioProcessingTapProcessCallback = { tap, frames, _, 
   guard MTAudioProcessingTapGetSourceAudio(tap, frames, buffers, flagsOut, nil, framesOut) == noErr else { return }
   let ctx = context(of: tap)
   guard ctx.format.isFloat else { return }
+  ctx.eq.process(buffers, frames: Int(framesOut.pointee), sampleRate: ctx.format.sampleRate, channels: ctx.format.channels, interleaved: ctx.format.interleaved)
   ctx.levels.feed(ctx.token, buffers, frames: Int(framesOut.pointee), format: ctx.format)
 }

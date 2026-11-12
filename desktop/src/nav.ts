@@ -23,7 +23,9 @@ export type Route =
   /** A song's audio editor (audio/AudioEditor.tsx). */
   | { name: 'editAudio'; id: string }
   /** The tap-to-sync lyrics maker for a song (lyrics/LyricsMaker.tsx). */
-  | { name: 'makeLyrics'; id: string };
+  | { name: 'makeLyrics'; id: string }
+  /** The theme editor, on a theme's id or 'new' (themes/ThemeEditor.tsx). */
+  | { name: 'themeEditor'; id: string };
 
 interface NavState {
   stack: Route[];

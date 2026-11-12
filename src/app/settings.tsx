@@ -13,6 +13,7 @@ import { appVersion, buildStamp, checkForUpdate, getUpdateInfo, type UpdateInfo 
 import { perfLogStatus, sendPerfLog } from '@/perf/log';
 import { engine } from '@/player/engine';
 import { BITRATE_OPTIONS, DOWNLOAD_QUALITY_OPTIONS, useSettings } from '@/settings/store';
+import { EqualizerSettings } from '@/ui/EqualizerSettings';
 import { LastfmSettings } from '@/ui/LastfmSettings';
 import { Segmented } from '@/ui/Segmented';
 import { Field, Toggle } from '@/ui/SettingRows';
@@ -221,6 +222,7 @@ export default function SettingsScreen() {
             />
           </Field>
         </View>
+        <EqualizerSettings />
 
         <OptionPicker
           options={DOWNLOAD_QUALITY_OPTIONS}
