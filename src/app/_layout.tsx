@@ -225,6 +225,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
                 <Stack.Screen name="video-queue" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="devices" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="stats" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="downloads" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="customize" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="lyrics-style" options={{ presentation: 'modal' }} />

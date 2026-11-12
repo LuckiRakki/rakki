@@ -120,6 +120,12 @@ export default function LibraryScreen() {
         <T variant="display" style={{ flex: 1 }}>
           Your Library
         </T>
+        {/* 2.0: History and Stats. */}
+        {offline ? null : (
+          <Pressable hitSlop={10} accessibilityLabel="History and Stats" onPress={() => router.push('/stats')} style={{ marginRight: t.space.lg }}>
+            <Ionicons name="stats-chart-outline" size={24} color={t.colors.text} />
+          </Pressable>
+        )}
         {offline ? null : (
           <Pressable hitSlop={10} accessibilityLabel="Create playlist" onPress={() => void createPlaylist()}>
             <Ionicons name="add" size={30} color={t.colors.text} />
