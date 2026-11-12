@@ -1,6 +1,6 @@
 // Lyrics timing: move this song's lyrics earlier or later. Saved on this phone as you go;
 // "Save to server" writes it into the lyrics themselves (see offset.ts).
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';

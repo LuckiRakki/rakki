@@ -1,5 +1,5 @@
 // The sign-in form (first sign-in and Settings → Add account).
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {

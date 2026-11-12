@@ -1,11 +1,15 @@
-// Rakki's icons: the phone app's set (Ionicons, the font it ships with), so both apps show the
-// same picture for the same action. Each icon is one character of the font, coloured by the
-// text around it. A few the font lacks (the sidebar, the mini player, repeat one) are drawn in
-// the same outline style. Named after what they were called before (lucide), so screens read
-// the same.
+// Rakki's icons (2.0): the hand-drawn set both apps share (24 point grid, round strokes), built
+// into a font by scripts/icons/build.py (assets/RakkiIcons.ttf + ui/iconGlyphs.json), so the
+// phone and the desktop show the same picture for the same action. Each icon is one character
+// of the font, coloured by the text around it. Names are the Ionicons ones the screens already
+// used; one the set doesn't have yet falls back to the Ionicons font. Exports keep their old
+// (lucide) names, so screens read the same.
 import type { CSSProperties } from 'react';
 
+import glyphs from './iconGlyphs.json';
 import './icons.css';
+
+const RAKKI = glyphs as Record<string, number>;
 
 export interface IconProps {
   size?: number;
@@ -108,61 +112,24 @@ const GLYPH: Record<string, number> = {
 };
 
 function Glyph({ name, size = 24, className, style, color }: IconProps & { name: string }) {
+  const own = RAKKI[name];
   return (
-    <span className={`ico${className ? ` ${className}` : ''}`} style={{ fontSize: size, color, ...style }} aria-hidden>
-      {String.fromCodePoint(GLYPH[name])}
+    <span className={`ico${own ? ' ico-r' : ''}${className ? ` ${className}` : ''}`} style={{ fontSize: size, color, ...style }} aria-hidden>
+      {String.fromCodePoint(own ?? GLYPH[name])}
     </span>
   );
 }
 
 const glyph = (name: string): Icon => (p) => <Glyph name={name} {...p} />;
 
-// Drawn rather than the font's: small font hearts came out clipped in the app's webview.
-const HEART = 'M256 448a32 32 0 01-18-5.57c-78.59-53.35-112.62-89.93-131.39-112.8-40-48.75-59.15-98.8-58.61-153C48.63 114.52 98.46 64 159.08 64c44.08 0 74.61 24.83 92.39 45.51a6 6 0 009.06 0C278.31 88.81 308.84 64 352.92 64c60.62 0 110.45 50.52 111.08 112.64.54 54.21-18.63 104.26-58.61 153-18.77 22.87-52.8 59.45-131.39 112.8a32 32 0 01-18 5.56z';
-export const Heart: Icon = (p) => {
-  const filled = !!p.fill && p.fill !== 'none';
-  return (
-    <Drawn {...p}>
-      <path d={HEART} fill={filled ? 'currentColor' : 'none'} stroke={filled ? 'none' : 'currentColor'} />
-    </Drawn>
-  );
-};
+export const Heart: Icon = (p) => <Glyph name={p.fill && p.fill !== 'none' ? 'heart' : 'heart-outline'} {...p} />;
 
-/** Drawn in Ionicons' outline style (512 box, 32 stroke) for the ones the font doesn't have. */
-function Drawn({ size = 24, className, style, color, children }: IconProps & { children: React.ReactNode }) {
-  return (
-    <svg
-      className={`ico-svg${className ? ` ${className}` : ''}`}
-      width={size}
-      height={size}
-      viewBox="0 0 512 512"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={32}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ color, ...style }}
-      aria-hidden>
-      {children}
-    </svg>
-  );
-}
 
 /** The right sidebar (Now playing view). */
-export const PanelRight: Icon = (p) => (
-  <Drawn {...p}>
-    <rect x="48" y="80" width="416" height="352" rx="48" />
-    <path d="M320 80v352" />
-  </Drawn>
-);
+export const PanelRight: Icon = (p) => <Glyph name="rakki-panel" {...p} />;
 
 /** The mini player. */
-export const PictureInPicture2: Icon = (p) => (
-  <Drawn {...p}>
-    <rect x="48" y="96" width="416" height="320" rx="48" />
-    <rect x="264" y="248" width="152" height="120" rx="20" fill="currentColor" stroke="none" />
-  </Drawn>
-);
+export const PictureInPicture2: Icon = (p) => <Glyph name="rakki-mini" {...p} />;
 
 /** Repeat this song: repeat with a small 1. */
 export const Repeat1: Icon = (p) => (
@@ -173,11 +140,7 @@ export const Repeat1: Icon = (p) => (
 );
 
 /** Edit Audio: a sound wave, bars of different heights. */
-export const AudioWave: Icon = (p) => (
-  <Drawn {...p}>
-    <path d="M96 208v96M176 144v224M256 96v320M336 176v160M416 224v64" />
-  </Drawn>
-);
+export const AudioWave: Icon = (p) => <Glyph name="rakki-wave" {...p} />;
 
 export const Alert = glyph('alert-circle-outline');
 export const ArrowDown = glyph('arrow-down');

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { Pressable, View } from 'react-native';
 
 import { tick } from '@/lib/haptics';

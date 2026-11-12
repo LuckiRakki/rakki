@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { router } from 'expo-router';
 import { AwayImage as Image } from '@/ui/AwayImage';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { BlurView } from 'expo-blur';
 import { AwayImage as Image } from '@/ui/AwayImage';
 import { LinearGradient } from 'expo-linear-gradient';

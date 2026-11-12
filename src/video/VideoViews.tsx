@@ -3,7 +3,7 @@
 // full screen: the video turned sideways across the whole screen, with the same controls and a
 // way out), and the small live video in the mini-player. Both show the one player VideoHost
 // owns. Loaded lazily, only on builds with expo-video's native side.
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { useEvent } from 'expo';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';

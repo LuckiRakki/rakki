@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { BottomTabBar, Tabs } from 'expo-router/tabs';
 import { View, type ColorValue } from 'react-native';
 

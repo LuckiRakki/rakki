@@ -8,3 +8,11 @@
 .ico-svg { flex: none; display: block; }
 .ico-stack { position: relative; display: inline-grid; place-items: center; flex: none; }
 .ico-stack > b { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -54%); font-weight: 900; line-height: 1; font-family: 'Inter Variable', sans-serif; }
+
+/* Rakki's own icons (2.0), built by scripts/icons/build.py; see ui/icons.tsx. */
+@font-face {
+  font-family: 'RakkiIcons';
+  src: url('../assets/RakkiIcons.ttf') format('truetype');
+  font-display: block;
+}
+.ico.ico-r { font-family: 'RakkiIcons'; }

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { router, usePathname } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { lazy, Suspense } from 'react';

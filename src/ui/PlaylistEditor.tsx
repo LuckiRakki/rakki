@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { memo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';

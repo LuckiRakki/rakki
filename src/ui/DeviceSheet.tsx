@@ -2,7 +2,7 @@
 // can stay the quick, likely thing. Play this phone's song there (it moves over and this phone
 // becomes its remote), remote control it (nothing moves), or play its song here. Choices that
 // can't be picked now say why. The choices and what they do are remote/connect.ts.
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/ui/Icon';
 import { Pressable, View } from 'react-native';
 
 import { useAuth } from '@/auth/store';

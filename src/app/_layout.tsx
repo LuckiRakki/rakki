@@ -18,6 +18,7 @@ import { restoreQueue } from '@/player/store';
 import { ensureSearchIndex } from '@/search/index';
 import { loadRecentSearches } from '@/search/recent';
 import { openPlayer, takePendingLink, useModalTracker } from '@/ui/nav';
+import { ICON_FONT } from '@/ui/Icon';
 import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
@@ -106,7 +107,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts(FONT_FILES);
+  const [fontsLoaded] = useFonts({ ...FONT_FILES, ...ICON_FONT });
   const status = useAuth((s) => s.status);
   const signedIn = useAuth((s) => s.session !== null);
 

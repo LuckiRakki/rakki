@@ -51,3 +51,4 @@ example
 
 # Icon color variants (PSD + PNG, ~170 MB): kept on the PC, not in the repo
 assets/icons/variants/
+__pycache__/
