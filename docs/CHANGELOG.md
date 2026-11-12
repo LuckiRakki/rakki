@@ -14,6 +14,8 @@ says otherwise.
   sheet's own top is the gap now (iOS still counted the status bar in there).
 - **The mini player and tabs float.** No band behind them any more: pages scroll on underneath
   the two glass cards, and every list ends with room so its last row still scrolls clear.
+- **Search icon fixed.** The filled magnifying glass (Search tab, selected) had a dark notch where
+  the handle meets the ring; it's one clean shape now (phone and desktop share the icon font).
 - **Lyrics crash work.** The 11-09 performance logs had two crashes on the lyrics screen, both
   iOS stopping Rakki on corrupted memory (one while drawing the lyrics, one while decoding the
   blurred cover). The lyrics backdrop now reuses the player's small blurred cover (no new image

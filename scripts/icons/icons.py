@@ -79,8 +79,8 @@ ICONS = {
     # Navigation
     'home': f'<path d="{HOME}" fill="currentColor"/>',
     'home-outline': f'<path d="{HOME}"/>',
-    'search': '<circle cx="10.8" cy="10.8" r="6.3" stroke-width="2.6"/><path d="M15.6 15.6 20 20" stroke-width="2.6"/>',
-    'search-outline': '<circle cx="10.8" cy="10.8" r="6.3" stroke-width="2.2"/><path d="M15.6 15.6 20 20" stroke-width="2.2"/>',
+    'search': '<circle cx="10.8" cy="10.8" r="6.3" stroke-width="2.6"/><path d="M15.3 15.3 20 20" stroke-width="2.6"/>',
+    'search-outline': '<circle cx="10.8" cy="10.8" r="6.3" stroke-width="2.2"/><path d="M15.3 15.3 20 20" stroke-width="2.2"/>',
     'library': '<path d="M5 4v16M10 4v16M14.5 4.6l4.8 15" stroke-width="2.6"/>',
     'library-outline': '<path d="M5 4v16M10 4v16M14.5 4.6l4.8 15" stroke-width="2.2"/>',
     'chevron-down': '<path d="M6 9l6 6 6-6" stroke-width="2.2"/>',
