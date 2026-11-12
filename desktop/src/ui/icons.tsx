@@ -45,6 +45,7 @@ const GLYPH: Record<string, number> = {
   'color-palette-outline': 0xf27e,
   'contract': 0xf289,
   'copy-outline': 0xf290,
+  'crop-outline': 0xf296,
   'cut-outline': 0xf29c,
   'desktop-outline': 0xf29f,
   'disc-outline': 0xf2a8,
@@ -196,6 +197,7 @@ export const Circle = glyph('ellipse-outline');
 export const CircleArrowDown = glyph('arrow-down-circle');
 export const Clock3 = glyph('time-outline');
 export const Copy = glyph('copy-outline');
+export const Crop = glyph('crop-outline');
 export const Disc3 = glyph('disc-outline');
 export const Backspace = glyph('backspace-outline');
 export const Ellipsis = glyph('ellipsis-horizontal');

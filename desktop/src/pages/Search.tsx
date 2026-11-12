@@ -21,6 +21,7 @@ import { openMenu } from '~/ui/overlays';
 import { activateOnKey } from '~/ui/keys';
 import { ArtistLinks, Artwork, ItemCard, Shelf, TrackTable } from '~/ui/parts';
 import { Loading } from '~/ui/states';
+import { GenreTilesSkeleton } from '~/pages/Library';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -53,9 +54,11 @@ function open(item: BaseItem) {
 function BrowseAll() {
   const genres = useGenres().data;
   const client = useAuth((s) => s.client);
+  // The first time only: after that last time's tiles hold the place (lib/lastGenres.ts).
+  if (!genres) return <GenreTilesSkeleton count={12} />;
   return (
     <div className="genre-grid">
-      {genres?.map((g) => {
+      {genres.map((g) => {
         const rgb = g.album && client ? blurhashAverage(client.blurhash(g.album)) : null;
         return (
           <button key={g.name} className="genre-tile" style={{ background: tileColor(rgb, g.name) }} onClick={() => go({ name: 'genre', id: g.name })}>

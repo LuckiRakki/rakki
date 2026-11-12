@@ -230,3 +230,7 @@
 .lm-action:hover { transform: scale(1.03); }
 .lm-action:active { transform: scale(0.97); }
 .lm-empty p { max-width: 520px; text-wrap: balance; }
+
+/* Sync Lyrics: Upload a Lyrics File (and a file dragged over the words box). */
+.mk-upload { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.mk-text.drop { border-color: #fff; border-style: dashed; }

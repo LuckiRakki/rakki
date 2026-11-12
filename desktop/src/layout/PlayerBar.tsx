@@ -197,8 +197,8 @@ export function PlayerBar() {
   const error = usePlayer((s) => s.error);
   const panel = useLayout((s) => s.panel);
   const open = useLayout((s) => s.nowPlaying);
-  const tab = useLayout((s) => s.playerTab);
   const lyricsView = useLayout((s) => s.lyricsView);
+  const fullscreen = useLayout((s) => s.fullscreen);
   const target = useRemote((s) => s.target);
   const video = useVideo((s) => s.video);
   const [fit, bar] = useFit();
@@ -208,19 +208,34 @@ export function PlayerBar() {
   if (video) return <VideoBar video={video} />;
   if (target) return <RemoteBar target={target} />;
 
-  // The lyrics take the main area (the full player open: its Lyrics tab, as before).
-  const toggleLyrics = () => (open ? (tab === 'lyrics' ? l.setNowPlaying(false) : l.setPlayerTab('lyrics')) : l.setLyricsView(!lyricsView));
-  const lyricsOn = open ? tab === 'lyrics' : lyricsView;
+  // The buttons on the right open things in the normal window: in full screen or the full
+  // player, a press leaves them first (the Full Player button and the volume excepted).
+  const covered = open || fullscreen;
+  const uncover = () => covered && l.showMain();
+  // The lyrics take the main area.
+  const toggleLyrics = () => {
+    if (covered) {
+      l.showMain();
+      l.setLyricsView(true);
+    } else l.setLyricsView(!lyricsView);
+  };
+  const lyricsOn = !covered && lyricsView;
+  const showPanel = (p: 'now' | 'queue') => {
+    if (covered) {
+      l.showMain();
+      l.setPanel(p);
+    } else l.togglePanel(p);
+  };
   const more = (e: React.MouseEvent) => {
     const sleep = sleepMenu();
     const items: MenuItem[] = [
       ...(fit === 'tight'
         ? [
-            { label: panel === 'now' ? 'Hide Now Playing View' : 'Now Playing View', icon: PanelRight, run: () => l.togglePanel('now') },
+            { label: panel === 'now' && !covered ? 'Hide Now Playing View' : 'Now Playing View', icon: PanelRight, run: () => showPanel('now') },
           ]
         : []),
       { label: 'Sleep Timer', icon: Moon, run: () => openMenu(e, sleep.items, sleep.title), divider: fit === 'tight' },
-      { label: 'Mini Player', icon: PictureInPicture2, run: () => void setMini(true) },
+      { label: 'Mini Player', icon: PictureInPicture2, run: () => (uncover(), void setMini(true)) },
     ];
     openMenu(e, items);
   };
@@ -255,7 +270,12 @@ export function PlayerBar() {
       </div>
       <div className="right">
         {fit !== 'tight' ? (
-          <button className={`iconbtn${panel === 'now' ? ' on dot' : ''}`} aria-label="Now Playing View" aria-pressed={panel === 'now'} title="Now Playing View" onClick={() => l.togglePanel('now')}>
+          <button
+            className={`iconbtn${panel === 'now' && !covered ? ' on dot' : ''}`}
+            aria-label="Now Playing View"
+            aria-pressed={panel === 'now' && !covered}
+            title="Now Playing View"
+            onClick={() => showPanel('now')}>
             <PanelRight size={19} />
           </button>
         ) : null}
@@ -269,18 +289,20 @@ export function PlayerBar() {
           <MicVocal size={19} />
         </button>
         <button
-          className={`iconbtn${(open ? tab === 'queue' : panel === 'queue') ? ' on dot' : ''}`}
+          className={`iconbtn${panel === 'queue' && !covered ? ' on dot' : ''}`}
           aria-label="Queue"
-          aria-pressed={open ? tab === 'queue' : panel === 'queue'}
+          aria-pressed={panel === 'queue' && !covered}
           title="Queue"
-          onClick={() => (open ? l.setPlayerTab('queue') : l.togglePanel('queue'))}>
+          onClick={() => showPanel('queue')}>
           <ListMusic size={20} />
         </button>
         {fit === 'wide' ? <SleepButton /> : null}
-        <DevicesButton />
+        <span className="contents" onClickCapture={uncover}>
+          <DevicesButton />
+        </span>
         <VolumeControl />
         {fit === 'wide' ? (
-          <button className="iconbtn" aria-label="Mini Player" title="Mini Player" onClick={() => void setMini(true)}>
+          <button className="iconbtn" aria-label="Mini Player" title="Mini Player" onClick={() => (uncover(), void setMini(true))}>
             <PictureInPicture2 size={19} />
           </button>
         ) : (

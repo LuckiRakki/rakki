@@ -11,6 +11,8 @@ import lucidCss from './lucid.css?raw';
 import { kv } from '~/lib/kv';
 
 export const DEFAULT_THEME = 'default';
+/** The theme a new install starts on (and what removing the theme in use goes back to): Kawarp. */
+export const STARTING_THEME = 'kawarp';
 
 const RAKKI: Theme = { id: DEFAULT_THEME, meta: { name: 'Rakki', description: "Rakki's own look.", backdrop: 'none' }, css: '', tokens: {}, builtIn: true };
 export const BUILT_IN: Theme[] = [RAKKI, { ...parseTheme(lucidCss, 'Lucid', 'lucid'), builtIn: true }, { ...parseTheme(kawarpCss, 'Kawarp', 'kawarp'), builtIn: true }];
@@ -19,6 +21,8 @@ const KEY = 'rakki.themes';
 
 interface Saved {
   active: string;
+  /** Set once Kawarp became the starting theme (desktop 1.7.0): Rakki's own look picked since then stays. */
+  kawarpDefault?: boolean;
   imported: { id: string; fileName: string; css: string }[];
 }
 
@@ -33,9 +37,12 @@ function load(): { active: string; imported: Theme[] } {
       }
     });
     const all = [...BUILT_IN, ...imported];
-    return { active: all.some((t) => t.id === v.active) ? v.active! : DEFAULT_THEME, imported };
+    // From before Kawarp was the default: Rakki's own look then was simply the default, so it
+    // moves to Kawarp once. Picking Rakki again afterwards is kept.
+    if (!v.kawarpDefault && (v.active === undefined || v.active === DEFAULT_THEME)) return { active: STARTING_THEME, imported };
+    return { active: all.some((t) => t.id === v.active) ? v.active! : STARTING_THEME, imported };
   } catch {
-    return { active: DEFAULT_THEME, imported: [] };
+    return { active: STARTING_THEME, imported: [] };
   }
 }
 
@@ -51,7 +58,7 @@ interface ThemesState {
 export const useThemes = create<ThemesState>((set, get) => {
   const save = () => {
     const { active, imported } = get();
-    const data: Saved = { active, imported: imported.map((t) => ({ id: t.id, fileName: t.meta.name, css: t.css })) };
+    const data: Saved = { active, kawarpDefault: true, imported: imported.map((t) => ({ id: t.id, fileName: t.meta.name, css: t.css })) };
     try {
       kv.setItem(KEY, JSON.stringify(data));
     } catch {
@@ -77,7 +84,7 @@ export const useThemes = create<ThemesState>((set, get) => {
     },
     remove(id) {
       const { active, imported } = get();
-      set({ imported: imported.filter((t) => t.id !== id), active: active === id ? DEFAULT_THEME : active });
+      set({ imported: imported.filter((t) => t.id !== id), active: active === id ? STARTING_THEME : active });
       save();
     },
   };

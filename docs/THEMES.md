@@ -3,8 +3,8 @@
 A theme changes how Rakki looks, the way a Spicetify theme changes Spotify. There's no
 marketplace: a theme is one `.css` file, and you add it in **Settings → Look → Theme → Import**.
 Importing a file with the same name again replaces the old copy, so you can edit a theme and
-import it again to see the change. **Use** switches between themes, and **Rakki** is the
-built-in default look.
+import it again to see the change. **Use** switches between themes. **Kawarp** is the theme
+Rakki starts on (since desktop 1.7.0), and **Rakki** is its own plain look.
 
 Themes work on the desktop app now. The phone app will use the same files later: it will read
 the colours on `:root` (the tokens below). The rest of the CSS only applies on the desktop.
@@ -94,4 +94,4 @@ Any CSS works, and the theme comes after Rakki's own styles. Useful class names:
   `.mini-controls`, `.mini-seek` its parts. It takes the theme's colours and backdrop like the
   full window: `--bg` tinted by the song without a backdrop, `--surface` over the cover with one
   (that layer is `.mini::after`).
-- `<html data-theme="...">` names the theme in use (`default`, `lucid`, or `file:...`).
+- `<html data-theme="...">` names the theme in use (`default` for Rakki's own look, `lucid`, `kawarp`, or `file:...`).

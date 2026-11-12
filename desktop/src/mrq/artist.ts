@@ -21,6 +21,8 @@ export interface ArtistImage {
   /** Backdrops are numbered from 0; the others are always 0. */
   index: number;
   url: string;
+  /** The picture at full size, for cropping (mrq/Cropper.tsx). */
+  fullUrl: string;
 }
 
 export interface ArtistDetails {
@@ -68,10 +70,10 @@ function imagesOf(item: BaseItem): ArtistImage[] {
   const out: ArtistImage[] = [];
   for (const type of ARTIST_IMAGE_TYPES) {
     if (type === 'Backdrop') {
-      (item.BackdropImageTags ?? []).forEach((tag, index) => out.push({ type, index, url: c.itemImageUrl(item.Id, type, index, tag) }));
+      (item.BackdropImageTags ?? []).forEach((tag, index) => out.push({ type, index, url: c.itemImageUrl(item.Id, type, index, tag), fullUrl: c.itemImageUrl(item.Id, type, index, tag, 4000) }));
     } else {
       const tag = item.ImageTags?.[type];
-      if (tag) out.push({ type, index: 0, url: c.itemImageUrl(item.Id, type, 0, tag) });
+      if (tag) out.push({ type, index: 0, url: c.itemImageUrl(item.Id, type, 0, tag), fullUrl: c.itemImageUrl(item.Id, type, 0, tag, 4000) });
     }
   }
   return out;

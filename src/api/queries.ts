@@ -21,6 +21,7 @@ import {
 import { useDownloads } from '@/downloads/store';
 import { seededShuffle } from '@/library/view';
 import { artistTopTracks, LastfmError, matchKey, matchPopular, trackPlaycount } from '@/lib/lastfm';
+import { keepGenres, lastGenres } from '@/lib/lastGenres';
 import { isMix, mixNumber } from '@/lib/mixes';
 import { useOffline } from '@/lib/online';
 import { useSettings } from '@/settings/store';
@@ -304,8 +305,22 @@ export const useMusicVideos = () => useUserQuery(['musicVideos'], (c) => c.getMu
 
 export const useSimilar = (id?: string) => useUserQuery(['similar', id], (c) => c.getSimilar(id!, 12), { enabled: !!id });
 
-export const useGenreCounts = () =>
-  useUserQuery(['genreCounts'], (c) => c.getGenreCounts(), { staleTime: 24 * 60 * 60_000, offline: offlineGenreCounts });
+/** Every genre with a cover. Last time's list shows at once and stays until the new one is in (lib/lastGenres.ts). */
+export function useGenreCounts() {
+  const client = useClient();
+  const mode = useModeKey();
+  const userId = client?.session.userId;
+  return useQuery({
+    queryKey: ['genreCounts', userId, mode],
+    enabled: !!client,
+    staleTime: mode !== 'online' ? Infinity : 24 * 60 * 60_000,
+    networkMode: mode !== 'online' ? 'always' : 'online',
+    queryFn: () => (mode !== 'online' || !client ? Promise.resolve(offlineGenreCounts()) : client.getGenreCounts().then((g) => keepGenres(userId, g))),
+    initialData: mode === 'online' ? () => lastGenres(userId) : undefined,
+    // Kept from last time: shown, but loaded again straight away.
+    initialDataUpdatedAt: 0,
+  });
+}
 export const useGenreAlbums = (genre?: string) =>
   useUserQuery(['genreAlbums', genre], async (c) => (await c.getGenreAlbums(genre!)).Items, {
     enabled: !!genre,

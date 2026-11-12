@@ -16,7 +16,8 @@ import { SignIn } from '~/auth/SignIn';
 import { PlayerBar } from '~/layout/PlayerBar';
 import { Resizer, Sidebar } from '~/layout/Sidebar';
 import { TitleBar } from '~/layout/TitleBar';
-import { useLayout } from '~/layout/layout';
+import { startFullscreenWatch, useLayout } from '~/layout/layout';
+import { startAutoRefresh } from '~/lib/refresh';
 import { MiniPlayer } from '~/layout/MiniPlayer';
 import { NowPlayingPanel } from '~/layout/NowPlayingPanel';
 import { useNav } from '~/nav';
@@ -41,6 +42,7 @@ import { LyricsMain } from '~/lyrics/LyricsMain';
 import { useLook } from '~/settings/look';
 import { handleShortcut, passFocus } from '~/settings/shortcuts';
 import { useVideo } from '~/player/video';
+import { usePresence } from '~/ui/motion';
 import { watchServer } from '@/lib/online';
 import { DevNotice } from '~/dev/DevNotice';
 
@@ -62,6 +64,8 @@ function App() {
   useApplyLook();
   useApplyCustomTheme();
   const settingUp = useSetup((s) => s.running);
+  // A music video in the theater: the player bar sits on its moving background (video.css).
+  const theater = usePresence(useVideo((s) => !!s.video && s.mode === 'theater'), 260).render;
 
   useEffect(() => {
     startPlayer();
@@ -74,6 +78,8 @@ function App() {
       if (p.playing && !prev.playing && useRemote.getState().target) useRemote.getState().setTarget(null);
     });
     startUpdateCheck();
+    // The window leaving full screen by itself: Rakki follows (layout.ts).
+    startFullscreenWatch();
     // The server stops answering: a bar says so, Rakki keeps asking, and failed pages load again once it's back.
     watchServer({ url: () => useAuth.getState().session?.serverUrl, back: refetchFailed });
     // Narrow windows: the right sidebar floats, the left one shrinks to icons (layout.ts).
@@ -123,7 +129,10 @@ function App() {
     const every = setInterval(() => void ensureSearchIndex(), 15 * 60_000);
     const onFocus = () => void ensureSearchIndex();
     window.addEventListener('focus', onFocus);
+    // Pages load fresh at midnight and noon (lib/refresh.ts; the title bar's Refresh any time).
+    const stopAuto = startAutoRefresh();
     return () => {
+      stopAuto();
       clearTimeout(first);
       clearInterval(every);
       window.removeEventListener('focus', onFocus);
@@ -138,7 +147,7 @@ function App() {
         <MiniPlayer />
       ) : signedIn ? (
         <div
-          className={`app${panel && !floating ? '' : ' no-panel'}${floating ? ' floating' : ''}${rail ? ' rail' : ''}${nowPlaying ? ' np-open' : ''}${nowPlaying && fullscreen ? ' np-fs' : ''}`}
+          className={`app${panel && !floating ? '' : ' no-panel'}${floating ? ' floating' : ''}${rail ? ' rail' : ''}${nowPlaying ? ' np-open' : ''}${nowPlaying && fullscreen ? ' np-fs' : ''}${theater ? ' vt-open' : ''}`}
           style={{ ['--sidebar' as string]: `${sidebarWidth}px`, ['--panel' as string]: `${panelWidth}px` }}>
           <ThemeBackdrop />
           <TitleBar />

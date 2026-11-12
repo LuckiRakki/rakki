@@ -13,7 +13,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { matchKey } from '@/lib/lastfm';
 import { videosByArtist, videoTitle } from '@/video/titles';
 import { client } from '~/auth/session';
-import { useLayout } from '~/layout/layout';
+import { onLeftFullscreen, onShowMain, useLayout } from '~/layout/layout';
 import { usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
 
@@ -153,6 +153,16 @@ export const useVideo = create<VideoState>((set, get) => ({
     set({ video: null, upNext: [], played: [], countdown: null, mode: 'theater' });
   },
 }));
+
+// Searching or a player bar button over a big video: it shrinks to the sidebar, still playing.
+onShowMain(() => {
+  const v = useVideo.getState();
+  if (v.video && v.mode !== 'mini') v.setMode('mini');
+});
+// The window left full screen by itself: the video goes back to the theater.
+onLeftFullscreen(() => {
+  if (useVideo.getState().mode === 'full') useVideo.setState({ mode: 'theater' });
+});
 
 export const playVideo = (video: BaseItem, from?: BaseItem[]) => useVideo.getState().open(video, from);
 

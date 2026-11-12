@@ -135,3 +135,26 @@
 .fs-hint { position: fixed; z-index: 200; top: 24px; left: 50%; transform: translate(-50%, -12px); padding: 12px 22px; border-radius: 999px; background: rgba(32, 33, 36, 0.92); color: #fff; font-size: 15px; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); opacity: 0; pointer-events: none; transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out); }
 .fs-hint.shown { opacity: 1; transform: translate(-50%, 0); }
 .fs-hint kbd { display: inline-block; margin: 0 4px; padding: 1px 8px; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 4px; font: inherit; font-size: 13px; }
+
+/* Crop (mrq/Cropper.tsx): the picture with a frame to move and size; outside it is dimmed. */
+.dialog:has(.crop-edit) { width: min(720px, calc(100vw - 40px)); }
+.crop-shapes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crop-shapes .chip { padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; background: var(--surface-3); color: var(--text); transition: background 0.15s, color 0.15s; }
+.crop-shapes .chip:hover { background: var(--surface-4); }
+.crop-shapes .chip.on { background: var(--text); color: #000; }
+.crop-reset { margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.crop-reset:hover { background: var(--surface-3); color: var(--text); }
+.crop-stage { position: relative; align-self: center; flex: none; overflow: hidden; border-radius: var(--radius-sm); touch-action: none; user-select: none; background: #000; }
+.crop-stage img { display: block; pointer-events: none; }
+.crop-frame { position: absolute; cursor: move; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); outline: 2px solid #fff; outline-offset: -1px; }
+.crop-grid { position: absolute; inset: 0; pointer-events: none; background:
+  linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
+  linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)); }
+.crop-frame.round::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7); pointer-events: none; }
+.crop-handle { position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 3px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+.crop-handle.nw { left: -8px; top: -8px; cursor: nwse-resize; }
+.crop-handle.ne { right: -8px; top: -8px; cursor: nesw-resize; }
+.crop-handle.sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
+.crop-handle.se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+.crop-hint { text-align: center; }
+.crop-state { min-height: 200px; display: grid; place-items: center; }

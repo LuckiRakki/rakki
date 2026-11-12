@@ -321,6 +321,15 @@ export async function saveMadeLyrics(item: BaseItem, d: Draft): Promise<void> {
   await queryClient.invalidateQueries({ queryKey: ['lyrics'] });
 }
 
+/** Sends a lyrics file (TTML, lyrics/lyricsFile.ts) to the server as the song's lyrics, the same
+ *  sidecar as lyrics made here. Any draft for the song is dropped. */
+export async function uploadLyrics(itemId: string, ttml: string): Promise<void> {
+  await ready();
+  await pluginRequest('PUT', `/Rakki/Lyrics/${itemId}`, ttml, 'application/xml');
+  clearDraftLocal(itemId);
+  await queryClient.invalidateQueries({ queryKey: ['lyrics'] });
+}
+
 /** Removes the lyrics you made for the song (it goes back to its other lyrics, if any). */
 export async function removeMadeLyrics(itemId: string): Promise<void> {
   await ready();

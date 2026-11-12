@@ -119,3 +119,4 @@ h1, h2, h3, p { margin: 0; }
 :root[data-density='compact'] .page { padding-top: 18px; }
 :root[data-density='compact'] .setting { padding: 10px 0; }
 :root[data-reduce-motion] *, :root[data-reduce-motion] *::before, :root[data-reduce-motion] *::after { transition: none !important; animation: none !important; }
+.contents { display: contents; }

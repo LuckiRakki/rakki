@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 
 import { cachedItem } from '@/api/cachedItem';
 import type { BaseItem, JellyfinClient } from '@/api/jellyfin';
+import { keepGenres, lastGenres } from '@/lib/lastGenres';
 import { isMix, mixNumber } from '@/lib/mixes';
 import { useAuth } from '~/auth/session';
 
@@ -61,7 +62,19 @@ export const useSimilarArtists = (id: string) => useClientQuery(['similar', id],
 
 export const useAllSongs = () =>
   useClientQuery(['allSongs'], (c) => c.getTracks({ sortBy: 'Album,ParentIndexNumber,IndexNumber', sortOrder: 'Ascending', limit: 20000 }).then((r) => r.Items));
-export const useGenres = () => useClientQuery(['genres'], (c) => c.getGenreCounts());
+/** Every genre with a cover. Last time's list shows at once and stays until the new one is in (lib/lastGenres.ts). */
+export function useGenres() {
+  const client = useAuth((s) => s.client);
+  const userId = client?.session.userId;
+  return useQuery({
+    queryKey: ['genres', userId],
+    enabled: !!client,
+    queryFn: () => (client ? client.getGenreCounts().then((g) => keepGenres(userId, g)) : Promise.resolve([])),
+    initialData: () => lastGenres(userId),
+    // Kept from last time: shown, but loaded again straight away.
+    initialDataUpdatedAt: 0,
+  });
+}
 export const useGenreAlbums = (genre: string) => useClientQuery(['genreAlbums', genre], (c) => c.getGenreAlbums(genre).then((r) => r.Items));
 export const useGenreTopSongs = (genre: string) => useClientQuery(['genreTop', genre], (c) => c.getGenreTracks(genre, { mostPlayed: true, limit: 20 }).then((r) => r.Items));
 export const useRediscover = (on = true) => useClientQuery(['rediscover'], (c) => c.getRediscoverAlbums(16), on);

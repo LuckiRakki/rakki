@@ -11,7 +11,7 @@ import { artColor } from '@/lib/blurhash';
 import { useAuth } from '~/auth/session';
 import { useLivePosition } from '~/player/position';
 import { Range } from '~/ui/Range';
-import { useLayout, win } from '~/layout/layout';
+import { leaveFullscreen, useLayout, win } from '~/layout/layout';
 import { usePlayer } from '~/player/store';
 import { ThemeBackdrop } from '~/themes/ThemeBackdrop';
 import { ArtistLinks, Artwork, SaveButton } from '~/ui/parts';
@@ -26,9 +26,10 @@ export async function setMini(on: boolean) {
   if (on === l.mini) return;
   if (!win) return useLayout.setState({ mini: on });
   if (on) {
+    // Full screen first: the size to come back to is the window's, not the screen's.
+    await leaveFullscreen();
     const size = (await win.innerSize()).toLogical(await win.scaleFactor());
     before = { width: size.width, height: size.height, maximized: await win.isMaximized() };
-    if (l.fullscreen) l.setFullscreen(false);
     if (before.maximized) await win.unmaximize();
     useLayout.setState({ mini: true, nowPlaying: false });
     await win.setMinSize(new LogicalSize(MINI.width, MINI.height));

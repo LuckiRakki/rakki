@@ -6,6 +6,49 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 1.24.3 (2026-11-12)
+- **Genres never leave a gap.** Search's Browse All and Library's Genres show last time's genre
+  tiles at once and keep them in place while the list loads again, then swap in the new one.
+  They used to vanish into empty space whenever the list had to load (at launch, after a while
+  away). The very first time, tiles the same size hold their places instead of a spinner.
+
+## Desktop 1.7.0 (2026-11-12, next desktop build)
+- **Desktop: Refresh in the title bar.** Next to Back and Forward: every page you have open loads
+  again from your server in place (nothing blanks, the icon turns while it works). It also
+  happens by itself at midnight and at noon, or the first moment after if the computer was asleep
+  or Rakki was in the tray, so a new day's Home, mixes and Recently Added are there.
+- **Desktop: genres stay in place until they refresh** (as on the phone, above).
+- **Desktop: the player bar's buttons on the right leave full screen and the full player.** Now
+  Playing View, Lyrics, Queue, Devices and Mini Player open in the normal window instead of
+  behind the full player or inside full screen (Lyrics shows them in the main area, Queue opens
+  the queue sidebar). The volume and the Full Player button work as before.
+- **Desktop: searching brings up the results.** Clicking the search box, typing, or the Search
+  shortcut closes whatever covers the page (the full player, full screen, the lyrics in the
+  main area, a big music video, which keeps playing in the sidebar, or a floating sidebar) and
+  shows the results.
+- **Desktop: upload lyrics files in Sync Lyrics.** Upload a Lyrics File (or drop one on the words
+  box): a .ttml file goes to your server exactly as it is (word timing, duets and background
+  vocals kept), an .lrc file (enhanced LRC's word times too) is turned into TTML, and both
+  become the song's lyrics through the Rakki plugin, like lyrics made by tapping, so every Rakki
+  shows them. A .txt (or an .lrc without times) fills the words box to tap along to.
+- **Desktop: the music video's player bar matches the video.** In the theater the moving
+  background runs under the player bar too, so the bar takes the video's colours like the full
+  player's does.
+- **Desktop: Kawarp is the default theme.** New installs start on it, and Rakki's own look moves
+  to Kawarp once; picking Rakki again in Settings → Look → Theme is kept.
+- **Desktop: full screen fixes.** F11 is the full screen of what's showing: a big music video,
+  the lyrics (from the lyrics in the main area), the full player, or else the whole window,
+  which now has Exit Full Screen where the window buttons were (Maximize did nothing there).
+  Leaving full screen puts a maximized window back to maximized. When the window leaves full
+  screen some other way (Windows' keys, the desktop's own full screen key), Rakki follows instead
+  of staying in its full screen look. On Linux, full screen no longer makes the window
+  unresizable, which Hyprland and other tiling desktops took as a floating window that didn't
+  fill the screen. Going to the mini player from full screen comes back at the window's size.
+- **Desktop: crop and reshape artist pictures.** Edit Artist → Crop on any picture: pick a shape
+  (Square, Portrait 4:5 or Landscape 4:3 for their photo; Wide 16:9, Wider 21:9 or Strip 3:1 for
+  the header; Free for any), drag the frame, size it by its corners, scroll to zoom. The
+  cropped copy waits for Save like a picture from a file.
+
 ## 1.24.2 (2026-11-07)
 - **Songs stop skipping after a long pause or a relaunch.** The server stops converting a song
   (and deletes its pieces) a while after the phone stops asking for it, but the player held on

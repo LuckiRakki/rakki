@@ -11,10 +11,11 @@ import type { BaseItem } from '@/api/jellyfin';
 import { patchItem } from '~/library/actions';
 import { applyOnlineArtistImage, loadArtist, onlineArtistImages, removeArtistImage, replaceArtistBackdrop, saveArtist, setArtistImage, type ArtistChanges, type ArtistDetails, type ArtistImageType, type OnlineImage } from '~/mrq/artist';
 import { mrqReady } from '~/mrq/client';
+import { Cropper, type Shape } from '~/mrq/Cropper';
 import { go, useNav } from '~/nav';
 import { usePlayer } from '~/player/store';
 import { queryClient } from '~/queries';
-import { ChevronDown, ChevronLeft, ImagePlus, Refresh, Search, Trash2, Undo } from '~/ui/icons';
+import { ChevronDown, ChevronLeft, Crop, ImagePlus, Refresh, Search, Trash2, Undo } from '~/ui/icons';
 import { closeDialog, showDialog, toast } from '~/ui/overlays';
 import { Artwork, showLocalPicture } from '~/ui/parts';
 import { Empty, Loading } from '~/ui/states';
@@ -25,13 +26,37 @@ interface Slot {
   detail: string;
   /** How the preview is cut: a round photo, a wide header, a logo on nothing, a long strip. */
   shape: 'round' | 'wide' | 'logo' | 'banner';
+  /** The shapes Crop offers, the first to start with. */
+  crops: Shape[];
 }
 
 const SLOTS: Slot[] = [
-  { type: 'Primary', label: 'Picture', detail: 'Their photo, on cards and on their page.', shape: 'round' },
-  { type: 'Backdrop', label: 'Header', detail: 'The wide picture behind their name on their page.', shape: 'wide' },
-  { type: 'Logo', label: 'Logo', detail: 'Their name as artwork, shown by other Jellyfin apps.', shape: 'logo' },
-  { type: 'Banner', label: 'Banner', detail: 'A long strip, shown by other Jellyfin apps.', shape: 'banner' },
+  {
+    type: 'Primary',
+    label: 'Picture',
+    detail: 'Their photo, on cards and on their page.',
+    shape: 'round',
+    crops: [
+      { label: 'Square', ratio: 1 },
+      { label: 'Portrait 4:5', ratio: 4 / 5 },
+      { label: 'Landscape 4:3', ratio: 4 / 3 },
+      { label: 'Free', ratio: null },
+    ],
+  },
+  {
+    type: 'Backdrop',
+    label: 'Header',
+    detail: 'The wide picture behind their name on their page.',
+    shape: 'wide',
+    crops: [
+      { label: 'Wide 16:9', ratio: 16 / 9 },
+      { label: 'Wider 21:9', ratio: 21 / 9 },
+      { label: 'Strip 3:1', ratio: 3 },
+      { label: 'Free', ratio: null },
+    ],
+  },
+  { type: 'Logo', label: 'Logo', detail: 'Their name as artwork, shown by other Jellyfin apps.', shape: 'logo', crops: [{ label: 'Free', ratio: null }, { label: 'Wide 4:1', ratio: 4 }] },
+  { type: 'Banner', label: 'Banner', detail: 'A long strip, shown by other Jellyfin apps.', shape: 'banner', crops: [{ label: 'Banner', ratio: 1000 / 185 }, { label: 'Free', ratio: null }] },
 ];
 const MAIN_SLOTS = SLOTS.slice(0, 2);
 const MORE_SLOTS = SLOTS.slice(2);
@@ -70,6 +95,7 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
   const [typed, setTyped] = useState<{ name?: string; sortName?: string; genres?: string; overview?: string }>({});
   const [staged, setStaged] = useState<Partial<Record<ArtistImageType, Staged>>>({});
   const [finding, setFinding] = useState<Slot | null>(null);
+  const [cropping, setCropping] = useState<Slot | null>(null);
   const [more, setMore] = useState(false);
   const canRename = mrqReady();
 
@@ -110,6 +136,33 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
     });
   const pickFile = (slot: Slot) => chooseFile((file) => stage(slot.type, { kind: 'file', file, url: URL.createObjectURL(file) }));
 
+  // What a slot shows now (a staged picture, else the server's), at full size for cropping.
+  const cropSource = (slot: Slot): string | null => {
+    const s = staged[slot.type];
+    if (s) return s.kind === 'remove' ? null : s.url;
+    return details?.images.find((i) => i.type === slot.type && i.index === 0)?.fullUrl ?? null;
+  };
+
+  if (cropping) {
+    const src = cropSource(cropping);
+    if (src) {
+      return (
+        <Cropper
+          src={src}
+          title={`${cropping.label} for ${start.name}`}
+          shapes={cropping.crops}
+          png={cropping.type === 'Logo'}
+          round={cropping.shape === 'round'}
+          onBack={() => setCropping(null)}
+          onDone={(file, url) => {
+            stage(cropping.type, { kind: 'file', file, url });
+            setCropping(null);
+          }}
+        />
+      );
+    }
+  }
+
   if (finding) {
     return (
       <OnlinePicker
@@ -133,7 +186,7 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
   const tiles = (slots: Slot[]) => (
     <div className="art-slots">
       {slots.map((slot) => (
-        <PictureSlot key={slot.type} slot={slot} artist={artist} details={details} staged={staged[slot.type]} onFile={() => pickFile(slot)} onFind={() => setFinding(slot)} onRemove={() => stage(slot.type, { kind: 'remove' })} onUndo={() => stage(slot.type, null)} />
+        <PictureSlot key={slot.type} slot={slot} artist={artist} details={details} staged={staged[slot.type]} onFile={() => pickFile(slot)} onFind={() => setFinding(slot)} onRemove={() => stage(slot.type, { kind: 'remove' })} onUndo={() => stage(slot.type, null)} onCrop={cropSource(slot) ? () => setCropping(slot) : undefined} />
       ))}
     </div>
   );
@@ -214,7 +267,7 @@ function ArtistEditor({ artist }: { artist: BaseItem }) {
 }
 
 /** One picture: what it is now (or what Save will put there), and how to change it. */
-function PictureSlot({ slot, artist, details, staged, onFile, onFind, onRemove, onUndo }: { slot: Slot; artist: BaseItem; details: ArtistDetails | null; staged?: Staged; onFile(): void; onFind(): void; onRemove(): void; onUndo(): void }) {
+function PictureSlot({ slot, artist, details, staged, onFile, onFind, onRemove, onUndo, onCrop }: { slot: Slot; artist: BaseItem; details: ArtistDetails | null; staged?: Staged; onFile(): void; onFind(): void; onRemove(): void; onUndo(): void; onCrop?: () => void }) {
   // Backdrops are numbered: the first is the one the artist page draws.
   const now = details?.images.find((i) => i.type === slot.type && i.index === 0);
   const src = staged ? (staged.kind === 'remove' ? null : staged.kind === 'online' ? staged.thumb : staged.url) : (now?.url ?? null);
@@ -236,6 +289,12 @@ function PictureSlot({ slot, artist, details, staged, onFile, onFind, onRemove, 
           <Search size={14} />
           Find Online
         </button>
+        {onCrop ? (
+          <button type="button" className="secondary small" onClick={onCrop} title={`Crop or Reshape the ${slot.label}`}>
+            <Crop size={14} />
+            Crop
+          </button>
+        ) : null}
         {staged ? (
           <button type="button" className="iconbtn" onClick={onUndo} aria-label={`Keep the ${slot.label} as It Was`} title="Keep as It Was">
             <Undo size={16} />

@@ -23,6 +23,7 @@ import {
   nextTarget,
   saveDraftLocal,
   saveMadeLyrics,
+  uploadLyrics,
   shiftLine,
   tap,
   untap,
@@ -30,15 +31,16 @@ import {
   type MakerLine,
 } from '~/lyrics/maker';
 import { pickLyrics } from '~/lyrics/LyricsView';
+import { LYRICS_FILE_TYPES, LyricsFileError, readLyricsFile } from '~/lyrics/lyricsFile';
 import { go, useNav } from '~/nav';
 import { currentPosition, usePlayer } from '~/player/store';
 import { queryClient, useItem } from '~/queries';
 import { useShortcuts } from '~/settings/shortcuts';
 import { useActiveTheme } from '~/themes/themes';
 import { useEditsAvailable } from '~/audio/edits';
-import { ArrowLeft, ArrowRight, Backspace, Check, ChevronLeft, Hand, Info, Music, Pause, Play, Rewind, Stopwatch } from '~/ui/icons';
+import { ArrowLeft, ArrowRight, ArrowUpFromLine, Backspace, Check, ChevronLeft, Hand, Info, Music, Pause, Play, Rewind, Stopwatch } from '~/ui/icons';
 import { confirmAction, toast } from '~/ui/overlays';
-import { Artwork } from '~/ui/parts';
+import { Artwork, ticksToSeconds } from '~/ui/parts';
 import { Empty, Loading } from '~/ui/states';
 
 /** Open the lyrics maker for a song in the main area. */
@@ -122,6 +124,35 @@ function Maker({ item }: { item: BaseItem }) {
     } else playNow(item, from);
   };
 
+  // A lyrics file from this computer (lyrics/lyricsFile.ts): timed ones go to the server as the
+  // song's lyrics straight away; words alone fill the box to tap along to.
+  const upload = async (file: File) => {
+    const name = item.Name;
+    let read;
+    try {
+      read = await readLyricsFile(file, { itemId: item.Id, title: item.Name, artist: item.Artists?.join(', '), durationMs: ticksToSeconds(item.RunTimeTicks) * 1000 });
+    } catch (e) {
+      return toast(e instanceof LyricsFileError ? e.message : "Couldn't read that file.");
+    }
+    if (read.kind === 'text') {
+      typed.current = true;
+      setText(read.text);
+      return toast('No times in that file: tap along to sync it');
+    }
+    if (!available) return toast('Uploading lyrics needs the Rakki plugin on your server.');
+    if (own && !(await confirmAction(`Replace the Lyrics for ${name}?`, `${file.name} (${read.lines} ${read.lines === 1 ? 'line' : 'lines'}, ${read.words ? 'word by word' : 'line by line'}) becomes this song's lyrics on your server, in every Rakki.`, 'Replace'))) return;
+    useNav.getState().back();
+    const backTo = useNav.getState().route;
+    try {
+      await uploadLyrics(item.Id, read.ttml);
+      toast(`Uploaded the lyrics for ${name}`);
+      const p = usePlayer.getState();
+      if (p.queue[p.index]?.Id === item.Id && useNav.getState().route === backTo) useLayout.getState().setLyricsView(true);
+    } catch (e) {
+      toast(`Couldn't upload the lyrics for ${name} (${e instanceof Error ? e.message : 'the server said no'}).`);
+    }
+  };
+
   const tint = client ? artColor(client.blurhash(item), '#202024') : '#202024';
   const ownBackground = useActiveTheme().meta.backdrop !== 'flow';
   const artists = item.Artists?.join(', ') || item.AlbumArtist;
@@ -168,6 +199,7 @@ function Maker({ item }: { item: BaseItem }) {
           fromApi={!!existing && !own}
           resume={draft && anyTapped(draft) && textOf(draft) === text ? draft : null}
           onStart={() => start(draftFromText(item.Id, text, mode))}
+          onUpload={(f) => void upload(f)}
           onResume={() => draft && setStep('check')}
           onFix={() => {
             if (!own) return;
@@ -223,16 +255,41 @@ function TextStep(p: {
   onStart(): void;
   onResume(): void;
   onFix(): void;
+  onUpload(file: File): void;
 }) {
+  const [over, setOver] = useState(false);
+  const pick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = LYRICS_FILE_TYPES;
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (file) p.onUpload(file);
+    };
+    input.click();
+  };
   const rows = p.text.split('\n').filter((r) => r.trim()).length;
   const words = p.text.split(/\s+/).filter(Boolean).length;
   return (
     <div className="mk-body mk-text-step">
       <textarea
-        className="mk-text"
+        className={`mk-text${over ? ' drop' : ''}`}
         value={p.text}
+        onDragOver={(e) => {
+          if (![...e.dataTransfer.types].includes('Files')) return;
+          e.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          const file = e.dataTransfer.files[0];
+          setOver(false);
+          if (!file) return;
+          e.preventDefault();
+          p.onUpload(file);
+        }}
         onChange={(e) => p.onText(e.target.value)}
-        placeholder={'Paste or type the lyrics, one sung line per row.\n\nLeave an empty row where the singing stops for a while.'}
+        placeholder={'Paste or type the lyrics, one sung line per row.\n\nLeave an empty row where the singing stops for a while.\n\nOr drop a lyrics file here (.lrc, .ttml or .txt).'}
         spellCheck={false}
         aria-label="The Lyrics"
         autoFocus
@@ -290,6 +347,9 @@ function TextStep(p: {
               Fix the Timing It Has
             </button>
           ) : null}
+          <button className="secondary mk-upload" onClick={pick} title="An .lrc or .ttml file goes to your server as this song's lyrics. A .txt fills the box to tap along to.">
+            <ArrowUpFromLine size={16} /> Upload a Lyrics File
+          </button>
           <button className="primary" disabled={!rows} onClick={p.onStart}>
             Start Tapping
           </button>

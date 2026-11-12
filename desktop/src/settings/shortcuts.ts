@@ -278,9 +278,18 @@ const ACTIONS: Record<ShortcutId, () => void> = {
     const l = useLayout.getState();
     l.setNowPlaying(!l.nowPlaying);
   },
+  // Full screen of what's showing: a big music video, the lyrics (from the lyrics in the main
+  // area, as their Full Screen button), the full player, or else the whole window.
   fullscreen: () => {
     const l = useLayout.getState();
-    l.setFullscreen(!l.fullscreen);
+    const v = useVideo.getState();
+    if (v.video && v.mode !== 'mini') return v.setMode(v.mode === 'full' ? 'theater' : 'full');
+    if (l.fullscreen) return l.setFullscreen(false);
+    if (l.lyricsView && !l.nowPlaying && usePlayer.getState().queue.length) {
+      l.setLyricsView(false);
+      l.setNowPlaying(true, 'lyrics');
+    }
+    l.setFullscreen(true);
   },
   miniPlayer: () => void import('~/layout/MiniPlayer').then((m) => m.setMini(!useLayout.getState().mini)),
 };

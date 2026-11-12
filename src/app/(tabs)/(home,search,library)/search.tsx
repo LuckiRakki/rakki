@@ -24,6 +24,7 @@ import { genreItem, useRecentSearches } from '@/search/recent';
 import { useSearchResults, type Filter, type SearchResults } from '@/search/useSearch';
 import { Artwork } from '@/ui/Artwork';
 import { GenreTile, useGenreColor } from '@/ui/GenreTile';
+import { GridSkeleton } from '@/ui/Reveal';
 import { Chip } from '@/ui/ItemRow';
 import { openGenre, openItem } from '@/ui/nav';
 import { openMenu } from '@/ui/overlays';
@@ -184,7 +185,8 @@ function BrowseAll() {
       ListHeaderComponent={<SectionTitle title="Browse all" />}
       ListEmptyComponent={
         genres.isLoading ? (
-          <ActivityIndicator color={t.colors.text} style={{ marginTop: t.space.xl }} />
+          // The first time only: after that last time's tiles hold the place (lib/lastGenres.ts).
+          <GridSkeleton tile={tileW} height={Math.round(tileW * 0.56)} columns={2} gap={gap} rowGap={gap} rows={4} bare />
         ) : (
           <T variant="caption" style={{ textAlign: 'center', padding: t.space.xl }}>
             {offline
