@@ -9,23 +9,36 @@ import { StyleSheet } from 'react-native';
 import { FONTS } from '@/appearance/fonts';
 import { APPEARANCE_DEFAULTS, type Appearance } from '@/appearance/store';
 import type { ThemeColors } from '@/appearance/themes';
-import { mix } from '@/lib/color';
+import { mix, withAlpha } from '@/lib/color';
 
 const DENSITY = { compact: 0.8, comfortable: 1, spacious: 1.2 } as const;
 
 /** Surface steps above the background (0–255 towards white), before the contrast setting. */
-const STEPS = { dark: [6, 18, 24], oled: [14, 26, 34] } as const;
+const STEPS = { dark: [9, 19, 29], oled: [14, 26, 34] } as const;
+
+/**
+ * Rakki 2.0's glass. Frost is smoked glass, Tint is glass coloured by the album, Clear has no panel (screens
+ * lay a dark fade under their controls instead). `fill` sits over a BlurView of `blur` intensity.
+ */
+function glassTokens(kind: Appearance['glass'], accent: string) {
+  if (kind === 'clear') return { kind, fill: 'transparent', blur: 0, line: 'transparent', well: 'rgba(18,18,22,0.42)' };
+  if (kind === 'tint') {
+    const deep = mix('#000000', accent, 0.3);
+    return { kind, fill: withAlpha(deep, 0.62), blur: 40, line: 'rgba(255,255,255,0.16)', well: withAlpha(mix('#000000', accent, 0.2), 0.62) };
+  }
+  return { kind, fill: 'rgba(18,18,22,0.42)', blur: 40, line: 'rgba(255,255,255,0.14)', well: 'rgba(0,0,0,0.34)' };
+}
 
 export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean; theme?: ThemeColors | null } = {}) {
   const d = DENSITY[a.density];
   const file = env.theme ?? {};
   // A theme file's corners replace Rakki's (its --radius is the card corner).
   const r = file.radius !== undefined ? file.radius / 8 : Math.max(0, a.roundness);
-  const base = file.bg ?? (a.background === 'oled' ? '#000000' : '#121212');
+  const base = file.bg ?? (a.background === 'oled' ? '#000000' : '#0B0B0D');
   const bg = a.background === 'tinted' && !file.bg ? mix(base, a.accent, 0.07) : base;
   const steps = STEPS[a.background === 'oled' ? 'oled' : 'dark'];
   const surface = (i: number) => mix(bg, '#ffffff', (steps[i] * a.surfaceContrast) / 255);
-  const faces = FONTS[a.font]?.faces ?? FONTS.inter.faces;
+  const faces = FONTS[a.font]?.faces ?? FONTS.figtree.faces;
   const heavy = a.titleWeight === 'heavy';
   return {
     appearance: a,
@@ -35,13 +48,20 @@ export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean; t
       surface2: file.surface2 ?? surface(1),
       surface3: file.surface3 ?? surface(2),
       text: file.text ?? '#FFFFFF',
-      textSecondary: file.textSecondary ?? 'rgba(255,255,255,0.70)',
-      textMuted: file.textMuted ?? 'rgba(255,255,255,0.50)',
+      textSecondary: file.textSecondary ?? 'rgba(255,255,255,0.80)',
+      textMuted: file.textMuted ?? 'rgba(255,255,255,0.70)',
       border: file.border ?? 'rgba(255,255,255,0.10)',
       /** Rakki's accent (a "spicy" orange by default, or Lucid's album colour). */
       accent: a.accent,
+      /** The accent as text: lifted toward white so it stays readable on glass whatever the cover is. */
+      accentText: mix(a.accent, '#FFFFFF', 0.24),
+      /** Ink on top of an accent fill (the pause circle). */
+      onAccent: '#141008',
+      /** Rows and wells on the 2.0 screens (Settings, History and Stats). */
+      row: 'rgba(255,255,255,0.06)',
       danger: '#FF5470',
     },
+    glass: glassTokens(a.glass, a.accent),
     space: {
       xs: Math.round(4 * d),
       sm: Math.round(8 * d),

@@ -19,6 +19,8 @@ import { useLyricsScreen } from '@/lyrics/screen';
 import { SyncPanel } from '@/lyrics/SyncPanel';
 import { LyricsStage, pickLyrics } from '@/lyrics/LyricsStage';
 import { ticksToSeconds } from '@/lib/format';
+import { PlayButton } from '@/player/PlayButton';
+import { SeekBar } from '@/player/SeekBar';
 import { usePlayer } from '@/player/store';
 import { useProgress } from '@/player/useProgress';
 import { useOnAir } from '@/radio/live';
@@ -26,12 +28,15 @@ import { radioPositionMs, useOnAirSong } from '@/radio/sync';
 import { useSettings } from '@/settings/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
+import { Glass } from '@/ui/Glass';
+import { HeartButton } from '@/ui/HeartButton';
+import { useInAnyPlaylist } from '@/library/playlistCache';
 import { Marquee } from '@/ui/Marquee';
 import { openAlbum } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
-const FOOTER_H = 110;
+const FOOTER_H = 150;
 
 export default function LyricsScreen() {
   const t = useTheme();
@@ -41,6 +46,7 @@ export default function LyricsScreen() {
   const client = useAuth((s) => s.client);
   const track = usePlayer((s) => s.queue[s.index]?.item);
   const playing = usePlayer((s) => s.playing);
+  const inPlaylist = useInAnyPlaylist(track?.Id);
   const mode = useSettings((s) => s.lyricsMode);
   // A SUB/WAVE station: the lyrics of the song on air, from the same song in your library,
   // timed from when it started on the station (see radio/sync.ts).
@@ -102,17 +108,28 @@ export default function LyricsScreen() {
           <GestureDetector gesture={swipe.pan()}>
             <View style={{ paddingTop: insets.top + t.space.xs }}>
               <View style={styles.topBar}>
-                <Pressable hitSlop={12} onPress={() => router.back()}>
+                <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Back to Player">
                   <Ionicons name="chevron-down" size={28} color={t.colors.text} />
                 </Pressable>
+                {/* 2.0: the heart, with Lyrics Style right next to it. */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md }}>
+                {track && !track.Radio ? (
+                  <HeartButton
+                    liked={track.UserData?.IsFavorite ?? false}
+                    inPlaylist={inPlaylist}
+                    size={26}
+                    onToggle={(v) => usePlayer.getState().setFavorite(track.Id, v)}
+                  />
+                ) : null}
                 <Pressable
                   hitSlop={10}
                   onPress={() =>
                     router.push({ pathname: '/lyrics-style', params: { from: 'lyrics', lyrics: lyrics ? '1' : '0', timing: canTime ? '1' : '0', song: !streamUrl && lyricsFor ? lyricsFor.Id : '' } })
                   }
                   accessibilityLabel="Lyrics Style">
-                  <Ionicons name="options-outline" size={24} color={visualizer || offset ? t.colors.accent : t.colors.text} />
+                  <Ionicons name="options-outline" size={24} color={visualizer || offset ? t.colors.accentText : t.colors.text} />
                 </Pressable>
+                </View>
               </View>
               {track ? <NowPlayingHeader track={track} /> : null}
             </View>
@@ -129,22 +146,30 @@ export default function LyricsScreen() {
             <UpNext lyricsEndSec={lyrics?.isSynced && lyrics.lines.length ? (Math.max(...lyrics.lines.map((l) => l.endMs || l.startMs)) + offset) / 1000 : null} />
           )}
           {controls ? (
-            <View style={styles.transport}>
-              <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()}>
-                <Ionicons name="play-skip-back" size={26} color={t.colors.text} />
-              </Pressable>
-              <Pressable onPress={() => usePlayer.getState().toggle()} style={styles.play}>
-                <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
-              </Pressable>
-              <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()}>
-                <Ionicons name="play-skip-forward" size={26} color={t.colors.text} />
-              </Pressable>
-            </View>
+            // 2.0: a glass bar with the clean play bar over the transport.
+            <Glass radius={26} style={styles.bar}>
+              {streamUrl ? null : <LyricsSeek />}
+              <View style={styles.transport}>
+                <Pressable hitSlop={10} onPress={() => usePlayer.getState().previous()} accessibilityLabel="Previous">
+                  <Ionicons name="play-skip-back" size={32} color={t.colors.text} />
+                </Pressable>
+                <PlayButton playing={playing} live={!!streamUrl} size={60} onPress={() => usePlayer.getState().toggle()} />
+                <Pressable hitSlop={10} onPress={() => usePlayer.getState().next()} accessibilityLabel="Next">
+                  <Ionicons name="play-skip-forward" size={32} color={t.colors.text} />
+                </Pressable>
+              </View>
+            </Glass>
           ) : null}
         </View>
       </GestureDetector>
     </Animated.View>
   );
+}
+
+/** The lyrics bar's clean play bar (its own component, so the lyrics don't re-render with it). */
+function LyricsSeek() {
+  const { position, duration } = useProgress(500);
+  return <SeekBar size="small" position={position} duration={duration} onSeek={(s) => usePlayer.getState().seek(s)} />;
 }
 
 const UP_NEXT_SECONDS = 15;
@@ -248,13 +273,6 @@ const useStyles = makeStyles((t) => ({
   upNextWrap: { alignSelf: 'stretch', paddingHorizontal: t.space.lg, marginBottom: t.space.md },
   // As the desktop's Next Up: no box, straight on the lyrics' background.
   upNext: { flexDirection: 'row', alignItems: 'center' },
-  transport: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxl },
-  play: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: t.colors.text,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  bar: { alignSelf: 'stretch', marginHorizontal: 12, paddingTop: 14, paddingHorizontal: 18, paddingBottom: 10, gap: 8 },
+  transport: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 36 },
 }));

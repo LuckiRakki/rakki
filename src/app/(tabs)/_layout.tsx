@@ -1,10 +1,13 @@
 import { Ionicons } from '@/ui/Icon';
-import { BottomTabBar, Tabs } from 'expo-router/tabs';
-import { View, type ColorValue } from 'react-native';
+import { Tabs, type BottomTabBarProps } from 'expo-router/tabs';
+import { Pressable, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibraryView } from '@/library/view';
 import { MiniPlayer } from '@/player/MiniPlayer';
 import { OfflineBar } from '@/ui/OfflineBar';
+import { Glass } from '@/ui/Glass';
+import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -14,6 +17,54 @@ function tabIcon(active: IconName, inactive: IconName) {
     <Ionicons name={focused ? active : inactive} size={24} color={color} />
   );
   return TabIcon;
+}
+
+/**
+ * Rakki 2.0's tab bar: a glass pill (Settings > Look > Glass) with the open tab lit, under the floating
+ * mini player.
+ */
+function PillTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: Math.max(insets.bottom - 8, 8) }}>
+      <Glass radius={32} style={{ flexDirection: 'row', padding: 4, gap: 4 }}>
+        {state.routes.map((route, i) => {
+          const { options } = descriptors[route.key];
+          const focused = state.index === i;
+          const color = focused ? t.colors.text : t.colors.textSecondary;
+          const label = typeof options.title === 'string' ? options.title : route.name;
+          const onPress = () => {
+            const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !e.defaultPrevented) navigation.navigate(route.name, route.params);
+          };
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={label}
+              style={{
+                flex: 1,
+                height: t.appearance.tabLabels ? 54 : 46,
+                borderRadius: 27,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 3,
+                backgroundColor: focused ? 'rgba(255,255,255,0.12)' : 'transparent',
+              }}>
+              {options.tabBarIcon?.({ focused, color, size: 24 })}
+              {t.appearance.tabLabels ? (
+                <T style={{ fontFamily: focused ? t.fonts.bold : t.fonts.semibold, fontSize: t.size(11), color }}>{label}</T>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </Glass>
+    </View>
+  );
 }
 
 export default function TabLayout() {
@@ -26,7 +77,7 @@ export default function TabLayout() {
         <View style={{ backgroundColor: t.colors.bg }}>
           <OfflineBar />
           <MiniPlayer />
-          <BottomTabBar {...props} />
+          <PillTabBar {...props} />
         </View>
       )}
       screenOptions={{

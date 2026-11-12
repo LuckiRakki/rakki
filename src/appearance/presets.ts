@@ -6,8 +6,8 @@ export const SECTIONS = {
   type: ['font', 'textScale', 'titleWeight'],
   shape: ['roundness', 'density', 'gridColumns'],
   home: ['homeOrder', 'homeHidden', 'quickPicks', 'greeting'],
-  mini: ['miniPlayer', 'miniProgress', 'miniVisualizer', 'tabLabels'],
-  player: ['playerBackground', 'playerMotion', 'lyricsCard'],
+  mini: ['glass', 'miniPlayer', 'miniProgress', 'miniVisualizer', 'tabLabels'],
+  player: ['playerBackground', 'playerMotion', 'lyricsCard', 'pauseStyle'],
   feel: ['haptics', 'motion'],
 } satisfies Record<string, (keyof Appearance)[]>;
 
@@ -30,13 +30,14 @@ export const PRESETS: { id: string; label: string; swatch: string; values: Parti
     id: 'spotify',
     label: 'Spotify-like',
     swatch: '#1ED760',
-    values: { accent: '#1ED760', font: 'figtree', roundness: 1, miniPlayer: 'tinted', playerBackground: 'gradient' },
+    values: { accentMode: 'custom', accent: '#1ED760', font: 'figtree', roundness: 1, miniPlayer: 'tinted', playerBackground: 'gradient' },
   },
   {
     id: 'apple',
     label: 'Apple Music-like',
     swatch: '#FA2D48',
     values: {
+      accentMode: 'custom',
       accent: '#FA2D48',
       background: 'oled',
       surfaceContrast: 1.2,
@@ -56,7 +57,7 @@ export const PRESETS: { id: string; label: string; swatch: string; values: Parti
     id: 'bold',
     label: 'Big & bold',
     swatch: '#FFD23F',
-    values: { accent: '#FFD23F', textScale: 1.25, density: 'spacious', roundness: 1.4, titleWeight: 'heavy' },
+    values: { accentMode: 'custom', accent: '#FFD23F', textScale: 1.25, density: 'spacious', roundness: 1.4, titleWeight: 'heavy' },
   },
 ];
 

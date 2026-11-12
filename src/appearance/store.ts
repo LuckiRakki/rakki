@@ -66,6 +66,14 @@ export interface Appearance {
   homeHidden: ShelfId[];
   quickPicks: boolean;
   greeting: boolean;
+  // ---- Glass (2.0) ----
+  /**
+   * The glass behind the player's controls, the lyrics bar, the mini player and the tab bar: Frost (smoked
+   * glass), Clear (no panels, a dark fade instead) or Tint (glass coloured by the album).
+   */
+  glass: 'frost' | 'clear' | 'tint';
+  /** The pause button: the accent circle (Maneki) or a plain white icon. */
+  pauseStyle: 'circle' | 'plain';
   // ---- Mini-player & tab bar ----
   miniPlayer: 'tinted' | 'solid' | 'glass';
   miniProgress: boolean;
@@ -84,22 +92,24 @@ export interface Appearance {
 }
 
 export const APPEARANCE_DEFAULTS: Appearance = {
-  accentMode: 'custom',
-  accent: '#FF6B3D',
+  accentMode: 'lucid',
+  accent: '#FF6A3D',
   background: 'dark',
   surfaceContrast: 1,
   artTint: 1,
-  font: 'inter',
+  font: 'figtree',
   textScale: 1,
   titleWeight: 'heavy',
-  roundness: 1,
+  roundness: 1.5,
   density: 'comfortable',
   gridColumns: 2,
   homeOrder: SHELVES.map((s) => s.id),
   homeHidden: [],
   quickPicks: true,
   greeting: true,
-  miniPlayer: 'tinted',
+  glass: 'frost',
+  pauseStyle: 'circle',
+  miniPlayer: 'glass',
   miniProgress: true,
   miniVisualizer: true,
   tabLabels: true,
@@ -110,7 +120,7 @@ export const APPEARANCE_DEFAULTS: Appearance = {
   motion: 'system',
 };
 
-const VERSION = 2;
+const VERSION = 3;
 const KEY = 'rakki.appearance';
 const KEYS = Object.keys(APPEARANCE_DEFAULTS) as (keyof Appearance)[];
 
@@ -135,9 +145,19 @@ function load(): Appearance {
     const raw = readPref(KEY);
     if (!raw) return APPEARANCE_DEFAULTS;
     const parsed = JSON.parse(raw) as Partial<Appearance> & { _v?: number };
+    if (parsed._v !== VERSION && parsed._v !== 1 && parsed._v !== 2) return APPEARANCE_DEFAULTS;
     // 1 → 2: the old default background (Gradient) becomes the new one (Moving).
     if (parsed._v === 1 && parsed.playerBackground === 'gradient') parsed.playerBackground = 'moving';
-    else if (parsed._v !== VERSION && parsed._v !== 1) return APPEARANCE_DEFAULTS;
+    // 2 → 3 (Rakki 2.0): settings still on the old defaults move to the new look. Anything you picked stays.
+    if (parsed._v === 1 || parsed._v === 2) {
+      if (parsed.font === 'inter') parsed.font = 'figtree';
+      if (parsed.miniPlayer === 'tinted') parsed.miniPlayer = 'glass';
+      if (parsed.roundness === 1) parsed.roundness = 1.5;
+      if (parsed.accent === '#FF6B3D') {
+        parsed.accent = '#FF6A3D';
+        if (parsed.accentMode === 'custom') parsed.accentMode = 'lucid';
+      }
+    }
     return normalizeAppearance(parsed);
   } catch {
     return APPEARANCE_DEFAULTS;

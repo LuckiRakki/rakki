@@ -6,15 +6,21 @@ import { formatDuration } from '@/lib/format';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 
-/** Spotify-style scrubber: drag or tap anywhere on the bar; seeks when you let go. */
+/**
+ * Rakki 2.0's clean play bar (like iOS Now Playing): elapsed time on the left, a thick rounded track with no
+ * handle, time left on the right. Drag or tap anywhere on the track; it seeks when you let go.
+ */
 export function SeekBar({
   position,
   duration,
   onSeek,
+  size = 'large',
 }: {
   position: number;
   duration: number;
   onSeek: (seconds: number) => void;
+  /** 'small' is the lyrics screen's and the video's bar. */
+  size?: 'large' | 'small';
 }) {
   const t = useTheme();
   const [width, setWidth] = useState(1);
@@ -22,6 +28,9 @@ export function SeekBar({
 
   const ratioAt = (x: number) => Math.min(1, Math.max(0, x / width));
   const shown = scrub ?? (duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0);
+  const track = size === 'large' ? 8 : 6;
+  const h = scrub !== null ? track + 4 : track;
+  const font = t.size(size === 'large' ? 13 : 12);
 
   const pan = Gesture.Pan()
     .runOnJS(true)
@@ -34,43 +43,22 @@ export function SeekBar({
     })
     .onFinalize(() => setScrub(null));
 
+  const time = { fontSize: font, fontFamily: t.fonts.semibold, color: t.colors.textSecondary, fontVariant: ['tabular-nums' as const] };
   return (
-    <View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: size === 'large' ? 12 : 10 }}>
+      <T style={[time, { minWidth: 36 }]}>{formatDuration(shown * duration)}</T>
       <GestureDetector gesture={pan}>
         <View
           onLayout={(e: LayoutChangeEvent) => setWidth(Math.max(1, e.nativeEvent.layout.width))}
-          style={{ height: 24, justifyContent: 'center' }}>
-          <View style={{ height: scrub !== null ? 6 : 4, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)' }}>
-            <View
-              style={{
-                width: `${shown * 100}%`,
-                height: '100%',
-                borderRadius: 3,
-                backgroundColor: t.colors.text,
-              }}
-            />
+          accessibilityRole="adjustable"
+          accessibilityLabel="Position"
+          style={{ flex: 1, height: 24, justifyContent: 'center' }}>
+          <View style={{ height: h, borderRadius: h / 2, backgroundColor: 'rgba(255,255,255,0.24)', overflow: 'hidden' }}>
+            <View style={{ width: `${shown * 100}%`, height: '100%', backgroundColor: t.colors.text }} />
           </View>
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              left: shown * width - 6,
-              width: 12,
-              height: 12,
-              borderRadius: 6,
-              backgroundColor: t.colors.text,
-            }}
-          />
         </View>
       </GestureDetector>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: t.space.xs }}>
-        <T variant="caption" style={{ fontSize: t.size(12) }}>
-          {formatDuration(shown * duration)}
-        </T>
-        <T variant="caption" style={{ fontSize: t.size(12) }}>
-          -{formatDuration(Math.max(0, duration - shown * duration))}
-        </T>
-      </View>
+      <T style={[time, { minWidth: 36, textAlign: 'right' }]}>-{formatDuration(Math.max(0, duration - shown * duration))}</T>
     </View>
   );
 }

@@ -151,6 +151,7 @@ function Stage({
             </View>
             <View style={[styles.bottom, fullscreen && { paddingHorizontal: 32, paddingBottom: 16 }]}>
               <SeekBar
+                size="small"
                 position={time.currentTime}
                 duration={player.duration || 0}
                 onSeek={(s) => {

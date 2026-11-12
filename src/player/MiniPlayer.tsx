@@ -1,6 +1,5 @@
 import { Ionicons } from '@/ui/Icon';
 import { router, usePathname } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { lazy, Suspense } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -17,6 +16,7 @@ import type { RakkiDevice } from '@/remote/devices';
 import { useProgress } from '@/player/useProgress';
 import { Artwork } from '@/ui/Artwork';
 import { Marquee } from '@/ui/Marquee';
+import { Glass } from '@/ui/Glass';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { Visualizer } from '@/ui/Visualizer';
@@ -83,13 +83,11 @@ export function MiniPlayer() {
     <Animated.View entering={t.reduceMotion ? undefined : FadeInDown.duration(260)} style={styles.wrap}>
       <GestureDetector gesture={swipes}>
         <Pressable style={[styles.card, { backgroundColor: background }]} onPress={() => router.push('/player')}>
-          {style === 'glass' && !away ? (
-            <BlurView intensity={70} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(40,40,40,0.35)' }]} />
-          ) : null}
-          <Artwork item={track} size={40} />
+          {style === 'glass' && !away ? <Glass radius={22} solid style={StyleSheet.absoluteFill} /> : null}
+          <Artwork item={track} size={44} rounded={10} />
           <View style={styles.text}>
             <Marquee text={track.Name} style={styles.title} />
-            <T variant="caption" numberOfLines={1} style={{ fontSize: t.size(12) }}>
+            <T numberOfLines={1} style={styles.artist}>
               {artistLine(track)}
             </T>
           </View>
@@ -145,7 +143,8 @@ function RemoteMini({ target }: { target: RakkiDevice }) {
   const item = target.item;
   const r = useRemoteTarget.getState;
   const pct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
-  const background = item ? t.tint(artColor(client?.blurhash(item), t.colors.surface3)) : t.colors.surface2;
+  const glass = t.appearance.miniPlayer === 'glass';
+  const background = glass ? 'transparent' : item ? t.tint(artColor(client?.blurhash(item), t.colors.surface3)) : t.colors.surface2;
   const swipes = Gesture.Race(
     Gesture.Fling()
       .direction(Directions.UP)
@@ -164,12 +163,13 @@ function RemoteMini({ target }: { target: RakkiDevice }) {
     <View style={styles.wrap}>
       <GestureDetector gesture={swipes}>
         <Pressable style={[styles.card, { backgroundColor: background }]} onPress={() => router.push(item ? '/player' : '/devices')}>
-          {item ? <Artwork item={item} size={40} /> : <Ionicons name="laptop-outline" size={26} color={t.colors.text} style={{ width: 40, textAlign: 'center' }} />}
+          {glass ? <Glass radius={22} solid style={StyleSheet.absoluteFill} /> : null}
+          {item ? <Artwork item={item} size={44} rounded={10} /> : <Ionicons name="laptop-outline" size={26} color={t.colors.text} style={{ width: 40, textAlign: 'center' }} />}
           <View style={styles.text}>
             <Marquee text={item?.Name ?? 'Nothing playing'} style={styles.title} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="laptop-outline" size={12} color={t.colors.accent} />
-              <T numberOfLines={1} style={{ fontFamily: t.fonts.semibold, fontSize: t.size(12), color: t.colors.accent, flexShrink: 1 }}>
+              <Ionicons name="laptop-outline" size={12} color={t.colors.accentText} />
+              <T numberOfLines={1} style={{ fontFamily: t.fonts.semibold, fontSize: t.size(13), color: t.colors.accentText, flexShrink: 1 }}>
                 {`Listening on ${target.name}`}
               </T>
             </View>
@@ -208,27 +208,31 @@ function RemoteMini({ target }: { target: RakkiDevice }) {
 }
 
 const useStyles = makeStyles((t) => ({
-  wrap: { paddingHorizontal: t.space.sm, paddingBottom: t.space.xs },
+  // 2.0: a floating glass card, 12 in from the edges, over the pill tab bar.
+  wrap: { paddingHorizontal: 12, paddingBottom: 4 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    paddingHorizontal: t.space.sm,
-    borderRadius: t.radius.card,
+    height: 64,
+    paddingLeft: 10,
+    paddingRight: 6,
+    borderRadius: 22,
     overflow: 'hidden',
   },
-  text: { flex: 1, marginHorizontal: 10 },
-  title: { fontFamily: t.fonts.semibold, fontSize: t.size(13) },
+  text: { flex: 1, marginHorizontal: 12 },
+  title: { fontFamily: t.fonts.bold, fontSize: t.size(15) },
+  artist: { fontFamily: t.fonts.semibold, fontSize: t.size(13), color: t.colors.accentText, marginTop: 1 },
   btn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   viz: { marginRight: 6, opacity: 0.85 },
   track: {
     position: 'absolute',
-    left: t.space.sm,
-    right: t.space.sm,
+    left: 18,
+    right: 18,
     bottom: 0,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
-  fill: { height: 2, borderRadius: 1, backgroundColor: t.colors.text },
+  fill: { height: 3, backgroundColor: t.colors.text },
 }));
