@@ -6,7 +6,9 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
-## 2.1.1 (2026-11-12)
+## 2.1.1, native build (2026-11-12)
+A new `.ipa` with the same runtime (2.0.0): the over-the-air part reaches the 2.0.0 install too,
+and installing the new one adds the native visualizer fix below.
 - **Album colours fade.** A new song's colour and blurred cover now ease in over 0.9 s, as on the
   desktop, instead of jumping: behind the player (Moving, Gradient and Blurred backgrounds), the
   lyrics, Kawarp, music videos and the player for another device.
@@ -20,7 +22,7 @@ says otherwise.
   iOS stopping Rakki on corrupted memory (one while drawing the lyrics, one while decoding the
   blurred cover). The lyrics backdrop now reuses the player's small blurred cover (no new image
   decode when the lyrics open, less memory), and the lyrics view no longer makes a throwaway
-  picture on every render. In the native code (next native build): each song's visualizer tap
+  picture on every render. In the native code (this build): each song's visualizer tap
   gets its own analysis buffers; they were shared, and two songs' taps running at once could
   write past the end of one, the kind of bug that corrupts memory and crashes later elsewhere.
   Native builds now keep their debug symbols so the next crash report can be read by name.
