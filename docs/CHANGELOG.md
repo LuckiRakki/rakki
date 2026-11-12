@@ -6,6 +6,52 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 2.0.0, native build (2026-11-12)
+A new `.ipa` (runtime 2.0.0): install it with SideStore over the existing app (sign-in,
+downloads and settings stay). Older installs stay on 1.24.3 until then.
+- **A new look: Rakki 2.0.** Figtree type, darker surfaces, the album's colour as the accent,
+  and Rakki's own hand-drawn icon set (24 point grid, round strokes) in place of Ionicons, on the
+  phone and the desktop alike.
+- **Glass, three ways.** Settings → Look → Glass: Frost (smoked glass), Clear (no panels, a dark
+  fade keeps the controls readable) or Tint (the album's colour). It styles the player's
+  controls, the mini player, the tab bar and the widgets.
+- **The player, redone.** The cover, then one glass sheet: title with the heart beside it, a
+  clean play bar (times at each end, no handle), shuffle / previous / pause / next / repeat,
+  then This iPhone (Connect), share and the queue. The lyrics card peeks in under it. The pause
+  button is an accent circle, or Plain (Look → Pause Button).
+- **History and Stats.** Settings → History and Stats: listening time with last period's to
+  compare, a day by day chart, your streak, top artists, albums and songs, and every song you
+  played on any device, by day, with the device it played on. The Rakki plugin 0.5 records the
+  plays for every app, so the phone and the desktop show the same history.
+- **Settings in groups, with search.** Look, Lyrics, Playback, Downloads; History and Stats,
+  Devices, Connections; About, Sign Out. Search finds a setting by what it does.
+- **Themes from a .css file.** Settings → Look → Theme takes the same theme files as the desktop
+  (paste the CSS or a link); their colours restyle the app.
+- **Equalizer.** Settings → Playback: ten bands and the Edit Audio presets, the same setting as
+  the desktop's. It runs in Rakki's own audio engine, so it needed this build.
+- **New widgets.** Now Playing and Jump Back In in the 2.0 look, plus Open Player, and for the
+  Lock Screen Up Next, Daily Mix, Shuffle All, Like and Sleep Timer.
+- **Control Center and Lock Screen controls** (iOS 18): Play and Pause, Next Song, Shuffle All,
+  Daily Mix, Like, Sleep Timer and Open Player. They work without opening Rakki (App Intents).
+- **A soft album-colour wash** behind Home's and Your Library's headers.
+- Under the hood: Settings, Library and the player are split into small files (one per page,
+  tab or part), shared code exists once for both apps, and dead code is gone. Nothing changes
+  in how they work.
+
+## Desktop 2.0.0 (2026-11-12, next desktop build; History and Stats need the Rakki plugin 0.5)
+Includes everything in Desktop 1.7.0 below, which was never built on its own.
+- **Desktop: Rakki 2.0's look.** Figtree, the 2.0 colours, Rakki's own icons, dark panels over
+  Kawarp's flowing cover, and a glass player bar (Settings → Look → Glass: Frost, Clear or Tint)
+  with the clean play bar and the accent circle pause button.
+- **Desktop: History and Stats** in the sidebar: listening time, the day chart, streaks, top
+  artists, albums and songs, and every play from every device (the same history as the phone).
+- **Desktop: Settings in groups** with icons and a search, each group on its own page.
+- **Desktop: Edit Theme.** Settings → Look → Theme → New Theme (or the pencil on a theme): the
+  CSS with line numbers, a colour picker for every colour, the whole window as a live preview,
+  Save (Ctrl+S), Undo Changes and Copy CSS.
+- **Desktop: Equalizer** in Settings → Playback (ten bands and presets), on top of a song's own
+  Edit Audio.
+
 ## 1.24.3 (2026-11-12)
 - **Genres never leave a gap.** Search's Browse All and Library's Genres show last time's genre
   tiles at once and keep them in place while the list loads again, then swap in the new one.
