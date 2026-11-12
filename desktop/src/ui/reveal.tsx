@@ -37,6 +37,12 @@ export const revealProps = (step: Step): { className?: string; style?: CSSProper
       ? { className: 'reveal-in', style: delayStyle(step.delay) }
       : {};
 
+/** revealProps for an element that has a class of its own (keeps both). */
+export const revealWith = (className: string, step: Step): { className: string; style?: CSSProperties } => {
+  const r = revealProps(step);
+  return { className: r.className ? `${className} ${r.className}` : className, style: r.style };
+};
+
 // ---- Placeholders: the real elements' classes (so the sizes match), with bars for text ----
 
 const WIDTHS = [72, 56, 80, 64, 70, 50, 76, 60, 66, 54];

@@ -16,6 +16,7 @@ import {
   Shuffle,
   Stopwatch,
   Tags,
+  TagIcon,
   Trash2,
   User,
   X,
@@ -29,6 +30,7 @@ import { openLyricsMaker } from '~/lyrics/LyricsMaker';
 import { mrqReady } from '~/mrq/client';
 import { openEditArtist } from '~/mrq/EditArtist';
 import { openEditMetadata } from '~/mrq/EditMetadata';
+import { openInTagging, searchInTagging } from '~/tagging/store';
 import {
   addToQueue,
   changePlaylistPicture,
@@ -78,7 +80,12 @@ export function songMenu(items: BaseItem[], ctx: MenuContext = {}): MenuItem[] {
     );
   }
   // Through MRQ, your tag editor, once its address is in Settings.
-  if (mrqReady() && items.every((i) => i.Type === 'Audio' && !i.Radio)) menu.push({ label: 'Edit Metadata', icon: Tags, divider: !one, run: () => openEditMetadata(items) });
+  if (mrqReady() && items.every((i) => i.Type === 'Audio' && !i.Radio)) {
+    menu.push(
+      { label: 'Edit Metadata', icon: Tags, divider: !one, run: () => openEditMetadata(items) },
+      { label: 'Open in Tagging', icon: TagIcon, run: () => void openInTagging(items) },
+    );
+  }
   if (ctx.playlistId) {
     menu.push({ label: 'Remove from This Playlist', icon: Trash2, danger: true, divider: true, run: () => void removeFromPlaylist(ctx.playlistId!, items) });
   }
@@ -104,7 +111,12 @@ export function collectionMenu(item: BaseItem): MenuItem[] {
       { label: 'Album Radio', icon: Radio, run: () => void startRadio(item) },
     );
     if (item.AlbumArtists?.length) menu.push({ label: 'Go to Artist', icon: User, run: () => goToArtist(item) });
-    if (mrqReady()) menu.push({ label: 'Edit Metadata', icon: Tags, divider: true, run: () => openEditMetadata([item]) });
+    if (mrqReady()) {
+      menu.push(
+        { label: 'Edit Metadata', icon: Tags, divider: true, run: () => openEditMetadata([item]) },
+        { label: 'Open in Tagging', icon: TagIcon, run: () => void openInTagging([item]) },
+      );
+    }
   } else if (item.Type === 'MusicArtist') {
     menu.push(
       { label: 'Artist Radio', icon: Radio, run: () => void startRadio(item), divider: true },
@@ -113,6 +125,7 @@ export function collectionMenu(item: BaseItem): MenuItem[] {
         : { label: 'Follow', icon: Heart, run: () => void setLiked([item], true) },
       { label: 'Edit Artist', icon: Pencil, divider: true, run: () => openEditArtist(item) },
     );
+    if (mrqReady()) menu.push({ label: 'Open in Tagging', icon: TagIcon, run: () => searchInTagging(`artist="${item.Name ?? ''}"`) });
   } else if (item.Type === 'Playlist') {
     menu.push({ label: 'Playlist Radio', icon: Radio, run: () => void startRadio(item), divider: true });
     if (!isMix(item)) {

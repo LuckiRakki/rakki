@@ -449,7 +449,7 @@ export interface LibraryStatus {
 export const libraryStatus = () => call<LibraryStatus>('/api/library/status');
 export const rescanLibrary = (full = false) => call<{ ok: boolean }>('/api/library/rescan', { json: { full } });
 export const beetsInbox = () => call<{ ok: boolean; path: string; folders: { name: string; tracks: number }[]; loose: number; pending: boolean }>('/api/inbox');
-export const importInbox = () => call<{ ok: boolean; folders: number; loose: number; tracks: number }>('/api/rescan-inbox', { json: {} });
+export const importInbox = () => call<{ ok: boolean; folders: { name: string; tracks: number }[]; loose: number; tracks: number }>('/api/rescan-inbox', { json: {} });
 
 export interface AutoGenreStatus {
   running: boolean;

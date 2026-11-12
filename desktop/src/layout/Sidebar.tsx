@@ -7,10 +7,11 @@ import { create } from 'zustand';
 import { displayName } from '@/lib/mixes';
 import { collectionMenu } from '~/library/menus';
 import { PANEL, SIDEBAR, useLayout } from '~/layout/layout';
+import { useMrq } from '~/mrq/client';
 import { go, useNav, type Route } from '~/nav';
 import { useDailyMixes, usePlaylists } from '~/queries';
 import { partOf, revealProps, RowsSkeleton, useReveal } from '~/ui/reveal';
-import { Blend, ChevronDown, ChevronUp, Disc3, Heart, Library, ListMusic, MonitorPlay, Music, Plus, Radio, Stats, Tags, UserRound, X } from '~/ui/icons';
+import { Blend, ChevronDown, ChevronUp, Disc3, Heart, Library, ListMusic, MonitorPlay, Music, Plus, Radio, Stats, TagIcon, Tags, UserRound, X } from '~/ui/icons';
 import { openMenu } from '~/ui/overlays';
 import { Artwork } from '~/ui/parts';
 import { activateOnKey } from '~/ui/keys';
@@ -46,6 +47,8 @@ const LIBRARY_TABS: { to: Route; label: string; Icon: typeof ListMusic; wide?: b
   { to: { name: 'radio' }, label: 'Radio', Icon: Radio },
   { to: { name: 'videos' }, label: 'Videos', Icon: MonitorPlay },
   { to: { name: 'stats' }, label: 'History and Stats', Icon: Stats, wide: true },
+  /** Only once MRQ's address is in Settings → Connections. */
+  { to: { name: 'tagging' }, label: 'Tagging', Icon: TagIcon, wide: true },
 ];
 
 function NavLink({ to, icon, label, wide }: { to: Route; icon: ReactNode; label: string; wide?: boolean }) {
@@ -110,6 +113,7 @@ function LibraryHead() {
 export function Sidebar() {
   const libOpen = useLibraryTabs((s) => s.open);
   const hiddenTabs = useLibraryTabs((s) => s.hidden);
+  const mrq = useMrq((s) => !!s.url);
   const playlistsQ = usePlaylists();
   const playlists = playlistsQ.data;
   const mixes = useDailyMixes().data;
@@ -122,7 +126,7 @@ export function Sidebar() {
       <LibraryHead />
       <div className={`side-links-fold${libOpen ? '' : ' folded'}`} aria-hidden={!libOpen}>
         <nav className="side-links">
-          {LIBRARY_TABS.filter((t) => !hiddenTabs.includes(t.to.name)).map(({ to, label, Icon, wide }) => (
+          {LIBRARY_TABS.filter((t) => !hiddenTabs.includes(t.to.name) && (t.to.name !== 'tagging' || mrq)).map(({ to, label, Icon, wide }) => (
             <NavLink key={to.name} to={to} icon={<Icon size={18} />} label={label} wide={wide} />
           ))}
         </nav>

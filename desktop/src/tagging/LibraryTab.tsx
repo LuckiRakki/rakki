@@ -38,7 +38,7 @@ import { autoFillDialog, spotifyLinksDialog, type FillChanges } from '~/tagging/
 import { togglePreview, usePreview } from '~/tagging/preview';
 import { parseQuery, SMART } from '~/tagging/query';
 import { useTagging } from '~/tagging/store';
-import { Check, ChevronDown, Copy, Disc3, Info, Music2, Play, Search, SlidersHorizontal, Sparkles, Undo, X } from '~/ui/icons';
+import { Check, ChevronDown, Copy, Disc3, Info, ListMusic, Music2, Play, Refresh, Scissors, Search, SlidersHorizontal, Sparkles, TextSize, Undo, X } from '~/ui/icons';
 import { closeDialog, confirmAction, openMenu, showDialog, toast } from '~/ui/overlays';
 import { Empty } from '~/ui/states';
 
@@ -84,23 +84,23 @@ const applyChanges = (src: Src, desc: string) => (c: Changes) =>
 type Col = 'title' | 'artist' | 'album' | 'albumartist' | 'date' | 'tracknumber' | 'discnumber' | 'genre' | 'releasetype' | 'composer' | 'spotifyid' | 'ext' | 'length';
 
 const COLS: { key: Col; label: string; w: string; edit?: boolean; list?: boolean; optional?: boolean }[] = [
-  { key: 'title', label: 'Title', w: 'minmax(160px, 2fr)', edit: true },
-  { key: 'artist', label: 'Artists', w: 'minmax(120px, 1.4fr)', edit: true, list: true },
-  { key: 'album', label: 'Album', w: 'minmax(120px, 1.4fr)', edit: true },
-  { key: 'albumartist', label: 'Album Artist', w: 'minmax(100px, 1fr)', edit: true, list: true, optional: true },
-  { key: 'date', label: 'Year', w: '64px', edit: true },
-  { key: 'tracknumber', label: '#', w: '58px', edit: true },
-  { key: 'discnumber', label: 'Disc', w: '52px', edit: true, optional: true },
-  { key: 'genre', label: 'Genres', w: 'minmax(120px, 1.4fr)', edit: true, list: true },
-  { key: 'releasetype', label: 'Type', w: '84px', edit: true, optional: true },
-  { key: 'composer', label: 'Composer', w: 'minmax(90px, 1fr)', edit: true, optional: true },
-  { key: 'spotifyid', label: 'Spotify', w: '64px', optional: true },
+  { key: 'title', label: 'Title', w: 'minmax(90px, 2fr)', edit: true },
+  { key: 'artist', label: 'Artists', w: 'minmax(60px, 1.4fr)', edit: true, list: true },
+  { key: 'album', label: 'Album', w: 'minmax(60px, 1.4fr)', edit: true },
+  { key: 'albumartist', label: 'Album Artist', w: 'minmax(60px, 1fr)', edit: true, list: true, optional: true },
+  { key: 'date', label: 'Year', w: '52px', edit: true },
+  { key: 'tracknumber', label: '#', w: '44px', edit: true },
+  { key: 'discnumber', label: 'Disc', w: '44px', edit: true, optional: true },
+  { key: 'genre', label: 'Genres', w: 'minmax(60px, 1.4fr)', edit: true, list: true },
+  { key: 'releasetype', label: 'Type', w: '72px', edit: true, optional: true },
+  { key: 'composer', label: 'Composer', w: 'minmax(70px, 1fr)', edit: true, optional: true },
+  { key: 'spotifyid', label: 'Spotify', w: '58px', optional: true },
   { key: 'length', label: 'Time', w: '56px', optional: true },
-  { key: 'ext', label: 'Format', w: '74px', optional: true },
+  { key: 'ext', label: 'Format', w: '56px', optional: true },
 ];
 
 const COLS_KEY = 'rakki.tagging.columns';
-const DEFAULT_HIDDEN: Col[] = ['composer', 'length'];
+const DEFAULT_HIDDEN: Col[] = ['composer', 'length', 'releasetype', 'ext'];
 
 function useColumns() {
   const [hidden, setHidden] = useState<Col[]>(() => {
@@ -174,19 +174,27 @@ export function LibraryTab() {
   const v = useVirtualizer({ count: shown.length, getScrollElement: () => scroller.current, estimateSize: () => ROW_H, overscan: 12 });
 
   // Open in Tagging: pick the songs another page sent, and show the first.
+  const scrollTo = useRef<string[] | null>(null);
   useEffect(() => {
-    if (!focus || !rows.length) return;
-    setSrc('L');
-    if (focus.search !== undefined) setSearch(focus.search);
+    if (!focus) return;
+    if (src !== 'L') return setSrc('L');
+    if (!rows.length) return;
+    setSearch(focus.search ?? '');
     if (focus.paths.length) {
-      setSearch('');
       setSel(new Set(focus.paths));
-      const all = rows.map((r) => r.p);
-      const first = Math.min(...focus.paths.map((p) => all.indexOf(p)).filter((i) => i >= 0));
-      if (Number.isFinite(first)) setTimeout(() => v.scrollToIndex(first, { align: 'center' }), 50);
+      scrollTo.current = focus.paths;
     }
     useTagging.setState({ focus: null });
-  }, [focus, rows]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [focus, rows, src]);
+  // …and scroll to the first of them once the table shows them.
+  useEffect(() => {
+    const want = scrollTo.current;
+    if (!want) return;
+    const at = want.map((p) => index.get(p)).filter((i): i is number => i !== undefined);
+    if (!at.length) return;
+    scrollTo.current = null;
+    v.scrollToIndex(Math.min(...at), { align: 'center' });
+  }, [index, v]);
 
   /** Change the pick, asking first when the panel has unsaved changes. */
   const pick = async (next: Set<string>) => {
@@ -286,7 +294,7 @@ export function LibraryTab() {
     openMenu(e, actionItems(src, list), list.length === 1 ? list[0].title : `${list.length} Songs`);
   };
 
-  const template = `40px ${cols.map((c) => c.w).join(' ')}`;
+  const template = `26px ${cols.map((c) => c.w).join(' ')}`;
   const showCols = (e: ReactMouseEvent) =>
     openMenu(
       e,
@@ -495,16 +503,16 @@ function actionItems(src: Src, list: Row[]) {
           (ids, link) => void writeBatch({ src, items: [...ids].map(([p, id]) => ({ p, set: { spotifyid: id } })), desc: `Spotify links from ${link.slice(0, 60)} · ${ids.size} files` }),
         ),
     },
-    { label: 'Auto-Number', icon: Check, divider: true, run: () => autoNumber(list, applyChanges(src, desc('Auto-number'))) },
+    { label: 'Auto-Number', icon: ListMusic, divider: true, run: () => autoNumber(list, applyChanges(src, desc('Auto-number'))) },
     { label: 'Find and Replace', icon: Search, run: () => findReplace(list, (c, d) => applyChanges(src, d)(c)) },
-    { label: 'Change Case', icon: Check, run: () => changeCase(list, (c, d) => applyChanges(src, d)(c)) },
+    { label: 'Change Case', icon: TextSize, run: () => changeCase(list, (c, d) => applyChanges(src, d)(c)) },
     { label: 'Clean Up Text', icon: Sparkles, run: () => cleanUp(list, (c, d) => applyChanges(src, d)(c)) },
-    { label: 'Split feat. Out of Titles', icon: Check, run: () => splitFeat(list, (c, d) => applyChanges(src, d)(c)) },
+    { label: 'Split feat. Out of Titles', icon: Scissors, run: () => splitFeat(list, (c, d) => applyChanges(src, d)(c)) },
     ...(old.length
       ? [
           {
             label: `Convert ${old.length} to ID3v2.4`,
-            icon: Check,
+            icon: Refresh,
             divider: true,
             run: () =>
               void runJob<{ converted: number; rows: unknown[][] }>(toV24(src, old.map((r) => r.p)), `Converting ${old.length} files`)
@@ -727,7 +735,7 @@ function TagPanel({ src, rows, onDirty }: { src: Src; rows: Row[]; onDirty(d: bo
         </CoverBox>
         <div className="tg-panel-title">
           <h3 className="ellipsis">{one ? one.title || one.p.split('/').pop() : `${rows.length} Songs`}</h3>
-          <p className="muted small ellipsis">{one ? `${one.artist.join(', ')} · ${one.album}` : `${new Set(rows.map((r) => r.album)).size} albums`}</p>
+          <p className="muted small ellipsis">{one ? `${one.artist.join(', ')} · ${one.album}` : ((n) => `${n} ${n === 1 ? 'album' : 'albums'}`)(new Set(rows.map((r) => r.album)).size)}</p>
           {one ? (
             <button className="tg-linkbtn" onClick={() => showRaw(src, one)}>
               <Info size={13} /> All Tags in the File
@@ -836,7 +844,7 @@ function TagPanel({ src, rows, onDirty }: { src: Src; rows: Row[]; onDirty(d: bo
   );
 }
 
-function ScalarField({ f, shared, typed, set }: { f: { key: Scalar; label: string }; shared: { value: string | null; count: number }; typed: string | undefined; set(v: string): void }) {
+function ScalarField({ f, shared, typed, set }: { f: { key: Scalar; label: string; narrow?: boolean }; shared: { value: string | null; count: number }; typed: string | undefined; set(v: string): void }) {
   const mixed = shared.value === null;
   const value = typed ?? shared.value ?? '';
   const changed = typed !== undefined && (mixed ? typed !== '' : typed.trim() !== (shared.value ?? '').trim());
@@ -844,7 +852,7 @@ function ScalarField({ f, shared, typed, set }: { f: { key: Scalar; label: strin
   return (
     <label className={`tg-field${changed ? (removed ? ' removed' : ' changed') : ''}`}>
       <span className="field-label">{f.label}</span>
-      <input className="field" value={value} placeholder={mixed ? `Keep (${shared.count} different)` : ''} onChange={(e) => set(e.target.value)} spellCheck={false} aria-label={f.label} />
+      <input className="field" value={value} placeholder={mixed ? (f.narrow ? 'Keep' : `Keep (${shared.count} different)`) : ''} title={mixed ? `${shared.count} different values: left as they are unless you type` : undefined} onChange={(e) => set(e.target.value)} spellCheck={false} aria-label={f.label} />
     </label>
   );
 }

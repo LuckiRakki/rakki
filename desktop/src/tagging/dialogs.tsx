@@ -2,7 +2,7 @@
 // iTunes and MusicBrainz. Both show exactly what would change and write nothing by themselves:
 // they hand the chosen values back (the inbox puts them into its cards, the library writes them
 // as one batch you can undo).
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { autofillLookup, runJob, type Lookup, type LookupResult } from '~/tagging/api';
 import { pairSongs, spotifyList, type SpotifySong } from '~/tagging/spotify';
@@ -226,6 +226,14 @@ function AutoFill({ songs, onApply, where }: { songs: FillSong[]; onApply(c: Fil
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'The look-up failed.'))
       .finally(() => setBusy(false));
   };
+
+  // Look them up as soon as the dialog opens; Look Up Again after changing the fields.
+  const looked = useRef(false);
+  useEffect(() => {
+    if (looked.current) return;
+    looked.current = true;
+    look();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Per song, the fields that would change: [field, now, new]. */
   const plan = useMemo(() => {

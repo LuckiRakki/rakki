@@ -19,6 +19,8 @@ export type Route =
   | { name: 'settings'; section?: string }
   /** History and Stats (2.0, pages/Stats.tsx). */
   | { name: 'stats' }
+  /** MRQ's tagger: inbox, library tags, music videos, tidy up, history (tagging/TaggingPage.tsx). */
+  | { name: 'tagging' }
   | { name: 'album'; id: string }
   | { name: 'artist'; id: string }
   | { name: 'playlist'; id: string }

@@ -10,6 +10,7 @@ import { Radio, Videos } from '~/pages/RadioVideos';
 import { SearchPage } from '~/pages/Search';
 import { Settings } from '~/pages/Settings';
 import { StatsPage } from '~/pages/Stats';
+import { TaggingPage } from '~/tagging/TaggingPage';
 import { ThemeEditor } from '~/themes/ThemeEditor';
 
 export function Page() {
@@ -49,6 +50,8 @@ export function Page() {
       return <Settings />;
     case 'stats':
       return <StatsPage />;
+    case 'tagging':
+      return <TaggingPage />;
     case 'editAudio':
       return <AudioEditor key={route.id} id={route.id} />;
     case 'makeLyrics':

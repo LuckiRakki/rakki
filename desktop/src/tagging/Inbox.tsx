@@ -42,7 +42,7 @@ import { togglePreview, usePreview } from '~/tagging/preview';
 import { queryClient } from '~/queries';
 import { Check, Disc3, Ellipsis, Heart, Pause, Play, Search, Sparkles, Trash2, X } from '~/ui/icons';
 import { closeDialog, confirmAction, openMenu, showDialog, toast } from '~/ui/overlays';
-import { Bar, revealProps, useReveal, partOf } from '~/ui/reveal';
+import { Bar, revealProps, revealWith, useReveal, partOf } from '~/ui/reveal';
 import { Empty } from '~/ui/states';
 
 // ---- Drafts: what you've typed, per song and per album, until it's saved or sent ----
@@ -144,7 +144,7 @@ export function Inbox() {
         <div className="tg-list-rows">
           {list.show === 'placeholder'
             ? Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="tg-group skel-row" {...revealProps(list)}>
+                <div key={i} {...revealWith('tg-group skel-row', list)}>
                   <span className="tg-thumb skel" />
                   <Bar width="60%" />
                 </div>
@@ -491,7 +491,7 @@ function ArtistView({ gid, onDone }: { gid: string; onDone(): void }) {
 
   return (
     <div className="tg-artist">
-      <header className="tg-artist-head" {...revealProps(head)}>
+      <header {...revealWith('tg-artist-head', head)}>
         <div>
           <h2>{group?.artist ?? <Bar width={180} as="span" />}</h2>
           <p className="muted small">
@@ -708,7 +708,7 @@ function SingleCard({ tid, ctx }: { tid: string; ctx: Ctx }) {
           <Field label="Composer">
             <input className="field" value={d.composer} onChange={(e) => set({ composer: e.target.value })} spellCheck={false} aria-label="Composer" />
           </Field>
-          <Field label="Spotify Link">
+          <Field label="Spotify Link" wide>
             <SpotifyInput value={d.spotify} had={t.spotifyid} onChange={(v) => set({ spotify: v })} label="Spotify Link" />
           </Field>
         </div>
