@@ -28,6 +28,7 @@ import { resetScreenAwake } from '@/lib/keepAwake';
 import { OpeningFade } from '@/ui/Rise';
 import { watchRadio } from '@/radio/live';
 import { startWidgets } from '@/widgets';
+import { startIntentActions, widgetActionsReady } from '@/widgets/actions';
 import { logErrorNow, startPerfLog } from '@/perf/log';
 import { startMemoryCare } from '@/lib/memory';
 import { lockPortrait } from '@/lib/orientation';
@@ -165,12 +166,15 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
     if (client) void startStationSync(client);
     // Opened from the Now Playing widget while closed: the player, now that there's a queue.
     if (takePendingLink() === '/player') setTimeout(openPlayer, 0);
+    // Widget buttons and Control Center controls that came in meanwhile (widgets/actions.ts).
+    widgetActionsReady();
   }, [userId]);
 
   // Home Screen / Lock Screen widgets follow the player and recently played from here on;
   // a radio station's now-playing is followed while it plays.
   useEffect(() => {
     startWidgets();
+    startIntentActions();
     watchRadio();
     // How the app uses the phone, for battery drain (Settings → Performance log).
     startPerfLog();

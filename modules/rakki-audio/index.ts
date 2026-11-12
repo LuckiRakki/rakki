@@ -62,6 +62,8 @@ type RakkiAudioEvents = {
   onState(event: StateEvent): void;
   onTrackChange(event: TrackChangeEvent): void;
   onError(event: ErrorEvent): void;
+  /** A Control Center or Lock Screen control was used: call takeIntents. Missing before 2.0.0. */
+  onIntent(): void;
 };
 
 declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
@@ -99,6 +101,8 @@ declare class RakkiAudioModule extends NativeModule<RakkiAudioEvents> {
   stepAside?(aside: boolean): Promise<void>;
   /** Songs that finished streaming since the last call, with the bytes each pulled off the network. Missing before 1.7.0. */
   takeStreamedBytes?(): { id: string; bytes: number }[];
+  /** Actions from the Control Center and Lock Screen controls ("action|ms"), oldest first. Missing before 2.0.0. */
+  takeIntents?(): string[];
 }
 
 export interface DeviceStats {

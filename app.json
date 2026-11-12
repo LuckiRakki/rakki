@@ -114,6 +114,7 @@
           "microphonePermission": false
         }
       ],
+      "./plugins/withRakkiIntents",
       [
         "expo-widgets",
         {
@@ -141,6 +142,75 @@
                 "supportedFamilies": [
                   "systemMedium",
                   "systemLarge"
+                ]
+              },
+              "android": null
+            },
+            {
+              "name": "OpenPlayer",
+              "displayName": "Open Player",
+              "description": "Opens Rakki on the player.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "accessoryCircular"
+                ],
+                "contentMarginsDisabled": true
+              },
+              "android": null
+            },
+            {
+              "name": "UpNext",
+              "displayName": "Up Next",
+              "description": "The song after this one. Tap to skip to it.",
+              "ios": {
+                "supportedFamilies": [
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ]
+              },
+              "android": null
+            },
+            {
+              "name": "DailyMix",
+              "displayName": "Daily Mix",
+              "description": "Starts today's mix in one tap.",
+              "ios": {
+                "supportedFamilies": [
+                  "accessoryRectangular"
+                ]
+              },
+              "android": null
+            },
+            {
+              "name": "ShuffleAll",
+              "displayName": "Shuffle All",
+              "description": "Shuffles your whole library.",
+              "ios": {
+                "supportedFamilies": [
+                  "accessoryCircular"
+                ]
+              },
+              "android": null
+            },
+            {
+              "name": "Like",
+              "displayName": "Like",
+              "description": "Likes the song playing.",
+              "ios": {
+                "supportedFamilies": [
+                  "accessoryCircular"
+                ]
+              },
+              "android": null
+            },
+            {
+              "name": "SleepTimer",
+              "displayName": "Sleep Timer",
+              "description": "Time left on the sleep timer. Tap to add 15 minutes.",
+              "ios": {
+                "supportedFamilies": [
+                  "accessoryCircular"
                 ]
               },
               "android": null

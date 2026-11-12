@@ -55,11 +55,12 @@ public class RakkiAudioModule: Module {
   public func definition() -> ModuleDefinition {
     Name("RakkiAudio")
 
-    Events("onState", "onTrackChange", "onError")
+    Events("onState", "onTrackChange", "onError", "onIntent")
 
     // iOS's daily reports (MetricKit) start collecting as soon as the app runs.
     OnCreate {
       RakkiMetrics.shared.start()
+      RakkiIntentInbox.listen(self)
     }
 
     OnDestroy {
@@ -159,6 +160,12 @@ public class RakkiAudioModule: Module {
     /// iOS's daily MetricKit reports kept since the last call (JSON text each), then forgotten.
     Function("takeMetricReports") { () -> [String] in
       RakkiMetrics.shared.take()
+    }
+
+    /// What the Control Center and Lock Screen controls asked for since the last call
+    /// ("action|time in ms"); see RakkiIntentInbox.
+    Function("takeIntents") { () -> [String] in
+      RakkiIntentInbox.take()
     }
 
     /// Keeps a folder (and everything in it) out of iCloud and computer backups: downloads can
