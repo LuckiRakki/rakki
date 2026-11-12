@@ -63,6 +63,7 @@
   display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; border-radius: var(--radius-sm); min-width: 0;
   background: var(--surface-2); color: var(--text-2); font-weight: 600; font-size: 13px; transition: background 0.15s, color 0.15s;
 }
+.side-links .link.wide { grid-column: 1 / -1; }
 .side-links .link-icon { width: 18px; height: 18px; flex: none; display: grid; place-items: center; }
 .side-links .link-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side-links .link { cursor: pointer; position: relative; }

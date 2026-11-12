@@ -35,7 +35,8 @@ const useLibraryTabs = create<{ open: boolean; hidden: string[]; set(p: Partial<
   };
 });
 
-const LIBRARY_TABS: { to: Route; label: string; Icon: typeof ListMusic }[] = [
+/** wide: a long name gets the whole row instead of being cut off. */
+const LIBRARY_TABS: { to: Route; label: string; Icon: typeof ListMusic; wide?: boolean }[] = [
   { to: { name: 'playlists' }, label: 'Playlists', Icon: ListMusic },
   { to: { name: 'mixes' }, label: 'Daily Mixes', Icon: Blend },
   { to: { name: 'albums' }, label: 'Albums', Icon: Disc3 },
@@ -44,15 +45,15 @@ const LIBRARY_TABS: { to: Route; label: string; Icon: typeof ListMusic }[] = [
   { to: { name: 'genres' }, label: 'Genres', Icon: Tags },
   { to: { name: 'radio' }, label: 'Radio', Icon: Radio },
   { to: { name: 'videos' }, label: 'Videos', Icon: MonitorPlay },
-  { to: { name: 'stats' }, label: 'History and Stats', Icon: Stats },
+  { to: { name: 'stats' }, label: 'History and Stats', Icon: Stats, wide: true },
 ];
 
-function NavLink({ to, icon, label }: { to: Route; icon: ReactNode; label: string }) {
+function NavLink({ to, icon, label, wide }: { to: Route; icon: ReactNode; label: string; wide?: boolean }) {
   const on = useNav((s) => s.route.name === to.name);
   const close = () => useLibraryTabs.getState().set({ hidden: [...useLibraryTabs.getState().hidden, to.name] });
   return (
     <div
-      className={`link${on ? ' on' : ''}`}
+      className={`link${wide ? ' wide' : ''}${on ? ' on' : ''}`}
       role="link"
       aria-current={on ? 'page' : undefined}
       aria-label={label}
@@ -121,8 +122,8 @@ export function Sidebar() {
       <LibraryHead />
       <div className={`side-links-fold${libOpen ? '' : ' folded'}`} aria-hidden={!libOpen}>
         <nav className="side-links">
-          {LIBRARY_TABS.filter((t) => !hiddenTabs.includes(t.to.name)).map(({ to, label, Icon }) => (
-            <NavLink key={to.name} to={to} icon={<Icon size={18} />} label={label} />
+          {LIBRARY_TABS.filter((t) => !hiddenTabs.includes(t.to.name)).map(({ to, label, Icon, wide }) => (
+            <NavLink key={to.name} to={to} icon={<Icon size={18} />} label={label} wide={wide} />
           ))}
         </nav>
       </div>

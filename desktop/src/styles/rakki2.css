@@ -100,8 +100,9 @@
 .stats-head .filters { margin: 0; }
 .stats-layout { display: flex; gap: 16px; align-items: flex-start; }
 .stats-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.stats-tiles { display: flex; gap: 12px; }
-.stats-tile { flex: 1 1 0; min-width: 0; padding: 14px 18px; border-radius: 16px; background: var(--row); display: flex; flex-direction: column; gap: 4px; }
+/* Tiles share the row equally but never get narrower than their numbers; they wrap instead. */
+.stats-tiles { display: flex; flex-wrap: wrap; gap: 12px; }
+.stats-tile { flex: 1 1 0; min-width: max-content; padding: 14px 18px; border-radius: 16px; background: var(--row); display: flex; flex-direction: column; gap: 4px; }
 .stats-tile.wide { flex-grow: 1.3; }
 .stats-tile-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
 .stats-tile-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -150,8 +151,9 @@
 .stats-when { width: 64px; flex: none; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats-hrow.now .stats-when { font-weight: 700; }
 .stats-device { color: var(--text-3); flex: none; }
-@media (max-width: 1100px) {
-  .stats-layout { flex-direction: column; }
+/* Measured on the main area, so the Now Playing panel being open counts too. */
+@container main (max-width: 940px) {
+  .stats-layout { flex-direction: column; align-items: stretch; }
   .stats-history { width: 100%; max-height: none; }
   .stats-pair { flex-direction: column; }
 }

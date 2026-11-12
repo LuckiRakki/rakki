@@ -82,7 +82,7 @@ export default function ThemesScreen() {
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
         <View style={styles.card}>
-          {row(DEFAULT_THEME, 'Rakki', "Rakki's own look, set in Customize.")}
+          {row(DEFAULT_THEME, 'Rakki', "Rakki's own look, set in Settings → Look.")}
           {imported.map((theme) =>
             row(theme.id, theme.meta.name, [theme.meta.description, theme.meta.author ? `By ${theme.meta.author}` : null].filter(Boolean).join(' · ') || 'Added', theme),
           )}

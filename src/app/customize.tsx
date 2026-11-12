@@ -176,15 +176,15 @@ export default function CustomizeScreen() {
               onChange={(v) => set('background', v)}
               options={[
                 { value: 'dark', label: 'Dark' },
-                { value: 'oled', label: 'OLED black' },
+                { value: 'oled', label: 'OLED Black' },
                 { value: 'tinted', label: 'Tinted' },
               ]}
             />
           </Field>
-          <Field label="Card contrast" value={`${Math.round(a.surfaceContrast * 100)}%`}>
+          <Field label="Card Contrast" value={`${Math.round(a.surfaceContrast * 100)}%`}>
             <Slider value={a.surfaceContrast} min={0.5} max={2} step={0.1} onChange={(v) => set('surfaceContrast', v)} />
           </Field>
-          <Field label="Album colour in headers and player" value={`${Math.round(a.artTint * 100)}%`}>
+          <Field label="Album Colour in Headers and Player" value={`${Math.round(a.artTint * 100)}%`}>
             <Slider value={a.artTint} min={0} max={1} step={0.05} onChange={(v) => set('artTint', v)} />
           </Field>
         </Section>
@@ -207,10 +207,10 @@ export default function CustomizeScreen() {
               {a.font === k ? <Ionicons name="checkmark" size={22} color={t.colors.accentText} /> : null}
             </Pressable>
           ))}
-          <Field label="Text size" value={`${Math.round(a.textScale * 100)}%`}>
+          <Field label="Text Size" value={`${Math.round(a.textScale * 100)}%`}>
             <Slider value={a.textScale} min={0.85} max={1.4} step={0.05} onChange={(v) => set('textScale', v)} />
           </Field>
-          <Field label="Big titles">
+          <Field label="Big Titles">
             <Segmented
               value={a.titleWeight}
               onChange={(v) => set('titleWeight', v)}
@@ -223,7 +223,7 @@ export default function CustomizeScreen() {
         </Section>
 
         <Section title="Shape" id="shape">
-          <Field label="Corner roundness" value={a.roundness === 0 ? 'Square' : `${Math.round(a.roundness * 100)}%`}>
+          <Field label="Corner Roundness" value={a.roundness === 0 ? 'Square' : `${Math.round(a.roundness * 100)}%`}>
             <Slider value={a.roundness} min={0} max={2} step={0.1} onChange={(v) => set('roundness', v)} />
           </Field>
           <Field label="Spacing">
@@ -237,7 +237,7 @@ export default function CustomizeScreen() {
               ]}
             />
           </Field>
-          <Field label="Album grid columns">
+          <Field label="Album Grid Columns">
             <Segmented
               value={a.gridColumns}
               onChange={(v) => set('gridColumns', v)}
@@ -252,36 +252,36 @@ export default function CustomizeScreen() {
 
         <Section title="Home" id="home">
           <Toggle label="Greeting" detail="“Good evening” at the top" value={a.greeting} onChange={(v) => set('greeting', v)} />
-          <Toggle label="Quick picks" detail="Liked Songs and recent albums as tiles" value={a.quickPicks} onChange={(v) => set('quickPicks', v)} />
+          <Toggle label="Quick Picks" detail="Liked Songs and recent albums as tiles" value={a.quickPicks} onChange={(v) => set('quickPicks', v)} />
           <T variant="caption" style={[styles.hint, { marginTop: t.space.md }]}>
             Shelves, top to bottom. Tap the eye to show or hide one.
           </T>
           <ShelfEditor />
         </Section>
 
-        <Section title="Mini-player and tab bar" id="mini">
-          <Field label="Mini-player">
+        <Section title="Mini Player and Tab Bar" id="mini">
+          <Field label="Mini Player">
             <Segmented
               value={a.miniPlayer}
               onChange={(v) => set('miniPlayer', v)}
               options={[
-                { value: 'tinted', label: 'Album colour' },
+                { value: 'tinted', label: 'Album Colour' },
                 { value: 'solid', label: 'Solid' },
                 { value: 'glass', label: 'Glass' },
               ]}
             />
           </Field>
-          <Toggle label="Progress line" value={a.miniProgress} onChange={(v) => set('miniProgress', v)} />
+          <Toggle label="Progress Line" value={a.miniProgress} onChange={(v) => set('miniProgress', v)} />
           <Toggle
             label="Visualizer"
             detail="Little bars by the song while it plays"
             value={a.miniVisualizer}
             onChange={(v) => set('miniVisualizer', v)}
           />
-          <Toggle label="Tab labels" detail="Home, Search, Your Library under the icons" value={a.tabLabels} onChange={(v) => set('tabLabels', v)} />
+          <Toggle label="Tab Labels" detail="Home, Search, Your Library under the icons" value={a.tabLabels} onChange={(v) => set('tabLabels', v)} />
         </Section>
 
-        <Section title="Now playing" id="player">
+        <Section title="Now Playing" id="player">
           <Field label="Background">
             <Segmented
               value={a.playerBackground}
@@ -294,11 +294,11 @@ export default function CustomizeScreen() {
               ]}
             />
           </Field>
-          <Field label="Movement (also music videos)" value={a.playerMotion === 0 ? 'Still' : `${a.playerMotion.toFixed(1)}×`}>
+          <Field label="Movement (Also Music Videos)" value={a.playerMotion === 0 ? 'Still' : `${a.playerMotion.toFixed(1)}×`}>
             <Slider value={a.playerMotion} min={0} max={2.5} step={0.1} onChange={(v) => set('playerMotion', v)} />
           </Field>
-          <Toggle label="Lyrics card" detail="Below the controls; scroll down to see it" value={a.lyricsCard} onChange={(v) => set('lyricsCard', v)} />
-          <Field label="Pause button">
+          <Toggle label="Lyrics Card" detail="Below the controls; scroll down to see it" value={a.lyricsCard} onChange={(v) => set('lyricsCard', v)} />
+          <Field label="Pause Button">
             <Segmented
               value={a.pauseStyle}
               onChange={(v) => set('pauseStyle', v)}
@@ -313,7 +313,7 @@ export default function CustomizeScreen() {
         <Pressable onPress={() => router.push('/lyrics-style')} style={({ pressed }) => [styles.card, styles.linkRow, { marginTop: t.space.xl }, pressed && { opacity: 0.7 }]}>
           <Ionicons name="mic-outline" size={22} color={t.colors.accent} />
           <View style={{ flex: 1, marginHorizontal: t.space.md }}>
-            <T variant="bodyStrong">Lyrics style</T>
+            <T variant="bodyStrong">Lyrics Style</T>
             <T variant="caption" style={{ fontSize: t.size(12) }}>
               Spicy glow, motion, size, colours and background; Regular lyrics
             </T>
