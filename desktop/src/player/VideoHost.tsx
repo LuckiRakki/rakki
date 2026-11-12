@@ -8,7 +8,7 @@
 // WebGL; your server allows the cross-origin reads they need).
 import { useQuery } from '@tanstack/react-query';
 import Hls from 'hls.js';
-import { ChevronDown, Expand, Maximize2, PanelRight, Pause, Play, Shrink, SkipBack, SkipForward, Volume2, X } from '~/ui/icons';
+import { ChevronDown, Expand, PanelRight, Pause, Play, Shrink, SkipBack, SkipForward, TheaterMode, Volume2, X } from '~/ui/icons';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { create } from 'zustand';
 
@@ -257,7 +257,7 @@ export function MiniVideoCard({ floating = false }: { floating?: boolean }) {
           <div className="sub">{video.Artists?.join(', ')}</div>
         </div>
         <button className="iconbtn" aria-label="Bigger" title="Bigger" onClick={() => v.setMode('theater')}>
-          <Maximize2 size={15} />
+          <TheaterMode size={15} />
         </button>
         <button className="iconbtn" aria-label="Close the Video" title="Close the Video" onClick={() => v.close()}>
           <X size={16} />
@@ -330,7 +330,7 @@ export function VideoBar({ video }: { video: BaseItem }) {
             <SkipBack size={20} fill="currentColor" />
           </button>
           <button className="pp" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause (Space)' : 'Play (Space)'} onClick={videoControls.toggle}>
-            {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />}
+            {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
           </button>
           <button className="iconbtn" aria-label="Next Video" title="Next Video" disabled={!hasNext} onClick={() => v.next()}>
             <SkipForward size={20} fill="currentColor" />
@@ -346,8 +346,8 @@ export function VideoBar({ video }: { video: BaseItem }) {
         <button className={`iconbtn${mode === 'mini' ? ' on' : ''}`} aria-label="In the Sidebar" title="In the Sidebar" onClick={() => v.setMode('mini')}>
           <PanelRight size={18} />
         </button>
-        <button className={`iconbtn${mode === 'theater' ? ' on' : ''}`} aria-label="Bigger" title="Bigger" onClick={() => v.setMode('theater')}>
-          <Maximize2 size={17} />
+        <button className={`iconbtn${mode === 'theater' ? ' on' : ''}`} aria-label="Bigger" title="Bigger, in the Window" onClick={() => v.setMode('theater')}>
+          <TheaterMode size={17} />
         </button>
         <button className="iconbtn" aria-label="Full Screen" title="Full Screen (F)" onClick={() => v.setMode('full')}>
           <Expand size={17} />

@@ -303,7 +303,7 @@ function Editor({ item }: { item: BaseItem }) {
               aria-label={current && playing ? 'Pause' : 'Play'}
               title={current && playing ? 'Pause' : current ? 'Play' : 'Play This Song'}
               onClick={() => (current ? usePlayer.getState().toggle() : playHere(draft.start))}>
-              {current && playing ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: 2 }} />}
+              {current && playing ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button className="iconbtn" aria-label="Hear the End" title="Hear the End" onClick={() => playHere(Math.max(draft.start, end - 4))}>
               <FastForward size={18} />

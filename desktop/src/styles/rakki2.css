@@ -69,7 +69,6 @@
 :root[data-pause='circle'] .buttons.big .pp { width: 64px; height: 64px; }
 :root[data-pause='plain'] .pp { width: 40px; height: 40px; background: none; color: var(--text); }
 :root[data-pause='plain'] .pp svg, :root[data-pause='plain'] .pp .ico { transform: scale(1.25); }
-.mini-controls .pp { width: 32px !important; height: 32px !important; }
 
 /* ---- Lists and pages ---- */
 
@@ -159,6 +158,4 @@
 }
 
 /* ---- Mini player and music video: the same clean bar and accent text ---- */
-.mini-by { color: var(--accent-text); font-weight: 600; }
-.mini-title { font-weight: 700; }
 .vf-title .by { color: var(--accent-text); }

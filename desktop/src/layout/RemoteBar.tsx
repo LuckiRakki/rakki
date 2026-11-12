@@ -51,7 +51,7 @@ export function RemoteBar({ target }: { target: RakkiDevice }) {
             <SkipBack size={20} fill="currentColor" />
           </button>
           <button className="pp" aria-label={target.paused ? 'Play' : 'Pause'} title={target.paused ? 'Play' : 'Pause'} disabled={!item} onClick={() => r.command('PlayPause')}>
-            {target.paused ? <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} /> : <Pause size={18} fill="currentColor" />}
+            {target.paused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
           </button>
           <button className="iconbtn" aria-label="Next" title="Next" disabled={!item} onClick={() => r.command('NextTrack')}>
             <SkipForward size={20} fill="currentColor" />

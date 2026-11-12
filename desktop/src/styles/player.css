@@ -84,27 +84,49 @@
 .nowplaying.fs .np-right { padding-bottom: 4vh; }
 .nowplaying.solo .np-body { grid-template-columns: minmax(0, 1fr); }
 
-/* ---- Mini player (layout/MiniPlayer.tsx): the whole window ---- */
+/* ---- Mini player (layout/MiniPlayer.tsx): the whole window, the 2.0 Frost mock ---- */
 
-/* The theme's colours: --bg tinted by the song. With a theme backdrop, the cover shows through
-   the theme's --surface (a layer over the backdrop), as it does behind the full window's panels. */
-.mini { position: relative; height: 100vh; display: flex; gap: 12px; padding: 8px; background: color-mix(in srgb, var(--tint) 35%, var(--bg)); color: var(--text); overflow: hidden; }
+/* The theme's colours: --bg tinted by the song. With a theme backdrop the cover shows through a
+   light scrim; the theme can still dress .mini::after (Lucid draws its border there). */
+.mini { position: relative; height: 100vh; display: flex; flex-direction: column; gap: 6px; padding: 8px; background: color-mix(in srgb, var(--tint) 35%, var(--bg)); color: #fff; overflow: hidden; }
 .mini:has(> .theme-backdrop) { isolation: isolate; background: none; }
-.mini:has(> .theme-backdrop)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--surface); pointer-events: none; }
-.mini-art { width: auto !important; height: 100%; flex: none; border-radius: 6px !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; }
+.mini:has(> .theme-backdrop)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: rgba(0, 0, 0, 0.14); pointer-events: none; }
+.mini.empty { background: #1d1d21; }
+.mini-main { flex: none; height: 116px; display: flex; gap: 12px; min-width: 0; }
+.mini-art { width: 116px !important; height: 116px !important; flex: none; border-radius: 8px !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; }
+.mini-art-empty { display: grid; place-items: center; background: #27272c; color: rgba(255, 255, 255, 0.7); box-shadow: none; }
 .mini-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
-.mini-top { display: flex; align-items: flex-start; gap: 2px; }
+.mini-top { display: flex; align-items: flex-start; gap: 4px; }
 .mini-text { flex: 1; min-width: 0; padding-top: 2px; }
 .mini-title { font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-by { color: var(--text-2); font-size: 12px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-top .iconbtn { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); opacity: 0; transition: opacity 0.15s; }
-.mini.hover .mini-top .iconbtn, .mini-top .iconbtn.on { opacity: 1; }
-.mini-top .iconbtn:hover { background: rgba(255, 255, 255, 0.12); color: var(--text); }
-.mini-controls { display: grid; grid-template-columns: 1fr auto auto auto 1fr; align-items: center; gap: 14px; }
-.mini-controls .pp { width: 32px; height: 32px; }
-.mini-controls .iconbtn { color: var(--text-2); }
-.mini-controls .iconbtn:hover { color: var(--text); }
+.mini-by { color: rgba(255, 255, 255, 0.8); font-size: 12px; font-weight: 500; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-by a { color: inherit; }
+.mini-failed { display: flex; align-items: center; gap: 5px; margin-top: 4px; color: #fff; font-weight: 600; }
+.mini-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #ff5470; }
+.mini-window { display: flex; gap: 2px; flex: none; }
+.mini-window .iconbtn { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: rgba(255, 255, 255, 0.8); opacity: 0; transition: opacity 0.15s, background 0.15s; }
+.mini.hover .mini-window .iconbtn { opacity: 1; }
+/* Out of the way until hovered, so the song's line gets the whole width. */
+.mini:not(.hover) .mini-window { display: none; }
+.mini-window .iconbtn:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+/* One glass pill: previous, play, next. */
+.mini-controls { align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 10px; border-radius: 22px; background: var(--glass-bg, rgba(18, 18, 22, 0.42)); backdrop-filter: blur(24px) saturate(1.6); -webkit-backdrop-filter: blur(24px) saturate(1.6); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 18px 40px rgba(0, 0, 0, 0.28); }
+.mini-controls .iconbtn { width: 28px; height: 28px; display: grid; place-items: center; color: rgba(255, 255, 255, 0.8); }
+.mini-controls .iconbtn:hover:not(:disabled) { color: #fff; }
+.mini-controls .pp { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; }
+.mini.empty .mini-controls { opacity: 0.45; }
+.mini.empty .mini-controls .pp { background: #fff; color: #141008; }
+/* The clean play bar: 4px, no handle. */
 .mini-seek .range { height: 12px; }
+.mini-seek .range .bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.26); }
+.mini-seek .range .fill { background: #fff; }
+.mini-seek .range .knob { display: none; }
+/* With Lyrics: the sung line under the player. */
+.mini-lyrics { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 2px 4px 0; }
+.mini-line { font-size: 17px; font-weight: 800; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; animation: fade-in 0.25s; }
+.mini-line .rest { color: rgba(255, 255, 255, 0.55); }
+.mini-lyrics.muted { color: rgba(255, 255, 255, 0.7); font-size: 12px; font-weight: 600; }
+.mini-credit { font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.7); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The timing panel stays put while it's open, even when the player's top fades. */
 .nowplaying.idle .np-top:has(.timing-pop) { opacity: 1; }

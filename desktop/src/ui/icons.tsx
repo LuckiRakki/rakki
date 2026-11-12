@@ -139,6 +139,15 @@ export const Repeat1: Icon = (p) => (
   </span>
 );
 
+/** Bigger video (theater, inside the window): a wide screen with arrows pushing out to the sides,
+ * so it doesn't look like Full Screen's corner arrows. Drawn on the same 24 grid, round strokes. */
+export const TheaterMode: Icon = ({ size = 24, className, style, color }) => (
+  <svg className={`ico-svg${className ? ` ${className}` : ''}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden>
+    <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+    <path d="M7.5 12h9M9.5 10l-2 2 2 2M14.5 10l2 2-2 2" />
+  </svg>
+);
+
 /** Edit Audio: a sound wave, bars of different heights. */
 export const AudioWave: Icon = (p) => <Glyph name="rakki-wave" {...p} />;
 

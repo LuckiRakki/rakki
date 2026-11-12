@@ -12,6 +12,8 @@ import { toast } from '~/ui/overlays';
 import { ArrowDownToLine, Check, Pause, Pencil, Plus, SkipBack, SkipForward, Trash2 } from '~/ui/icons';
 import { Slider } from '~/ui/Slider';
 import { DEFAULT_ACCENT, useTheme } from '~/ui/theme';
+import { useLayout } from '~/layout/layout';
+import { setMiniLyrics } from '~/layout/MiniPlayer';
 import { Card, Choice, Row, Toggle } from '~/settings/rows';
 
 const THEMES_HELP = 'https://github.com/LuckiRakki/rakki/blob/main/docs/THEMES.md';
@@ -95,6 +97,7 @@ export function Look() {
   const setBg = useLook((s) => s.setBackground);
   const app = useLook((s) => s.app);
   const setApp = useLook((s) => s.setApp);
+  const miniLyrics = useLayout((s) => s.miniLyrics);
   return (
     <>
       <Card title="Glass">
@@ -145,6 +148,14 @@ export function Look() {
             </form>
           </div>
         </div>
+      </Card>
+      <Card title="Mini Player">
+        <Toggle
+          on={miniLyrics}
+          onChange={(on) => void setMiniLyrics(on)}
+          label="Lyrics"
+          detail="The line being sung under the controls, with its credit. The mini player grows to fit it."
+        />
       </Card>
       <Card title="Size and Text">
         <Row label="App Size" detail="Everything bigger or smaller, like zooming a browser.">

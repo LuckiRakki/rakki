@@ -6,6 +6,18 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## Desktop 2.1.0 (2026-11-12, next desktop build)
+- **Desktop: the mini player is the 2.0 Frost design.** Cover, song and artist, one glass pill
+  with previous, play and next, and the clean play bar with no handle. Keep on Top and Full Window
+  show when the pointer is over it. Nothing Playing has its own look, and a song that won't play
+  shows "Couldn't play, trying the next song" for a few seconds.
+- **Desktop: lyrics in the mini player** (Settings → Look → Mini Player → Lyrics). The line being
+  sung shows under the controls with its credit, and the mini player grows to 380 × 196 for it.
+- **Desktop: play icons sit in the middle of their circles.** The icon was already centred, and an
+  extra nudge pushed it to the right (player bar, mini player, video, lyrics maker, audio editor).
+- **Desktop: the music video's Bigger button has its own icon** (a wide screen), so it no longer
+  looks the same as Full Screen.
+
 ## 2.1.2 (2026-11-12)
 - **The tab bar keeps its glass with Clear.** Since the tabs float over the pages, Clear glass left
   them with no panel and hard to see; the tab bar now keeps its smoked panel, like the mini player.

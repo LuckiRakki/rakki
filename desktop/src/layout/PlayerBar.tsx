@@ -59,7 +59,7 @@ export function Transport({ size = 'normal' }: { size?: 'normal' | 'big' }) {
         <SkipBack size={20 * s} />
       </button>
       <button className="pp" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause (Space)' : 'Play (Space)'} onClick={() => p.toggle()}>
-        {playing ? <Pause size={20 * s} /> : <Play size={20 * s} style={{ marginLeft: 2 }} />}
+        {playing ? <Pause size={20 * s} /> : <Play size={20 * s} />}
       </button>
       <button className="iconbtn" aria-label="Next" title="Next" onClick={() => p.next()}>
         <SkipForward size={20 * s} />

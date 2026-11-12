@@ -605,7 +605,7 @@ export function ActionBar({
         title={isThis && playing ? 'Pause' : 'Play'}
         disabled={!tracks.length}
         onClick={() => (isThis ? usePlayer.getState().toggle() : usePlayer.getState().playQueue(tracks, 0, { shuffle: !!shuffleFirst }))}>
-        {isThis && playing ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 3 }} />}
+        {isThis && playing ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
       </button>
       <button
         className="iconbtn big"

@@ -110,7 +110,7 @@ export function TapStep({ item, draft, current, onDraft, onDone }: { item: BaseI
         </button>
         <div className="mk-pad-side right">
           <button className="mk-tool" onClick={() => usePlayer.getState().toggle()} disabled={!current} aria-label={playing ? 'Pause' : 'Play'} title={`${playing ? 'Pause' : 'Play'} (Enter)`}>
-            <span className="mk-tool-ico">{playing ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: 2 }} />}</span>
+            <span className="mk-tool-ico">{playing ? <Pause size={20} /> : <Play size={20} />}</span>
             <span>{playing ? 'Pause' : 'Play'}</span>
           </button>
           <button className="mk-tool" onClick={onDone} aria-label="Done Tapping" title="Done Tapping (Esc)">

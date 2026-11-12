@@ -135,6 +135,8 @@ interface LayoutState {
   /** The window shrunk to the mini player (layout/MiniPlayer.tsx). */
   mini: boolean;
   miniOnTop: boolean;
+  /** The mini player shows the sung line under its controls (taller window, 380 by 196). */
+  miniLyrics: boolean;
   setPanel(p: Panel | null): void;
   togglePanel(p: Panel): void;
   setWidth(which: 'sidebar' | 'panel', px: number): void;
@@ -143,6 +145,7 @@ interface LayoutState {
   setPlayerTab(tab: PlayerTab): void;
   setFullscreen(on: boolean): void;
   setMiniOnTop(on: boolean): void;
+  setMiniLyrics(on: boolean): void;
   /**
    * Back to the normal window with the page showing: out of full screen and the full player
    * (the player bar's buttons on the right, layout/PlayerBar.tsx). With `page`, the lyrics in
@@ -162,6 +165,7 @@ export const useLayout = create<LayoutState>((set, get) => ({
   fullscreen: false,
   mini: false,
   miniOnTop: read('rakki.miniOnTop', true),
+  miniLyrics: read('rakki.miniLyrics', false),
   setPanel(panel) {
     if (!get().floating) save('rakki.panel2', panel);
     set({ panel });
@@ -207,6 +211,10 @@ export const useLayout = create<LayoutState>((set, get) => ({
   setMiniOnTop(miniOnTop) {
     save('rakki.miniOnTop', miniOnTop);
     set({ miniOnTop });
+  },
+  setMiniLyrics(miniLyrics) {
+    save('rakki.miniLyrics', miniLyrics);
+    set({ miniLyrics });
   },
   showMain(page) {
     const s = get();
