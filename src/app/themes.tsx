@@ -1,12 +1,13 @@
 import { Ionicons } from '@/ui/Icon';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemeError, type Theme } from '@/appearance/themeFormat';
-import { DEFAULT_THEME, fetchTheme, phoneColors, usePhoneThemes } from '@/appearance/themes';
+import { BUILT_IN_THEMES, DEFAULT_THEME, fetchTheme, phoneColors, usePhoneThemes } from '@/appearance/themes';
 import { tick } from '@/lib/haptics';
 import { showToast } from '@/ui/overlays';
 import { T } from '@/ui/T';
@@ -14,7 +15,7 @@ import { makeStyles, useTheme } from '@/ui/theme';
 
 const THEMES_HELP = 'https://github.com/LuckiRakki/rakki/blob/main/docs/THEMES.md';
 
-/** Customize → Theme: Rakki's own look, or a theme file (the same .css files as the desktop). */
+/** Settings → Look → Theme: Rakki's own look, Kawarp, or a theme file (the same .css files as the desktop). */
 export default function ThemesScreen() {
   const t = useTheme();
   const styles = useStyles();
@@ -40,7 +41,7 @@ export default function ThemesScreen() {
 
   const row = (id: string, name: string, detail: string, theme?: Theme) => {
     const on = id === active;
-    const c = theme ? phoneColors(theme.tokens) : null;
+    const c = theme ? phoneColors(theme) : null;
     return (
       <Pressable
         key={id}
@@ -52,6 +53,10 @@ export default function ThemesScreen() {
         }}
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
         <View style={[styles.swatch, { backgroundColor: c?.bg ?? '#121212', borderColor: c?.border ?? t.colors.border }]}>
+          {/* A theme with a backdrop shows colour flowing behind its card. */}
+          {c?.backdrop && c.backdrop !== 'none' ? (
+            <LinearGradient colors={[t.colors.accent, '#5B3FD0', '#0B3B5E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+          ) : null}
           <View style={[styles.swatchCard, { backgroundColor: c?.surface ?? '#1e1e1e' }]} />
           <View style={[styles.swatchDot, { backgroundColor: t.colors.accent }]} />
         </View>
@@ -61,7 +66,7 @@ export default function ThemesScreen() {
             {detail}
           </T>
         </View>
-        {theme ? (
+        {theme && !theme.builtIn ? (
           <Pressable hitSlop={10} accessibilityLabel={`Remove ${name}`} onPress={() => remove(id)} style={{ marginRight: t.space.md }}>
             <Ionicons name="trash-outline" size={20} color={t.colors.textMuted} />
           </Pressable>
@@ -72,7 +77,7 @@ export default function ThemesScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
@@ -83,6 +88,7 @@ export default function ThemesScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
         <View style={styles.card}>
           {row(DEFAULT_THEME, 'Rakki', "Rakki's own look, set in Settings → Look.")}
+          {BUILT_IN_THEMES.map((theme) => row(theme.id, theme.meta.name, theme.meta.description ?? '', theme))}
           {imported.map((theme) =>
             row(theme.id, theme.meta.name, [theme.meta.description, theme.meta.author ? `By ${theme.meta.author}` : null].filter(Boolean).join(' · ') || 'Added', theme),
           )}

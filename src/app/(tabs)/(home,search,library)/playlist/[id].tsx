@@ -120,7 +120,7 @@ export default function PlaylistScreen() {
 
   if (playlist.error) {
     return (
-      <View style={{ flex: 1, backgroundColor: t.colors.bg, alignItems: 'center', justifyContent: 'center', padding: t.space.xl }}>
+      <View style={{ flex: 1, backgroundColor: t.colors.page, alignItems: 'center', justifyContent: 'center', padding: t.space.xl }}>
         <T variant="heading">This playlist no longer exists</T>
         <BackButton onPress={() => router.back()} />
       </View>
@@ -182,7 +182,7 @@ export default function PlaylistScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.FlatList
         windowSize={7}
         onScroll={onScroll}

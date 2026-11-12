@@ -10,7 +10,7 @@ import { useTheme } from '@/ui/theme';
 export function OfflineUnavailable() {
   const t = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg, alignItems: 'center', justifyContent: 'center', padding: t.space.xl }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page, alignItems: 'center', justifyContent: 'center', padding: t.space.xl }}>
       <Ionicons name="cloud-offline-outline" size={44} color={t.colors.textMuted} />
       <T variant="heading" style={{ marginTop: t.space.md, textAlign: 'center' }}>
         Not available offline

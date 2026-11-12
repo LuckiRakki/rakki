@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { memo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
-import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
+import ReorderableList, { useIsActive, useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -96,7 +96,7 @@ export default function QueueScreen() {
   ) : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={[styles.header, { paddingTop: insets.top > 20 ? t.space.md : t.space.lg }]}>
         <Pressable hitSlop={12} onPress={() => router.back()}>
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
@@ -140,6 +140,7 @@ const QueueRow = memo(function QueueRow({ entry }: { entry: QueueEntry }) {
   const t = useTheme();
   const styles = useStyles();
   const drag = useReorderableDrag();
+  const lifted = useIsActive();
   // Look the position up at tap time: the queue may have changed since this row rendered.
   const at = () => usePlayer.getState().queue.findIndex((e) => e.key === entry.key);
   return (
@@ -147,7 +148,7 @@ const QueueRow = memo(function QueueRow({ entry }: { entry: QueueEntry }) {
       onPress={() => usePlayer.getState().skipTo(at())}
       onLongPress={drag}
       delayLongPress={300}
-      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? t.colors.surface : t.colors.bg }]}>
+      style={({ pressed }) => [styles.row, { backgroundColor: lifted ? t.colors.lifted : pressed ? t.colors.surface : t.colors.page }]}>
       <Artwork item={entry.item} size={46} />
       <View style={{ flex: 1, marginHorizontal: t.space.md }}>
         <T variant="bodyStrong" numberOfLines={1}>
@@ -187,7 +188,7 @@ const useStyles = makeStyles((t) => ({
     paddingTop: t.space.xl,
     paddingBottom: t.space.sm,
     fontSize: t.size(17),
-    backgroundColor: t.colors.bg,
+    backgroundColor: t.colors.page,
   },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.space.lg, paddingVertical: t.space.sm },
   playedToggle: {

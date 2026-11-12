@@ -78,7 +78,7 @@ export default function DownloadsScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()}>
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />

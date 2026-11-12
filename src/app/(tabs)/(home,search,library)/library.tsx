@@ -187,13 +187,15 @@ export default function LibraryScreen() {
 
   const List = LISTS[tab];
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
-      {/* 2.0: a soft album-colour wash behind the header (the lists scroll over it). */}
-      <LinearGradient
-        colors={[withAlpha(t.colors.accent, 0.2), withAlpha(t.colors.accent, 0)]}
-        style={[StyleSheet.absoluteFill, { height: 260 }]}
-        pointerEvents="none"
-      />
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+      {/* 2.0: a soft album-colour wash behind the header (the lists scroll over it); Kawarp's flow instead. */}
+      {t.backdrop === 'none' ? (
+        <LinearGradient
+          colors={[withAlpha(t.colors.accent, 0.2), withAlpha(t.colors.accent, 0)]}
+          style={[StyleSheet.absoluteFill, { height: 260 }]}
+          pointerEvents="none"
+        />
+      ) : null}
       <List header={header} sort={sort} layout={layout} filter={filter} />
     </View>
   );

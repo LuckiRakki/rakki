@@ -78,7 +78,7 @@ export default function AlbumScreen() {
   const header = (
     <View>
       <LinearGradient
-        colors={[t.tint(tint), t.colors.bg]}
+        colors={t.wash(t.tint(tint))}
         style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
         <Animated.View style={cover}>
           {album.data ? (
@@ -168,7 +168,7 @@ export default function AlbumScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.FlatList
         windowSize={7}
         onScroll={onScroll}

@@ -2,7 +2,7 @@ import { Ionicons } from '@/ui/Icon';
 import { memo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
-import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
+import ReorderableList, { useIsActive, useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { thud } from '@/lib/haptics';
@@ -38,7 +38,7 @@ export function PlaylistEditor({
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={[styles.bar, { paddingTop: insets.top + t.space.sm }]}>
         <View style={{ width: 56 }} />
         <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Edit playlist</T>
@@ -95,8 +95,9 @@ const EditRow = memo(function EditRow({ playlistId, track }: { playlistId: strin
   const t = useTheme();
   const styles = useStyles();
   const drag = useReorderableDrag();
+  const lifted = useIsActive();
   return (
-    <Pressable onLongPress={drag} delayLongPress={300} style={styles.row}>
+    <Pressable onLongPress={drag} delayLongPress={300} style={[styles.row, lifted && { backgroundColor: t.colors.lifted }]}>
       <Pressable
         hitSlop={10}
         accessibilityLabel={`Remove ${track.Name}`}
@@ -162,6 +163,6 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     paddingHorizontal: t.space.lg,
     paddingVertical: t.space.sm,
-    backgroundColor: t.colors.bg,
+    backgroundColor: t.colors.page,
   },
 }));

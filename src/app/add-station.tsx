@@ -37,7 +37,7 @@ export default function AddStationScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg, paddingTop: insets.top + t.space.sm, paddingHorizontal: t.space.lg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page, paddingTop: insets.top + t.space.sm, paddingHorizontal: t.space.lg }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />

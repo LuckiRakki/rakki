@@ -39,7 +39,7 @@ export default function StatsScreen() {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('stats');
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={26} color={t.colors.text} />

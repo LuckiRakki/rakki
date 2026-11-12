@@ -124,18 +124,20 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: t.colors.bg }}
+      style={{ flex: 1, backgroundColor: t.colors.page }}
       contentContainerStyle={{ paddingTop: insets.top + t.space.md, paddingBottom: t.space.xl }}
       refreshControl={
         <RefreshControl refreshing={refreshing} tintColor={t.colors.text} onRefresh={() => void queryClient.invalidateQueries()} />
       }>
-      {/* 2.0: the album colour washing down from the top, like the Kawarp desktop. */}
-      <LinearGradient
-        colors={[withAlpha(t.colors.accent, 0.3), withAlpha(t.colors.accent, 0.1), t.colors.bg]}
-        locations={[0, 0.45, 1]}
-        style={[StyleSheet.absoluteFill, { height: 420 }]}
-        pointerEvents="none"
-      />
+      {/* 2.0: the album colour washing down from the top (over Kawarp's flow there's no need). */}
+      {t.backdrop === 'none' ? (
+        <LinearGradient
+          colors={[withAlpha(t.colors.accent, 0.3), withAlpha(t.colors.accent, 0.1), t.colors.bg]}
+          locations={[0, 0.45, 1]}
+          style={[StyleSheet.absoluteFill, { height: 420 }]}
+          pointerEvents="none"
+        />
+      ) : null}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.push('/settings')}

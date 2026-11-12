@@ -85,7 +85,7 @@ export default function EditStationScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg, paddingTop: insets.top + t.space.sm }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page, paddingTop: insets.top + t.space.sm }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Cancel">
           <T style={{ fontFamily: t.fonts.medium, fontSize: t.size(15) }}>Cancel</T>

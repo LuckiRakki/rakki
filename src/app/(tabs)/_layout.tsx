@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibraryView } from '@/library/view';
 import { MiniPlayer } from '@/player/MiniPlayer';
+import { AppBackdrop } from '@/ui/AppBackdrop';
 import { OfflineBar } from '@/ui/OfflineBar';
 import { Glass } from '@/ui/Glass';
 import { T } from '@/ui/T';
@@ -74,7 +75,9 @@ export default function TabLayout() {
       // Mini-player rides on top of the tab bar, like Spotify. Because the bar is in normal
       // layout flow, screens end above it and nothing is hidden behind the player.
       tabBar={(props) => (
-        <View style={{ backgroundColor: t.colors.bg }}>
+        <View style={{ backgroundColor: t.colors.page }}>
+          {/* With Kawarp, the bottom of the same flow as the screen above. */}
+          <AppBackdrop anchor="bottom" />
           <OfflineBar />
           <MiniPlayer />
           <PillTabBar {...props} />

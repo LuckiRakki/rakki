@@ -54,7 +54,7 @@ export function CollectionHeader({
   const cover = useCoverStyle(scrollY ?? still);
   return (
     <View>
-      <LinearGradient colors={[t.tint(tint), t.colors.bg]} style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
+      <LinearGradient colors={t.wash(t.tint(tint))} style={{ paddingTop: insets.top + 56, paddingBottom: t.space.lg, alignItems: 'center' }}>
         <Animated.View style={[styles.artShadow, cover]}>{art}</Animated.View>
       </LinearGradient>
       <View style={{ paddingHorizontal: t.space.lg }}>

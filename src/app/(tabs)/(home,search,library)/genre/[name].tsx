@@ -155,7 +155,7 @@ export default function GenreScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.FlatList
         windowSize={7}
         onScroll={onScroll}

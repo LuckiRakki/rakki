@@ -44,7 +44,7 @@ const LAYERS: LayerSpec[] = [
   { scale: 0.8, cx: 0.8, cy: 0.75, turn: 34, orbit: 0.14, orbitSec: 29, opacity: 0.7 },
 ];
 
-function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: SharedValue<number> }) {
+function Layer({ uri, spec, clock, fade }: { uri: string; spec: LayerSpec; clock: SharedValue<number>; fade?: number }) {
   const { width, height } = useWindowDimensions();
   const side = Math.hypot(width, height) * spec.scale;
 
@@ -75,7 +75,7 @@ function Layer({ uri, spec, clock }: { uri: string; spec: LayerSpec; clock: Shar
         },
         style,
       ]}>
-      <Image source={{ uri }} blurRadius={60} style={{ width: side, height: side }} contentFit="cover" />
+      <Image source={{ uri }} blurRadius={60} style={{ width: side, height: side }} contentFit="cover" transition={fade} />
     </Animated.View>
   );
 }
@@ -116,13 +116,21 @@ export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) 
   }, [clock, motion]);
 
   // In the background the three big blurred layers let go (the colour behind them stays).
-  return uri && !away ? (
+  return uri && !away ? <FlowLayers uri={uri} clock={clock} /> : null;
+}
+
+/**
+ * The three layers at `clock` (seconds of motion), the size of the window from the top-left of
+ * what holds them. `fade` crossfades a new cover in over that many milliseconds.
+ */
+export function FlowLayers({ uri, clock, fade }: { uri: string; clock: SharedValue<number>; fade?: number }) {
+  return (
     <>
       {LAYERS.map((spec, i) => (
-        <Layer key={i} uri={uri} spec={spec} clock={clock} />
+        <Layer key={i} uri={uri} spec={spec} clock={clock} fade={fade} />
       ))}
     </>
-  ) : null;
+  );
 }
 
 /**

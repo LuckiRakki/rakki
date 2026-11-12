@@ -40,10 +40,18 @@ export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean; t
   const surface = (i: number) => mix(bg, '#ffffff', (steps[i] * a.surfaceContrast) / 255);
   const faces = FONTS[a.font]?.faces ?? FONTS.figtree.faces;
   const heavy = a.titleWeight === 'heavy';
+  const backdrop = file.backdrop ?? 'none';
   return {
     appearance: a,
+    /** What's behind every screen (the theme's @backdrop): nothing, the playing cover still, or flowing (Kawarp). */
+    backdrop,
     colors: {
+      /** The background colour: solid, for anything that must hide what's under it. */
       bg,
+      /** A screen's own background: the background, or see-through when the theme has a backdrop. */
+      page: backdrop === 'none' ? bg : 'transparent',
+      /** A row being dragged: always solid, so the rows it passes over don't show through it. */
+      lifted: backdrop === 'none' ? bg : '#1D1D21',
       surface: file.surface ?? surface(0),
       surface2: file.surface2 ?? surface(1),
       surface3: file.surface3 ?? surface(2),
@@ -80,6 +88,8 @@ export function buildTheme(a: Appearance, env: { systemReduceMotion?: boolean; t
     },
     /** A font size scaled by the user's text size setting. */
     size: (n: number) => Math.round(n * a.textScale * 10) / 10,
+    /** A page's colour wash from `top` down into the page; over a backdrop there's none, the flow shows instead. */
+    wash: (top: string): readonly [string, string] => (backdrop === 'none' ? [top, bg] : ['transparent', 'transparent']),
     /** An album-art colour toned by the "art tint" setting (0 = plain background). */
     tint: (color: string) => mix(bg, color, a.artTint),
     /** Skip or shorten animations (the setting, or iOS Reduce Motion when set to follow it). */

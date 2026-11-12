@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { memo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
-import ReorderableList, { reorderItems, useReorderableDrag } from 'react-native-reorderable-list';
+import ReorderableList, { reorderItems, useIsActive, useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -82,7 +82,7 @@ export default function VideoQueueScreen() {
   ) : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={[styles.header, { paddingTop: insets.top > 20 ? t.space.md : t.space.lg }]}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
@@ -135,6 +135,7 @@ const QueueRow = memo(function QueueRow({ item }: { item: BaseItem }) {
   const t = useTheme();
   const styles = useStyles();
   const drag = useReorderableDrag();
+  const lifted = useIsActive();
   // Look the position up at tap time: the queue may have changed since this row rendered.
   const at = () => useVideoSession.getState().upNext.findIndex((v) => v.Id === item.Id);
   return (
@@ -145,7 +146,7 @@ const QueueRow = memo(function QueueRow({ item }: { item: BaseItem }) {
       }}
       onLongPress={drag}
       delayLongPress={300}
-      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? t.colors.surface : t.colors.bg }]}>
+      style={({ pressed }) => [styles.row, { backgroundColor: lifted ? t.colors.lifted : pressed ? t.colors.surface : t.colors.page }]}>
       <VideoInfo item={item} />
       <Pressable
         hitSlop={10}

@@ -146,7 +146,7 @@ export default function ArtistScreen() {
   if (artist.data === null) return <OfflineUnavailable />;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: t.space.xxl }}>
         <View style={[styles.hero, { backgroundColor: t.tint(tint) }]}>
           {cover && !away ? (
@@ -160,7 +160,12 @@ export default function ArtistScreen() {
               />
             </Animated.View>
           ) : null}
-          <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.25)', t.colors.bg]} locations={[0, 0.6, 1]} style={StyleHero} />
+          {/* Into the page, or over a backdrop darker at the bottom so the name reads (as on the desktop). */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.25)', t.backdrop === 'none' ? t.colors.bg : 'rgba(0,0,0,0.65)']}
+            locations={[0, 0.6, 1]}
+            style={StyleHero}
+          />
           <Reveal
             step={nameStep}
             placeholder={

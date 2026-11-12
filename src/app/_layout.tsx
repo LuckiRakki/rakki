@@ -19,6 +19,7 @@ import { ensureSearchIndex } from '@/search/index';
 import { loadRecentSearches } from '@/search/recent';
 import { openPlayer, takePendingLink, useModalTracker } from '@/ui/nav';
 import { ICON_FONT } from '@/ui/Icon';
+import { backdropScreenLayout, useBackdropClock } from '@/ui/AppBackdrop';
 import { OverlayHost } from '@/ui/OverlayHost';
 import { useTheme } from '@/ui/theme';
 import { ThemeProvider as RakkiThemeProvider } from '@/ui/ThemeProvider';
@@ -137,6 +138,8 @@ export default function RootLayout() {
 function AppShell({ signedIn }: { signedIn: boolean }) {
   const t = useTheme();
   useModalTracker();
+  // Kawarp's flow (a theme with a backdrop): one clock moves it on every screen.
+  useBackdropClock();
 
   // Watch whether the server answers (offline mode switches on its own when it doesn't).
   const serverUrl = useAuth((s) => s.session?.serverUrl ?? null);
@@ -211,7 +214,7 @@ function AppShell({ signedIn }: { signedIn: boolean }) {
         <ThemeProvider value={navTheme}>
           <StatusBar style="light" />
           <OpeningFade>
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.bg } }}>
+            <Stack screenLayout={backdropScreenLayout} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.page } }}>
               <Stack.Protected guard={signedIn}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="player" options={{ presentation: 'modal' }} />

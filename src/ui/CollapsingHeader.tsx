@@ -1,7 +1,8 @@
 // Spotify's album/playlist header feel: as the page scrolls, the cover shrinks, fades and
 // drifts up, and a title bar in the page's colour fades in at the top once the title has
 // scrolled under it. Scroll-driven (it follows your finger), so it stays on with reduced motion.
-import { View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -65,11 +66,13 @@ export function StickyTitleBar({
           height: insets.top + t.space.sm + 36 + t.space.sm,
           paddingTop: insets.top + t.space.sm,
           paddingHorizontal: 64,
-          backgroundColor: color,
+          // Over a theme's backdrop (Kawarp) the page has no colour of its own: smoked glass instead.
+          backgroundColor: t.backdrop === 'none' ? color : 'rgba(18,18,22,0.55)',
           justifyContent: 'center',
         },
         style,
       ]}>
+      {t.backdrop === 'none' ? null : <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />}
       <View style={{ height: 36, justifyContent: 'center' }}>
         <T numberOfLines={1} style={{ fontFamily: t.fonts.bold, fontSize: t.size(16), textAlign: 'center' }}>
           {title}

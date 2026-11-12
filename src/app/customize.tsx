@@ -16,7 +16,7 @@ import {
   type Appearance,
   type ShelfId,
 } from '@/appearance/store';
-import { usePhoneThemes } from '@/appearance/themes';
+import { findTheme, usePhoneThemes } from '@/appearance/themes';
 import { isHexColor } from '@/lib/color';
 import { tick } from '@/lib/haptics';
 import { AppIconPicker } from '@/ui/AppIconPicker';
@@ -41,7 +41,7 @@ export default function CustomizeScreen() {
   const a = t.appearance;
   const custom = useAppearance((s) => s.accent);
   const [hex, setHex] = useState(custom);
-  const themeName = usePhoneThemes((s) => s.imported.find((x) => x.id === s.active)?.meta.name ?? 'Rakki');
+  const themeName = usePhoneThemes((s) => findTheme(s.active, s.imported)?.meta.name ?? 'Rakki');
 
   const resetAll = () =>
     Alert.alert('Reset Everything?', 'All of Look goes back to how Rakki looks out of the box.', [
@@ -57,7 +57,7 @@ export default function CustomizeScreen() {
     ]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />

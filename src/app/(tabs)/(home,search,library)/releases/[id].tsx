@@ -29,7 +29,7 @@ export default function ReleasesScreen() {
   const name = artist.data?.Name;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <FlatList
         windowSize={7}
         key={`releases-${columns}`}

@@ -7,8 +7,10 @@ import it again to see the change. **Use** switches between themes. **Kawarp** i
 Rakki starts on (since desktop 1.7.0), and **Rakki** is its own plain look.
 
 Both apps use the same files. On the desktop the whole file applies. On the phone
-(**Customize → Theme**, paste the CSS or a link to the file) only the colours on `:root` apply
-(the tokens below); the rest of the CSS is for the desktop.
+(**Settings → Look → Theme**, paste the CSS or a link to the file) the colours on `:root` (the
+tokens below) and `@backdrop` apply; the rest of the CSS is for the desktop. The phone has
+**Kawarp** built in too (since 2.1.0): every screen and the tab bar over the playing cover,
+flowing.
 
 On the desktop you can also write one in the app: **Settings → Look → Theme → New Theme**, or
 the pencil on any theme (built-in ones open as a copy). The CSS goes on the left and its
@@ -65,9 +67,12 @@ Set these on `:root` (plain colours: `#hex`, `rgb()` or `rgba()`; the phone skip
 | `--radius` | Corner size of cards and panels (in `px`). |
 
 On the phone, `--bg` is the background, `--surface-2`, `--surface-3` and `--surface-4` are its
-cards, raised things and hover (see-through colours are laid over `--bg`), and `--line` and the
-three text colours are used as they are. `--surface` (the desktop's panels) isn't used there:
-a phone screen is one panel.
+cards, raised things and hover, and `--line` and the three text colours are used as they are.
+`--surface` (the desktop's panels) isn't used there: a phone screen is one panel. Without a
+backdrop, see-through colours are laid over `--bg`. With `@backdrop album` or `flow` every
+screen shows the playing cover (blurred and still, or flowing at Look → Now Playing →
+Movement's speed, while a song plays), cards stay see-through, and menus and title bars turn to
+smoked glass. The backdrop settings below are desktop only.
 
 The accent stays yours: Settings → Look → Colour (your colour, or Lucid's album colour) sets
 `--accent` over any theme. Colours Rakki sets while it runs, for a theme to use:

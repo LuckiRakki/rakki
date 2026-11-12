@@ -102,7 +102,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={{ paddingTop: insets.top + t.space.md, paddingHorizontal: t.space.lg }}>
         {!active ? (
           <T variant="display" style={{ marginBottom: t.space.lg }}>

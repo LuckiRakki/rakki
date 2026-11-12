@@ -72,7 +72,7 @@ export default function SettingsScreen() {
   const lyricsStyle = () => router.push({ pathname: '/lyrics-style', params: { from: 'settings' } });
   const groups: NavRowProps[][] = [
     [
-      { icon: 'color-palette-outline', label: 'Look', value: GLASS_LABEL[glass], onPress: () => router.push('/customize'), keywords: 'glass colour color font text corners motion theme pause home mini player' },
+      { icon: 'color-palette-outline', label: 'Look', value: GLASS_LABEL[glass], onPress: () => router.push('/customize'), keywords: 'glass colour color font text corners motion theme kawarp pause home mini player' },
       { icon: 'mic-outline', label: 'Lyrics', value: LYRICS_LABEL[lyricsMode] ?? '', onPress: lyricsStyle, keywords: 'spicy karaoke style' },
       { icon: 'play-circle', label: 'Playback', onPress: () => setPage('playback'), keywords: 'quality streaming wifi cellular volume autoplay equalizer eq video' },
       { icon: 'cloud-download-outline', label: 'Downloads', value: downloadedSongs ? songCount(downloadedSongs) : '', onPress: () => setPage('downloads'), keywords: 'offline cellular quality' },
@@ -92,7 +92,7 @@ export default function SettingsScreen() {
 
   const title = { index: 'Settings', account: 'Account', playback: 'Playback', downloads: 'Downloads', connections: 'Connections', about: 'About Rakki' }[page];
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         {page === 'index' ? null : (
           <Pressable hitSlop={12} onPress={() => setPage('index')} accessibilityLabel="Back to Settings" style={{ marginRight: 4 }}>

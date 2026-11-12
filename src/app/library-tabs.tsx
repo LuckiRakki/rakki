@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
-import ReorderableList, { useReorderableDrag } from 'react-native-reorderable-list';
+import ReorderableList, { useIsActive, useReorderableDrag } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { thud, tick } from '@/lib/haptics';
@@ -26,7 +26,7 @@ export default function LibraryTabsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={[styles.header, { paddingTop: insets.top > 20 ? t.space.md : t.space.lg }]}>
         <View style={{ width: 56 }} />
         <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Library tabs</T>
@@ -73,9 +73,10 @@ const TabRow = memo(function TabRow({ tab }: { tab: LibraryTab }) {
   const t = useTheme();
   const styles = useStyles();
   const drag = useReorderableDrag();
+  const lifted = useIsActive();
   const label = LIBRARY_TABS.find((x) => x.key === tab)?.label ?? tab;
   return (
-    <Pressable onLongPress={drag} delayLongPress={250} style={styles.row}>
+    <Pressable onLongPress={drag} delayLongPress={250} style={[styles.row, lifted && { backgroundColor: t.colors.lifted }]}>
       <T variant="bodyStrong" style={{ flex: 1 }}>
         {label}
       </T>
@@ -99,7 +100,7 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     paddingHorizontal: t.space.lg,
     height: 56,
-    backgroundColor: t.colors.bg,
+    backgroundColor: t.colors.page,
     borderBottomWidth: 1,
     borderBottomColor: t.colors.border,
   },

@@ -6,6 +6,14 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 2.1.0 (2026-11-12)
+- **Kawarp on the phone.** Settings → Look → Theme → Kawarp: every screen and the tab bar sit over
+  the playing cover flowing like liquid, as on the desktop. Cards turn see-through, and menus and
+  page title bars turn to smoked glass. The flow moves only while a song plays, at Look → Now
+  Playing → Movement's speed (still with Reduce Motion), only the screen on top redraws, and the
+  cover is let go while Rakki is in the background. A theme file with `@backdrop album` or `flow`
+  gets its backdrop on the phone too. Needs the 2.0.0 native build.
+
 ## 2.0.0, native build (2026-11-12)
 A new `.ipa` (runtime 2.0.0): install it with SideStore over the existing app (sign-in,
 downloads and settings stay). Older installs stay on 1.24.3 until then.

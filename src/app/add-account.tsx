@@ -9,7 +9,7 @@ import { useTheme } from '@/ui/theme';
 export default function AddAccountScreen() {
   const t = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={{ paddingHorizontal: t.space.lg, paddingTop: t.space.md }}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />

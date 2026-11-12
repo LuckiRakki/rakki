@@ -100,7 +100,7 @@ export default function DevicesScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={[styles.header, { paddingTop: insets.top > 20 ? t.space.md : t.space.lg }]}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />

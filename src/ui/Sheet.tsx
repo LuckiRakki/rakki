@@ -1,5 +1,6 @@
+import { BlurView } from 'expo-blur';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,8 +37,9 @@ export function SheetPanel({
   // Opening mounts straight away; closing unmounts after the slide-out finishes.
   if (visible && !mounted) setMounted(true);
 
+  const t = useTheme();
   // Reduced motion: sheets appear and go almost at once instead of sliding.
-  const fast = useTheme().reduceMotion;
+  const fast = t.reduceMotion;
 
   useEffect(() => {
     if (visible) {
@@ -70,6 +72,8 @@ export function SheetPanel({
   if (!mounted) return null;
   return (
     <Animated.View style={[styles.sheet, { maxHeight: height * maxHeightRatio, paddingBottom: insets.bottom + 8 }, sheetStyle]}>
+      {/* Over a theme's backdrop (Kawarp) the cards are see-through, so the sheet is smoked glass instead. */}
+      {t.backdrop === 'none' ? null : <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />}
       <GestureDetector gesture={pan}>
         <View style={styles.handleArea}>
           <View style={styles.handle} />
@@ -86,7 +90,7 @@ const useStyles = makeStyles((t) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: t.colors.surface2,
+    backgroundColor: t.backdrop === 'none' ? t.colors.surface2 : 'rgba(18,18,22,0.6)',
     borderTopLeftRadius: 12 * Math.max(0.5, t.appearance.roundness),
     borderTopRightRadius: 12 * Math.max(0.5, t.appearance.roundness),
     overflow: 'hidden',
