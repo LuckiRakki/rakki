@@ -10,7 +10,7 @@ import { PANEL, SIDEBAR, useLayout } from '~/layout/layout';
 import { go, useNav, type Route } from '~/nav';
 import { useDailyMixes, usePlaylists } from '~/queries';
 import { partOf, revealProps, RowsSkeleton, useReveal } from '~/ui/reveal';
-import { Blend, ChevronDown, ChevronUp, Disc3, Heart, Library, ListMusic, MonitorPlay, Music, Plus, Radio, Tags, UserRound, X } from '~/ui/icons';
+import { Blend, ChevronDown, ChevronUp, Disc3, Heart, Library, ListMusic, MonitorPlay, Music, Plus, Radio, Stats, Tags, UserRound, X } from '~/ui/icons';
 import { openMenu } from '~/ui/overlays';
 import { Artwork } from '~/ui/parts';
 import { activateOnKey } from '~/ui/keys';
@@ -44,6 +44,7 @@ const LIBRARY_TABS: { to: Route; label: string; Icon: typeof ListMusic }[] = [
   { to: { name: 'genres' }, label: 'Genres', Icon: Tags },
   { to: { name: 'radio' }, label: 'Radio', Icon: Radio },
   { to: { name: 'videos' }, label: 'Videos', Icon: MonitorPlay },
+  { to: { name: 'stats' }, label: 'History and Stats', Icon: Stats },
 ];
 
 function NavLink({ to, icon, label }: { to: Route; icon: ReactNode; label: string }) {

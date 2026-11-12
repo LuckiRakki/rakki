@@ -18,7 +18,7 @@ import { dataFolder } from '~/lib/kv';
 import { inTauri } from '~/lib/tauri';
 import { installUpdate, useUpdate } from '~/lib/updateCheck';
 import { mrqVersion, normalizeMrqUrl, useMrq } from '~/mrq/client';
-import { useNav } from '~/nav';
+import { go, useNav } from '~/nav';
 import { GITHUB_BUTTON_LABEL, SONG_BUTTON_LABEL, useDiscord } from '~/player/discord';
 import { currentPosition, usePlayer } from '~/player/store';
 import { APP_LOOK, FEISHIN, LYRICS_SIZE, presetOf, useLook, VISUALIZER_PRESETS, type VisualizerLook } from '~/settings/look';
@@ -37,7 +37,36 @@ import { openThemeEditor } from '~/themes/ThemeEditor';
 import { allThemes, useThemes } from '~/themes/themes';
 import { openLink } from '~/lib/links';
 import { toast } from '~/ui/overlays';
-import { ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, LogOut, Music, Pencil, Plus, Trash2, Undo, X, type Icon } from '~/ui/icons';
+import {
+  ArrowDown,
+  ArrowDownToLine,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Check,
+  ChevronDown,
+  Globe,
+  Info,
+  Keyboard,
+  LogOut,
+  MicVocal,
+  Music,
+  Palette,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Search as SearchIcon,
+  SkipBack,
+  SkipForward,
+  Stats as StatsIcon,
+  Trash2,
+  Undo,
+  User,
+  Visualizer as VisualizerIcon,
+  X,
+  type Icon,
+} from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
 import { Artwork, formatTime } from '~/ui/parts';
 import { Slider } from '~/ui/Slider';
@@ -124,7 +153,7 @@ function Account() {
           </div>
         </div>
         <button className="secondary small" onClick={() => useAuth.getState().signOut()}>
-          <LogOut size={16} /> Sign out
+          <LogOut size={16} /> Sign Out
         </button>
       </div>
     </Card>
@@ -212,6 +241,33 @@ function Look() {
   const setApp = useLook((s) => s.setApp);
   return (
     <>
+      <Card title="Glass">
+        <div className="glass-picks" role="group" aria-label="Glass">
+          {(['frost', 'clear', 'tint'] as const).map((g) => (
+            <button key={g} className={`glass-pick ${g}${app.glass === g ? ' on' : ''}`} aria-pressed={app.glass === g} onClick={() => setApp({ glass: g })}>
+              <span className="swatch-flow">
+                <span className="swatch-bar">
+                  <SkipBack size={14} />
+                  <Pause size={16} />
+                  <SkipForward size={14} />
+                </span>
+              </span>
+              {GLASS_LABEL[g]}
+            </button>
+          ))}
+        </div>
+        <Row label="Pause Button" detail="The accent circle, or a plain white icon.">
+          <Choice
+            label="Pause Button"
+            value={app.pause}
+            onChange={(pause) => setApp({ pause })}
+            options={[
+              { value: 'circle', label: 'Accent Circle' },
+              { value: 'plain', label: 'Plain' },
+            ]}
+          />
+        </Row>
+      </Card>
       <ThemeCard />
       <Card title="Colour">
         <Toggle on={lucid} onChange={(v) => setTheme({ lucid: v })} label="Lucid" detail="The accent takes the colour of the album that's playing (your colour when nothing is)." />
@@ -238,12 +294,13 @@ function Look() {
         <Row label="App Size" detail="Everything bigger or smaller, like zooming a browser.">
           <Slider label="App Size" value={app.size} min={0.8} max={1.5} step={0.05} show={(v) => `${Math.round(v * 100)}%`} onChange={(size) => setApp({ size })} />
         </Row>
-        <Row label="Typeface" detail="Inter, as on the phone, or this computer's own.">
+        <Row label="Typeface" detail="Figtree, as on the phone, Inter, or this computer's own.">
           <Choice
             label="Typeface"
             value={app.font}
             onChange={(font) => setApp({ font })}
             options={[
+              { value: 'figtree', label: 'Figtree' },
               { value: 'inter', label: 'Inter' },
               { value: 'system', label: 'System' },
             ]}
@@ -911,6 +968,24 @@ function MrqCard() {
   );
 }
 
+function HistoryGroup() {
+  return (
+    <Card>
+      <div className="setting">
+        <div className="setting-text">
+          <div className="setting-label">History and Stats</div>
+          <div className="setting-detail">
+            Every song you play on any Rakki (and any other Jellyfin app) is kept by the Rakki plugin on your server, so your phone and this computer show the same history, listening time and top artists.
+          </div>
+        </div>
+        <button className="secondary small" onClick={() => go({ name: 'stats' })}>
+          <StatsIcon size={16} /> Open
+        </button>
+      </div>
+    </Card>
+  );
+}
+
 function About() {
   const update = useUpdate((u) => u.version);
   return (
@@ -948,16 +1023,20 @@ function DataFolder() {
   );
 }
 
-const GROUPS: { id: string; label: string; view: () => ReactNode }[] = [
-  { id: 'account', label: 'Account', view: () => <Account /> },
-  { id: 'look', label: 'Look', view: () => <Look /> },
-  { id: 'lyrics', label: 'Lyrics', view: () => <Lyrics /> },
-  { id: 'visualizer', label: 'Visualizer', view: () => <VisualizerSettings /> },
-  { id: 'playback', label: 'Playback', view: () => <Playback /> },
-  { id: 'shortcuts', label: 'Shortcuts', view: () => <Shortcuts /> },
+const GLASS_LABEL = { frost: 'Frost', clear: 'Clear', tint: 'Tint' } as const;
+
+const GROUPS: { id: string; label: string; icon: Icon; keywords: string; view: () => ReactNode }[] = [
+  { id: 'account', label: 'Account', icon: User, keywords: 'sign out server user', view: () => <Account /> },
+  { id: 'look', label: 'Look', icon: Palette, keywords: 'glass frost clear tint pause theme colour color accent lucid size font typeface corners spacing motion background', view: () => <Look /> },
+  { id: 'lyrics', label: 'Lyrics', icon: MicVocal, keywords: 'spicy size karaoke', view: () => <Lyrics /> },
+  { id: 'visualizer', label: 'Visualizer', icon: VisualizerIcon, keywords: 'line bars feishin', view: () => <VisualizerSettings /> },
+  { id: 'playback', label: 'Playback', icon: Play, keywords: 'quality streaming equalizer eq volume startup crossfade', view: () => <Playback /> },
+  { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard, keywords: 'keys keyboard hotkeys', view: () => <Shortcuts /> },
   {
     id: 'connections',
     label: 'Connections',
+    icon: Globe,
+    keywords: 'last.fm lastfm discord mrq spotify',
     view: () => (
       <>
         <LastfmCard />
@@ -966,7 +1045,8 @@ const GROUPS: { id: string; label: string; view: () => ReactNode }[] = [
       </>
     ),
   },
-  { id: 'about', label: 'About', view: () => <About /> },
+  { id: 'history', label: 'History and Stats', icon: StatsIcon, keywords: 'plays listening top artists', view: () => <HistoryGroup /> },
+  { id: 'about', label: 'About', icon: Info, keywords: 'version update data folder', view: () => <About /> },
 ];
 
 export function Settings() {
@@ -978,16 +1058,35 @@ export function Settings() {
     if (asked && GROUPS.some((g) => g.id === asked)) setGroup(asked);
   }, [asked, route]);
   const current = GROUPS.find((g) => g.id === group) ?? GROUPS[0];
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const shown = q ? GROUPS.filter((g) => `${g.label} ${g.keywords}`.toLowerCase().includes(q)) : GROUPS;
   return (
     <div className="page settings">
       <h1>Settings</h1>
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="Settings Groups">
-          {GROUPS.map((g) => (
+          <label className="settings-search">
+            <SearchIcon size={16} />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                const t = e.target.value.trim().toLowerCase();
+                const first = t ? GROUPS.find((g) => `${g.label} ${g.keywords}`.toLowerCase().includes(t)) : undefined;
+                if (first) setGroup(first.id);
+              }}
+              placeholder="Search Settings"
+              aria-label="Search Settings"
+            />
+          </label>
+          {shown.map((g) => (
             <button key={g.id} className={g.id === group ? 'on' : ''} aria-current={g.id === group ? 'page' : undefined} onClick={() => setGroup(g.id)}>
+              <g.icon size={18} />
               {g.label}
             </button>
           ))}
+          {q && shown.length === 0 ? <p className="muted small">No settings match.</p> : null}
         </nav>
         <div key={current.id} className="settings-body">
           {current.view()}

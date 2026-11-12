@@ -2,25 +2,26 @@
  * @name Kawarp
  * @author Rakki
  * @description The whole app over the cover flowing like liquid, as on the Spicy Lyrics screen.
- * @version 1.0
+ * @version 2.0
  * @backdrop flow
  *
  * The full player's Kawarp background (Settings → Look → Backgrounds sets how lively it is and
- * whether it moves with the music) stretched behind everything: no panels, just white text and
- * soft glass where things need edges. It holds still while paused, hidden or in the tray.
+ * whether it moves with the music) stretched behind everything. Rakki 2.0: dark panels on the
+ * flowing cover, glass only on the player bar (Settings → Look → Glass). It holds still while
+ * paused, hidden or in the tray.
  */
 
 :root {
-  --bg: #050506;
-  /* Panels are barely there: the flow shows through. */
-  --surface: rgba(0, 0, 0, 0.1);
+  --bg: #0B0B0D;
+  /* 2.0: dark panels, the flow showing through. */
+  --surface: rgba(0, 0, 0, 0.36);
   --surface-2: rgba(255, 255, 255, 0.08);
   --surface-3: rgba(255, 255, 255, 0.14);
   --surface-4: rgba(255, 255, 255, 0.2);
   --line: rgba(255, 255, 255, 0.12);
   --text: #fff;
-  --text-2: rgba(255, 255, 255, 0.78);
-  --text-3: rgba(255, 255, 255, 0.62);
+  --text-2: rgba(255, 255, 255, 0.8);
+  --text-3: rgba(255, 255, 255, 0.7);
   /* Bright and saturated, like the Spicy Lyrics screen. */
   --backdrop-brightness: 0.8;
   --backdrop-saturation: 1.5;
@@ -32,7 +33,7 @@
 
 /* ---- No panels: everything sits on the flow ---- */
 
-.panel { background: var(--surface); }
+.panel { background: var(--surface); border-radius: 18px; }
 .navbtn, .navbtn.home { background: rgba(255, 255, 255, 0.1); }
 .navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
 .win:hover { background: rgba(255, 255, 255, 0.12); }

@@ -62,14 +62,18 @@ export const LYRICS_SIZE = { min: 0.5, max: 2.5, default: 1.3 };
 export interface AppLook {
   /** 0.8-1.5: everything bigger or smaller, like the browser's zoom. */
   size: number;
-  font: 'inter' | 'system';
+  font: 'figtree' | 'inter' | 'system';
   corners: 'rounded' | 'soft' | 'square';
   density: 'comfortable' | 'compact';
   /** Fewer animations: pages and panels appear without moving, backgrounds hold still. */
   reduceMotion: boolean;
+  /** Rakki 2.0: the player bar's glass. Frost (smoked), Clear (no panel, a dark fade) or Tint (the album's colour). */
+  glass: 'frost' | 'clear' | 'tint';
+  /** The play / pause button: the accent circle, or a plain white icon. */
+  pause: 'circle' | 'plain';
 }
 
-export const APP_LOOK: AppLook = { size: 1, font: 'inter', corners: 'rounded', density: 'comfortable', reduceMotion: false };
+export const APP_LOOK: AppLook = { size: 1, font: 'figtree', corners: 'rounded', density: 'comfortable', reduceMotion: false, glass: 'frost', pause: 'circle' };
 
 interface LookState {
   visualizer: VisualizerLook;
@@ -91,6 +95,8 @@ function saved(): Pick<LookState, 'visualizer' | 'background' | 'lyricsSize' | '
     const visualizer = { ...fallback.visualizer, ...v.visualizer };
     // Version 2: the line visualizer is one line (peak marks off).
     if ((v.v ?? 1) < 2) visualizer.peaks = false;
+    // Version 3 (Rakki 2.0): Inter, the old default typeface, becomes Figtree.
+    if ((v.v ?? 1) < 3 && v.app?.font === 'inter') v.app = { ...v.app, font: 'figtree' };
     return {
       visualizer,
       background: { ...fallback.background, ...v.background },
@@ -106,7 +112,7 @@ export const useLook = create<LookState>((set, get) => {
   const save = () => {
     const { visualizer, background, lyricsSize, app } = get();
     try {
-      kv.setItem(KEY, JSON.stringify({ v: 2, visualizer, background, lyricsSize, app }));
+      kv.setItem(KEY, JSON.stringify({ v: 3, visualizer, background, lyricsSize, app }));
     } catch {
       // Kept for this session only.
     }

@@ -109,6 +109,7 @@ h1, h2, h3, p { margin: 0; }
 .visualizer canvas { display: block; width: 100% !important; height: 100% !important; }
 
 /* ---- Settings -> Look (ui/applyLook.ts): typeface, corners, spacing, motion ---- */
+:root[data-font='inter'] { font-family: 'Inter Variable', 'Segoe UI', system-ui, sans-serif; }
 :root[data-font='system'] { font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; }
 :root[data-corners='soft'] { --radius: 6px; --radius-sm: 5px; --radius-art: 4px; }
 :root[data-corners='square'] { --radius: 2px; --radius-sm: 2px; --radius-art: 2px; }

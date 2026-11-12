@@ -1,3 +1,4 @@
+import '@fontsource-variable/figtree';
 import '@fontsource-variable/inter';
 import './styles/index.css';
 

@@ -1,0 +1,162 @@
+/* Rakki 2.0: the light glass refresh. Figtree, the 2.0 ink and greys, the accent lifted toward white
+   for text, the player bar's glass (Settings > Look > Glass: Frost, Clear or Tint, as data-glass on
+   <html>), the clean play bar (thick track, no handle), the pause button (data-pause: the accent
+   circle or plain), and History and Stats. Themes still win where they set their own colours. */
+
+:root {
+  font-family: 'Figtree Variable', 'Segoe UI', system-ui, sans-serif;
+  --bg: #0B0B0D;
+  --surface: #141417;
+  --surface-2: #1D1D21;
+  --surface-3: #27272C;
+  --surface-4: #323238;
+  --text: #FFFFFF;
+  --text-2: rgba(255, 255, 255, 0.8);
+  --text-3: rgba(255, 255, 255, 0.7);
+  --danger: #FF5470;
+  /* The accent as text: readable on glass and dark panels whatever the cover is. */
+  --accent-text: color-mix(in srgb, var(--accent) 76%, #FFFFFF);
+  --row: rgba(255, 255, 255, 0.06);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-art: 8px;
+  --playerbar: 92px;
+  --glass-bg: rgba(18, 18, 22, 0.42);
+  --glass-line: rgba(255, 255, 255, 0.14);
+  --glass-blur: blur(24px) saturate(1.6);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+:root[data-glass='tint'] {
+  --glass-bg: color-mix(in srgb, color-mix(in srgb, var(--now) 30%, #000) 62%, transparent);
+  --glass-line: rgba(255, 255, 255, 0.16);
+}
+:root[data-glass='clear'] {
+  --glass-bg: transparent;
+  --glass-line: transparent;
+  --glass-blur: none;
+  --glass-shadow: none;
+}
+
+/* ---- The player bar: one glass bar, floating 8px in, over everything ---- */
+
+.playerbar {
+  margin: 0 8px 8px;
+  padding: 0 14px;
+  border-radius: 20px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-shadow);
+}
+:root[data-glass='clear'] .playerbar { background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.55)); }
+.np-art .thumb { width: 56px; border-radius: 8px; }
+.np .name { font-size: 15px; font-weight: 700; }
+.np .by { font-size: 13px; font-weight: 600; color: var(--accent-text); }
+.buttons { gap: 14px; }
+.buttons .iconbtn.on { color: var(--accent-text); }
+
+/* The clean play bar: elapsed time, a thick rounded track with no handle, the time left. */
+.seek { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.range .bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.24); }
+.range .fill { border-radius: 0; }
+.range .knob, .range:hover .knob, .range.dragging .knob, .range:focus-visible .knob { display: none; }
+.range:hover .bar, .range.dragging .bar { height: 8px; border-radius: 4px; }
+.buttons.big + .seek .range .bar, .np-controls .range .bar { height: 8px; border-radius: 4px; }
+
+/* The pause button: the accent circle (default) or a plain white icon. */
+:root[data-pause='circle'] .pp { width: 40px; height: 40px; background: var(--accent); color: var(--on-accent); }
+:root[data-pause='circle'] .buttons.big .pp { width: 64px; height: 64px; }
+:root[data-pause='plain'] .pp { width: 40px; height: 40px; background: none; color: var(--text); }
+:root[data-pause='plain'] .pp svg, :root[data-pause='plain'] .pp .ico { transform: scale(1.25); }
+.mini-controls .pp { width: 32px !important; height: 32px !important; }
+
+/* ---- Lists and pages ---- */
+
+.np-artist { color: var(--accent-text); }
+.np-title { font-weight: 800; }
+.settings-card { background: var(--row); border-radius: 16px; }
+.settings-nav button { display: flex; align-items: center; gap: 10px; border-radius: 10px; }
+.settings-nav button .ico { color: var(--text-2); }
+.settings-nav button.on .ico { color: var(--text); }
+.settings-search { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; margin-bottom: 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.08); color: var(--text-2); }
+.settings-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--text); font-size: 14px; font-weight: 500; }
+.settings-search:focus-within { box-shadow: inset 0 0 0 2px var(--focus); }
+.glass-picks { display: flex; gap: 14px; padding: 14px 0; }
+.glass-pick { display: flex; flex-direction: column; gap: 8px; width: 132px; text-align: left; font-weight: 700; }
+.glass-pick .swatch-flow { position: relative; display: block; height: 84px; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, var(--now), #0E2E38 55%, #F2A65A); }
+.glass-pick.on .swatch-flow { box-shadow: 0 0 0 2px #fff; }
+.glass-pick .swatch-bar { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 28px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 12px; color: #fff; }
+.glass-pick.frost .swatch-bar { background: rgba(18, 18, 22, 0.42); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.14); }
+.glass-pick.tint .swatch-bar { background: color-mix(in srgb, color-mix(in srgb, var(--now) 30%, #000) 62%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.16); }
+.glass-pick.clear .swatch-flow::after { content: ''; position: absolute; inset: 40% 0 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.6)); }
+.glass-pick.clear .swatch-bar { z-index: 1; }
+
+/* ---- History and Stats (pages/Stats.tsx) ---- */
+
+.stats-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.stats-head h1 { flex: 1; margin: 0; }
+.stats-head .filters { margin: 0; }
+.stats-layout { display: flex; gap: 16px; align-items: flex-start; }
+.stats-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.stats-tiles { display: flex; gap: 12px; }
+.stats-tile { flex: 1 1 0; min-width: 0; padding: 14px 18px; border-radius: 16px; background: var(--row); display: flex; flex-direction: column; gap: 4px; }
+.stats-tile.wide { flex-grow: 1.3; }
+.stats-tile-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.stats-tile-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats-tile-sub { font-size: 12px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats-card { padding: 18px 20px; border-radius: 16px; background: var(--row); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.stats-card h2 { font-size: 17px; font-weight: 800; margin: 0; }
+.stats-pair { display: flex; gap: 16px; }
+.stats-pair > .stats-card { flex: 1; }
+.stats-chart { display: flex; flex-direction: column; gap: 8px; }
+.stats-plot { position: relative; height: 150px; }
+.stats-grid { position: absolute; left: 0; right: 0; height: 1px; background: rgba(255, 255, 255, 0.07); }
+.stats-grid.base { background: rgba(255, 255, 255, 0.18); }
+.stats-grid span { position: absolute; left: 0; top: 0; transform: translateY(-50%); width: 32px; font-size: 11px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.stats-bars { position: absolute; inset: 0 0 0 36px; display: flex; }
+.stats-col { position: relative; flex: 1; height: 100%; display: flex; justify-content: center; align-items: flex-end; border-radius: 8px; }
+.stats-col:hover { background: rgba(255, 255, 255, 0.05); }
+.stats-bar { width: 40px; max-width: 70%; border-radius: 4px 4px 0 0; background: var(--accent); }
+.stats-tip { position: absolute; left: 50%; bottom: calc(100% - 8px); transform: translateX(-50%); padding: 8px 10px; border-radius: 10px; background: #1D1D21;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.4); white-space: nowrap; display: none; flex-direction: column; gap: 2px; z-index: 2; pointer-events: none; }
+.stats-tip span { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.stats-tip b { font-size: 14px; font-weight: 800; }
+.stats-col:hover .stats-tip { display: flex; }
+.stats-labels { padding-left: 36px; display: flex; }
+.stats-labels span { flex: 1; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.stats-labels span.today { font-weight: 800; color: var(--text); }
+.stats-list { display: flex; flex-direction: column; gap: 10px; }
+.stats-row { display: flex; align-items: center; gap: 12px; text-align: left; border-radius: 10px; padding: 2px; }
+.stats-row:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+.stats-rank { width: 18px; flex: none; text-align: right; font-size: 13px; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.stats-cover { width: 40px; height: 40px; flex: none; border-radius: 6px; overflow: hidden; background: var(--surface-3); display: grid; place-items: center; color: var(--text-3); }
+.stats-cover.round { border-radius: 50%; }
+.stats-cover img { width: 100%; height: 100%; object-fit: cover; }
+.stats-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.stats-line { display: flex; justify-content: space-between; gap: 8px; }
+.stats-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats-by { font-size: 12px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats-plays { font-size: 13px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats-meter { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.08); }
+.stats-meter span { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.stats-history { width: 330px; flex: none; align-self: stretch; padding-bottom: 0; max-height: calc(100vh - var(--titlebar) - var(--playerbar) - 120px); }
+.stats-history-list { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -8px; padding: 0 8px 12px; }
+.stats-history-list h3 { margin: 10px 0 4px; font-size: 13px; font-weight: 700; color: var(--text-2); }
+.stats-hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 4px; text-align: left; border-radius: 10px; }
+.stats-hrow:hover { background: rgba(255, 255, 255, 0.06); }
+.stats-hrow.now .stats-name, .stats-hrow.now .stats-when { color: var(--accent-text); }
+.stats-when { width: 64px; flex: none; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats-hrow.now .stats-when { font-weight: 700; }
+.stats-device { color: var(--text-3); flex: none; }
+@media (max-width: 1100px) {
+  .stats-layout { flex-direction: column; }
+  .stats-history { width: 100%; max-height: none; }
+  .stats-pair { flex-direction: column; }
+}
+
+/* ---- Mini player and music video: the same clean bar and accent text ---- */
+.mini-by { color: var(--accent-text); font-weight: 600; }
+.mini-title { font-weight: 700; }
+.vf-title .by { color: var(--accent-text); }

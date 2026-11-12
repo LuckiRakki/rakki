@@ -17,6 +17,8 @@ export type Route =
   | { name: 'videos' }
   | { name: 'liked' }
   | { name: 'settings'; section?: string }
+  /** History and Stats (2.0, pages/Stats.tsx). */
+  | { name: 'stats' }
   | { name: 'album'; id: string }
   | { name: 'artist'; id: string }
   | { name: 'playlist'; id: string }

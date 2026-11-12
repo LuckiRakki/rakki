@@ -7,7 +7,7 @@ import { useLayout, win } from '~/layout/layout';
 import { installUpdate, useUpdate } from '~/lib/updateCheck';
 import { go, useNav } from '~/nav';
 import { onShortcut } from '~/settings/shortcuts';
-import { ChevronLeft, ChevronRight, CircleArrowDown, Copy, Home as HomeIcon, LogOut, Minus, Refresh, Search as SearchIcon, Settings2, Shrink, Square, X } from '~/ui/icons';
+import { ChevronLeft, ChevronRight, CircleArrowDown, Copy, Home as HomeIcon, LogOut, Minus, Refresh, Search as SearchIcon, Settings2, Shrink, Square, Stats, X } from '~/ui/icons';
 import { Avatar } from '~/ui/Avatar';
 import { openMenu } from '~/ui/overlays';
 import { refreshAll, useRefreshing } from '~/lib/refresh';
@@ -50,6 +50,7 @@ function UserButton() {
         openMenu(
           e,
           [
+            { label: 'History and Stats', icon: Stats, run: () => go({ name: 'stats' }) },
             { label: 'Settings', icon: Settings2, run: () => go({ name: 'settings' }) },
             { label: 'Sign Out', icon: LogOut, run: () => useAuth.getState().signOut(), divider: true },
           ],

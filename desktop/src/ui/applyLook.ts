@@ -23,7 +23,9 @@ export function useApplyLook() {
     root.dataset.corners = app.corners;
     root.dataset.density = app.density;
     root.toggleAttribute('data-reduce-motion', app.reduceMotion);
-  }, [app.font, app.corners, app.density, app.reduceMotion]);
+    root.dataset.glass = app.glass;
+    root.dataset.pause = app.pause;
+  }, [app.font, app.corners, app.density, app.reduceMotion, app.glass, app.pause]);
 
   useEffect(() => document.documentElement.style.setProperty('--lyrics-size', String(lyricsSize)), [lyricsSize]);
 }

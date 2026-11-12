@@ -9,6 +9,7 @@ import { Albums, Artists, Genre, Genres, Mixes, Playlists, Songs } from '~/pages
 import { Radio, Videos } from '~/pages/RadioVideos';
 import { SearchPage } from '~/pages/Search';
 import { Settings } from '~/pages/Settings';
+import { StatsPage } from '~/pages/Stats';
 import { ThemeEditor } from '~/themes/ThemeEditor';
 
 export function Page() {
@@ -46,6 +47,8 @@ export function Page() {
       return <SearchPage term={route.term ?? ''} />;
     case 'settings':
       return <Settings />;
+    case 'stats':
+      return <StatsPage />;
     case 'editAudio':
       return <AudioEditor key={route.id} id={route.id} />;
     case 'makeLyrics':
