@@ -1,6 +1,5 @@
 // History and Stats (Rakki 2.0): your listening time, top artists, albums and songs, and every
 // song you played on any device. The Rakki plugin (0.5) records the plays, so every app shares them.
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native';
@@ -23,6 +22,7 @@ import {
   rangeDays,
   type StatsRange,
 } from '@/stats/format';
+import { useRakkiHistory, useRakkiStats } from '@/stats/queries';
 import { AwayImage as Image } from '@/ui/AwayImage';
 import { Ionicons } from '@/ui/Icon';
 import { Chip } from '@/ui/ItemRow';
@@ -69,15 +69,9 @@ function StatsTab({ bottom }: { bottom: number }) {
   const t = useTheme();
   const styles = useStyles();
   const client = useClient();
-  const userId = client?.session.userId;
   const [range, setRange] = useState<StatsRange>('7');
   const days = rangeDays(range);
-  const stats = useQuery({
-    queryKey: ['rakkiStats', userId, days],
-    enabled: !!client,
-    staleTime: 60_000,
-    queryFn: () => (client ? client.getRakkiStats(days) : Promise.resolve(null)),
-  });
+  const stats = useRakkiStats(client, days);
 
   const data = stats.data;
   return (
@@ -285,16 +279,8 @@ function HistoryTab({ bottom }: { bottom: number }) {
   const t = useTheme();
   const styles = useStyles();
   const client = useClient();
-  const userId = client?.session.userId;
   const [query, setQuery] = useState('');
-  const history = useInfiniteQuery({
-    queryKey: ['rakkiHistory', userId],
-    enabled: !!client,
-    staleTime: 30_000,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => (client ? client.getRakkiHistory(PAGE, pageParam) : Promise.resolve(null)),
-    getNextPageParam: (last) => (last && last.length === PAGE ? last[last.length - 1].At : undefined),
-  });
+  const history = useRakkiHistory(client, PAGE);
   const pages = history.data?.pages;
   const missing = pages?.[0] === null;
   const all = useMemo(() => (pages ?? []).flatMap((p) => p ?? []), [pages]);

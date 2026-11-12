@@ -1,11 +1,11 @@
 // History and Stats (Rakki 2.0): your listening time, top artists and albums, and every song you
 // played on any device, newest first. The Rakki plugin (0.5) records the plays, so the phone and the
 // desktop show the same history (phone: src/app/stats.tsx; shared helpers: src/stats/format.ts).
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import type { JellyfinClient, RakkiHistoryEntry, RakkiStats, RakkiTop } from '@/api/jellyfin';
 import { chartBars, compareLine, deviceKind, deviceLabel, groupByDay, hm, playTime, RANGES, rangeDays, type StatsRange } from '@/stats/format';
+import { useRakkiHistory, useRakkiStats } from '@/stats/queries';
 import { useAuth } from '~/auth/session';
 import { go } from '~/nav';
 import { usePlayer } from '~/player/store';
@@ -17,15 +17,9 @@ const PAGE = 60;
 
 export function StatsPage() {
   const client = useAuth((s) => s.client);
-  const userId = client?.session.userId;
   const [range, setRange] = useState<StatsRange>('7');
   const days = rangeDays(range);
-  const stats = useQuery({
-    queryKey: ['rakkiStats', userId, days],
-    enabled: !!client,
-    staleTime: 60_000,
-    queryFn: () => (client ? client.getRakkiStats(days) : Promise.resolve(null)),
-  });
+  const stats = useRakkiStats(client, days);
   const data = stats.data;
   return (
     <div className="page stats-page">
@@ -191,15 +185,7 @@ async function playOne(client: JellyfinClient | null, id: string) {
 const DEVICE_ICON: Record<ReturnType<typeof deviceKind>, Icon> = { phone: Smartphone, desktop: Monitor, web: Globe, other: Music };
 
 function HistoryColumn({ client }: { client: JellyfinClient | null }) {
-  const userId = client?.session.userId;
-  const history = useInfiniteQuery({
-    queryKey: ['rakkiHistory', userId],
-    enabled: !!client,
-    staleTime: 30_000,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => (client ? client.getRakkiHistory(PAGE, pageParam) : Promise.resolve(null)),
-    getNextPageParam: (last) => (last && last.length === PAGE ? last[last.length - 1].At : undefined),
-  });
+  const history = useRakkiHistory(client, PAGE);
   const all = useMemo(() => (history.data?.pages ?? []).flatMap((p) => p ?? []), [history.data]);
   const groups = useMemo(() => groupByDay(all), [all]);
   return (
