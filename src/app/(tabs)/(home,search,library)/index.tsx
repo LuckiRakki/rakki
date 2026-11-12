@@ -129,9 +129,11 @@ export default function HomeScreen() {
       refreshControl={
         <RefreshControl refreshing={refreshing} tintColor={t.colors.text} onRefresh={() => void queryClient.invalidateQueries()} />
       }>
+      {/* 2.0: the album colour washing down from the top, like the Kawarp desktop. */}
       <LinearGradient
-        colors={[withAlpha(t.colors.accent, 0.22), t.colors.bg]}
-        style={[StyleSheet.absoluteFill, { height: 320 }]}
+        colors={[withAlpha(t.colors.accent, 0.3), withAlpha(t.colors.accent, 0.1), t.colors.bg]}
+        locations={[0, 0.45, 1]}
+        style={[StyleSheet.absoluteFill, { height: 420 }]}
         pointerEvents="none"
       />
       <View style={styles.header}>
@@ -157,7 +159,7 @@ export default function HomeScreen() {
           hitSlop={8}
           accessibilityLabel="Shuffle your whole library"
           style={({ pressed }) => [styles.shuffle, pressed && { transform: [{ scale: 0.94 }] }]}>
-          <Ionicons name="shuffle" size={20} color="#000" />
+          <Ionicons name="shuffle" size={20} color={t.colors.onAccent} />
         </Pressable>
       </View>
 
@@ -221,7 +223,7 @@ const beat = (step: Step, i: number): Step => ({ ...step, delay: step.delay + i 
 function QuickSkeleton({ i }: { i: number }) {
   const t = useTheme();
   return (
-    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 56, borderRadius: t.radius.art, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 56, borderRadius: t.radius.art * 2, overflow: 'hidden', backgroundColor: t.colors.row }}>
       <Bone style={{ width: 56, height: 56 }} />
       <Line variant="body" size={t.size(13)} width={barWidth(i, 10)} style={{ flex: 1, marginHorizontal: 10 }} />
     </View>
@@ -276,8 +278,8 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     height: 56,
-    borderRadius: t.radius.art,
+    borderRadius: t.radius.art * 2,
     overflow: 'hidden',
-    backgroundColor: t.colors.surface2,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
 }));

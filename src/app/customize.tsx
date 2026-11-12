@@ -33,7 +33,7 @@ function set<K extends keyof Appearance>(key: K, value: Appearance[K]) {
   useAppearance.getState().set(key, value);
 }
 
-/** Settings → Customize: every look-and-feel choice, applied live. */
+/** Settings → Look (was Customize): every look-and-feel choice, applied live. Glass comes first in 2.0. */
 export default function CustomizeScreen() {
   const t = useTheme();
   const styles = useStyles();
@@ -44,7 +44,7 @@ export default function CustomizeScreen() {
   const themeName = usePhoneThemes((s) => s.imported.find((x) => x.id === s.active)?.meta.name ?? 'Rakki');
 
   const resetAll = () =>
-    Alert.alert('Reset everything?', 'All of Customize goes back to how Rakki looks out of the box.', [
+    Alert.alert('Reset Everything?', 'All of Look goes back to how Rakki looks out of the box.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Reset',
@@ -62,7 +62,7 @@ export default function CustomizeScreen() {
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
         </Pressable>
-        <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Customize</T>
+        <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Look</T>
         <Pressable hitSlop={10} onPress={resetAll}>
           <T variant="bodyStrong" color={t.colors.textSecondary}>
             Reset
@@ -74,6 +74,18 @@ export default function CustomizeScreen() {
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
         <Preview />
+
+        <T variant="label" style={styles.label}>
+          Glass
+        </T>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: t.space.sm }}>
+          {(['frost', 'clear', 'tint'] as const).map((g) => (
+            <GlassPick key={g} kind={g} selected={a.glass === g} onPress={() => set('glass', g)} />
+          ))}
+        </View>
+        <T variant="caption" style={styles.hint}>
+          Frost is smoked glass, Clear drops the panels for a dark fade, Tint colours the glass with the album.
+        </T>
 
         <T variant="label" style={styles.label}>
           Presets
@@ -192,7 +204,7 @@ export default function CustomizeScreen() {
                   {FONTS[k].note}
                 </T>
               </View>
-              {a.font === k ? <Ionicons name="checkmark" size={22} color={t.colors.accent} /> : null}
+              {a.font === k ? <Ionicons name="checkmark" size={22} color={t.colors.accentText} /> : null}
             </Pressable>
           ))}
           <Field label="Text size" value={`${Math.round(a.textScale * 100)}%`}>
@@ -286,6 +298,16 @@ export default function CustomizeScreen() {
             <Slider value={a.playerMotion} min={0} max={2.5} step={0.1} onChange={(v) => set('playerMotion', v)} />
           </Field>
           <Toggle label="Lyrics card" detail="Below the controls; scroll down to see it" value={a.lyricsCard} onChange={(v) => set('lyricsCard', v)} />
+          <Field label="Pause button">
+            <Segmented
+              value={a.pauseStyle}
+              onChange={(v) => set('pauseStyle', v)}
+              options={[
+                { value: 'circle', label: 'Accent Circle' },
+                { value: 'plain', label: 'Plain' },
+              ]}
+            />
+          </Field>
         </Section>
 
         <Pressable onPress={() => router.push('/lyrics-style')} style={({ pressed }) => [styles.card, styles.linkRow, { marginTop: t.space.xl }, pressed && { opacity: 0.7 }]}>
@@ -471,6 +493,39 @@ function Preview() {
         ) : null}
       </View>
     </View>
+  );
+}
+
+/** A small preview of one glass level: the album's colours with a control bar on them. */
+function GlassPick({ kind, selected, onPress }: { kind: Appearance['glass']; selected: boolean; onPress: () => void }) {
+  const t = useTheme();
+  const label = { frost: 'Frost', clear: 'Clear', tint: 'Tint' }[kind];
+  const deep = '#0E2E38';
+  const bar =
+    kind === 'frost'
+      ? { backgroundColor: 'rgba(18,18,22,0.42)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: StyleSheet.hairlineWidth }
+      : kind === 'tint'
+        ? { backgroundColor: 'rgba(14,46,56,0.62)', borderColor: 'rgba(255,255,255,0.16)', borderWidth: StyleSheet.hairlineWidth }
+        : null;
+  return (
+    <Pressable onPress={() => { tick(); onPress(); }} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={`Glass: ${label}`} style={{ flex: 1, gap: 8 }}>
+      <View style={{ height: 76, borderRadius: 14, overflow: 'hidden', borderWidth: selected ? 2 : StyleSheet.hairlineWidth, borderColor: selected ? '#FFFFFF' : 'rgba(255,255,255,0.12)' }}>
+        <LinearGradient colors={[SAMPLE_ART, deep, '#F2A65A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        {kind === 'clear' ? <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']} style={[StyleSheet.absoluteFill, { top: '40%' }]} /> : null}
+        <View style={[{ position: 'absolute', left: 8, right: 8, bottom: 8, height: 26, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, overflow: 'hidden' }, bar]}>
+          {kind === 'clear' ? null : <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />}
+          <Ionicons name="play-skip-back" size={13} color="#fff" />
+          <Ionicons name="pause" size={15} color="#fff" />
+          <Ionicons name="play-skip-forward" size={13} color="#fff" />
+        </View>
+        {selected ? (
+          <View style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="checkmark" size={14} color={t.colors.bg} />
+          </View>
+        ) : null}
+      </View>
+      <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(14) }}>{label}</T>
+    </Pressable>
   );
 }
 

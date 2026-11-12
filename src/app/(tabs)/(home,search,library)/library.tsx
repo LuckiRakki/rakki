@@ -1,8 +1,9 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@/ui/Icon';
 import { router } from 'expo-router';
 import { AwayImage as Image } from '@/ui/AwayImage';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem, GenreCount } from '@/api/jellyfin';
@@ -19,6 +20,7 @@ import {
 } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { playMusicVideo } from '@/video/musicVideos';
+import { withAlpha } from '@/lib/color';
 import { songCount } from '@/lib/format';
 import { kindLine } from '@/lib/items';
 import { mixArtists } from '@/lib/mixes';
@@ -218,6 +220,12 @@ export default function LibraryScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+      {/* 2.0: a soft album-colour wash behind the header (the lists scroll over it). */}
+      <LinearGradient
+        colors={[withAlpha(t.colors.accent, 0.2), withAlpha(t.colors.accent, 0)]}
+        style={[StyleSheet.absoluteFill, { height: 260 }]}
+        pointerEvents="none"
+      />
       {tab === 'albums' ? <Albums header={header} sort={sort} layout={layout} filter={filter} /> : null}
       {tab === 'songs' ? <Songs header={header} sort={sort} layout={layout} filter={filter} /> : null}
       {tab === 'artists' ? <Artists header={header} sort={sort} layout={layout} filter={filter} /> : null}
