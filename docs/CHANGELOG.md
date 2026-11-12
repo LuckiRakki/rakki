@@ -6,6 +6,10 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 2.1.2 (2026-11-12)
+- **The tab bar keeps its glass with Clear.** Since the tabs float over the pages, Clear glass left
+  them with no panel and hard to see; the tab bar now keeps its smoked panel, like the mini player.
+
 ## 2.1.1, native build (2026-11-12)
 A new `.ipa` with the same runtime (2.0.0): the over-the-air part reaches the 2.0.0 install too,
 and installing the new one adds the native visualizer fix below.

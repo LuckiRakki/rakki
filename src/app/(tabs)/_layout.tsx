@@ -29,7 +29,8 @@ function PillTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   return (
     <View pointerEvents="box-none" style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: Math.max(insets.bottom - 8, 8) }}>
-      <Glass radius={32} style={{ flexDirection: 'row', padding: 4, gap: 4 }}>
+      {/* Solid: keeps its panel with Clear glass too, so the icons read over the pages underneath. */}
+      <Glass radius={32} solid style={{ flexDirection: 'row', padding: 4, gap: 4 }}>
         {state.routes.map((route, i) => {
           const { options } = descriptors[route.key];
           const focused = state.index === i;
