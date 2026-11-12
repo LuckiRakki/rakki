@@ -55,6 +55,11 @@ namespace Jellyfin.Plugin.Rakki.HistoryApi
         public int Songs { get; set; }
         public int Artists { get; set; }
         public DateTime? Since { get; set; }
+        /// <summary>Minutes in the same number of days just before (0 for all time).</summary>
+        public int PreviousMinutes { get; set; }
+        /// <summary>Days in a row with a play, up to today (or yesterday, before today's first play).</summary>
+        public int Streak { get; set; }
+        public int BestStreak { get; set; }
         public List<DayEntry> PerDay { get; set; } = new();
         public List<TopEntry> TopArtists { get; set; } = new();
         public List<TopEntry> TopAlbums { get; set; } = new();
@@ -121,7 +126,8 @@ namespace Jellyfin.Plugin.Rakki.HistoryApi
             var offset = TimeSpan.FromMinutes(Math.Clamp(tz, -14 * 60, 14 * 60));
             var now = DateTime.UtcNow;
             var from = days == 0 ? DateTime.MinValue : (now + offset).Date.AddDays(1 - days) - offset;
-            var plays = _history.For(user).Where(p => p.At >= from).ToList();
+            var all = _history.For(user);
+            var plays = all.Where(p => p.At >= from).ToList();
 
             var songs = new Dictionary<Guid, Audio?>();
             Audio? Song(Guid id)
@@ -138,6 +144,30 @@ namespace Jellyfin.Plugin.Rakki.HistoryApi
                 Songs = plays.Select(p => p.Id).Distinct().Count(),
                 Since = plays.Count > 0 ? DateTime.SpecifyKind(plays[0].At, DateTimeKind.Utc) : null,
             };
+
+            if (days > 0)
+            {
+                var before = from.AddDays(-days);
+                result.PreviousMinutes = (int)Math.Round(all.Where(p => p.At >= before && p.At < from).Sum(p => p.Sec) / 60.0);
+            }
+
+            // Streaks, over everything kept.
+            var played = all.Select(p => (p.At + offset).Date).ToHashSet();
+            var today = (now + offset).Date;
+            var day = played.Contains(today) ? today : today.AddDays(-1);
+            while (played.Contains(day))
+            {
+                result.Streak++;
+                day = day.AddDays(-1);
+            }
+            var run = 0;
+            DateTime? prev = null;
+            foreach (var d in played.OrderBy(d => d))
+            {
+                run = prev is DateTime p && (d - p).TotalDays == 1 ? run + 1 : 1;
+                result.BestStreak = Math.Max(result.BestStreak, run);
+                prev = d;
+            }
 
             // Minutes per day, every day in the range (all time: from the first play), in the caller's time zone.
             var perDay = plays.GroupBy(p => (p.At + offset).Date).ToDictionary(g => g.Key, g => g.Sum(p => p.Sec));

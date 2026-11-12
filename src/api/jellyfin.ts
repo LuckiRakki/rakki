@@ -82,6 +82,47 @@ export interface BaseItem {
   }[];
 }
 
+/** One play, from the Rakki plugin's History (0.5). */
+export interface RakkiHistoryEntry {
+  Id: string;
+  Name: string;
+  Artist: string;
+  Album: string;
+  AlbumId?: string | null;
+  /** When it stopped, ISO UTC. */
+  At: string;
+  Seconds: number;
+  Device: string;
+  App: string;
+}
+
+export interface RakkiTop {
+  Id?: string | null;
+  Name: string;
+  Artist: string;
+  Plays: number;
+  Minutes: number;
+}
+
+/** The Rakki plugin's Stats (0.5) for a range of days. */
+export interface RakkiStats {
+  Days: number;
+  Plays: number;
+  Minutes: number;
+  Songs: number;
+  Artists: number;
+  Since?: string | null;
+  /** Minutes in the same number of days just before (0 for all time). */
+  PreviousMinutes: number;
+  /** Days in a row with a play, up to today. */
+  Streak: number;
+  BestStreak: number;
+  PerDay: { Date: string; Minutes: number }[];
+  TopArtists: RakkiTop[];
+  TopAlbums: RakkiTop[];
+  TopSongs: RakkiTop[];
+}
+
 export type SearchKind = 'songs' | 'albums' | 'artists' | 'playlists';
 
 /** A song in a playlist: its id, and the entry (the same song can be in a playlist twice). */
@@ -517,6 +558,34 @@ export class JellyfinClient {
       headers: { 'Content-Type': 'text/plain' },
       body: text,
     });
+  }
+
+  /**
+   * History and Stats (plugin 0.5): your plays from every app, newest first. Null when the server's
+   * plugin is older (404), so the screens can say what's needed.
+   */
+  async getRakkiHistory(limit = 50, before?: string): Promise<RakkiHistoryEntry[] | null> {
+    try {
+      return await this.get<RakkiHistoryEntry[]>('/Rakki/History', { limit, before });
+    } catch (e) {
+      if (e instanceof JellyfinError && e.status === 404) return null;
+      throw e;
+    }
+  }
+
+  /** Stats for the last `days` days (0 = all time), days counted in this device's time zone. Null without plugin 0.5. */
+  async getRakkiStats(days: number): Promise<RakkiStats | null> {
+    try {
+      return await this.get<RakkiStats>('/Rakki/Stats', { days, tz: -new Date().getTimezoneOffset() });
+    } catch (e) {
+      if (e instanceof JellyfinError && e.status === 404) return null;
+      throw e;
+    }
+  }
+
+  /** An item's primary image by id (History and Stats rows, which only know the id). */
+  primaryImageUrl(id: string, size = 120): string {
+    return `${this.session.serverUrl}/Items/${id}/Images/Primary${query({ fillWidth: size, fillHeight: size, quality: 90 })}`;
   }
 
   /** The Rakki companion plugin, when the server has it (404 when it doesn't). */
