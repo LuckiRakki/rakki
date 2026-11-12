@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import type { BaseItem } from '@/api/jellyfin';
 import { useInAnyPlaylist } from '@/library/playlistCache';
 import { artColor } from '@/lib/blurhash';
+import { formatDuration as formatTime, ticksToSeconds } from '@/lib/format';
 import { displayName, isMix, mixArtists } from '@/lib/mixes';
 import { useAuth } from '~/auth/session';
 import { playItem, setLiked } from '~/library/actions';
@@ -150,15 +151,8 @@ export function Shelf({ title, items, onShowAll }: { title: string; items?: Base
   );
 }
 
-export function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
-  const s = Math.floor(seconds % 60);
-  const m = Math.floor(seconds / 60) % 60;
-  const h = Math.floor(seconds / 3600);
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
-}
-
-export const ticksToSeconds = (t?: number) => (t ? t / 10_000_000 : 0);
+/** "3:07", "1:02:05" (the phone app's formatDuration), and ticks to seconds, for the pages. */
+export { formatTime, ticksToSeconds };
 
 export function totalLength(tracks: BaseItem[]): string {
   const s = tracks.reduce((n, t) => n + ticksToSeconds(t.RunTimeTicks), 0);
