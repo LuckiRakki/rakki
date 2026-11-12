@@ -15,6 +15,7 @@ import { useInBackground } from '@/lib/appActive';
 import { artColor } from '@/lib/blurhash';
 import { usePlayer } from '@/player/store';
 import { FlowLayers } from '@/spicy/Backdrop';
+import { FadeColor, SONG_FADE_MS } from '@/ui/FadeColor';
 import { useTheme } from '@/ui/theme';
 
 /** Seconds of flow so far, shared by every copy. Moved by useBackdropClock at the root. */
@@ -65,21 +66,21 @@ export function AppBackdrop({ anchor = 'top' }: { anchor?: 'top' | 'bottom' }) {
   const uri = track ? (localArtUri(track.AlbumId ?? track.Id) ?? client?.imageUrl(track, kind === 'flow' ? 300 : 600)) : undefined;
   const base = track ? t.tint(artColor(client?.blurhash(track))) : t.colors.bg;
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden', backgroundColor: base }]}>
+    <FadeColor color={base} pointerEvents="none" style={{ overflow: 'hidden' }}>
       {/* In the background only the colour stays: the covers and the blur keep big buffers. */}
       {uri && !away ? (
         <View style={{ position: 'absolute', left: 0, right: 0, height, [anchor]: 0 }}>
           {kind === 'flow' ? (
             <ScreenFlow uri={uri} />
           ) : (
-            <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={60} cachePolicy="memory-disk" transition={600} />
+            <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={60} cachePolicy="memory-disk" transition={SONG_FADE_MS} />
           )}
         </View>
       ) : null}
       {kind === 'flow' && uri && !away ? <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} /> : null}
       {/* Dims bright covers so white text reads on any of them. */}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: kind === 'flow' ? 'rgba(0,0,0,0.24)' : 'rgba(0,0,0,0.45)' }]} />
-    </View>
+    </FadeColor>
   );
 }
 
@@ -117,5 +118,5 @@ function ScreenFlow({ uri }: { uri: string }) {
       if (showing.get()) clock.set(now);
     },
   );
-  return <FlowLayers uri={uri} clock={clock} fade={600} />;
+  return <FlowLayers uri={uri} clock={clock} fade={SONG_FADE_MS} />;
 }

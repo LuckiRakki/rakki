@@ -4,12 +4,14 @@ import { useAlbumArtists } from '@/api/queries';
 import { useLibraryView } from '@/library/view';
 import { ItemTile } from '@/ui/AlbumTile';
 import { ItemRow } from '@/ui/ItemRow';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { FadeRow, GridSkeleton, Hold, ItemRowsSkeleton } from '@/ui/Reveal';
 import { type ListProps, NoMatches, useListReveal, usePullToRefresh, useTileSize } from '@/library/tabs/shared';
 
 export function Artists({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const artists = useAlbumArtists(sort.sortBy, sort.sortOrder, seed, filter);
   const refresh = usePullToRefresh(sort, artists.refetch, artists.isPlaceholderData);
@@ -25,7 +27,7 @@ export function Artists({ header, sort, layout, filter }: ListProps) {
       keyExtractor={(a) => a.Id}
       numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
-      contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock, gap: grid ? t.space.lg : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={

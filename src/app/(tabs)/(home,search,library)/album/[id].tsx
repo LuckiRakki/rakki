@@ -24,6 +24,7 @@ import { openArtist } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { TrackRow } from '@/ui/TrackRow';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { useDockSpace } from '@/ui/dock';
 
 const ART = 232;
 
@@ -32,6 +33,7 @@ const holdFor = (count?: number) => Math.min(Math.max(count || 10, 1), 12);
 
 export default function AlbumScreen() {
   const t = useTheme();
+  const dock = useDockSpace();
   const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -176,7 +178,7 @@ export default function AlbumScreen() {
         data={body.show === 'content' ? list : []}
         keyExtractor={(t) => t.Id}
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         renderItem={({ item, index }) => {
           const disc = item.ParentIndexNumber ?? 1;
           const newDisc = multiDisc && (index === 0 || (list[index - 1].ParentIndexNumber ?? 1) !== disc);

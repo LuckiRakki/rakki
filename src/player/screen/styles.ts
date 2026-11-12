@@ -10,6 +10,15 @@ export function tap(fn: () => void) {
   };
 }
 
+/**
+ * The top padding inside the player's sheet. iOS still reports the status bar's height there,
+ * though the sheet starts below it, so adding it pushed the "Playing from" line down onto the
+ * cover. On a notched phone the sheet's own top is enough; `gap` is the space under it.
+ */
+export function sheetTop(insetTop: number, gap: number) {
+  return insetTop > 20 ? gap : insetTop + gap;
+}
+
 export const usePlayerStyles = makeStyles((t) => ({
   root: { flex: 1, backgroundColor: t.colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', height: 44 },

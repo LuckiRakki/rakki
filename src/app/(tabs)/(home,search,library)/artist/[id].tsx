@@ -36,6 +36,7 @@ import { Bone, gaveUp, Line, Reveal, ShelfSkeleton, TrackRowsSkeleton, useReveal
 import { Shelf, SectionTitle } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { useDockSpace } from '@/ui/dock';
 import { TrackRow } from '@/ui/TrackRow';
 import { VideoShelf } from '@/ui/VideoShelf';
 import { videosByArtist } from '@/video/musicVideos';
@@ -44,6 +45,7 @@ import { useInBackground } from '@/lib/appActive';
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
+  const dock = useDockSpace();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const away = useInBackground();
@@ -147,7 +149,7 @@ export default function ArtistScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.page }}>
-      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: t.space.xxl }}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: t.space.xxl + dock }}>
         <View style={[styles.hero, { backgroundColor: t.tint(tint) }]}>
           {cover && !away ? (
             <Animated.View style={[StyleHero, heroMotion]}>

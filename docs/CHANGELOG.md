@@ -6,6 +6,23 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
+## 2.1.1 (2026-11-12)
+- **Album colours fade.** A new song's colour and blurred cover now ease in over 0.9 s, as on the
+  desktop, instead of jumping: behind the player (Moving, Gradient and Blurred backgrounds), the
+  lyrics, Kawarp, music videos and the player for another device.
+- **"Playing from" sits higher.** The player's top line no longer sits low against the cover: the
+  sheet's own top is the gap now (iOS still counted the status bar in there).
+- **The mini player and tabs float.** No band behind them any more: pages scroll on underneath
+  the two glass cards, and every list ends with room so its last row still scrolls clear.
+- **Lyrics crash work.** The 11-09 performance logs had two crashes on the lyrics screen, both
+  iOS stopping Rakki on corrupted memory (one while drawing the lyrics, one while decoding the
+  blurred cover). The lyrics backdrop now reuses the player's small blurred cover (no new image
+  decode when the lyrics open, less memory), and the lyrics view no longer makes a throwaway
+  picture on every render. In the native code (next native build): each song's visualizer tap
+  gets its own analysis buffers; they were shared, and two songs' taps running at once could
+  write past the end of one, the kind of bug that corrupts memory and crashes later elsewhere.
+  Native builds now keep their debug symbols so the next crash report can be read by name.
+
 ## 2.1.0 (2026-11-12)
 - **Kawarp on the phone.** Settings → Look → Theme → Kawarp: every screen and the tab bar sit over
   the playing cover flowing like liquid, as on the desktop. Cards turn see-through, and menus and

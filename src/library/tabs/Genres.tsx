@@ -7,6 +7,7 @@ import { Artwork } from '@/ui/Artwork';
 import { GenreTile } from '@/ui/GenreTile';
 import { openGenre } from '@/ui/nav';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { FadeRow, GridSkeleton, Hold, ItemRowsSkeleton } from '@/ui/Reveal';
 import { type ListProps, useListReveal, usePullToRefresh } from '@/library/tabs/shared';
@@ -14,6 +15,7 @@ import { type ListProps, useListReveal, usePullToRefresh } from '@/library/tabs/
 /** Every genre in the library (offline: the downloaded albums' genres). */
 export function Genres({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const genres = useGenreCounts();
   const refresh = usePullToRefresh(sort, genres.refetch);
@@ -37,7 +39,7 @@ export function Genres({ header, sort, layout, filter }: ListProps) {
       keyExtractor={(g) => g.name}
       numColumns={grid ? 2 : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
-      contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? gap : 0 }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock, gap: grid ? gap : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={

@@ -5,6 +5,7 @@ import { mixArtists } from '@/lib/mixes';
 import { ItemTile } from '@/ui/AlbumTile';
 import { ItemRow } from '@/ui/ItemRow';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { FadeRow, GridSkeleton, Hold, ItemRowsSkeleton } from '@/ui/Reveal';
 import { type ListProps, NoMatches, useListReveal, usePullToRefresh, useTileSize } from '@/library/tabs/shared';
@@ -12,6 +13,7 @@ import { type ListProps, NoMatches, useListReveal, usePullToRefresh, useTileSize
 /** Daily Mixes: the playlists the Rakki plugin makes every night (lib/mixes.ts). */
 export function Mixes({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const mixes = useDailyMixes();
   const refresh = usePullToRefresh(sort, mixes.refetch);
   const { gap, tile, columns } = useTileSize();
@@ -38,7 +40,7 @@ export function Mixes({ header, sort, layout, filter }: ListProps) {
         keyExtractor={(p) => p.Id}
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
-        contentContainerStyle={{ paddingBottom: t.space.xl, gap: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl + dock, gap: t.space.xl }}
         refreshControl={refresh}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
@@ -56,7 +58,7 @@ export function Mixes({ header, sort, layout, filter }: ListProps) {
       key="mixes-list"
       data={data}
       keyExtractor={(p) => p.Id}
-      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}

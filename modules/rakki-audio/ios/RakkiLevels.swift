@@ -11,29 +11,15 @@ import QuartzCore
 /// audio plays on the receiver) have no levels: `read` returns nil and the visualizer falls
 /// back to its simulated beat.
 ///
-/// Threads: `feed` runs on the audio render thread and never allocates; the main thread
-/// registers taps and says which one is current; `read` runs on the JS thread. The state they
-/// share is behind an unfair lock held for a few dozen float copies.
+/// Threads: each tap has its own LevelAnalyzer (ring of samples, FFT buffers), used only by that
+/// tap's audio thread and never allocating there. Until 2.x every tap shared one: two songs'
+/// taps running at once (the next song getting ready for a gapless change) could move the ring
+/// between two reads and write past the end of the FFT buffer: memory corruption of the kind
+/// that crashes later somewhere else (a suspect for the malloc traps in 2026-11 logs). The main
+/// thread registers taps and says which one is current; `read` runs on the JS thread. The
+/// state they share is behind an unfair lock held for a few dozen float copies.
 final class RakkiLevels {
-  private static let fftLog2: vDSP_Length = 11
-  private static let fftSize = 2048
-  private static let half = fftSize / 2
   static let bandCount = 32
-
-  // Audio thread only.
-  private let fftSetup: FFTSetup
-  private let window = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.fftSize)
-  private let ring = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.fftSize)
-  private var ringPos = 0
-  private let frame = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.fftSize)
-  private let real = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.half)
-  private let imag = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.half)
-  private let power = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.half)
-  private let bandLo = UnsafeMutablePointer<Int>.allocate(capacity: RakkiLevels.bandCount)
-  private let bandHi = UnsafeMutablePointer<Int>.allocate(capacity: RakkiLevels.bandCount)
-  private let bandTilt = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.bandCount)
-  private let fresh = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.bandCount)
-  private var bandRate: Double = 0
 
   // Shared, behind `lock`.
   private let lock = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
@@ -52,27 +38,14 @@ final class RakkiLevels {
   private var peak: Float = 0
 
   init() {
-    fftSetup = vDSP_create_fftsetup(RakkiLevels.fftLog2, FFTRadix(kFFTRadix2))!
-    vDSP_hann_window(window, vDSP_Length(RakkiLevels.fftSize), Int32(vDSP_HANN_DENORM))
-    ring.initialize(repeating: 0, count: RakkiLevels.fftSize)
-    frame.initialize(repeating: 0, count: RakkiLevels.fftSize)
-    real.initialize(repeating: 0, count: RakkiLevels.half)
-    imag.initialize(repeating: 0, count: RakkiLevels.half)
-    power.initialize(repeating: 0, count: RakkiLevels.half)
-    bandLo.initialize(repeating: 1, count: RakkiLevels.bandCount)
-    bandHi.initialize(repeating: 2, count: RakkiLevels.bandCount)
-    bandTilt.initialize(repeating: 0, count: RakkiLevels.bandCount)
-    fresh.initialize(repeating: 0, count: RakkiLevels.bandCount)
     target.initialize(repeating: 0, count: RakkiLevels.bandCount)
     shown.initialize(repeating: 0, count: RakkiLevels.bandCount)
     lock.initialize(to: os_unfair_lock())
   }
 
   deinit {
-    vDSP_destroy_fftsetup(fftSetup)
-    for p in [window, ring, frame, real, imag, power, bandTilt, fresh, target, shown] { p.deallocate() }
-    bandLo.deallocate()
-    bandHi.deallocate()
+    target.deallocate()
+    shown.deallocate()
     lock.deallocate()
   }
 
@@ -164,89 +137,13 @@ final class RakkiLevels {
 
   // MARK: - Audio thread
 
-  fileprivate func feed(_ token: Int, _ list: UnsafeMutablePointer<AudioBufferList>, frames: Int, format: TapFormat) {
-    let buffers = UnsafeMutableAudioBufferListPointer(list)
-    guard frames > 0, buffers.count > 0, let first = buffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
-    let mask = RakkiLevels.fftSize - 1
-    if format.interleaved {
-      let channels = max(1, format.channels)
-      let n = min(frames, Int(buffers[0].mDataByteSize) / (4 * channels))
-      let scale = 1 / Float(channels)
-      for i in 0..<n {
-        var sum: Float = 0
-        for c in 0..<channels { sum += first[i * channels + c] }
-        ring[ringPos] = sum * scale
-        ringPos = (ringPos + 1) & mask
-      }
-    } else {
-      let n = min(frames, Int(buffers[0].mDataByteSize) / 4)
-      if buffers.count > 1, let second = buffers[1].mData?.assumingMemoryBound(to: Float.self),
-         Int(buffers[1].mDataByteSize) / 4 >= n {
-        for i in 0..<n {
-          ring[ringPos] = (first[i] + second[i]) * 0.5
-          ringPos = (ringPos + 1) & mask
-        }
-      } else {
-        for i in 0..<n {
-          ring[ringPos] = first[i]
-          ringPos = (ringPos + 1) & mask
-        }
-      }
-    }
-    analyze(token, sampleRate: format.sampleRate)
-  }
-
-  private func analyze(_ token: Int, sampleRate: Double) {
-    let size = RakkiLevels.fftSize
-    let half = RakkiLevels.half
-    // The newest `size` samples, oldest first, through the Hann window.
-    let tail = size - ringPos
-    vDSP_vmul(ring + ringPos, 1, window, 1, frame, 1, vDSP_Length(tail))
-    if ringPos > 0 {
-      vDSP_vmul(ring, 1, window + tail, 1, frame + tail, 1, vDSP_Length(ringPos))
-    }
-    var split = DSPSplitComplex(realp: real, imagp: imag)
-    frame.withMemoryRebound(to: DSPComplex.self, capacity: half) { pairs in
-      vDSP_ctoz(pairs, 2, &split, 1, vDSP_Length(half))
-    }
-    vDSP_fft_zrip(fftSetup, &split, 1, RakkiLevels.fftLog2, FFTDirection(FFT_FORWARD))
-    imag[0] = 0 // zrip packs the Nyquist bin here; not used
-    vDSP_zvmags(&split, 1, power, 1, vDSP_Length(half))
-
-    if sampleRate != bandRate { layoutBands(sampleRate) }
-    // |X| of a full-scale sine: n/2 (FFT) × 0.5 (Hann) × 2 (zrip's scaling).
-    let fullScale = Float(size) * 0.5
-    for b in 0..<RakkiLevels.bandCount {
-      var sum: Float = 0
-      for k in bandLo[b]..<bandHi[b] { sum += power[k] }
-      let amplitude = sqrtf(sum / Float(bandHi[b] - bandLo[b])) / fullScale
-      let db = 20 * log10f(amplitude + 1e-7) + bandTilt[b]
-      fresh[b] = min(1, max(0, (db + 62) / 52)) // -62 dB → 0, -10 dB → 1
-    }
+  /// A tap's newest band levels (its own LevelAnalyzer worked them out).
+  fileprivate func publish(_ token: Int, _ fresh: UnsafePointer<Float>) {
     os_unfair_lock_lock(lock)
     target.update(from: fresh, count: RakkiLevels.bandCount)
     updatedAt = CACurrentMediaTime()
     sourceToken = token
     os_unfair_lock_unlock(lock)
-  }
-
-  /// 32 bands spaced evenly in pitch from 40 Hz to 16 kHz, each at least one FFT bin wide.
-  /// Highs get a lift of 3 dB per octave above 1 kHz (music has less energy up there).
-  private func layoutBands(_ rate: Double) {
-    bandRate = rate
-    let low = 40.0
-    let high = min(16000, rate * 0.45)
-    let binHz = rate / Double(RakkiLevels.fftSize)
-    let count = RakkiLevels.bandCount
-    for b in 0..<count {
-      let f0 = low * pow(high / low, Double(b) / Double(count))
-      let f1 = low * pow(high / low, Double(b + 1) / Double(count))
-      let lo = min(RakkiLevels.half - 1, max(1, Int(f0 / binHz)))
-      let hi = min(RakkiLevels.half, max(lo + 1, Int(f1 / binHz)))
-      bandLo[b] = lo
-      bandHi[b] = hi
-      bandTilt[b] = Float(3 * log2((f0 * f1).squareRoot() / 1000))
-    }
   }
 
   // MARK: - JS thread
@@ -299,6 +196,137 @@ fileprivate struct TapFormat {
   var isFloat = false
 }
 
+/// One tap's analysis: the newest 2048 samples, an FFT over them, 32 band levels. Used only on
+/// that tap's audio thread (AVFoundation calls a tap's process callback one at a time), and
+/// nothing is allocated after init.
+fileprivate final class LevelAnalyzer {
+  private static let fftLog2: vDSP_Length = 11
+  private static let fftSize = 2048
+  private static let half = fftSize / 2
+
+  private let fftSetup: FFTSetup
+  private let window = UnsafeMutablePointer<Float>.allocate(capacity: LevelAnalyzer.fftSize)
+  private let ring = UnsafeMutablePointer<Float>.allocate(capacity: LevelAnalyzer.fftSize)
+  private var ringPos = 0
+  private let frame = UnsafeMutablePointer<Float>.allocate(capacity: LevelAnalyzer.fftSize)
+  private let real = UnsafeMutablePointer<Float>.allocate(capacity: LevelAnalyzer.half)
+  private let imag = UnsafeMutablePointer<Float>.allocate(capacity: LevelAnalyzer.half)
+  private let power = UnsafeMutablePointer<Float>.allocate(capacity: LevelAnalyzer.half)
+  private let bandLo = UnsafeMutablePointer<Int>.allocate(capacity: RakkiLevels.bandCount)
+  private let bandHi = UnsafeMutablePointer<Int>.allocate(capacity: RakkiLevels.bandCount)
+  private let bandTilt = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.bandCount)
+  /// The newest levels (0-1, low to high).
+  let fresh = UnsafeMutablePointer<Float>.allocate(capacity: RakkiLevels.bandCount)
+  private var bandRate: Double = 0
+
+  init?() {
+    guard let setup = vDSP_create_fftsetup(LevelAnalyzer.fftLog2, FFTRadix(kFFTRadix2)) else { return nil }
+    fftSetup = setup
+    vDSP_hann_window(window, vDSP_Length(LevelAnalyzer.fftSize), Int32(vDSP_HANN_DENORM))
+    ring.initialize(repeating: 0, count: LevelAnalyzer.fftSize)
+    frame.initialize(repeating: 0, count: LevelAnalyzer.fftSize)
+    real.initialize(repeating: 0, count: LevelAnalyzer.half)
+    imag.initialize(repeating: 0, count: LevelAnalyzer.half)
+    power.initialize(repeating: 0, count: LevelAnalyzer.half)
+    bandLo.initialize(repeating: 1, count: RakkiLevels.bandCount)
+    bandHi.initialize(repeating: 2, count: RakkiLevels.bandCount)
+    bandTilt.initialize(repeating: 0, count: RakkiLevels.bandCount)
+    fresh.initialize(repeating: 0, count: RakkiLevels.bandCount)
+  }
+
+  deinit {
+    vDSP_destroy_fftsetup(fftSetup)
+    for p in [window, ring, frame, real, imag, power, bandTilt, fresh] { p.deallocate() }
+    bandLo.deallocate()
+    bandHi.deallocate()
+  }
+
+  /// Adds the buffer's samples (mixed to mono) and works out `fresh`. False if there were none.
+  func feed(_ list: UnsafeMutablePointer<AudioBufferList>, frames: Int, format: TapFormat) -> Bool {
+    let buffers = UnsafeMutableAudioBufferListPointer(list)
+    guard frames > 0, buffers.count > 0, let first = buffers[0].mData?.assumingMemoryBound(to: Float.self) else { return false }
+    let mask = LevelAnalyzer.fftSize - 1
+    var pos = ringPos
+    if format.interleaved {
+      let channels = max(1, format.channels)
+      let n = min(frames, Int(buffers[0].mDataByteSize) / (4 * channels))
+      let scale = 1 / Float(channels)
+      for i in 0..<n {
+        var sum: Float = 0
+        for c in 0..<channels { sum += first[i * channels + c] }
+        ring[pos] = sum * scale
+        pos = (pos + 1) & mask
+      }
+    } else {
+      let n = min(frames, Int(buffers[0].mDataByteSize) / 4)
+      if buffers.count > 1, let second = buffers[1].mData?.assumingMemoryBound(to: Float.self),
+         Int(buffers[1].mDataByteSize) / 4 >= n {
+        for i in 0..<n {
+          ring[pos] = (first[i] + second[i]) * 0.5
+          pos = (pos + 1) & mask
+        }
+      } else {
+        for i in 0..<n {
+          ring[pos] = first[i]
+          pos = (pos + 1) & mask
+        }
+      }
+    }
+    ringPos = pos
+    analyze(pos, sampleRate: format.sampleRate)
+    return true
+  }
+
+  /// `pos` is read once, so the two halves of the window always add up to exactly fftSize.
+  private func analyze(_ pos: Int, sampleRate: Double) {
+    let size = LevelAnalyzer.fftSize
+    let half = LevelAnalyzer.half
+    // The newest `size` samples, oldest first, through the Hann window.
+    let tail = size - pos
+    vDSP_vmul(ring + pos, 1, window, 1, frame, 1, vDSP_Length(tail))
+    if pos > 0 {
+      vDSP_vmul(ring, 1, window + tail, 1, frame + tail, 1, vDSP_Length(pos))
+    }
+    var split = DSPSplitComplex(realp: real, imagp: imag)
+    frame.withMemoryRebound(to: DSPComplex.self, capacity: half) { pairs in
+      vDSP_ctoz(pairs, 2, &split, 1, vDSP_Length(half))
+    }
+    vDSP_fft_zrip(fftSetup, &split, 1, LevelAnalyzer.fftLog2, FFTDirection(FFT_FORWARD))
+    imag[0] = 0 // zrip packs the Nyquist bin here; not used
+    vDSP_zvmags(&split, 1, power, 1, vDSP_Length(half))
+
+    if sampleRate != bandRate { layoutBands(sampleRate) }
+    // |X| of a full-scale sine: n/2 (FFT) × 0.5 (Hann) × 2 (zrip's scaling).
+    let fullScale = Float(size) * 0.5
+    for b in 0..<RakkiLevels.bandCount {
+      var sum: Float = 0
+      for k in bandLo[b]..<bandHi[b] { sum += power[k] }
+      let amplitude = sqrtf(sum / Float(bandHi[b] - bandLo[b])) / fullScale
+      let db = 20 * log10f(amplitude + 1e-7) + bandTilt[b]
+      fresh[b] = min(1, max(0, (db + 62) / 52)) // -62 dB → 0, -10 dB → 1
+    }
+  }
+
+  /// 32 bands spaced evenly in pitch from 40 Hz to 16 kHz, each at least one FFT bin wide.
+  /// Highs get a lift of 3 dB per octave above 1 kHz (music has less energy up there).
+  private func layoutBands(_ rate: Double) {
+    bandRate = rate
+    let low = 40.0
+    let high = min(16000, rate * 0.45)
+    let binHz = rate / Double(LevelAnalyzer.fftSize)
+    let count = RakkiLevels.bandCount
+    for b in 0..<count {
+      let f0 = low * pow(high / low, Double(b) / Double(count))
+      let f1 = low * pow(high / low, Double(b + 1) / Double(count))
+      let lo = min(LevelAnalyzer.half - 1, max(1, Int(f0 / binHz)))
+      let hi = min(LevelAnalyzer.half, max(lo + 1, Int(f1 / binHz)))
+      bandLo[b] = lo
+      bandHi[b] = hi
+      bandTilt[b] = Float(3 * log2((f0 * f1).squareRoot() / 1000))
+    }
+  }
+}
+
 /// Owned by its tap (retained on create, released in finalize).
 fileprivate final class TapContext {
   let token: Int
@@ -306,6 +334,8 @@ fileprivate final class TapContext {
   var format = TapFormat()
   /// The equalizer's filters for this song (RakkiEqualizer).
   let eq = RakkiEqualizerState()
+  /// This song's own visualizer analysis (nil: no FFT setup, so no levels).
+  let analyzer = LevelAnalyzer()
 
   init(token: Int, levels: RakkiLevels) {
     self.token = token
@@ -342,5 +372,7 @@ private let tapProcess: MTAudioProcessingTapProcessCallback = { tap, frames, _, 
   let ctx = context(of: tap)
   guard ctx.format.isFloat else { return }
   ctx.eq.process(buffers, frames: Int(framesOut.pointee), sampleRate: ctx.format.sampleRate, channels: ctx.format.channels, interleaved: ctx.format.interleaved)
-  ctx.levels.feed(ctx.token, buffers, frames: Int(framesOut.pointee), format: ctx.format)
+  if let analyzer = ctx.analyzer, analyzer.feed(buffers, frames: Int(framesOut.pointee), format: ctx.format) {
+    ctx.levels.publish(ctx.token, analyzer.fresh)
+  }
 }

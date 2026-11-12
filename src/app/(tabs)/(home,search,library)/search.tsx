@@ -32,6 +32,7 @@ import { useLyricsSearch } from '@/search/lyricsSearch';
 import { SectionTitle, Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { useDockSpace } from '@/ui/dock';
 import { TrackRow } from '@/ui/TrackRow';
 import { VideoShelf } from '@/ui/VideoShelf';
 import { searchVideos } from '@/video/musicVideos';
@@ -166,6 +167,7 @@ export default function SearchScreen() {
 
 function BrowseAll() {
   const t = useTheme();
+  const dock = useDockSpace();
   const { width } = useWindowDimensions();
   const genres = useGenreCounts();
   const offline = useOffline();
@@ -180,7 +182,7 @@ function BrowseAll() {
       keyExtractor={(g) => g.name}
       numColumns={2}
       columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
-      contentContainerStyle={{ gap, paddingTop: t.space.md, paddingBottom: t.space.xl }}
+      contentContainerStyle={{ gap, paddingTop: t.space.md, paddingBottom: t.space.xl + dock }}
       keyboardDismissMode="on-drag"
       ListHeaderComponent={<SectionTitle title="Browse all" />}
       ListEmptyComponent={
@@ -215,6 +217,7 @@ function BrowseAll() {
 
 function RecentSearches() {
   const t = useTheme();
+  const dock = useDockSpace();
   const items = useRecentSearches((s) => s.items);
   if (!items.length) {
     return (
@@ -232,7 +235,7 @@ function RecentSearches() {
     <ScrollView
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      contentContainerStyle={{ paddingBottom: t.space.xl }}>
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}>
       <View style={{ marginTop: t.space.md }}>
         <SectionTitle title="Recent searches" />
       </View>
@@ -276,6 +279,7 @@ function RecentSearches() {
 
 function Results({ term, filter }: { term: string; filter: Filter }) {
   const t = useTheme();
+  const dock = useDockSpace();
   const results = useSearchResults(term, filter);
   const indexMissing = useSearchIndex((s) => !s.index && s.syncing);
   const lyrics = useLyricsSearch(term);
@@ -331,7 +335,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
         keyExtractor={(g) => g.name}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingBottom: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         ListFooterComponent={footer}
         renderItem={({ item }) => <GenreRow genre={item} />}
       />
@@ -345,7 +349,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
       keyExtractor={(x) => x.Id}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
       ListFooterComponent={footer}
       renderItem={({ item }) =>
         filter === 'songs' ? (
@@ -360,13 +364,14 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
 
 function AllResults({ data, term, footer }: { data: SearchResults; term: string; footer: ReactNode }) {
   const t = useTheme();
+  const dock = useDockSpace();
   const videos = searchVideos(term, useMusicVideos().data);
   const fromLyrics = useLyricsSearch(term).data ?? [];
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      contentContainerStyle={{ paddingBottom: t.space.xl }}>
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}>
       {data.top ? <TopResult item={data.top} songs={data.songs} term={term} /> : null}
       {data.songs.length ? (
         <View style={{ marginTop: t.space.xl }}>

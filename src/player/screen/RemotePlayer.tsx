@@ -25,7 +25,8 @@ import { openAlbum } from '@/ui/nav';
 import { openAddToPlaylist, openMenu } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
-import { tap, usePlayerStyles } from '@/player/screen/styles';
+import { FadeColor } from '@/ui/FadeColor';
+import { sheetTop, tap, usePlayerStyles } from '@/player/screen/styles';
 
 /**
  * Another Rakki's song, like Spotify's Connect player: its cover, title and place, with buttons
@@ -56,8 +57,10 @@ export function RemotePlayer({ target }: { target: RakkiDevice }) {
   const inPlaylist = useInAnyPlaylist(item?.Id);
   return (
     <View style={styles.root}>
-      <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
-      <View style={{ flex: 1, paddingTop: insets.top + t.space.sm, paddingBottom: insets.bottom + t.space.md, paddingHorizontal: t.space.xl }}>
+      <FadeColor color={t.tint(tint)} pointerEvents="none">
+        <LinearGradient colors={['rgba(16,16,16,0)', '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
+      </FadeColor>
+      <View style={{ flex: 1, paddingTop: sheetTop(insets.top, t.space.xs), paddingBottom: insets.bottom + t.space.md, paddingHorizontal: t.space.xl }}>
         <View style={styles.header}>
           <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
             <Ionicons name="chevron-down" size={28} color={t.colors.text} />

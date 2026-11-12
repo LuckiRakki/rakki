@@ -25,6 +25,7 @@ import { Marquee } from '@/ui/Marquee';
 import { openAlbum } from '@/ui/nav';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { FadeColor, SONG_FADE_MS } from '@/ui/FadeColor';
 import { inAppVideo, videoTitle } from '@/video/musicVideos';
 import { useVideoSession } from '@/video/session';
 import { VideoCarousel } from '@/video/VideoCarousel';
@@ -152,17 +153,17 @@ export default function VideoScreen() {
 
   return (
     <GestureDetector gesture={swipeDown}>
-      <Animated.View style={[{ flex: 1, backgroundColor: t.tint(tint), overflow: 'hidden' }, follow]}>
-        {/* The video's colours, flowing slowly (still with reduced motion). */}
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <FlowingCover uri={thumb} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} />
+      <Animated.View style={[{ flex: 1, overflow: 'hidden' }, follow]}>
+        {/* The video's colours, flowing slowly (still with reduced motion), easing to the next video's. */}
+        <FadeColor color={t.tint(tint)} pointerEvents="none">
+          <FlowingCover uri={thumb} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} fade={SONG_FADE_MS} />
           <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
           <LinearGradient
             colors={['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.7)']}
             locations={[0, 0.45, 1]}
             style={StyleSheet.absoluteFill}
           />
-        </View>
+        </FadeColor>
 
         <View style={[styles.header, { marginTop: insets.top }]}>
           <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Minimize">

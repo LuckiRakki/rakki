@@ -8,12 +8,14 @@ import { isSingleOrEp, releaseKind } from '@/lib/items';
 import { ItemTile } from '@/ui/AlbumTile';
 import { FadeRow, GridSkeleton, Hold, Line, partOf, useReveal, useRowFade } from '@/ui/Reveal';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 
 /** An artist's whole Discography, or all their Singles and EPs (the artist page's "Show all"). */
 export default function ReleasesScreen() {
   const { id, kind } = useLocalSearchParams<{ id: string; kind?: string }>();
   const t = useTheme();
+  const dock = useDockSpace();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const artist = useItem(id);
@@ -37,7 +39,7 @@ export default function ReleasesScreen() {
         keyExtractor={(a) => a.Id}
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
-        contentContainerStyle={{ paddingBottom: t.space.xxl, gap: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xxl + dock, gap: t.space.xl }}
         ListHeaderComponent={
           <View style={{ paddingTop: insets.top + t.space.sm, paddingHorizontal: t.space.lg, paddingBottom: t.space.sm }}>
             <Pressable hitSlop={10} onPress={() => router.back()} accessibilityLabel="Back" style={{ width: 36, height: 36, justifyContent: 'center' }}>

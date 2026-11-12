@@ -34,6 +34,7 @@ import { openOptions } from '@/ui/overlays';
 import { Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { useDockSpace } from '@/ui/dock';
 import { UserAvatar } from '@/ui/UserAvatar';
 import { VIDEO_TILE, VideoShelf } from '@/ui/VideoShelf';
 import { RadioShelf } from '@/radio/RadioShelf';
@@ -42,6 +43,7 @@ import { newestVideos } from '@/video/musicVideos';
 
 export default function HomeScreen() {
   const t = useTheme();
+  const dock = useDockSpace();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const recent = useRecentlyPlayed();
@@ -125,7 +127,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: t.colors.page }}
-      contentContainerStyle={{ paddingTop: insets.top + t.space.md, paddingBottom: t.space.xl }}
+      contentContainerStyle={{ paddingTop: insets.top + t.space.md, paddingBottom: t.space.xl + dock }}
       refreshControl={
         <RefreshControl refreshing={refreshing} tintColor={t.colors.text} onRefresh={() => void queryClient.invalidateQueries()} />
       }>

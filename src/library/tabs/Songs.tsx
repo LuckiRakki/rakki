@@ -5,6 +5,7 @@ import { useTracks } from '@/api/queries';
 import { playRandom } from '@/library/actions';
 import { useLibraryView } from '@/library/view';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { usePlayer } from '@/player/store';
 import { TrackRow } from '@/ui/TrackRow';
@@ -14,6 +15,7 @@ import { type ListProps, NoMatches, useListReveal, usePullToRefresh } from '@/li
 /** Every song in the library, as a list. Tapping one plays the list from there. */
 export function Songs({ header, sort, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const seed = useLibraryView((s) => s.shuffleSeed);
   const tracks = useTracks(sort.sortBy, sort.sortOrder, seed, filter);
   const refresh = usePullToRefresh(sort, tracks.refetch, tracks.isPlaceholderData);
@@ -27,7 +29,7 @@ export function Songs({ header, sort, filter }: ListProps) {
       key="songs"
       data={items}
       keyExtractor={(x) => x.Id}
-      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
       refreshControl={refresh}
       ListHeaderComponent={
         <View>

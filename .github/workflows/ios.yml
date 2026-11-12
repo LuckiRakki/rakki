@@ -106,6 +106,28 @@ jobs:
           path: ${{ env.IPA_NAME }}.ipa
           retention-days: 30
 
+      # Debug symbols, so crash reports from the phone (MetricKit, in the performance logs) can be
+      # turned into function names. The .ipa above is replaced by every build, so without these
+      # a crash in an older native build can't be read (2026-11-09: the 1.15.0 build was gone).
+      - name: Collect debug symbols
+        run: |
+          RUNTIME=$(node -p "require('./app.json').expo.runtimeVersion")
+          echo "RUNTIME=$RUNTIME" >> "$GITHUB_ENV"
+          mkdir -p symbols
+          find build/Build/Products -maxdepth 2 -name "*.dSYM" -type d -exec cp -R {} symbols/ \;
+          APP=$(find build/Build/Products -maxdepth 2 -name "*.app" -type d | head -n 1)
+          NAME=$(basename "$APP" .app)
+          cp "$APP/$NAME" "symbols/$NAME-binary"
+          dwarfdump --uuid "symbols/$NAME-binary" | tee symbols/UUIDS.txt
+          (cd symbols && zip -qry "../$IPA_NAME-$RUNTIME-symbols.zip" .)
+          ls -lh "$IPA_NAME-$RUNTIME-symbols.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IPA_NAME }}-${{ env.RUNTIME }}-symbols
+          path: ${{ env.IPA_NAME }}-${{ env.RUNTIME }}-symbols.zip
+          retention-days: 90
+
       # Release builds also go to a fixed GitHub Release so the iPhone can download them in
       # Safari: https://github.com/LuckiRakki/rakki/releases/download/ios-latest/Rakki.ipa
       - name: Publish to GitHub Release
@@ -118,6 +140,8 @@ jobs:
             gh release create ios-latest --title "Rakki for iPhone (latest build)" --notes "$NOTES" --prerelease
           fi
           gh release upload ios-latest "$IPA_NAME.ipa" --clobber
+          # Symbols are kept per native runtime (not replaced by the next build).
+          gh release upload ios-latest "$IPA_NAME-$RUNTIME-symbols.zip" --clobber
           # Title and notes follow the app's version and docs/CHANGELOG.md (as "iOS release
           # page" does on every version bump).
           node scripts/ios-release-notes.js > notes.md

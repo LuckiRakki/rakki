@@ -16,6 +16,7 @@ import { useGenreColor } from '@/ui/GenreTile';
 import { FadeRow, GridSkeleton, Line, partOf, Reveal, ShelfSkeleton, useReveal, useRowFade } from '@/ui/Reveal';
 import { SectionTitle, Shelf } from '@/ui/Shelf';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
 
@@ -44,6 +45,7 @@ function Mosaic({ albums, color }: { albums: BaseItem[]; color: string }) {
 export default function GenreScreen() {
   const { name = '' } = useLocalSearchParams<{ name: string }>();
   const t = useTheme();
+  const dock = useDockSpace();
   const { y, onScroll } = useScrollY();
   const { width } = useWindowDimensions();
   const genre = useGenreCounts().data?.find((g) => g.name === name);
@@ -165,7 +167,7 @@ export default function GenreScreen() {
         key={`genre-albums-${columns}`}
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
-        contentContainerStyle={{ gap: t.space.xl, paddingBottom: t.space.xl }}
+        contentContainerStyle={{ gap: t.space.xl, paddingBottom: t.space.xl + dock }}
         ListHeaderComponent={header}
         renderItem={({ item, index }) => (
           <FadeRow entering={tileFade(index)}>

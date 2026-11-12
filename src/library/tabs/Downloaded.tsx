@@ -12,6 +12,7 @@ import { ItemRow } from '@/ui/ItemRow';
 import { LikedArt } from '@/ui/LikedArt';
 import { openItem } from '@/ui/nav';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { usePlayer } from '@/player/store';
 import { type ListProps, usePullToRefresh, useTileSize } from '@/library/tabs/shared';
@@ -57,6 +58,7 @@ function DownloadedTile({ c, size, onPress }: { c: DownloadedCollection; size: n
 /** Everything on the phone: albums, playlists, Liked Songs, then single songs. */
 export function Downloaded({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const collections = useDownloads((s) => s.collections);
   const refresh = usePullToRefresh(sort);
   const grid = layout === 'grid';
@@ -104,7 +106,7 @@ export function Downloaded({ header, sort, layout, filter }: ListProps) {
       keyExtractor={(c) => c.id}
       numColumns={grid ? columns : 1}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
-      contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.xl : 0 }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock, gap: grid ? t.space.xl : 0 }}
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}

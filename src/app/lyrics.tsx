@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { BaseItem } from '@/api/jellyfin';
 import { useAuth } from '@/auth/store';
+import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
 import { useScreenAwake } from '@/lib/keepAwake';
 import { useSwipeDown } from '@/ui/useSwipeDown';
@@ -100,7 +101,15 @@ export default function LyricsScreen() {
         durationMs={timed.durationMs}
         // A live stream can't seek.
         onSeek={streamUrl ? () => {} : (ms) => usePlayer.getState().seek(ms / 1000)}
-        artUri={track?.Radio ? (track.Radio.coverUrl ?? track.Radio.imageUri) : track ? client?.imageUrl(track, 600) : undefined}
+        // The same small cover as the player's moving background: it's blurred anyway, and it's
+        // already decoded and blurred in memory, so opening the lyrics adds no new image work.
+        artUri={
+          track?.Radio
+            ? (track.Radio.coverUrl ?? track.Radio.imageUri)
+            : track
+              ? (localArtUri(track.AlbumId ?? track.Id) ?? client?.imageUrl(track, 300))
+              : undefined
+        }
         tint={tint}
         footerSpace={footerSpace}
         visualizer={visualizer}

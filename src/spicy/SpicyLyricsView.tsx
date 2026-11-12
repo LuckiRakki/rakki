@@ -74,7 +74,9 @@ export function SpicyLyricsView({
     () => ({ ...style.spicy, color: style.color === 'accent' ? t.colors.accent : '#ffffff' }),
     [style.spicy, style.color, t.colors.accent],
   );
-  const picture = useSharedValue<SkPicture>(emptyPicture());
+  // Made once (not a fresh native picture on every render, thrown away).
+  const [blank] = useState(emptyPicture);
+  const picture = useSharedValue<SkPicture>(blank);
   // Drawing stops in the background (a frame loop there is a busy loop; see lib/appActive.ts).
   const active = useAppActive();
   const away = useInBackground();

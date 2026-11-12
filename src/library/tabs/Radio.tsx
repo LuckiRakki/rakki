@@ -6,12 +6,14 @@ import { matchesSearch } from '@/api/queries';
 import { useStations } from '@/radio/stations';
 import { StationRow } from '@/radio/StationViews';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import type { ListProps } from '@/library/tabs/shared';
 
 /** Your radio stations, with Add a station at the top. */
 export function Radio({ header, sort, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const stations = useStations((s) => s.stations).filter((st) => matchesSearch({ Name: st.name }, filter));
   const list =
     sort.key === 'alpha'
@@ -24,7 +26,7 @@ export function Radio({ header, sort, filter }: ListProps) {
       windowSize={7}
       data={list}
       keyExtractor={(s) => s.id}
-      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
       ListHeaderComponent={
         <>
           {header}

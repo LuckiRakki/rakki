@@ -13,6 +13,7 @@ import { ItemTile } from '@/ui/AlbumTile';
 import { ItemRow } from '@/ui/ItemRow';
 import { LikedArt } from '@/ui/LikedArt';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { FadeRow, Hold, ItemRowSkeleton, TileSkeleton } from '@/ui/Reveal';
 import { type ListProps, useListReveal, usePullToRefresh, useTileSize } from '@/library/tabs/shared';
@@ -24,6 +25,7 @@ const PLACES: BaseItem[] = Array.from({ length: 8 }, (_, i) => ({ Id: `place-${i
 
 export function Playlists({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const offline = useOffline();
   const playlists = usePlaylists();
   const liked = useLikedSongs();
@@ -63,7 +65,7 @@ export function Playlists({ header, sort, layout, filter }: ListProps) {
         keyExtractor={(p) => p.Id}
         numColumns={columns}
         columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
-        contentContainerStyle={{ paddingBottom: t.space.xl, gap: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl + dock, gap: t.space.xl }}
         refreshControl={refresh}
         ListHeaderComponent={header}
         renderItem={({ item, index }) =>
@@ -91,7 +93,7 @@ export function Playlists({ header, sort, layout, filter }: ListProps) {
       key="playlists-list"
       data={data}
       keyExtractor={(p) => p.Id}
-      contentContainerStyle={{ paddingBottom: t.space.xl }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
       refreshControl={refresh}
       ListHeaderComponent={header}
       ListFooterComponent={

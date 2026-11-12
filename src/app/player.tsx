@@ -27,7 +27,7 @@ import { useOnAir } from '@/radio/live';
 import { RadioCard } from '@/radio/RadioCard';
 import { stationWebsite, useStations } from '@/radio/stations';
 import { openStationWebsite } from '@/radio/StationViews';
-import { tap, usePlayerStyles } from '@/player/screen/styles';
+import { sheetTop, tap, usePlayerStyles } from '@/player/screen/styles';
 import { RemotePlayer } from '@/player/screen/RemotePlayer';
 import { PlayerBackdrop } from '@/player/screen/PlayerBackdrop';
 import { PlayerActions } from '@/player/screen/PlayerActions';
@@ -95,7 +95,7 @@ function LocalPlayer() {
       <PlayerBackdrop track={track} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + t.space.xl }}>
         {/* The player fills the page but for a peek of the lyrics card below it (Maneki). */}
-        <View style={{ height: pageHeight - PEEK, paddingTop: insets.top + t.space.sm, paddingBottom: t.space.md, paddingHorizontal: t.space.xl }}>
+        <View style={{ height: pageHeight - PEEK, paddingTop: sheetTop(insets.top, t.space.xs), paddingBottom: t.space.md, paddingHorizontal: t.space.xl }}>
           {/* Header */}
           <View style={styles.header}>
             <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close Player">

@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibraryView } from '@/library/view';
 import { MiniPlayer } from '@/player/MiniPlayer';
-import { AppBackdrop } from '@/ui/AppBackdrop';
 import { OfflineBar } from '@/ui/OfflineBar';
+import { useDock } from '@/ui/dock';
 import { Glass } from '@/ui/Glass';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
@@ -28,7 +28,7 @@ function PillTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: Math.max(insets.bottom - 8, 8) }}>
+    <View pointerEvents="box-none" style={{ paddingHorizontal: 12, paddingTop: 4, paddingBottom: Math.max(insets.bottom - 8, 8) }}>
       <Glass radius={32} style={{ flexDirection: 'row', padding: 4, gap: 4 }}>
         {state.routes.map((route, i) => {
           const { options } = descriptors[route.key];
@@ -72,12 +72,14 @@ export default function TabLayout() {
   const t = useTheme();
   return (
     <Tabs
-      // Mini-player rides on top of the tab bar, like Spotify. Because the bar is in normal
-      // layout flow, screens end above it and nothing is hidden behind the player.
+      // Mini-player rides on top of the tab bar, like Spotify.
       tabBar={(props) => (
-        <View style={{ backgroundColor: t.colors.page }}>
-          {/* With Kawarp, the bottom of the same flow as the screen above. */}
-          <AppBackdrop anchor="bottom" />
+        // Floats over the pages (no band behind it): they scroll on underneath, and each list
+        // ends with the dock's height of room (useDockSpace) so nothing stays hidden.
+        <View
+          pointerEvents="box-none"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
+          onLayout={(e) => useDock.setState({ height: Math.round(e.nativeEvent.layout.height) })}>
           <OfflineBar />
           <MiniPlayer />
           <PillTabBar {...props} />

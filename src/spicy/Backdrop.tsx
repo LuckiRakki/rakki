@@ -18,6 +18,7 @@ import Animated, {
 import { useLyricsStyle } from '@/lyrics/style';
 import { useTheme } from '@/ui/theme';
 import { useInBackground } from '@/lib/appActive';
+import { SONG_FADE_MS } from '@/ui/FadeColor';
 
 /**
  * A layer of the backdrop: one blurred copy of the cover, turning at its own speed and
@@ -89,9 +90,10 @@ const MOVES_PER_SECOND = 12;
  * is a static texture the GPU only moves around (on the UI thread, which iOS pauses in the
  * background), 12 times a second, and not at all while another screen covers this one.
  * `motion` scales the speed; 0 keeps it still. Put a live blur on top to melt the layers'
- * edges together. Also the Now Playing and music video screens' Moving background.
+ * edges together. Also the Now Playing and music video screens' Moving background. `fade`
+ * crossfades a new cover in over that many milliseconds.
  */
-export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) {
+export function FlowingCover({ uri, motion, fade }: { uri?: string; motion: number; fade?: number }) {
   const clock = useSharedValue(0);
   const lastMove = useSharedValue(0);
   const focused = useIsFocused();
@@ -116,7 +118,7 @@ export function FlowingCover({ uri, motion }: { uri?: string; motion: number }) 
   }, [clock, motion]);
 
   // In the background the three big blurred layers let go (the colour behind them stays).
-  return uri && !away ? <FlowLayers uri={uri} clock={clock} /> : null;
+  return uri && !away ? <FlowLayers uri={uri} clock={clock} fade={fade} /> : null;
 }
 
 /**
@@ -167,7 +169,7 @@ export function SpicyBackdrop({ uri }: { uri?: string }) {
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0b0b0b', overflow: 'hidden' }]} pointerEvents="none">
-      <FlowingCover uri={uri} motion={still ? 0 : motion} />
+      <FlowingCover uri={uri} motion={still ? 0 : motion} fade={SONG_FADE_MS} />
       {away ? null : <BlurView intensity={Math.round(100 * blur)} tint="dark" style={StyleSheet.absoluteFill} />}
       {/* Brightness pulse, like the web mod's backdrop glow. */}
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, breathe]} />

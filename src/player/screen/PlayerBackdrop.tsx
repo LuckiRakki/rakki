@@ -10,6 +10,7 @@ import { artColor } from '@/lib/blurhash';
 import { useTheme } from '@/ui/theme';
 import { FlowingCover } from '@/spicy/Backdrop';
 import { useInBackground } from '@/lib/appActive';
+import { FadeColor, SONG_FADE_MS } from '@/ui/FadeColor';
 
 /** Behind the player: the cover flowing, a colour gradient or the blurred cover (Customize), and
  *  with Clear glass a dark fade under the controls. */
@@ -28,8 +29,8 @@ export function PlayerBackdrop({ track }: { track: BaseItem }) {
     <>
       {playerBackground === 'moving' ? (
         // The cover's colours flowing slowly behind everything (still with reduced motion).
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.tint(tint), overflow: 'hidden' }]} pointerEvents="none">
-          <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} />
+        <FadeColor color={t.tint(tint)} style={{ overflow: 'hidden' }} pointerEvents="none">
+          <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} fade={SONG_FADE_MS} />
           {/* The full-screen blur keeps big buffers; in the background only the colour stays. */}
           {away ? null : (
             <>
@@ -41,9 +42,12 @@ export function PlayerBackdrop({ track }: { track: BaseItem }) {
               />
             </>
           )}
-        </View>
+        </FadeColor>
       ) : playerBackground === 'gradient' ? (
-        <LinearGradient colors={[t.tint(tint), '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
+        // The colour eases under a fixed fade to near-black (same as a gradient from the colour).
+        <FadeColor color={t.tint(tint)} pointerEvents="none">
+          <LinearGradient colors={['rgba(16,16,16,0)', '#101010']} locations={[0, 0.85]} style={StyleSheet.absoluteFill} />
+        </FadeColor>
       ) : playerBackground === 'blur' && !away ? (
         <View style={StyleSheet.absoluteFill}>
           <Image
@@ -52,6 +56,7 @@ export function PlayerBackdrop({ track }: { track: BaseItem }) {
             contentFit="cover"
             blurRadius={60}
             cachePolicy="memory-disk"
+            transition={SONG_FADE_MS}
           />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
         </View>

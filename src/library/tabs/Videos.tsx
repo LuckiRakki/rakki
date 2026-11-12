@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/store';
 import { playMusicVideo } from '@/video/musicVideos';
 import { seededShuffle, useLibraryView } from '@/library/view';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { barWidth, Bone, FadeRow, GridSkeleton, Hold, Line } from '@/ui/Reveal';
 import { type ListProps, useListReveal } from '@/library/tabs/shared';
@@ -15,6 +16,7 @@ import { type ListProps, useListReveal } from '@/library/tabs/shared';
 /** Your music videos: 16:9 tiles two across, or a list. Tap one to watch it. */
 export function Videos({ header, sort, layout, filter }: ListProps) {
   const t = useTheme();
+  const dock = useDockSpace();
   const client = useAuth((s) => s.client);
   const videos = useMusicVideos();
   const seed = useLibraryView((s) => s.shuffleSeed);
@@ -47,7 +49,7 @@ export function Videos({ header, sort, layout, filter }: ListProps) {
       numColumns={grid ? 2 : 1}
       keyExtractor={(v) => v.Id}
       columnWrapperStyle={grid ? { gap, paddingHorizontal: t.space.lg } : undefined}
-      contentContainerStyle={{ paddingBottom: t.space.xl, gap: grid ? t.space.lg : 0 }}
+      contentContainerStyle={{ paddingBottom: t.space.xl + dock, gap: grid ? t.space.lg : 0 }}
       ListHeaderComponent={header}
       ListEmptyComponent={
         step.show === 'placeholder' ? (

@@ -24,6 +24,7 @@ import { seededShuffle } from '@/library/view';
 import { PlaylistEditor } from '@/ui/PlaylistEditor';
 import { Bone, FadeRow, Hold, Line, partOf, Reveal, TrackRowsSkeleton, useReveal, useRowFade } from '@/ui/Reveal';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
 import { displayName } from '@/lib/mixes';
@@ -70,6 +71,7 @@ function sortPlaylist(list: BaseItem[], key: PlaylistSort, seed: number): BaseIt
 export default function PlaylistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
+  const dock = useDockSpace();
   const client = useAuth((s) => s.client);
   const playlist = useItem(id);
   const items = usePlaylistItems(id);
@@ -192,7 +194,7 @@ export default function PlaylistScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         renderItem={({ item, index }) => (
           <FadeRow entering={rowFade(index)}>
             <TrackRow

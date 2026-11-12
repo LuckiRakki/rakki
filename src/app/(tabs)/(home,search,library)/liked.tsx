@@ -14,6 +14,7 @@ import { FindBar } from '@/ui/FindBar';
 import { LikedArt } from '@/ui/LikedArt';
 import { Bone, FadeRow, Hold, partOf, Reveal, TrackRowsSkeleton, useReveal, useRowFade } from '@/ui/Reveal';
 import { T } from '@/ui/T';
+import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
 
@@ -21,6 +22,7 @@ const LIKED = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
 
 export default function LikedSongsScreen() {
   const t = useTheme();
+  const dock = useDockSpace();
   const { y, onScroll } = useScrollY();
   const liked = useLikedSongs();
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
@@ -86,7 +88,7 @@ export default function LikedSongsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListHeaderComponent={header}
-        contentContainerStyle={{ paddingBottom: t.space.xl }}
+        contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         renderItem={({ item, index }) => (
           <FadeRow entering={rowFade(index)}>
             <TrackRow

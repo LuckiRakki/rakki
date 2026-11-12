@@ -7,6 +7,7 @@ import type { Lyrics, LyricsBundle } from '@/lyrics/types';
 import { usePlayer } from '@/player/store';
 import type { LyricsMode } from '@/settings/store';
 import { SpicyBackdrop } from '@/spicy/Backdrop';
+import { FadeColor } from '@/ui/FadeColor';
 import type { SpicyLayout } from '@/spicy/scene';
 import { SpicyLyrics } from '@/spicy/SpicyLyrics';
 import { T } from '@/ui/T';
@@ -69,7 +70,7 @@ export function LyricsStage({
       {mode === 'spicy' ? (
         <SpicyBackdrop uri={artUri} />
       ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: tint }]} />
+        <FadeColor color={tint} />
       )}
       {header}
       <View style={{ flex: 1 }}>
