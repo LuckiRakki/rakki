@@ -6,7 +6,30 @@ very minor things. 1.0.0 once the user is happy with it. "Native build" is the i
 an update needs (see FRAMEWORK.md, decision 6); everything here shipped over the air unless it
 says otherwise.
 
-## Desktop 2.1.0 (2026-11-12, next desktop build)
+## Desktop 2.2.0 (2026-11-12, next desktop build)
+Also brings Desktop 2.1.0 below (it wasn't built on its own).
+- **Desktop: Tagging, MRQ inside Rakki.** A new page in Your Library (shown once MRQ's address is
+  in Settings → Connections) with five tabs:
+  - **Inbox:** new downloads by artist. Singles and albums open as cards with genre and artist
+    chips (spell-checked against your library's genres, with suggestions), a cover you can drop,
+    paste, search online or take from the download folder, Spotify links (paste one album link to
+    match every song), Auto-Fill from iTunes and MusicBrainz, genre Look Up, and "feat." hints.
+    Send files them into the library; a song from an album you already have can be added to it.
+  - **Library:** every song file in one fast table, searched with MRQ's syntax
+    (`genre:rap year>=2020 missing:spotify`) or the ready-made Problems list. Pick songs with
+    Shift and Ctrl and change them together in the side panel (fields they differ on are kept),
+    or double-click one cell. Right-click: Auto-Fill, Spotify Links From an Album, Auto-Number,
+    Find and Replace, Change Case, Clean Up Text, Split feat., Convert to ID3v2.4.
+  - **Music Videos:** queue and library, the video beside its tags, Match Song, Auto-Fill, a
+    poster, Send and Re-File, and several videos at once.
+  - **Tidy Up:** Big Brother's fixes, genre cleanup (merge, split, remove, mark fine), artists
+    filed twice, the library index and the downloads folder, and filling in genres for the inbox.
+  - **History:** every edit MRQ made, with Undo (also offered right after each save).
+  Right-click a song, album or artist anywhere in Rakki → Open in Tagging.
+- **Desktop: dropping files works.** Pictures onto a cover and lyric files onto the lyrics maker
+  (the window was catching the drop itself).
+
+## Desktop 2.1.0 (2026-11-12, not built: ships in 2.2.0)
 - **Desktop: the mini player is the 2.0 Frost design.** Cover, song and artist, one glass pill
   with previous, play and next, and the clean play bar with no handle. Keep on Top and Full Window
   show when the pointer is over it. Nothing Playing has its own look, and a song that won't play
