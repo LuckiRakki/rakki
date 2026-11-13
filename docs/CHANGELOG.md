@@ -41,6 +41,18 @@ Also brings Desktop 2.1.0 below (it wasn't built on its own).
 - **Desktop: the music video's Bigger button has its own icon** (a wide screen), so it no longer
   looks the same as Full Screen.
 
+## 2.1.3 (2026-11-13)
+- **Real Kawarp on the phone.** The flowing backgrounds (Kawarp theme behind every screen, Now
+  Playing's Moving background, Spicy Lyrics, music videos) were three blurred covers spinning
+  under a live blur, which read as a turning blurred square. They're now Kawarp itself, the
+  desktop's liquid warp, ported to Skia: the cover is blurred once per song on a small square
+  and then bent by slow noise each frame, with no live blur. Lighter, and no shapes or edges.
+  Lyrics Style → Blur sets how soft its colours are.
+- **Kawarp is the default theme.** New installs start on it, and anyone still on Rakki's own look
+  moves to it once (Settings → Look → Theme → Rakki brings the old look back, and stays).
+- **Play icons are centred.** The play triangle is drawn centred in Rakki's icon font, but the big
+  play button and the album, artist, playlist, search and video play buttons still nudged it right.
+
 ## 2.1.2 (2026-11-12)
 - **The tab bar keeps its glass with Clear.** Since the tabs float over the pages, Clear glass left
   them with no panel and hard to see; the tab bar now keeps its smoked panel, like the mini player.

@@ -9,6 +9,7 @@ projects below; each keeps its own licence.
 |---|---|---|
 | SpicyLyrics-Jellyfin web mod (by the Rakki author) | AGPL-3.0 | `src/spicy`: the lyrics renderer is a port of the web mod's `LyricsAnimator` to Skia; `Spring.ts` and `Spline.ts` are copied from it. |
 | [Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) by Spikerko | AGPL-3.0 | An unofficial port, not affiliated with or endorsed by Spicy Lyrics: the look and motion the web mod reproduces (word springs, letter emphasis, glow, depth blur). Lyrics from the Spicy Lyrics API are shown with their source and attribution, as its terms require. |
+| [Kawarp](https://www.npmjs.com/package/@kawarp/core) by Better Lyrics | MIT | `src/spicy/Kawarp.tsx`: the phone's flowing background ports Kawarp's domain warp and output shaders (@kawarp/core 1.3.1) to Skia. Copyright (c) 2026 Better Lyrics, MIT licence. The desktop uses the library itself. |
 | [just_audio](https://github.com/ryanheise/just_audio) by Ryan Heise | MIT | `modules/rakki-audio`: the gapless "treadmill" design (an AVQueuePlayer holding the current song and the next ones) follows just_audio's iOS player, rewritten in Swift. Copyright (c) Ryan Heise and contributors, MIT licence. |
 
 ## References (behaviour and design, no code)

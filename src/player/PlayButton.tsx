@@ -21,7 +21,7 @@ export function PlayButton({ playing, buffering, live, onPress, size = 76 }: { p
       {buffering ? (
         <ActivityIndicator color={ink} />
       ) : (
-        <Ionicons name={icon} size={glyph} color={ink} style={{ marginLeft: playing ? 0 : Math.round(size / 18) }} />
+        <Ionicons name={icon} size={glyph} color={ink} />
       )}
     </Pressable>
   );

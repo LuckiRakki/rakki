@@ -38,7 +38,7 @@ export function VideoShelf({ title, videos, onShowAll }: { title: string; videos
               <View style={{ width: WIDTH, height: HEIGHT, borderRadius: t.radius.art, overflow: 'hidden', backgroundColor: t.colors.surface2 }}>
                 {thumb ? <Image source={{ uri: thumb }} style={{ width: WIDTH, height: HEIGHT }} contentFit="cover" transition={150} /> : null}
                 <View style={styleBadge}>
-                  <Ionicons name="play" size={18} color="#fff" style={{ marginLeft: 2 }} />
+                  <Ionicons name="play" size={18} color="#fff" />
                 </View>
               </View>
               <T variant="bodyStrong" numberOfLines={1} style={{ marginTop: 8, fontSize: t.size(14) }}>

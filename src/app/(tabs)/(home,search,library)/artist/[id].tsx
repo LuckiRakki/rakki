@@ -199,7 +199,6 @@ export default function ArtistScreen() {
               name={isThisArtist && playing ? 'pause' : 'play'}
               size={26}
               color="#000"
-              style={{ marginLeft: isThisArtist && playing ? 0 : 3 }}
             />
           </Pressable>
         </View>

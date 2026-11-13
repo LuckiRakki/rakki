@@ -152,7 +152,6 @@ export default function AlbumScreen() {
                 name={isThisAlbum && playing ? 'pause' : 'play'}
                 size={28}
                 color="#000"
-                style={{ marginLeft: isThisAlbum && playing ? 0 : 3 }}
               />
             </Pressable>
           </View>

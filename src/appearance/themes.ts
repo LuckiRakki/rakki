@@ -8,7 +8,10 @@ import { create } from 'zustand';
 import { parseTheme, readColor, ThemeError, type Theme, type ThemeBackdrop } from '@/appearance/themeFormat';
 import { readPref, writePref } from '@/lib/prefs';
 
+/** Rakki's own look (no theme), set in Settings → Look. */
 export const DEFAULT_THEME = 'default';
+/** What a new install starts on, and what everyone still on Rakki's own look moved to once (2.1.3). */
+const STARTING_THEME = 'kawarp';
 const KEY = 'rakki.themes';
 
 /**
@@ -55,6 +58,8 @@ export interface ThemeColors {
 interface Saved {
   active: string;
   imported: { id: string; css: string }[];
+  /** Set once Kawarp became the default (2.1.3), so picking Rakki again afterwards stays picked. */
+  kawarpDefault?: boolean;
 }
 
 function load(): { active: string; imported: Theme[] } {
@@ -68,9 +73,12 @@ function load(): { active: string; imported: Theme[] } {
       }
     });
     const known = [...BUILT_IN_THEMES, ...imported].some((t) => t.id === v.active);
-    return { active: known ? v.active! : DEFAULT_THEME, imported };
+    // Kawarp is the default from 2.1.3: anyone still on Rakki's own look moves to it once.
+    const active = known ? v.active! : v.kawarpDefault && v.active === DEFAULT_THEME ? DEFAULT_THEME : STARTING_THEME;
+    if (!v.kawarpDefault) writePref(KEY, JSON.stringify({ active, imported: v.imported ?? [], kawarpDefault: true } satisfies Saved));
+    return { active, imported };
   } catch {
-    return { active: DEFAULT_THEME, imported: [] };
+    return { active: STARTING_THEME, imported: [] };
   }
 }
 
@@ -86,7 +94,7 @@ interface ThemesState {
 export const usePhoneThemes = create<ThemesState>((set, get) => {
   const save = () => {
     const { active, imported } = get();
-    writePref(KEY, JSON.stringify({ active, imported: imported.map((t) => ({ id: t.id, css: t.css })) } satisfies Saved));
+    writePref(KEY, JSON.stringify({ active, imported: imported.map((t) => ({ id: t.id, css: t.css })), kawarpDefault: true } satisfies Saved));
   };
   return {
     ...load(),

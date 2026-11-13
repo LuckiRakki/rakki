@@ -2,7 +2,6 @@
 // playing cover flowing like liquid (@backdrop flow), or the cover blurred and still (@backdrop
 // album), as on the desktop. Each screen draws its own copy, so a screen sliding in covers the one
 // under it; one clock moves every copy, so they all show the same flow.
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useEffect, type ReactElement } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -14,7 +13,7 @@ import { localArtUri } from '@/downloads/store';
 import { useInBackground } from '@/lib/appActive';
 import { artColor } from '@/lib/blurhash';
 import { usePlayer } from '@/player/store';
-import { FlowLayers } from '@/spicy/Backdrop';
+import { Kawarp, KAWARP_DIM } from '@/spicy/Kawarp';
 import { FadeColor, SONG_FADE_MS } from '@/ui/FadeColor';
 import { useTheme } from '@/ui/theme';
 
@@ -77,7 +76,7 @@ export function AppBackdrop({ anchor = 'top' }: { anchor?: 'top' | 'bottom' }) {
           )}
         </View>
       ) : null}
-      {kind === 'flow' && uri && !away ? <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} /> : null}
+      {kind === 'flow' && uri && !away ? <View style={[StyleSheet.absoluteFill, { backgroundColor: KAWARP_DIM }]} /> : null}
       {/* Dims bright covers so white text reads on any of them. */}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: kind === 'flow' ? 'rgba(0,0,0,0.24)' : 'rgba(0,0,0,0.45)' }]} />
     </FadeColor>
@@ -118,5 +117,5 @@ function ScreenFlow({ uri }: { uri: string }) {
       if (showing.get()) clock.set(now);
     },
   );
-  return <FlowLayers uri={uri} clock={clock} fade={SONG_FADE_MS} />;
+  return <Kawarp uri={uri} clock={clock} fade={SONG_FADE_MS} />;
 }

@@ -139,7 +139,7 @@ function Stage({
                 <GlassButton size={64} label="Loading" loading />
               ) : (
                 <GlassButton size={64} onPress={touched(toggle)} label={isPlaying ? 'Pause' : 'Play'}>
-                  <Ionicons name={isPlaying ? 'pause' : 'play'} size={30} color="#fff" style={{ marginLeft: isPlaying ? 0 : 4 }} />
+                  <Ionicons name={isPlaying ? 'pause' : 'play'} size={30} color="#fff" />
                 </GlassButton>
               )}
               <GlassButton size={48} onPress={touched(() => player.seekBy(10))} label="Forward 10 seconds">

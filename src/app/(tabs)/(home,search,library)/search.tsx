@@ -454,7 +454,7 @@ function TopResult({ item, songs, term }: { item: BaseItem; songs: BaseItem[]; t
           accessibilityLabel={`Play ${item.Name}`}
           onPress={() => void playResult(item)}
           style={({ pressed }) => [styles.topPlay, pressed && { transform: [{ scale: 0.94 }] }]}>
-          <Ionicons name="play" size={24} color="#000" style={{ marginLeft: 3 }} />
+          <Ionicons name="play" size={24} color="#000" />
         </Pressable>
       </Pressable>
     </View>

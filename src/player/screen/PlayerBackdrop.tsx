@@ -1,6 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
 import { StyleSheet, View } from 'react-native';
 
 import type { BaseItem } from '@/api/jellyfin';
@@ -9,10 +8,11 @@ import { localArtUri } from '@/downloads/store';
 import { artColor } from '@/lib/blurhash';
 import { useTheme } from '@/ui/theme';
 import { FlowingCover } from '@/spicy/Backdrop';
+import { KAWARP_DIM } from '@/spicy/Kawarp';
 import { useInBackground } from '@/lib/appActive';
 import { FadeColor, SONG_FADE_MS } from '@/ui/FadeColor';
 
-/** Behind the player: the cover flowing, a colour gradient or the blurred cover (Customize), and
+/** Behind the player: Kawarp (the cover flowing like liquid), a colour gradient or the blurred cover (Customize), and
  *  with Clear glass a dark fade under the controls. */
 export function PlayerBackdrop({ track }: { track: BaseItem }) {
   const t = useTheme();
@@ -31,10 +31,9 @@ export function PlayerBackdrop({ track }: { track: BaseItem }) {
         // The cover's colours flowing slowly behind everything (still with reduced motion).
         <FadeColor color={t.tint(tint)} style={{ overflow: 'hidden' }} pointerEvents="none">
           <FlowingCover uri={artUri} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} fade={SONG_FADE_MS} />
-          {/* The full-screen blur keeps big buffers; in the background only the colour stays. */}
           {away ? null : (
             <>
-              <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: KAWARP_DIM }]} />
               <LinearGradient
                 colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.6)']}
                 locations={[0, 0.5, 1]}

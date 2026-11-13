@@ -102,7 +102,7 @@ export function CollectionHeader({
           ) : null}
           <View style={{ flex: 1 }} />
           <Pressable onPress={onPlay} style={({ pressed }) => [styles.playBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
-            <Ionicons name={playing ? 'pause' : 'play'} size={28} color="#000" style={{ marginLeft: playing ? 0 : 3 }} />
+            <Ionicons name={playing ? 'pause' : 'play'} size={28} color="#000" />
           </Pressable>
         </View>
       </View>

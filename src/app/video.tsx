@@ -1,5 +1,4 @@
 import { Ionicons } from '@/ui/Icon';
-import { BlurView } from 'expo-blur';
 import { AwayImage as Image } from '@/ui/AwayImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -19,6 +18,7 @@ import { useScreenAwake } from '@/lib/keepAwake';
 import { allowTurning, lockPortrait } from '@/lib/orientation';
 import { useSettings } from '@/settings/store';
 import { FlowingCover } from '@/spicy/Backdrop';
+import { KAWARP_DIM } from '@/spicy/Kawarp';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { Artwork } from '@/ui/Artwork';
 import { Marquee } from '@/ui/Marquee';
@@ -157,7 +157,7 @@ export default function VideoScreen() {
         {/* The video's colours, flowing slowly (still with reduced motion), easing to the next video's. */}
         <FadeColor color={t.tint(tint)} pointerEvents="none">
           <FlowingCover uri={thumb} motion={t.reduceMotion ? 0 : t.appearance.playerMotion} fade={SONG_FADE_MS} />
-          <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: KAWARP_DIM }]} />
           <LinearGradient
             colors={['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.7)']}
             locations={[0, 0.45, 1]}
