@@ -1,5 +1,5 @@
-import { router, useIsFocused } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect, useIsFocused } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,6 +33,8 @@ import { sheetTop, tap, usePlayerStyles } from '@/player/screen/styles';
 import { RemotePlayer } from '@/player/screen/RemotePlayer';
 import { PlayerBackdrop } from '@/player/screen/PlayerBackdrop';
 import { PlayerActions } from '@/player/screen/PlayerActions';
+import { LandscapePlayer } from '@/player/screen/LandscapePlayer';
+import { allowTurning, lockPortrait } from '@/lib/orientation';
 
 /** How much of the lyrics card shows under the player before you scroll. */
 const PEEK = 64;
@@ -80,6 +82,16 @@ function LocalPlayer() {
   // Plain streams have no song info, so no lyrics either (SUB/WAVE stations do).
   const plainRadio = !!station && !station.apiBase;
   const noLyrics = useNoLyrics(track);
+  // Look → Now Playing → Turn for Full Screen: the player turns with the phone while it's on top;
+  // leaving it stands the app upright again (lib/orientation.ts).
+  const turn = t.appearance.turnFullScreen;
+  useFocusEffect(
+    useCallback(() => {
+      if (!turn) return;
+      allowTurning();
+      return lockPortrait;
+    }, [turn]),
+  );
 
   if (!track) {
     return (
@@ -88,6 +100,9 @@ function LocalPlayer() {
       </View>
     );
   }
+
+  // Held sideways: the full screen player (lyrics or the visualizer), like the desktop's.
+  if (turn && width > height) return <LandscapePlayer track={track} />;
 
   const art = Math.min(width - t.space.xl * 2, 420);
   const favorite = track.UserData?.IsFavorite ?? false;
