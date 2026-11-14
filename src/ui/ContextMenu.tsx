@@ -103,6 +103,9 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ]
       : [];
 
+  // Share as a picture (or text), from the share sheet.
+  const share: Action = { icon: 'share-outline', label: 'Share', run: () => useOverlays.getState().menuToShare({ kind: 'item', item }) };
+
   // A song with a music video in the library.
   const musicVideo = item.Type === 'Audio' ? findVideoFor(item, cachedMusicVideos()) : undefined;
   const watch: Action[] = musicVideo
@@ -122,6 +125,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ...(item.AlbumId ? [{ icon: 'disc-outline' as IconName, label: 'Go to album', run: go(`/album/${item.AlbumId}`), offline: true }] : []),
         ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`), offline: true }] : []),
         { icon: 'radio-outline', label: 'Song radio', run: () => startRadio(item) },
+        share,
         ...sleep,
       ];
     case 'MusicAlbum':
@@ -133,12 +137,14 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ...download,
         ...(artist ? [{ icon: 'person-outline' as IconName, label: 'Go to artist', run: go(`/artist/${artist.Id}`), offline: true }] : []),
         { icon: 'radio-outline', label: 'Album radio', run: () => startRadio(item) },
+        share,
       ];
     case 'MusicArtist':
       return [
         like,
         { icon: 'radio-outline', label: 'Artist radio', run: () => startRadio(item) },
         { icon: 'person-outline', label: 'Go to artist', run: go(`/artist/${item.Id}`), offline: true },
+        share,
       ];
     case 'Playlist':
       return [
@@ -147,6 +153,7 @@ function actionsFor(item: BaseItem, close: () => void, context: MenuContext | nu
         ...download,
         { icon: 'radio-outline', label: 'Playlist radio', run: () => startRadio(item) },
         { icon: 'albums-outline', label: 'Go to playlist', run: go(`/playlist/${item.Id}`), offline: true },
+        share,
         { icon: 'create-outline', label: 'Rename playlist', run: () => renamePlaylist(item), afterClose: true },
         { icon: 'trash-outline', label: 'Delete playlist', run: () => deletePlaylist(item), afterClose: true },
       ];
@@ -189,7 +196,7 @@ export function ContextMenuPanel() {
               onPress={() => {
                 tick();
                 // These switch to another sheet (or page) themselves.
-                const switches = a.label === 'Add to playlist' || a.label.startsWith('Go to') || a.label.startsWith('Sleep timer');
+                const switches = a.label === 'Add to playlist' || a.label === 'Share' || a.label.startsWith('Go to') || a.label.startsWith('Sleep timer');
                 if (!switches) close();
                 if (a.afterClose) setTimeout(() => void a.run(), CLOSE_MS + 150);
                 else void a.run();

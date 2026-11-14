@@ -27,6 +27,7 @@ import { AwayImage as Image } from '@/ui/AwayImage';
 import { Ionicons } from '@/ui/Icon';
 import { Chip } from '@/ui/ItemRow';
 import { openAlbum, openArtist } from '@/ui/nav';
+import { openShare } from '@/ui/overlays';
 import { Segmented } from '@/ui/Segmented';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
@@ -38,13 +39,25 @@ export default function StatsScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('stats');
+  const [range, setRange] = useState<StatsRange>('7');
+  // The same query the Stats tab shows (shared through the cache), for Share.
+  const shown = useRakkiStats(useClient(), rangeDays(range)).data;
+  const canShare = tab === 'stats' && !!shown && shown.Plays > 0;
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={26} color={t.colors.text} />
         </Pressable>
-        <T style={styles.title}>History and Stats</T>
+        <T style={[styles.title, { flex: 1 }]}>History and Stats</T>
+        {canShare ? (
+          <Pressable
+            hitSlop={12}
+            onPress={() => shown && openShare({ kind: 'stats', stats: shown, range: RANGES.find((r) => r.value === range)?.label ?? '' })}
+            accessibilityLabel="Share Your Stats">
+            <Ionicons name="share-outline" size={24} color={t.colors.text} />
+          </Pressable>
+        ) : null}
       </View>
       <View style={{ paddingHorizontal: t.space.lg, paddingTop: t.space.sm }}>
         <Segmented
@@ -56,7 +69,7 @@ export default function StatsScreen() {
           ]}
         />
       </View>
-      {tab === 'stats' ? <StatsTab bottom={insets.bottom} /> : <HistoryTab bottom={insets.bottom} />}
+      {tab === 'stats' ? <StatsTab bottom={insets.bottom} range={range} setRange={setRange} /> : <HistoryTab bottom={insets.bottom} />}
     </View>
   );
 }
@@ -65,11 +78,10 @@ function useClient(): JellyfinClient | null {
   return useAuth((s) => s.client);
 }
 
-function StatsTab({ bottom }: { bottom: number }) {
+function StatsTab({ bottom, range, setRange }: { bottom: number; range: StatsRange; setRange: (r: StatsRange) => void }) {
   const t = useTheme();
   const styles = useStyles();
   const client = useClient();
-  const [range, setRange] = useState<StatsRange>('7');
   const days = rangeDays(range);
   const stats = useRakkiStats(client, days);
 
@@ -401,7 +413,7 @@ function Empty() {
 }
 
 const useStyles = makeStyles((t) => ({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 52, paddingHorizontal: t.space.sm },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 52, paddingLeft: t.space.sm, paddingRight: t.space.lg },
   title: { fontFamily: t.fonts.black, fontSize: t.size(26), letterSpacing: -0.4 },
   chips: { gap: 8, paddingHorizontal: t.space.lg, paddingTop: 14 },
   card: { marginHorizontal: t.space.lg, padding: 16, borderRadius: 18, backgroundColor: t.colors.row },

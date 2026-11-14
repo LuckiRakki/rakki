@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { thud } from '@/lib/haptics';
 import type { BaseItem } from '@/api/jellyfin';
 import type { RakkiDevice } from '@/remote/devices';
+import type { ShareTarget } from '@/share/ShareCard';
 
 /** Where a menu was opened from, for context-only actions (e.g. remove from this playlist). */
 export interface MenuContext {
@@ -32,6 +33,8 @@ interface Overlays {
   options: OptionsSheet | null;
   /** A device held in Connect: its choices (ui/DeviceSheet.tsx). */
   device: RakkiDevice | null;
+  /** The share sheet: a card to share as a picture (share/SharePanel.tsx). */
+  share: ShareTarget | null;
   openMenu(item: BaseItem, context?: MenuContext): void;
   closeMenu(): void;
   /** Songs to add; `title` is what the sheet says it's adding (a song or an album name). */
@@ -45,6 +48,10 @@ interface Overlays {
   closeOptions(): void;
   openDevice(d: RakkiDevice): void;
   closeDevice(): void;
+  openShare(target: ShareTarget): void;
+  /** From the menu straight to the share sheet in one update. */
+  menuToShare(target: ShareTarget): void;
+  closeShare(): void;
   closeAll(): void;
   showToast(text: string): void;
 }
@@ -56,6 +63,7 @@ export const useOverlays = create<Overlays>((set) => ({
   toast: null,
   options: null,
   device: null,
+  share: null,
   openMenu: (item, context) => set({ menu: item, menuContext: context ?? null }),
   closeMenu: () => set({ menu: null, menuContext: null }),
   openAddToPlaylist: (items, title) => set({ addTo: { items, title } }),
@@ -66,7 +74,10 @@ export const useOverlays = create<Overlays>((set) => ({
   closeOptions: () => set({ options: null }),
   openDevice: (device) => set({ device }),
   closeDevice: () => set({ device: null }),
-  closeAll: () => set({ menu: null, menuContext: null, addTo: null, options: null, device: null }),
+  openShare: (share) => set({ share }),
+  menuToShare: (share) => set({ menu: null, menuContext: null, share }),
+  closeShare: () => set({ share: null }),
+  closeAll: () => set({ menu: null, menuContext: null, addTo: null, options: null, device: null, share: null }),
   showToast: (text) => set({ toast: { text, id: Date.now() } }),
 }));
 
@@ -83,6 +94,8 @@ export const openDeviceSheet = (d: RakkiDevice) => {
 };
 export const openAddToPlaylist = (items: BaseItem[], title: string) => useOverlays.getState().openAddToPlaylist(items, title);
 export const showToast = (text: string) => useOverlays.getState().showToast(text);
+/** Share something as a picture (Spotify-style card), or as text from the same sheet. */
+export const openShare = (target: ShareTarget) => useOverlays.getState().openShare(target);
 
 // Web dev preview only: lets the menus be opened from the browser console for testing.
 if (__DEV__ && typeof window !== 'undefined') {

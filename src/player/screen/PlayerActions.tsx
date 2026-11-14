@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
-import { Pressable, Share, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Ionicons } from '@/ui/Icon';
 import { getRoutePicker } from '../../../modules/rakki-audio';
 import type { BaseItem } from '@/api/jellyfin';
 import { useMusicVideos } from '@/api/queries';
-import { artistLine } from '@/lib/items';
 import { sleepSheet, useSleepLabel } from '@/player/sleep';
-import { openOptions } from '@/ui/overlays';
+import { openOptions, openShare } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { useTheme } from '@/ui/theme';
 import { findVideoFor, playMusicVideo } from '@/video/musicVideos';
@@ -15,13 +14,9 @@ import { usePlayerStyles } from '@/player/screen/styles';
 
 const RoutePicker = getRoutePicker();
 
-async function shareTrack(track: BaseItem) {
-  const by = artistLine(track);
-  try {
-    await Share.share({ message: by ? `${track.Name} by ${by}` : track.Name });
-  } catch {
-    // Dismissed or unavailable: nothing to do.
-  }
+/** Share opens the share sheet: the song as a picture (like Spotify's), or as text. */
+function shareTrack(track: BaseItem) {
+  openShare({ kind: 'item', item: track });
 }
 
 /** The player's last row: the device chip (Connect) on the left; sleep timer, music video,
@@ -58,7 +53,7 @@ export function PlayerActions({ track, radio, plainRadio }: { track: BaseItem; r
         {RoutePicker ? (
           <RoutePicker style={{ width: 36, height: 36 }} tintColor={t.colors.textSecondary} activeTintColor={t.colors.accentText} />
         ) : null}
-        <Pressable hitSlop={8} onPress={() => void shareTrack(track)} accessibilityLabel="Share" style={styles.iconBtn}>
+        <Pressable hitSlop={8} onPress={() => shareTrack(track)} accessibilityLabel="Share" style={styles.iconBtn}>
           <Ionicons name="share-outline" size={22} color={t.colors.textSecondary} />
         </Pressable>
         {radio ? null : (
