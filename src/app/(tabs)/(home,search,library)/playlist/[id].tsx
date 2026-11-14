@@ -28,6 +28,7 @@ import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
 import { displayName } from '@/lib/mixes';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 type PlaylistSort = 'custom' | 'recent' | 'title' | 'artist' | 'album' | 'length' | 'random';
 
@@ -69,6 +70,7 @@ function sortPlaylist(list: BaseItem[], key: PlaylistSort, seed: number): BaseIt
 }
 
 export default function PlaylistScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const dock = useDockSpace();
@@ -184,15 +186,14 @@ export default function PlaylistScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.FlatList
         windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
         data={body.show === 'content' ? shown : []}
         keyExtractor={(x, i) => x.PlaylistItemId ?? `${x.Id}-${i}`}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        {...closeKeyboardOnScroll}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         renderItem={({ item, index }) => (

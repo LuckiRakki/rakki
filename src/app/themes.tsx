@@ -12,11 +12,13 @@ import { tick } from '@/lib/haptics';
 import { showToast } from '@/ui/overlays';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 const THEMES_HELP = 'https://github.com/LuckiRakki/rakki/blob/main/docs/THEMES.md';
 
 /** Settings → Look → Theme: Rakki's own look, Kawarp, or a theme file (the same .css files as the desktop). */
 export default function ThemesScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -77,7 +79,7 @@ export default function ThemesScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
@@ -85,7 +87,7 @@ export default function ThemesScreen() {
         <T style={{ fontFamily: t.fonts.bold, fontSize: t.size(16) }}>Theme</T>
         <View style={{ width: 28 }} />
       </View>
-      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
+      <ScrollView {...closeKeyboardOnScroll} contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
         <View style={styles.card}>
           {row(DEFAULT_THEME, 'Rakki', "Rakki's own look, set in Settings → Look.")}
           {BUILT_IN_THEMES.map((theme) => row(theme.id, theme.meta.name, theme.meta.description ?? '', theme))}

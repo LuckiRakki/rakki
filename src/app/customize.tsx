@@ -27,6 +27,7 @@ import { Slider } from '@/ui/Slider';
 import { SoundGraph } from '@/ui/SoundGraph';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 /** A sample album colour for the preview (shows how art tints the UI). */
 const SAMPLE_ART = '#6E44C9';
@@ -37,6 +38,7 @@ function set<K extends keyof Appearance>(key: K, value: Appearance[K]) {
 
 /** Settings → Look (was Customize): every look-and-feel choice, applied live. Glass comes first in 2.0. */
 export default function CustomizeScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -59,7 +61,7 @@ export default function CustomizeScreen() {
     ]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <Ionicons name="chevron-down" size={28} color={t.colors.text} />
@@ -72,8 +74,7 @@ export default function CustomizeScreen() {
         </Pressable>
       </View>
       <ScrollView
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        {...closeKeyboardOnScroll}
         contentContainerStyle={{ padding: t.space.lg, paddingBottom: insets.bottom + t.space.xxl }}>
         <Preview />
 

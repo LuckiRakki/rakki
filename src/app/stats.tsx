@@ -31,10 +31,12 @@ import { openShare } from '@/ui/overlays';
 import { Segmented } from '@/ui/Segmented';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 type Tab = 'stats' | 'history';
 
 export default function StatsScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -44,7 +46,7 @@ export default function StatsScreen() {
   const shown = useRakkiStats(useClient(), rangeDays(range)).data;
   const canShare = tab === 'stats' && !!shown && shown.Plays > 0;
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={26} color={t.colors.text} />
@@ -307,8 +309,7 @@ function HistoryTab({ bottom }: { bottom: number }) {
 
   return (
     <ScrollView
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      {...closeKeyboardOnScroll}
       contentContainerStyle={{ paddingBottom: bottom + t.space.xxl }}
       onScroll={(e) => {
         const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;

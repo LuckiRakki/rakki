@@ -36,6 +36,7 @@ import { useDockSpace } from '@/ui/dock';
 import { TrackRow } from '@/ui/TrackRow';
 import { VideoShelf } from '@/ui/VideoShelf';
 import { searchVideos } from '@/video/musicVideos';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -72,6 +73,7 @@ async function playResult(item: BaseItem) {
 }
 
 export default function SearchScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -103,7 +105,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={{ paddingTop: insets.top + t.space.md, paddingHorizontal: t.space.lg }}>
         {!active ? (
           <T variant="display" style={{ marginBottom: t.space.lg }}>
@@ -183,7 +185,7 @@ function BrowseAll() {
       numColumns={2}
       columnWrapperStyle={{ gap, paddingHorizontal: t.space.lg }}
       contentContainerStyle={{ gap, paddingTop: t.space.md, paddingBottom: t.space.xl + dock }}
-      keyboardDismissMode="on-drag"
+      {...closeKeyboardOnScroll}
       ListHeaderComponent={<SectionTitle title="Browse all" />}
       ListEmptyComponent={
         genres.isLoading ? (
@@ -233,8 +235,7 @@ function RecentSearches() {
   }
   return (
     <ScrollView
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      {...closeKeyboardOnScroll}
       contentContainerStyle={{ paddingBottom: t.space.xl + dock }}>
       <View style={{ marginTop: t.space.md }}>
         <SectionTitle title="Recent searches" />
@@ -333,8 +334,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
       <FlatList
         data={data.genres}
         keyExtractor={(g) => g.name}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        {...closeKeyboardOnScroll}
         contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         ListFooterComponent={footer}
         renderItem={({ item }) => <GenreRow genre={item} />}
@@ -347,8 +347,7 @@ function Results({ term, filter }: { term: string; filter: Filter }) {
     <FlatList
       data={list}
       keyExtractor={(x) => x.Id}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      {...closeKeyboardOnScroll}
       contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
       ListFooterComponent={footer}
       renderItem={({ item }) =>
@@ -369,8 +368,7 @@ function AllResults({ data, term, footer }: { data: SearchResults; term: string;
   const fromLyrics = useLyricsSearch(term).data ?? [];
   return (
     <ScrollView
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      {...closeKeyboardOnScroll}
       contentContainerStyle={{ paddingBottom: t.space.xl + dock }}>
       {data.top ? <TopResult item={data.top} songs={data.songs} term={term} /> : null}
       {data.songs.length ? (

@@ -25,6 +25,7 @@ import { Mixes } from '@/library/tabs/Mixes';
 import { Playlists } from '@/library/tabs/Playlists';
 import { Downloaded } from '@/library/tabs/Downloaded';
 import { Songs } from '@/library/tabs/Songs';
+import { useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 /** Each tab's list. */
 const LISTS: Record<LibraryTab, (props: ListProps) => ReactElement> = {
@@ -40,6 +41,7 @@ const LISTS: Record<LibraryTab, (props: ListProps) => ReactElement> = {
 };
 
 export default function LibraryScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tab = useLibraryView((s) => s.tab);
@@ -187,7 +189,7 @@ export default function LibraryScreen() {
 
   const List = LISTS[tab];
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       {/* 2.0: a soft album-colour wash behind the header (the lists scroll over it); Kawarp's flow instead. */}
       {t.backdrop === 'none' ? (
         <LinearGradient

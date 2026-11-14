@@ -13,6 +13,7 @@ import { Artwork } from '@/ui/Artwork';
 import { showToast, useOverlays } from '@/ui/overlays';
 import { SheetGrab, SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
+import { closeKeyboardOnScroll } from '@/ui/keyboard';
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const LIKED = '__liked__';
@@ -196,7 +197,7 @@ export function AddToPlaylistPanel() {
           </View>
         </View>
       </SheetGrab>
-      <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ paddingBottom: t.space.md }}>
+      <ScrollView {...closeKeyboardOnScroll} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingBottom: t.space.md }}>
         {single && !query
           ? row(
               LIKED,

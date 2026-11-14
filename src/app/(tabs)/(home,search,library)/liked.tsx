@@ -17,10 +17,12 @@ import { T } from '@/ui/T';
 import { useDockSpace } from '@/ui/dock';
 import { useTheme } from '@/ui/theme';
 import { TrackRow } from '@/ui/TrackRow';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 const LIKED = { Id: 'liked', Name: 'Liked Songs', Type: 'Playlist' };
 
 export default function LikedSongsScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const dock = useDockSpace();
   const { y, onScroll } = useScrollY();
@@ -78,15 +80,14 @@ export default function LikedSongsScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.FlatList
         windowSize={7}
         onScroll={onScroll}
         scrollEventThrottle={16}
         data={body.show === 'content' ? shown : []}
         keyExtractor={(x) => x.Id}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        {...closeKeyboardOnScroll}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: t.space.xl + dock }}
         renderItem={({ item, index }) => (

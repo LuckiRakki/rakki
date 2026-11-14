@@ -21,6 +21,7 @@ import { DownloadsPage } from '@/settings/screen/DownloadsPage';
 import { AboutPage } from '@/settings/screen/AboutPage';
 import { PerfLogSettings } from '@/settings/screen/PerfLogSettings';
 import { useSettingsStyles } from '@/settings/screen/styles';
+import { closeKeyboardOnScroll, useSwipeClosesKeyboard } from '@/ui/keyboard';
 
 type Page = 'index' | 'account' | 'playback' | 'downloads' | 'connections' | 'about';
 
@@ -33,6 +34,7 @@ const LYRICS_LABEL: Record<string, string> = { spicy: 'Word by Word', regular: '
  * History and Stats, Devices, Connections / About, Sign Out). Each group opens its own page here.
  */
 export default function SettingsScreen() {
+  const swipeKb = useSwipeClosesKeyboard();
   const t = useTheme();
   const styles = useSettingsStyles();
   const insets = useSafeAreaInsets();
@@ -92,7 +94,7 @@ export default function SettingsScreen() {
 
   const title = { index: 'Settings', account: 'Account', playback: 'Playback', downloads: 'Downloads', connections: 'Connections', about: 'About Rakki' }[page];
   return (
-    <View style={{ flex: 1, backgroundColor: t.colors.page }}>
+    <View {...swipeKb} style={{ flex: 1, backgroundColor: t.colors.page }}>
       <View style={styles.header}>
         {page === 'index' ? null : (
           <Pressable hitSlop={12} onPress={() => setPage('index')} accessibilityLabel="Back to Settings" style={{ marginRight: 4 }}>
@@ -104,7 +106,7 @@ export default function SettingsScreen() {
           <Ionicons name="close" size={26} color={t.colors.text} />
         </Pressable>
       </View>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: t.space.lg, paddingTop: t.space.xs, paddingBottom: insets.bottom + t.space.xxl }}>
+      <ScrollView {...closeKeyboardOnScroll} contentContainerStyle={{ padding: t.space.lg, paddingTop: t.space.xs, paddingBottom: insets.bottom + t.space.xxl }}>
         {page === 'index' ? (
           <>
             <View style={styles.searchWell}>
