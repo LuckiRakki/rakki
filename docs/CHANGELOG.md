@@ -41,6 +41,16 @@ Also brings Desktop 2.1.0 below (it wasn't built on its own).
 - **Desktop: the music video's Bigger button has its own icon** (a wide screen), so it no longer
   looks the same as Full Screen.
 
+## 2.2.1 (2026-11-14)
+- **The sideways player is centred.** The cover, the song and the controls now sit in the middle
+  of the left side; the cover used to hug the left edge while the controls were centred.
+- **When the controls fade, the cover and the song grow into their space**, in one smooth move,
+  and shrink back when a touch brings the controls back.
+- **Keep the controls on screen:** Look → Now Playing → Hide Controls When Idle (on by default)
+  turns the fading off.
+- **Swiping or scrolling closes the keyboard** on every screen with search, including over empty
+  or short results.
+
 ## 2.2.0 (2026-11-14)
 - **Most played moves with what you play.** The Home shelf sorted by all-time play counts, which
   barely change, so it looked the same every day. It now leads with your top albums of the last
