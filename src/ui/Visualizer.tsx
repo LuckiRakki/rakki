@@ -1,4 +1,4 @@
-// A bar visualizer. From build 1.0.0 the bars follow the actual sound: the native player taps
+// The mini player's little bars (the big visualizer is ui/SoundGraph.tsx). From build 1.0.0 the bars follow the actual sound: the native player taps
 // each song's audio and hands over band levels (low to high), read here once a frame. Where
 // there are none (older builds, songs the server transcodes to HLS, AirPlay, the web preview)
 // they move like music instead: a steady beat at a tempo of the song's own (from its id), low
@@ -20,7 +20,7 @@ import { usePlayer } from '@/player/store';
 import { useTheme } from '@/ui/theme';
 
 /** A tempo between 84 and 132 BPM, the same every time for a given song. */
-function tempoFor(id: string): number {
+export function tempoFor(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
   return 84 + (Math.abs(hash) % 49);
@@ -137,18 +137,7 @@ function Bar({
       const level = real[index] ?? 0;
       return { transform: [{ scaleY: 0.12 + 0.88 * Math.min(1, Math.max(0, level)) * energy.get() }] };
     }
-    const t = time.get();
-    const beat = (t * bpm.get()) / 60;
-    // Sharp attack on each beat, then a decay; a softer off-beat in between.
-    const kick = Math.exp(-(beat % 1) * 5);
-    const off = Math.exp(-((beat + 0.5) % 1) * 7) * 0.45;
-    const pos = count > 1 ? index / (count - 1) : 0.5; // 0 = low end, 1 = high end
-    const wander =
-      0.5 + 0.25 * Math.sin(t * (0.9 + index * 0.31) + index * 1.7) + 0.25 * Math.sin(t * (2.3 + index * 0.17) + index * 0.6);
-    const shimmer = 0.5 + 0.5 * Math.sin(t * (6 + index * 0.83) + index * 2.9);
-    const low = (0.45 + 0.55 * kick) * (0.7 + 0.3 * wander);
-    const high = (0.25 + 0.35 * off + 0.4 * shimmer) * (0.6 + 0.4 * wander);
-    const level = low * (1 - pos) + high * pos;
+    const level = fakeLevel(index, count, time.get(), bpm.get());
     const scale = 0.12 + 0.88 * Math.min(1, Math.max(0, level)) * energy.get();
     return { transform: [{ scaleY: scale }] };
   });
@@ -160,4 +149,23 @@ function Bar({
       ]}
     />
   );
+}
+
+/**
+ * A level (0-1) for bar `index` of `count` (low to high) at `t` seconds, moving like music at
+ * `bpm`: low bars thump on the beat, high ones shimmer. For when there are no real levels.
+ */
+export function fakeLevel(index: number, count: number, t: number, bpm: number): number {
+  'worklet';
+  const beat = (t * bpm) / 60;
+  // Sharp attack on each beat, then a decay; a softer off-beat in between.
+  const kick = Math.exp(-(beat % 1) * 5);
+  const off = Math.exp(-((beat + 0.5) % 1) * 7) * 0.45;
+  const pos = count > 1 ? index / (count - 1) : 0.5; // 0 = low end, 1 = high end
+  const wander =
+    0.5 + 0.25 * Math.sin(t * (0.9 + index * 0.31) + index * 1.7) + 0.25 * Math.sin(t * (2.3 + index * 0.17) + index * 0.6);
+  const shimmer = 0.5 + 0.5 * Math.sin(t * (6 + index * 0.83) + index * 2.9);
+  const low = (0.45 + 0.55 * kick) * (0.7 + 0.3 * wander);
+  const high = (0.25 + 0.35 * off + 0.4 * shimmer) * (0.6 + 0.4 * wander);
+  return low * (1 - pos) + high * pos;
 }

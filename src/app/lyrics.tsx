@@ -1,5 +1,5 @@
 import { Ionicons } from '@/ui/Icon';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
@@ -70,10 +70,12 @@ export default function LyricsScreen() {
   // timing panel: both switched from Lyrics style, so the top is only Close and Lyrics style.
   const visualizer = useLyricsScreen((s) => s.visualizer);
   const timing = useLyricsScreen((s) => s.timing);
+  // Opened from the player's visualizer card: straight to the visualizer.
+  const { visualizer: startWithVisualizer } = useLocalSearchParams<{ visualizer?: string }>();
   useEffect(() => {
-    useLyricsScreen.getState().set({ visualizer: false, timing: false });
+    useLyricsScreen.getState().set({ visualizer: startWithVisualizer === '1', timing: false });
     return () => useLyricsScreen.getState().set({ visualizer: false, timing: false });
-  }, []);
+  }, [startWithVisualizer]);
   const setTiming = (on: boolean) => useLyricsScreen.getState().set({ timing: on });
   // This song's timing offset (saved on the phone; positive = lyrics later). Not for radio.
   const offset = useLyricsOffset(streamUrl ? undefined : lyricsFor?.Id);

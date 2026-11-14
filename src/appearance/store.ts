@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 
 import type { FontKey } from '@/appearance/fonts';
+import { DESKTOP_LINE, normalizeVisualizer, type VisualizerLook } from '@/appearance/visualizer';
 import { readPref, writePref } from '@/lib/prefs';
 
 export type ShelfId =
@@ -85,6 +86,13 @@ export interface Appearance {
   /** How fast the Moving background flows (0 = still); also the music video screen's. */
   playerMotion: number;
   lyricsCard: boolean;
+  /** Turning the phone sideways in the player shows it full screen with the lyrics (or the visualizer). */
+  turnFullScreen: boolean;
+  // ---- Visualizer ----
+  /** The big visualizer's look (appearance/visualizer.ts); the desktop's line by default. */
+  visualizer: VisualizerLook;
+  /** A song without lyrics: the visualizer in the player where the lyrics card would be. */
+  noLyricsVisualizer: boolean;
   // ---- Feel ----
   haptics: boolean;
   /** 'system' follows iOS Reduce Motion. */
@@ -116,6 +124,9 @@ export const APPEARANCE_DEFAULTS: Appearance = {
   playerBackground: 'moving',
   playerMotion: 1,
   lyricsCard: true,
+  turnFullScreen: true,
+  visualizer: DESKTOP_LINE,
+  noLyricsVisualizer: true,
   haptics: true,
   motion: 'system',
 };
@@ -132,6 +143,8 @@ export function normalizeAppearance(input: Partial<Appearance>): Appearance {
       (merged as Record<string, unknown>)[k] = input[k];
     }
   }
+  // An object: keep what's saved, fill in what an older version didn't have.
+  merged.visualizer = normalizeVisualizer(input.visualizer);
   const known = new Set(SHELVES.map((s) => s.id));
   const order = merged.homeOrder.filter((id) => known.has(id));
   for (const s of SHELVES) if (!order.includes(s.id)) order.push(s.id);

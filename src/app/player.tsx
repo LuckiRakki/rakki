@@ -10,7 +10,9 @@ import { thud } from '@/lib/haptics';
 import { useInAnyPlaylist } from '@/library/playlistCache';
 import { artistLine } from '@/lib/items';
 import { LyricsCard } from '@/lyrics/LyricsCard';
+import { useNoLyrics } from '@/lyrics/LyricsStage';
 import { CreditsCard } from '@/player/CreditsCard';
+import { VisualizerCard } from '@/player/VisualizerCard';
 import { SwipeCover } from '@/player/SwipeCover';
 import { PlayButton } from '@/player/PlayButton';
 import { SeekBar } from '@/player/SeekBar';
@@ -77,6 +79,7 @@ function LocalPlayer() {
   const station = useStations((s) => (stationId ? s.stations.find((x) => x.id === stationId) : undefined));
   // Plain streams have no song info, so no lyrics either (SUB/WAVE stations do).
   const plainRadio = !!station && !station.apiBase;
+  const noLyrics = useNoLyrics(track);
 
   if (!track) {
     return (
@@ -213,6 +216,7 @@ function LocalPlayer() {
           ) : (
             <>
               {t.appearance.lyricsCard ? <LyricsCard track={track} positionSec={position} /> : null}
+              {noLyrics && t.appearance.noLyricsVisualizer ? <VisualizerCard /> : null}
               <CreditsCard track={track} />
             </>
           )}

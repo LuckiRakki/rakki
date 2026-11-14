@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
+import { useLyrics } from '@/lyrics/fetch';
 import { RegularLyricsView } from '@/lyrics/RegularLyricsView';
 import type { Lyrics, LyricsBundle } from '@/lyrics/types';
 import { usePlayer } from '@/player/store';
@@ -12,7 +13,7 @@ import type { SpicyLayout } from '@/spicy/scene';
 import { SpicyLyrics } from '@/spicy/SpicyLyrics';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
-import { Visualizer } from '@/ui/Visualizer';
+import { SoundGraph } from '@/ui/SoundGraph';
 
 /**
  * Which lyrics each mode shows. Spicy prefers word-timed TTML (falling back to LRC, drawn
@@ -25,6 +26,19 @@ export function pickLyrics(bundle: LyricsBundle | undefined, mode: LyricsMode): 
   if (ttml?.chosen) return ttml;
   const order = mode === 'spicy' ? [ttml, lrc] : [lrc, ttml];
   return order.find((l) => l?.isSynced) ?? order.find(Boolean) ?? null;
+}
+
+/**
+ * True once it's known that `track` has no lyrics to show (not while they load; a radio station
+ * counts as none). Same test as the lyrics card's: some line with words in it.
+ */
+export function useNoLyrics(track: { Id: string; Radio?: unknown } | undefined): boolean {
+  const q = useLyrics(track && !track.Radio ? track.Id : undefined);
+  if (!track) return false;
+  if (track.Radio) return true;
+  if (q.isLoading) return false;
+  const lyrics = pickLyrics(q.data, 'regular');
+  return !lyrics || !lyrics.lines.some((l) => l.text.trim());
 }
 
 /** The sung line follows a quarter of the way down, under the album header (Spicy's compact view). */
@@ -60,7 +74,7 @@ export function LyricsStage({
   tint: string;
   header?: ReactNode;
   footerSpace?: number;
-  /** Show the visualizer instead of the lyrics. */
+  /** Show the visualizer instead of the lyrics (or of "No lyrics", straight away). */
   visualizer?: boolean;
 }) {
   const styles = useStyles();
@@ -74,7 +88,7 @@ export function LyricsStage({
       )}
       {header}
       <View style={{ flex: 1 }}>
-        {visualizer && lyrics ? (
+        {visualizer ? (
           <View style={[styles.empty, { paddingBottom: footerSpace }]}>
             <VisualizerPanel />
           </View>
@@ -110,10 +124,10 @@ export function LyricsStage({
   );
 }
 
-/** The full-width visualizer for the lyrics panel. */
+/** The full-width visualizer for the lyrics panel (its look: Settings → Look → Visualizer). */
 function VisualizerPanel() {
   const { width } = useWindowDimensions();
-  return <Visualizer bars={28} width={width - 64} height={200} color="rgba(255,255,255,0.9)" gap={5} radius={3} mirrored />;
+  return <SoundGraph width={width - 48} height={280} />;
 }
 
 /**

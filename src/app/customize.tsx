@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FONTS, type FontKey } from '@/appearance/fonts';
@@ -17,12 +17,14 @@ import {
   type ShelfId,
 } from '@/appearance/store';
 import { findTheme, usePhoneThemes } from '@/appearance/themes';
+import { DESKTOP_LINE, presetOf, VISUALIZER_PRESETS, type VisualizerLook } from '@/appearance/visualizer';
 import { isHexColor } from '@/lib/color';
 import { tick } from '@/lib/haptics';
 import { AppIconPicker } from '@/ui/AppIconPicker';
 import { Segmented } from '@/ui/Segmented';
 import { Field, SettingSection, Toggle } from '@/ui/SettingRows';
 import { Slider } from '@/ui/Slider';
+import { SoundGraph } from '@/ui/SoundGraph';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -298,6 +300,12 @@ export default function CustomizeScreen() {
             <Slider value={a.playerMotion} min={0} max={2.5} step={0.1} onChange={(v) => set('playerMotion', v)} />
           </Field>
           <Toggle label="Lyrics Card" detail="Below the controls; scroll down to see it" value={a.lyricsCard} onChange={(v) => set('lyricsCard', v)} />
+          <Toggle
+            label="Turn for Full Screen"
+            detail="Hold the phone sideways in the player for the lyrics, or the visualizer, across the whole screen"
+            value={a.turnFullScreen}
+            onChange={(v) => set('turnFullScreen', v)}
+          />
           <Field label="Pause Button">
             <Segmented
               value={a.pauseStyle}
@@ -320,6 +328,8 @@ export default function CustomizeScreen() {
           </View>
           <Ionicons name="chevron-forward" size={20} color={t.colors.textMuted} />
         </Pressable>
+
+        <VisualizerSection />
 
         <Section title="Feel" id="feel">
           <Toggle label="Haptics" detail="Light taps on buttons and menus" value={a.haptics} onChange={(v) => set('haptics', v)} />
@@ -397,6 +407,122 @@ function Section({ title, id, onReset, children }: { title: string; id: SectionI
       }}>
       {children}
     </SettingSection>
+  );
+}
+
+function setLook(patch: Partial<VisualizerLook>) {
+  set('visualizer', { ...useAppearance.getState().visualizer, ...patch });
+}
+
+/**
+ * Look → Visualizer: a live preview, the desktop's four looks and its colours, the player's card for
+ * songs without lyrics, then the finer settings (as on the desktop's Settings → Visualizer).
+ */
+function VisualizerSection() {
+  const t = useTheme();
+  const styles = useStyles();
+  const { width } = useWindowDimensions();
+  const a = t.appearance;
+  const look = a.visualizer;
+  const preset = presetOf(look);
+  const line = look.style === 'line';
+  const [more, setMore] = useState(false);
+  return (
+    <Section title="Visualizer" id="visualizer">
+      <View style={styles.vizPreview}>
+        <SoundGraph width={width - t.space.lg * 4} height={120} demo />
+      </View>
+      <T variant="caption" style={styles.hint}>
+        Plays along with whatever Rakki plays. Shown on the lyrics screen, sideways in the player, and for songs without lyrics.
+      </T>
+      <Field label="Look">
+        <Segmented
+          value={preset ?? 'custom'}
+          onChange={(id) => {
+            const p = VISUALIZER_PRESETS.find((x) => x.id === id);
+            if (p) set('visualizer', p.look);
+          }}
+          options={[...VISUALIZER_PRESETS.map((p) => ({ value: p.id, label: p.label })), ...(preset ? [] : [{ value: 'custom', label: 'Yours' }])]}
+        />
+      </Field>
+      <Field label="Colours" hint={look.colors === 'accent' ? 'Accent follows the colour of what’s playing.' : undefined}>
+        <Segmented
+          value={look.colors}
+          onChange={(colors) => setLook({ colors })}
+          options={[
+            { value: 'mono', label: 'White' },
+            { value: 'accent', label: 'Accent' },
+            { value: 'prism', label: 'Prism' },
+            { value: 'rainbow', label: 'Rainbow' },
+          ]}
+        />
+      </Field>
+      <Toggle
+        label="When a Song Has No Lyrics"
+        detail="The visualizer in the player where the lyrics card would be; tap it for the full visualizer"
+        value={a.noLyricsVisualizer}
+        onChange={(v) => set('noLyricsVisualizer', v)}
+      />
+      <Pressable onPress={() => setMore(!more)} hitSlop={6} style={styles.moreRow} accessibilityState={{ expanded: more }}>
+        <T variant="bodyStrong">More Options</T>
+        <Ionicons name={more ? 'chevron-up' : 'chevron-down'} size={18} color={t.colors.textMuted} />
+      </Pressable>
+      {more ? (
+        <>
+          <Field label="Drawn As">
+            <Segmented
+              value={look.style}
+              onChange={(style) => setLook({ style })}
+              options={[
+                { value: 'line', label: 'Line' },
+                { value: 'bars', label: 'Bars' },
+              ]}
+            />
+          </Field>
+          {line ? (
+            <Field label="Line Width" value={look.lineWidth.toFixed(1)}>
+              <Slider value={look.lineWidth} min={0.5} max={4} step={0.1} onChange={(lineWidth) => setLook({ lineWidth })} />
+            </Field>
+          ) : (
+            <Field label="Bars">
+              <Segmented<VisualizerLook['bars']>
+                value={look.bars}
+                onChange={(bars) => setLook({ bars })}
+                options={[
+                  { value: 12, label: 'Few' },
+                  { value: 20, label: 'Some' },
+                  { value: 32, label: 'Many' },
+                ]}
+              />
+            </Field>
+          )}
+          <Field label={line ? 'Fill Under the Line' : 'Bar Opacity'} value={`${Math.round(look.fill * 100)}%`}>
+            <Slider value={look.fill} min={0} max={1} step={0.05} onChange={(fill) => setLook({ fill })} />
+          </Field>
+          <Field label="Reflection" hint="A faint mirror under it.">
+            <Segmented<number>
+              value={look.reflection}
+              onChange={(reflection) => setLook({ reflection })}
+              options={[
+                { value: 0, label: 'Off' },
+                { value: 0.25, label: 'Short' },
+                { value: 0.5, label: 'Half' },
+                ...([0, 0.25, 0.5].includes(look.reflection) ? [] : [{ value: look.reflection, label: 'Yours' }]),
+              ]}
+            />
+          </Field>
+          <Field label="Smoothing" value={`${Math.round(look.smoothing * 100)}%`} hint="Higher: calmer movement.">
+            <Slider value={look.smoothing} min={0} max={0.9} step={0.05} onChange={(smoothing) => setLook({ smoothing })} />
+          </Field>
+          <Toggle label="Peaks" detail="Marks that hold the highest points for a moment" value={look.peaks} onChange={(peaks) => setLook({ peaks })} />
+          {preset !== 'line' ? (
+            <Pressable onPress={() => set('visualizer', DESKTOP_LINE)} style={({ pressed }) => [styles.button, { marginTop: t.space.lg, alignSelf: 'flex-start' }, pressed && { opacity: 0.7 }]}>
+              <T variant="bodyStrong">Back to the Desktop Look</T>
+            </Pressable>
+          ) : null}
+        </>
+      ) : null}
+    </Section>
   );
 }
 
@@ -541,6 +667,8 @@ const useStyles = makeStyles((t) => ({
   card: { backgroundColor: t.colors.surface, borderRadius: t.radius.card, padding: t.space.lg, paddingTop: t.space.xs },
   linkRow: { flexDirection: 'row', alignItems: 'center', paddingTop: t.space.lg },
   hint: { marginTop: t.space.sm, fontSize: t.size(12) },
+  vizPreview: { marginTop: t.space.md, height: 120, borderRadius: t.radius.card - 4, backgroundColor: 'rgba(0,0,0,0.35)', overflow: 'hidden', alignItems: 'center' },
+  moreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: t.space.lg },
   preset: {
     flexDirection: 'row',
     alignItems: 'center',
