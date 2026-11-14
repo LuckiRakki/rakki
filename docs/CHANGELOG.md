@@ -41,6 +41,28 @@ Also brings Desktop 2.1.0 below (it wasn't built on its own).
 - **Desktop: the music video's Bigger button has its own icon** (a wide screen), so it no longer
   looks the same as Full Screen.
 
+## 2.2.0 (2026-11-14)
+- **Most played moves with what you play.** The Home shelf sorted by all-time play counts, which
+  barely change, so it looked the same every day. It now leads with your top albums of the last
+  30 days (the Rakki plugin's Stats, 0.5) and fills the rest from all-time counts.
+- **Covers and backgrounds stay for a quick app switch.** Pictures, the moving backgrounds and the
+  lyrics drawing now let go of their memory only after about 3 minutes in the background (at once
+  if iOS says memory is low), not the moment you leave. Animation still stops at once.
+- **Shuffle is per playlist.** Each playlist, album, genre and Liked Songs remembers its own
+  shuffle, off until you turn it on there, and it stays on there until you turn it off.
+- **Swipe down to close Add to Playlist** anywhere above the first playlist (title, New Playlist,
+  Find Playlist), not just on the handle.
+- **The heart looks like a heart again** (round lobes, no longer squeezed).
+- **The artist photo fades into the page**, with no hard edge.
+- **Look → Visualizer:** Line, Area, Bars and Prism looks, colours, and more options. The
+  desktop's line is the default.
+- **Songs without lyrics show the visualizer** in the player where the lyrics card would be. Tap
+  it for full screen.
+- **Turn the phone sideways in the player** for a full screen player with the lyrics, or the
+  visualizer when a song has none (Look → Now Playing → Turn for Full Screen).
+- **Share as a picture:** songs, albums, playlists, artists and your History and Stats, with a
+  Colour, Blurred or Dark background.
+
 ## 2.1.3 (2026-11-13)
 - **Real Kawarp on the phone.** The flowing backgrounds (Kawarp theme behind every screen, Now
   Playing's Moving background, Spicy Lyrics, music videos) were three blurred covers spinning
