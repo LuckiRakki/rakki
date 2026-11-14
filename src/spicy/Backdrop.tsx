@@ -14,7 +14,7 @@ import Animated, {
 
 import { useLyricsStyle } from '@/lyrics/style';
 import { useTheme } from '@/ui/theme';
-import { useInBackground } from '@/lib/appActive';
+import { useBackgroundNow, useInBackground } from '@/lib/appActive';
 import { SONG_FADE_MS } from '@/ui/FadeColor';
 import { Kawarp, KAWARP_DIM } from '@/spicy/Kawarp';
 
@@ -33,7 +33,8 @@ export function FlowingCover({ uri, motion, fade, blur }: { uri?: string; motion
   const lastMove = useSharedValue(0);
   const focused = useIsFocused();
   const away = useInBackground();
-  const running = motion > 0 && focused && !!uri && !away;
+  const hidden = useBackgroundNow();
+  const running = motion > 0 && focused && !!uri && !hidden;
 
   // Seconds of motion so far (scaled by `motion`), advanced in steps.
   useFrameCallback((frame) => {

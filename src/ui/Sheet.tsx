@@ -1,14 +1,43 @@
 import { BlurView } from 'expo-blur';
-import { useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { makeStyles, useTheme } from '@/ui/theme';
 
 const OPEN_MS = 260;
 export const CLOSE_MS = 200;
+
+/** Dragging the sheet down: past 110 pt (or flicked) closes it, otherwise it springs back. */
+function dragToClose(drag: SharedValue<number>, onClose: () => void) {
+  return Gesture.Pan()
+    .activeOffsetY(10)
+    .failOffsetX([-20, 20])
+    .onChange((e) => {
+      drag.set(Math.max(0, drag.get() + e.changeY));
+    })
+    .onEnd((e) => {
+      if (drag.get() > 110 || e.velocityY > 900) {
+        runOnJS(onClose)();
+      } else {
+        drag.set(withTiming(0, { duration: 180 }));
+      }
+    });
+}
+
+const SheetDrag = createContext<{ drag: SharedValue<number>; onClose: () => void } | null>(null);
+
+/**
+ * Makes more of a sheet draggable than its handle: wrap a sheet's header (title, buttons, search
+ * field) and swiping down anywhere on it closes the sheet too. Taps still go to what's inside.
+ */
+export function SheetGrab({ children }: { children: ReactNode }) {
+  const ctx = useContext(SheetDrag);
+  if (!ctx) return <>{children}</>;
+  return <GestureDetector gesture={dragToClose(ctx.drag, ctx.onClose)}>{children}</GestureDetector>;
+}
 
 /**
  * A Spotify-style bottom sheet panel: slides up when `visible`, down (and unmounts) when not;
@@ -54,18 +83,7 @@ export function SheetPanel({
     }
   }, [visible, mounted, height, offset, drag, fast]);
 
-  const pan = Gesture.Pan()
-    .activeOffsetY(10)
-    .onChange((e) => {
-      drag.set(Math.max(0, drag.get() + e.changeY));
-    })
-    .onEnd((e) => {
-      if (drag.get() > 110 || e.velocityY > 900) {
-        runOnJS(onClose)();
-      } else {
-        drag.set(withTiming(0, { duration: 180 }));
-      }
-    });
+  const pan = dragToClose(drag, onClose);
 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.get() + drag.get() }] }));
 
@@ -79,7 +97,7 @@ export function SheetPanel({
           <View style={styles.handle} />
         </View>
       </GestureDetector>
-      {children}
+      <SheetDrag.Provider value={{ drag, onClose }}>{children}</SheetDrag.Provider>
     </Animated.View>
   );
 }

@@ -11,7 +11,7 @@ import { setLiked } from '@/library/actions';
 import { checkPlaylistsNow, refreshPlaylist, usePlaylistCache } from '@/library/playlistCache';
 import { Artwork } from '@/ui/Artwork';
 import { showToast, useOverlays } from '@/ui/overlays';
-import { SheetPanel } from '@/ui/Sheet';
+import { SheetGrab, SheetPanel } from '@/ui/Sheet';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 
@@ -171,28 +171,31 @@ export function AddToPlaylistPanel() {
 
   return (
     <SheetPanel visible={!!request} onClose={close} maxHeightRatio={0.9}>
-      <View style={styles.top}>
-        <T variant="heading" style={{ textAlign: 'center' }}>
-          Add to playlist
-        </T>
-        <T variant="caption" numberOfLines={1} style={{ textAlign: 'center', marginTop: 2 }}>
-          {items.length > 1 ? `${request?.title} · ${songCount(items.length)}` : request?.title}
-        </T>
-        <Pressable onPress={newPlaylist} style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.8 }]}>
-          <T style={styles.newBtnText}>New playlist</T>
-        </Pressable>
-        <View style={styles.search}>
-          <Ionicons name="search" size={16} color={t.colors.textMuted} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Find playlist"
-            placeholderTextColor={t.colors.textMuted}
-            style={styles.searchInput}
-            autoCorrect={false}
-          />
+      {/* Swiping down anywhere above the first playlist closes the sheet, not just on the handle. */}
+      <SheetGrab>
+        <View style={styles.top}>
+          <T variant="heading" style={{ textAlign: 'center' }}>
+            Add to playlist
+          </T>
+          <T variant="caption" numberOfLines={1} style={{ textAlign: 'center', marginTop: 2 }}>
+            {items.length > 1 ? `${request?.title} · ${songCount(items.length)}` : request?.title}
+          </T>
+          <Pressable onPress={newPlaylist} style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.8 }]}>
+            <T style={styles.newBtnText}>New playlist</T>
+          </Pressable>
+          <View style={styles.search}>
+            <Ionicons name="search" size={16} color={t.colors.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Find playlist"
+              placeholderTextColor={t.colors.textMuted}
+              style={styles.searchInput}
+              autoCorrect={false}
+            />
+          </View>
         </View>
-      </View>
+      </SheetGrab>
       <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ paddingBottom: t.space.md }}>
         {single && !query
           ? row(

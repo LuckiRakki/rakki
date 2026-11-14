@@ -10,7 +10,7 @@ import { makeMutable, useAnimatedReaction, useFrameCallback, useSharedValue } fr
 
 import { useAuth } from '@/auth/store';
 import { localArtUri } from '@/downloads/store';
-import { useInBackground } from '@/lib/appActive';
+import { useBackgroundNow, useInBackground } from '@/lib/appActive';
 import { artColor } from '@/lib/blurhash';
 import { usePlayer } from '@/player/store';
 import { Kawarp, KAWARP_DIM } from '@/spicy/Kawarp';
@@ -32,7 +32,7 @@ const MOVES_PER_SECOND = 12;
 export function useBackdropClock() {
   const t = useTheme();
   const playing = usePlayer((s) => s.playing);
-  const away = useInBackground();
+  const away = useBackgroundNow();
   const motion = t.reduceMotion ? 0 : t.appearance.playerMotion;
   useFrameCallback(
     (frame) => {

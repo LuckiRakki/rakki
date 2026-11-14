@@ -906,8 +906,30 @@ export class JellyfinClient {
 
   // ---- Home shelves ----
 
-  /** Albums of the most played songs. */
+  /**
+   * Most played albums, by what you've played lately: the Rakki plugin's (0.5) top albums of the
+   * last 30 days first, then all-time play counts to fill the shelf. All-time counts alone barely
+   * move, so the shelf used to look the same for months.
+   */
   async getMostPlayedAlbums(limit = 16): Promise<BaseItem[]> {
+    const [recent, allTime] = await Promise.all([
+      this.getRakkiStats(30).catch(() => null),
+      this.getMostPlayedAlbumsAllTime(limit),
+    ]);
+    const ids = (recent?.TopAlbums ?? []).map((a) => a.Id).filter((id): id is string => !!id);
+    if (ids.length === 0) return allTime;
+    const byId = new Map((await this.getItemsByIds(ids)).map((a) => [a.Id, a]));
+    const out = ids.map((id) => byId.get(id)).filter((a): a is BaseItem => !!a);
+    const seen = new Set(out.map((a) => a.Id));
+    for (const a of allTime) {
+      if (out.length >= limit) break;
+      if (!seen.has(a.Id)) out.push(a);
+    }
+    return out.slice(0, limit);
+  }
+
+  /** Albums of the most played songs, all time (Jellyfin's play counts). */
+  private async getMostPlayedAlbumsAllTime(limit: number): Promise<BaseItem[]> {
     const r = await this.items({
       IncludeItemTypes: 'Audio',
       Filters: 'IsPlayed',

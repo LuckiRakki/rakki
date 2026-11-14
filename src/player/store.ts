@@ -49,10 +49,11 @@ interface PlayerState {
   /** This queue is in shuffled order. */
   shuffle: boolean;
   /**
-   * The shuffle toggle (player, album and playlist pages): new queues start shuffled only
-   * while it's on. One-off "shuffle play" buttons shuffle just their queue.
+   * The shuffle toggle, per playlist, album, genre or Liked Songs (by shuffleKey): each starts
+   * shuffled only if you turned shuffle on for it, and stays that way until you turn it off.
+   * Off for everything else. One-off "shuffle play" buttons shuffle just their queue.
    */
-  shuffleMode: boolean;
+  shuffleBy: Record<string, true>;
   source: QueueSource | null;
   error: string | null;
   /**
@@ -82,22 +83,54 @@ interface PlayerState {
   stop(): void;
 }
 
-const SHUFFLE_KEY = 'rakki.shuffleMode';
+// Was one switch for everything ('rakki.shuffleMode', no longer read): now one per source.
+const SHUFFLE_KEY = 'rakki.shuffleBy';
 
-/** Turn the shuffle toggle on or off (remembered; the current queue isn't touched). */
-export function setShuffleMode(on: boolean) {
-  writePref(SHUFFLE_KEY, on ? '1' : '0');
-  usePlayer.setState({ shuffleMode: on });
+function readShuffleBy(): Record<string, true> {
+  try {
+    const v = JSON.parse(readPref(SHUFFLE_KEY) ?? '{}') as unknown;
+    return v && typeof v === 'object' ? (v as Record<string, true>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** What a queue's shuffle is remembered by: a playlist, album, genre or Liked Songs. Null for the rest (search, songs, radio). */
+export function shuffleKey(source: QueueSource | null | undefined): string | null {
+  if (!source?.id) return null;
+  if (source.type === 'playlist' || source.type === 'album' || source.type === 'genre') return `${source.type}:${source.id}`;
+  return null;
+}
+
+/** Turn shuffle on or off for one source (remembered; the current queue isn't touched). */
+export function setShuffleFor(key: string | null, on: boolean) {
+  if (!key) return;
+  const next = { ...usePlayer.getState().shuffleBy };
+  if (on) next[key] = true;
+  else delete next[key];
+  writePref(SHUFFLE_KEY, JSON.stringify(next));
+  usePlayer.setState({ shuffleBy: next });
+}
+
+/** Whether shuffle is on for this source (a hook, for a page's toggle). */
+export function useShuffleOn(source: QueueSource): boolean {
+  const key = shuffleKey(source);
+  return usePlayer((s) => (key ? !!s.shuffleBy[key] : false));
 }
 
 /**
  * A page's shuffle toggle: on the page whose music is playing it shuffles (or un-shuffles)
- * the queue too; anywhere else it just sets what the next Play does.
+ * the queue too; anywhere else it just sets what that page's next Play does.
  */
-export function toggleShuffleFor(playingHere: boolean) {
+export function toggleShuffleFor(playingHere: boolean, source: QueueSource) {
   const p = usePlayer.getState();
-  if (playingHere && p.queue.length) p.toggleShuffle();
-  else setShuffleMode(!p.shuffleMode);
+  if (playingHere && p.queue.length && shuffleKey(p.source) === shuffleKey(source)) {
+    // Shuffles the queue and remembers it for this source (toggleShuffle).
+    p.toggleShuffle();
+  } else {
+    const key = shuffleKey(source);
+    setShuffleFor(key, !(key && p.shuffleBy[key]));
+  }
 }
 
 let keyCounter = 0;
@@ -225,7 +258,7 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   buffering: false,
   repeat: 'off',
   shuffle: false,
-  shuffleMode: readPref(SHUFFLE_KEY) === '1',
+  shuffleBy: readShuffleBy(),
   source: null,
   error: null,
 
@@ -238,7 +271,8 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       if (opts.startIndex !== undefined) opts = { ...opts, startIndex: Math.max(0, items.findIndex((x) => x.Id === chosen?.Id)) };
     }
     if (items.length === 0) return;
-    const shuffle = opts.shuffle ?? get().shuffleMode;
+    const key = shuffleKey(opts.source);
+    const shuffle = opts.shuffle ?? (key ? !!get().shuffleBy[key] : false);
     if (remote && !items.some((it) => it.Radio)) {
       let list = items;
       let at = Math.min(Math.max(opts.startIndex ?? 0, 0), items.length - 1);
@@ -391,9 +425,9 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   },
 
   toggleShuffle() {
-    const { queue, index, shuffle } = get();
-    // The toggle follows: what this queue does is what new ones will do.
-    setShuffleMode(!shuffle);
+    const { queue, index, shuffle, source } = get();
+    // Remembered for where this queue came from (its playlist, album...): playing it again does the same.
+    setShuffleFor(shuffleKey(source), !shuffle);
     if (queue.length === 0) {
       set({ shuffle: !shuffle });
       return;

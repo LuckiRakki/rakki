@@ -7,7 +7,7 @@ import type { BaseItem } from '@/api/jellyfin';
 import { useGenreAlbums, useGenreArtists, useGenreCounts, useGenreTopTracks } from '@/api/queries';
 import { useAuth } from '@/auth/store';
 import { withAlpha } from '@/lib/color';
-import { toggleShuffleFor, usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer, useShuffleOn } from '@/player/store';
 import { ItemTile } from '@/ui/AlbumTile';
 import { Artwork } from '@/ui/Artwork';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
@@ -61,13 +61,13 @@ export default function GenreScreen() {
   const albumList = albums.data ?? [];
   const topList = top.data ?? [];
   const source = { type: 'genre' as const, id: name, name };
+  const shuffleOn = useShuffleOn(source);
 
   // Artists with the most albums in this genre first.
   const albumCount = new Map<string, number>();
   for (const a of albumList) for (const x of a.AlbumArtists ?? []) albumCount.set(x.Id, (albumCount.get(x.Id) ?? 0) + 1);
   const artistList = [...(artists.data ?? [])].sort((a, b) => (albumCount.get(b.Id) ?? 0) - (albumCount.get(a.Id) ?? 0));
 
-  const shuffleOn = usePlayer((s) => s.shuffleMode);
 
   /** Play the genre (shuffled while the shuffle toggle is on). */
   async function play() {
@@ -111,7 +111,7 @@ export default function GenreScreen() {
         lines={['Genre', counts || (artists.data === undefined && !artists.isError ? null : '')]}
         playing={isThis && playing}
         onPlay={() => void play()}
-        onShuffle={() => toggleShuffleFor(isThis)}
+        onShuffle={() => toggleShuffleFor(isThis, source)}
         shuffleOn={shuffleOn}
       />
       <Reveal step={topStep}>

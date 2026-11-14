@@ -6,7 +6,7 @@ import Animated from 'react-native-reanimated';
 import { matchesSearch, useLikedSongs } from '@/api/queries';
 import { withAlpha } from '@/lib/color';
 import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
-import { toggleShuffleFor, usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer, useShuffleOn } from '@/player/store';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
 import { BackButton, CollectionHeader } from '@/ui/CollectionHeader';
 import { DownloadButton } from '@/ui/DownloadButton';
@@ -28,9 +28,9 @@ export default function LikedSongsScreen() {
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === 'liked');
-  const shuffleOn = usePlayer((s) => s.shuffleMode);
   const list = liked.data ?? [];
   const source = { type: 'playlist' as const, id: 'liked', name: 'Liked Songs' };
+  const shuffleOn = useShuffleOn(source);
   const [find, setFind] = useState('');
   // Find in Liked Songs: the songs shown; playing one still plays them all from there.
   const shown = find.trim() ? list.filter((x) => matchesSearch(x, find.trim())) : list;
@@ -53,7 +53,7 @@ export default function LikedSongsScreen() {
           if (isThis) return usePlayer.getState().toggle();
           if (list.length) usePlayer.getState().playQueue(list, { source });
         }}
-        onShuffle={() => toggleShuffleFor(isThis)}
+        onShuffle={() => toggleShuffleFor(isThis, source)}
         shuffleOn={shuffleOn}
         download={list.length ? <DownloadButton kind="liked" item={LIKED} /> : undefined}
       />

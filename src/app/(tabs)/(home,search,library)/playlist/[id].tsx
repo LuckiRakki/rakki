@@ -11,7 +11,7 @@ import { artColor } from '@/lib/blurhash';
 import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
 import { useOffline } from '@/lib/online';
 import { noteLoadedPlaylist } from '@/library/playlistCache';
-import { toggleShuffleFor, usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer, useShuffleOn } from '@/player/store';
 import { Artwork } from '@/ui/Artwork';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { StickyTitleBar, useScrollY } from '@/ui/CollapsingHeader';
@@ -78,7 +78,6 @@ export default function PlaylistScreen() {
   const currentId = usePlayer((s) => s.queue[s.index]?.item.Id);
   const playing = usePlayer((s) => s.playing);
   const isThis = usePlayer((s) => s.source?.type === 'playlist' && s.source.id === id);
-  const shuffleOn = usePlayer((s) => s.shuffleMode);
   const [editing, setEditing] = useState(false);
   const [find, setFind] = useState('');
   const [sortKey, setSortKey] = useState<PlaylistSort>(() => (readPref(SORT_KEY) as PlaylistSort | null) ?? 'custom');
@@ -95,6 +94,7 @@ export default function PlaylistScreen() {
   const list = items.data ?? [];
   const seconds = list.reduce((sum, x) => sum + ticksToSeconds(x.RunTimeTicks), 0);
   const source = { type: 'playlist' as const, id, name: p ? displayName(p) : 'Playlist' };
+  const shuffleOn = useShuffleOn(source);
   // The playlist in the chosen order (Play follows it), then Find narrows down what's shown;
   // playing a found song still plays the whole (sorted) playlist from there.
   const ordered = sortPlaylist(list, sortKey, seed);
@@ -143,7 +143,7 @@ export default function PlaylistScreen() {
           if (isThis) return usePlayer.getState().toggle();
           if (ordered.length) usePlayer.getState().playQueue(ordered, { source });
         }}
-        onShuffle={() => toggleShuffleFor(isThis)}
+        onShuffle={() => toggleShuffleFor(isThis, source)}
         shuffleOn={shuffleOn}
         onMore={p ? () => openMenu(p) : undefined}
         onEdit={p && list.length && !offline ? () => setEditing(true) : undefined}

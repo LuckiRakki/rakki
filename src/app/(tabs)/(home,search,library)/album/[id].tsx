@@ -12,7 +12,7 @@ import { formatLength, songCount, ticksToSeconds } from '@/lib/format';
 import { artistLine } from '@/lib/items';
 import { formatCompact } from '@/lib/lastfm';
 import { openMenu } from '@/ui/overlays';
-import { toggleShuffleFor, usePlayer } from '@/player/store';
+import { toggleShuffleFor, usePlayer, useShuffleOn } from '@/player/store';
 import { ArtistLinks } from '@/ui/ArtistLinks';
 import { DownloadButton } from '@/ui/DownloadButton';
 import { GenreChips } from '@/ui/GenreChips';
@@ -54,6 +54,7 @@ export default function AlbumScreen() {
   const seconds = list.reduce((sum, t) => sum + ticksToSeconds(t.RunTimeTicks), 0);
   const tint = artColor(album.data && client?.blurhash(album.data));
   const source = { type: 'album' as const, id, name: album.data?.Name ?? 'Album' };
+  const shuffleOn = useShuffleOn(source);
 
   // Top to bottom: the name (there at once when a list had the album), its genres (only the
   // full album has them, and often there are none, so they hold no place), then Play and the songs.
@@ -62,7 +63,6 @@ export default function AlbumScreen() {
   const [head, chips, body] = useReveal([partOf(album.data), genrePart, partOf(tracks.data, { failed: !!tracks.error })]);
   const rowFade = useRowFade(body);
 
-  const shuffleOn = usePlayer((s) => s.shuffleMode);
 
   /** Play (in shuffled order while the shuffle toggle is on). */
   function play() {
@@ -133,7 +133,7 @@ export default function AlbumScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg }}>
               <Pressable
                 hitSlop={8}
-                onPress={() => toggleShuffleFor(isThisAlbum)}
+                onPress={() => toggleShuffleFor(isThisAlbum, source)}
                 accessibilityRole="switch"
                 accessibilityState={{ checked: shuffleOn }}
                 accessibilityLabel="Shuffle"
