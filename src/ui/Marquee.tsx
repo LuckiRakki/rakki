@@ -23,7 +23,8 @@ const SPEED = 32; // points per second
 const REST_MS = 2600;
 const GAP = 48; // between the end of the text and its copy
 
-export function Marquee({ text, style }: { text: string; style?: StyleProp<TextStyle> }) {
+/** `center`: a title that fits sits in the middle (one that scrolls starts at the left, as always). */
+export function Marquee({ text, style, center }: { text: string; style?: StyleProp<TextStyle>; center?: boolean }) {
   const t = useTheme();
   const [boxW, setBoxW] = useState(0);
   const [textW, setTextW] = useState(0);
@@ -56,7 +57,10 @@ export function Marquee({ text, style }: { text: string; style?: StyleProp<TextS
     <View style={{ overflow: 'hidden', alignSelf: 'stretch' }} onLayout={(e) => setBoxW(e.nativeEvent.layout.width)}>
       {/* Laid out as wide as it likes, to measure the whole title. */}
       <Animated.View style={[{ flexDirection: 'row', width: 10000, opacity: overflows && !scrolls ? 0 : 1 }, slide]}>
-        <View onLayout={(e) => setTextW(e.nativeEvent.layout.width)}>
+        <View
+          onLayout={(e) => setTextW(e.nativeEvent.layout.width)}
+          style={center && !overflows && textW > 0 ? { marginLeft: (boxW - textW) / 2 } : undefined}
+        >
           <T numberOfLines={1} style={style}>
             {text}
           </T>

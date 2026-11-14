@@ -307,6 +307,14 @@ export default function CustomizeScreen() {
             value={a.turnFullScreen}
             onChange={(v) => set('turnFullScreen', v)}
           />
+          {a.turnFullScreen ? (
+            <Toggle
+              label="Hide Controls When Idle"
+              detail="Sideways, the controls fade and the cover grows into their space; a touch brings them back"
+              value={a.fullScreenAutoHide}
+              onChange={(v) => set('fullScreenAutoHide', v)}
+            />
+          ) : null}
           <Field label="Pause Button">
             <Segmented
               value={a.pauseStyle}

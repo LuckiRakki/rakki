@@ -88,6 +88,8 @@ export interface Appearance {
   lyricsCard: boolean;
   /** Turning the phone sideways in the player shows it full screen with the lyrics (or the visualizer). */
   turnFullScreen: boolean;
+  /** Sideways, the controls fade after a few seconds and the cover grows into their space. */
+  fullScreenAutoHide: boolean;
   // ---- Visualizer ----
   /** The big visualizer's look (appearance/visualizer.ts); the desktop's line by default. */
   visualizer: VisualizerLook;
@@ -125,6 +127,7 @@ export const APPEARANCE_DEFAULTS: Appearance = {
   playerMotion: 1,
   lyricsCard: true,
   turnFullScreen: true,
+  fullScreenAutoHide: true,
   visualizer: DESKTOP_LINE,
   noLyricsVisualizer: true,
   haptics: true,
