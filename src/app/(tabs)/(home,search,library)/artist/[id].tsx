@@ -1,9 +1,7 @@
 import { Ionicons } from '@/ui/Icon';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +32,7 @@ import { openOptions, showToast } from '@/ui/overlays';
 import { OfflineUnavailable } from '@/ui/OfflineUnavailable';
 import { Bone, gaveUp, Line, Reveal, ShelfSkeleton, TrackRowsSkeleton, useReveal, type Part } from '@/ui/Reveal';
 import { Shelf, SectionTitle } from '@/ui/Shelf';
+import { FadedPhoto } from '@/ui/FadedPhoto';
 import { T } from '@/ui/T';
 import { makeStyles, useTheme } from '@/ui/theme';
 import { useDockSpace } from '@/ui/dock';
@@ -48,6 +47,7 @@ export default function ArtistScreen() {
   const dock = useDockSpace();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const away = useInBackground();
   const client = useAuth((s) => s.client);
   const artist = useItem(id);
@@ -150,24 +150,14 @@ export default function ArtistScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.page }}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: t.space.xxl + dock }}>
-        <View style={[styles.hero, { backgroundColor: t.tint(tint) }]}>
-          {cover && !away ? (
-            <Animated.View style={[StyleHero, heroMotion]}>
-              <Image
-                source={{ uri: cover }}
-                placeholder={blurhash ? { blurhash } : undefined}
-                style={StyleHero}
-                contentFit="cover"
-                transition={200}
-              />
+        <View style={styles.hero}>
+          {/* The photo runs on below the hero and fades into the page (or Kawarp) with no edge;
+              its colour alone, faded the same way, while it loads or when there's no photo. */}
+          {a && !away ? (
+            <Animated.View style={[styles.heroArt, heroMotion]} pointerEvents="none">
+              <FadedPhoto uri={cover ?? undefined} width={width} height={HERO + HERO_TAIL} tint={t.tint(tint)} />
             </Animated.View>
           ) : null}
-          {/* Into the page, or over a backdrop darker at the bottom so the name reads (as on the desktop). */}
-          <LinearGradient
-            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.25)', t.backdrop === 'none' ? t.colors.bg : 'rgba(0,0,0,0.65)']}
-            locations={[0, 0.6, 1]}
-            style={StyleHero}
-          />
           <Reveal
             step={nameStep}
             placeholder={
@@ -301,7 +291,9 @@ export default function ArtistScreen() {
   );
 }
 
-const StyleHero = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 } as const;
+/** The hero's height, and how far below it the photo carries on while it fades out. */
+const HERO = 340;
+const HERO_TAIL = 150;
 
 /** "12 plays", "1 play", "Not played yet": your own plays of a song. */
 function myPlays(track: BaseItem): string {
@@ -311,7 +303,8 @@ function myPlays(track: BaseItem): string {
 }
 
 const useStyles = makeStyles((t) => ({
-  hero: { height: 340, justifyContent: 'flex-end', overflow: 'hidden' },
+  hero: { height: HERO, justifyContent: 'flex-end' },
+  heroArt: { position: 'absolute', left: 0, right: 0, top: 0, height: HERO + HERO_TAIL },
   name: {
     fontFamily: t.fonts.black,
     fontSize: t.size(44),
